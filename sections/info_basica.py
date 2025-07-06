@@ -5,9 +5,12 @@ def render_info_basica(dados_classes):
     if "info_basica_expandida" not in st.session_state:
         st.session_state["info_basica_expandida"] = True
 
+    personagem = st.session_state.get("personagem", {})
+
     with st.expander("📘 Informações Básicas", expanded=st.session_state["info_basica_expandida"]):
         nomes_classes = [c["nome"] for c in dados_classes]
-        classe_escolhida = st.selectbox("Classe:", nomes_classes)
+        classe_default = personagem.get("classe", nomes_classes[0] if nomes_classes else "")
+        classe_escolhida = st.selectbox("Classe:", nomes_classes, index=nomes_classes.index(classe_default) if classe_default in nomes_classes else 0)
 
         classe_dados = next((c for c in dados_classes if c["nome"] == classe_escolhida), None)
         cor_classe = classe_dados.get("cor", "#333")
@@ -15,19 +18,20 @@ def render_info_basica(dados_classes):
         st.markdown(f"<h2 style='color:{cor_classe};'>🧭 Classe: {classe_escolhida}</h2>", unsafe_allow_html=True)
 
         nomes_arquetipos = [a["nome"] for a in classe_dados["arquetipos"]]
-        arquetipo_escolhido = st.selectbox("Arquetipo:", nomes_arquetipos)
+        arquetipo_default = personagem.get("arquetipo", nomes_arquetipos[0] if nomes_arquetipos else "")
+        arquetipo_escolhido = st.selectbox("Arquetipo:", nomes_arquetipos, index=nomes_arquetipos.index(arquetipo_default) if arquetipo_default in nomes_arquetipos else 0)
 
         arquetipo_dados = next((a for a in classe_dados["arquetipos"] if a["nome"] == arquetipo_escolhido), None)
 
         col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
         with col1:
-            nome = st.text_input("Nome:")
+            nome = st.text_input("Nome:", value=personagem.get("nome", ""))
         with col2:
-            idade = st.number_input("Idade:", min_value=0, step=1)
+            idade = st.number_input("Idade:", min_value=0, step=1, value=personagem.get("idade", 0))
         with col3:
-            sexo = st.selectbox("Sexo:", ["", "Masculino", "Feminino", "Outro"])
+            sexo = st.selectbox("Sexo:", ["", "Masculino", "Feminino", "Outro"], index=["", "Masculino", "Feminino", "Outro"].index(personagem.get("sexo", "")))
         with col4:
-            raca = st.text_input("Raça:")
+            raca = st.text_input("Raça:", value=personagem.get("raca", ""))
 
     return {
         "nome": nome,
