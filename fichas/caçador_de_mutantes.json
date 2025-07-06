@@ -1,0 +1,207 @@
+{
+  "personagem": {
+    "nome": "caçador de mutantes",
+    "idade": 18,
+    "sexo": "Feminino",
+    "raca": "pericles",
+    "classe": "Lutador",
+    "classe_dados": {
+      "nome": "Lutador",
+      "cor": "#B03A2E",
+      "habilidades": [
+        {
+          "nome": "Soco Poderoso",
+          "descricao": "Um golpe devastador"
+        },
+        {
+          "nome": "Bloqueio",
+          "descricao": "Reduz o dano recebido"
+        }
+      ],
+      "arquetipos": [
+        {
+          "nome": "Antimago",
+          "habilidades": [
+            {
+              "nome": "Anular Magia",
+              "descricao": "Cancela efeitos mágicos"
+            },
+            {
+              "nome": "Dispersão",
+              "descricao": "Remove buffs do inimigo"
+            }
+          ]
+        },
+        {
+          "nome": "Caçador Mutante",
+          "habilidades": [
+            {
+              "nome": "Armadilha Sônica",
+              "descricao": "Paralisa mutantes"
+            },
+            {
+              "nome": "Besta de Energia",
+              "descricao": "Atira projéteis de plasma"
+            }
+          ]
+        }
+      ]
+    },
+    "arquetipo": "Caçador Mutante",
+    "arquetipo_dados": {
+      "nome": "Caçador Mutante",
+      "habilidades": [
+        {
+          "nome": "Armadilha Sônica",
+          "descricao": "Paralisa mutantes"
+        },
+        {
+          "nome": "Besta de Energia",
+          "descricao": "Atira projéteis de plasma"
+        }
+      ]
+    },
+    "cor_classe": "#B03A2E"
+  },
+  "personalidade": {
+    "alinhamento": "Leal | Neutro",
+    "pecado": "Preguiça",
+    "coisa_favorita": "tatuagens rúnicas",
+    "odeia": "mentirosos",
+    "vivo_para": "criar a poção perfeita",
+    "emoji_pecado": "😴"
+  },
+  "atributos": {
+    "valores": {
+      "Força": 4,
+      "Destreza": 1,
+      "Vigor": 4,
+      "Carisma": 1,
+      "Manipulação": 4,
+      "Aparência": 1,
+      "Percepção": 3,
+      "Inteligência": 1,
+      "Raciocínio": 1
+    },
+    "totais": {
+      "Força": 4,
+      "Destreza": 1,
+      "Vigor": 4,
+      "Carisma": 1,
+      "Manipulação": 4,
+      "Aparência": 1,
+      "Percepção": 4,
+      "Inteligência": 1,
+      "Raciocínio": 1
+    },
+    "ajustes": {
+      "Força": 0,
+      "Destreza": 0,
+      "Vigor": 0,
+      "Carisma": 0,
+      "Manipulação": 0,
+      "Aparência": 0,
+      "Percepção": 1,
+      "Inteligência": 0,
+      "Raciocínio": 0
+    }
+  },
+  "pericias": {
+    "valores": {
+      "Prontidão": 0,
+      "Esportes": 0,
+      "Briga": 3,
+      "Esquiva": 0,
+      "Empatia": 0,
+      "Expressão": 5,
+      "Intimidação": 0,
+      "Liderança": 0,
+      "Conhecimento urbano": 5,
+      "Lábia": 0,
+      "Lidar com animais": 0,
+      "Oficios": 0,
+      "Pilotagem": 0,
+      "Etiqueta": 0,
+      "Longo alcance": 0,
+      "Armas Brancas": 0,
+      "Performance": 0,
+      "Prestidigitação": 0,
+      "Furtividade": 0,
+      "Sobrevivência": 0,
+      "Acadêmicos": 0,
+      "Arcanismo": 0,
+      "Finanças": 0,
+      "Investigação": 0,
+      "Direito": 0,
+      "Linguistica": 0,
+      "Medicina": 0,
+      "Ocultismo": 0,
+      "Politica": 0,
+      "Natureza": 0
+    },
+    "totais": {
+      "Prontidão": 0,
+      "Esportes": 0,
+      "Briga": 3,
+      "Esquiva": 0,
+      "Empatia": 0,
+      "Expressão": 7,
+      "Intimidação": 0,
+      "Liderança": 0,
+      "Conhecimento urbano": 3,
+      "Lábia": 0,
+      "Lidar com animais": 0,
+      "Oficios": 0,
+      "Pilotagem": 0,
+      "Etiqueta": 0,
+      "Longo alcance": 0,
+      "Armas Brancas": 0,
+      "Performance": 0,
+      "Prestidigitação": 0,
+      "Furtividade": 0,
+      "Sobrevivência": 0,
+      "Acadêmicos": 0,
+      "Arcanismo": 0,
+      "Finanças": 0,
+      "Investigação": 0,
+      "Direito": 0,
+      "Linguistica": 0,
+      "Medicina": 0,
+      "Ocultismo": 0,
+      "Politica": 0,
+      "Natureza": 0
+    },
+    "ajustes": {
+      "Prontidão": 0,
+      "Esportes": 0,
+      "Briga": 0,
+      "Esquiva": 0,
+      "Empatia": 0,
+      "Expressão": 2,
+      "Intimidação": 0,
+      "Liderança": 0,
+      "Conhecimento urbano": -2,
+      "Lábia": 0,
+      "Lidar com animais": 0,
+      "Oficios": 0,
+      "Pilotagem": 0,
+      "Etiqueta": 0,
+      "Longo alcance": 0,
+      "Armas Brancas": 0,
+      "Performance": 0,
+      "Prestidigitação": 0,
+      "Furtividade": 0,
+      "Sobrevivência": 0,
+      "Acadêmicos": 0,
+      "Arcanismo": 0,
+      "Finanças": 0,
+      "Investigação": 0,
+      "Direito": 0,
+      "Linguistica": 0,
+      "Medicina": 0,
+      "Ocultismo": 0,
+      "Politica": 0,
+      "Natureza": 0
+    }
+  }
+}

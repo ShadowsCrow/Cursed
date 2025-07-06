@@ -1,0 +1,43 @@
+[
+  {
+    "nome": "Mago",
+    "cor": "#5B2C6F",
+    "habilidades": [
+      {"nome": "Bola de Fogo", "descricao": "Lança uma explosão flamejante em área"},
+      {"nome": "Escudo Arcano", "descricao": "Cria uma barreira mágica temporária"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Mutante",
+        "habilidades": [
+          {"nome": "Regeneração", "descricao": "Recupera vida rapidamente"},
+          {"nome": "Visão Térmica", "descricao": "Detecta inimigos por calor"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Lutador",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Antimago",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Caçador Mutante",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }
+    ]
+  }
+]
