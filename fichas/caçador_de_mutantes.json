@@ -1,9 +1,9 @@
 {
   "personagem": {
     "nome": "caçador de mutantes",
-    "idade": 18,
+    "idade": 19,
     "sexo": "Feminino",
-    "raca": "pericles",
+    "raca": "pericless",
     "classe": "Lutador",
     "classe_dados": {
       "nome": "Lutador",
