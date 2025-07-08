@@ -8,7 +8,16 @@
     ],
     "arquetipos": [
       {
-        "nome": "Mutante",
+        "nome": "Mutante Arcano",
+        "conceito": "Magos sofrem mutações em seu processo de formação e alguns deles possuem corpos mais propicios a mais mutações e mutações mais fortes.",
+        "habilidades": [
+          {"nome": "Regeneração", "descricao": "Recupera vida rapidamente"},
+          {"nome": "Visão Térmica", "descricao": "Detecta inimigos por calor"}
+        ]
+      },      
+      {
+        "nome": "Estudioso do Véu",
+        "conceito": "Após sua formação, esse Mago escolheu se espicializar e apesar de não ser capaz de se conectar com o Véu, é muito eficiente no uso das suas capacidades.",
         "habilidades": [
           {"nome": "Regeneração", "descricao": "Recupera vida rapidamente"},
           {"nome": "Visão Térmica", "descricao": "Detecta inimigos por calor"}
@@ -17,7 +26,7 @@
     ]
   },
   {
-    "nome": "Lutador",
+    "nome": "Especialista de Combate",
     "cor": "#B03A2E",
     "habilidades": [
       {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
@@ -26,6 +35,7 @@
     "arquetipos": [
       {
         "nome": "Antimago",
+        "conceito": "Pouco se sabe sobre sua origem e sobre sua historia, mas os livros de historia os tratam como vilões e assassinos trapaceiros, enquanto algumas lendas populares os tratam como habilidosos e inteligentes guerreiros idealistas.",
         "habilidades": [
           {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
           {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
@@ -33,6 +43,263 @@
       },
       {
         "nome": "Caçador Mutante",
+        "conceito": "Caçadores mutantes são guerreiros mercenaios que passaram por processos de mutação que inspiraram os magos e são conhecidos por todas as partes do mundo por serem extremamente eficientes em suas caçadas.",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Gatuno",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Ladrão",
+        "conceito": "Uma agil e esguio especialista, sua experiência e habilidade em conseguir o que quer o torna um verdadeiro sobrevivente urbano.",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Assassino",
+        "conceito": "Um rigoroso treinamente o tornou uma maquina especializada em matar, seja se infiltrando eu um baile de gala pela porta da frente caçando seu alvo e o envenando ou o emboscando na calada da noite, dando-lhe uma morte rapida.",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      },
+      {
+        "nome": " Psionico",
+        "conceito": "Os Psionicos são pessoas especiais que nasceram uma mutação natural, que lhes dá acesso a uma parte muito especifica do Véu que os dá um gemeo energizado e com uma profunda ligação com seu Uno (O corpo principal), permitindo que conforme sua conexão se aprimore, eles desbloqueiem habilidades unicas.",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Acolito",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Paladino",
+        "conceito": "Um cavaleiro que jurou servir a um Deus ou uma Criatura de poder e recebeu sua divina proteção e missão, além de uma fração de seu poder e personalidade, também podem ter seu corpo tomado sendo seu porta voz.",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Sacerdote",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Druida",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Caminho Feral",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Caminho da Raiz",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      },
+      {
+        "nome": "Xamã totemico",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      },
+      {
+        "nome": "Animalista",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Virtuoso",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Artista",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Sonhador",
+        "conceito": "Lunaticos, que vivem em um mundo de sonhos, e que os tornaram realidades através de um objeto mágico geralmente vindos de um sonho impossivel e que foi sonhado acordado, o objeto materaliza fisicamente, objetos que o usuario tenha adquirido em um sonho impossivel.",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      },
+      {
+        "nome": "Popular",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      },
+      {
+        "nome": "Mercador",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Ocultista",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Demonologista",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Possuido",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      },
+      {
+        "nome": "Cavaleiro demonio",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      },
+      {
+        "nome": "Necromante",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Feiticeiro",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Arcano",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      }
+    ]
+  },
+  {
+    "nome": "Marcial",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Pugilista",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Lutador elemental",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
+          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+        ]
+      }    
+    ]
+  },
+  {
+    "nome": "Furioso",
+    "cor": "#B03A2E",
+    "habilidades": [
+      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
+      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+    ],
+    "arquetipos": [
+      {
+        "nome": "Berserker",
+        "conceito": "",
+        "habilidades": [
+          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
+          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+        ]
+      },
+      {
+        "nome": "Furia elemental",
+        "conceito": "",
         "habilidades": [
           {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
           {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
@@ -40,4 +307,5 @@
       }
     ]
   }
+  
 ]
