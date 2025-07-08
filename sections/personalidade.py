@@ -1,5 +1,4 @@
 import streamlit as st
-import random
 
 def render_personalidade():
     alinhamentos = [
@@ -12,20 +11,6 @@ def render_personalidade():
         "Ira": "😡", "Gula": "🍔", "Avareza": "💰",
         "Luxúria": "🔥", "Inveja": "👀", "Preguiça": "😴", "Soberba": "👑"
     }
-
-    exemplos_favorito = [
-        "uma pedra de estimação", "cogumelos brilhantes", "instrumentos antigos",
-        "tatuagens rúnicas", "pintar mapas", "andar descalço na chuva"
-    ]
-    exemplos_odeio = [
-        "cheiro de enxofre", "mentirosos", "gatos falantes", "perder tempo",
-        "vozes sussurrando", "luz do sol"
-    ]
-    exemplos_vivo_para = [
-        "descobrir os segredos do mundo", "vingar sua família",
-        "criar a poção perfeita", "tornar-se uma lenda",
-        "provar que os deuses estão errados", "salvar alguém que ama"
-    ]
 
     if "personalidade_expandida" not in st.session_state:
         st.session_state["personalidade_expandida"] = True
@@ -48,17 +33,19 @@ def render_personalidade():
                 format_func=lambda p: f"{pecados_emojis[p]} {p}"
             )
 
-        # Exemplo aleatório, apenas se não houver valor carregado da ficha
-        coisa_favorita_default = dados.get("coisa_favorita", random.choice(exemplos_favorito))
-        odeia_default = dados.get("odeia", random.choice(exemplos_odeio))
-        vivo_para_default = dados.get("vivo_para", random.choice(exemplos_vivo_para))
-
         col3, col4 = st.columns(2)
         with col3:
-            coisa_favorita = st.text_input("Coisa favorita:", value=coisa_favorita_default)
+            coisa_favorita = st.text_input("Coisa favorita:", value=dados.get("coisa_favorita", ""), placeholder="Ex: runas antigas")
+            odeia = st.text_input("O que odeia:", value=dados.get("odeia", ""), placeholder="Ex: traição")
+            quando_me_veem = st.text_input("Quando me veem pensam que:", value=dados.get("quando_me_veem", ""), placeholder="Ex: um sábio distante")
+            manias = st.text_input("Manias ou Hábitos:", value=dados.get("manias", ""), placeholder="Ex: roer unha")
         with col4:
-            odeia = st.text_input("O que odeia:", value=odeia_default)
-        vivo_para = st.text_input("Vivo para:", value=vivo_para_default)
+            vivo_para = st.text_input("Vivo para:", value=dados.get("vivo_para", ""), placeholder="Ex: proteger os inocentes")
+            meu_lema = st.text_input("Meu lema:", value=dados.get("meu_lema", ""), placeholder="Ex: O dever acima de tudo")
+            medo = st.text_input("Medo ou Fobia:", value=dados.get("medo", ""), placeholder="Ex: aranhas gigantes")
+            valor_inquebravel = st.text_input("Valor inquebrável:", value=dados.get("valor_inquebravel", ""), placeholder="Ex: lealdade")
+        
+        religiao = st.text_input("Religião ou Crença:", value=dados.get("religiao", ""), placeholder="Ex: Deusa da Lua")
 
     return {
         "alinhamento": alinhamento,
@@ -66,5 +53,11 @@ def render_personalidade():
         "coisa_favorita": coisa_favorita,
         "odeia": odeia,
         "vivo_para": vivo_para,
-        "emoji_pecado": pecados_emojis[pecado]
+        "emoji_pecado": pecados_emojis[pecado],
+        "quando_me_veem": quando_me_veem,
+        "meu_lema": meu_lema,
+        "manias": manias,
+        "medo": medo,
+        "valor_inquebravel": valor_inquebravel,
+        "religiao": religiao
     }
