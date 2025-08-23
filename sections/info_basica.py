@@ -21,8 +21,28 @@ def render_info_basica(dados_classes):
         arquetipo_default = personagem.get("arquetipo", nomes_arquetipos[0] if nomes_arquetipos else "")
         arquetipo_escolhido = st.selectbox("Arquetipo:", nomes_arquetipos, index=nomes_arquetipos.index(arquetipo_default) if arquetipo_default in nomes_arquetipos else 0)
 
+        # Obter dados do arquétipo
         arquetipo_dados = next((a for a in classe_dados["arquetipos"] if a["nome"] == arquetipo_escolhido), None)
 
+        # Mostrar conceito do arquétipo
+        if arquetipo_dados and arquetipo_dados.get("conceito"):
+            st.markdown(
+    f"""
+    <div style='
+        background-color:#f9f9f9;
+        padding:10px;
+        border-left:4px solid {cor_classe};
+        margin-top:-10px;
+        margin-bottom:10px;
+        color: #000;
+    '>
+        <strong>Conceito:</strong> {arquetipo_dados['conceito']}
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+        # Campos básicos
         col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
         with col1:
             nome = st.text_input("Nome:", value=personagem.get("nome", ""))

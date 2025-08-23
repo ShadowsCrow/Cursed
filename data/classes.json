@@ -3,309 +3,871 @@
     "nome": "Mago",
     "cor": "#5B2C6F",
     "habilidades": [
-      {"nome": "Bola de Fogo", "descricao": "Lança uma explosão flamejante em área"},
-      {"nome": "Escudo Arcano", "descricao": "Cria uma barreira mágica temporária"}
+      {
+        "nome": "Mutações",
+        "descricao": "No nivel 1: 2 mutações da lista de mutações.\nNo nivel 9: 1 mutação aleatoria da lista de mutações.\nNo nivel 16: 1 mutação da lista de mutações.\n No nivel 20: 3 mutações da lista de mutações.",
+        "tipo": "Passiva"
+      },
+      {
+        "nome": "Desgaste de arcano",
+        "descricao": "Uma pedra de mana pequena tem 10 cargas de usos, algumas magias e truques usam mais de uma carga, o jogador começa com 2 pedras, suas cargas não são repostas sem ser por uma fonte de magia inata, o mago consome uma carga por semana pra se manter.",
+        "tipo": "Passiva"
+      },
+      {
+        "nome": "Corpo instavel",
+        "descricao": "Ao ficar afastado por mais de 5 dias + (vigor x 2) de uma pedra de mana carregada, os corpos dos magos entram em estado de colapso, faça um teste de morte todo dia.",
+        "tipo": "Passiva"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Mutante Arcano",
         "conceito": "Magos sofrem mutações em seu processo de formação e alguns deles possuem corpos mais propicios a mais mutações e mutações mais fortes.",
         "habilidades": [
-          {"nome": "Regeneração", "descricao": "Recupera vida rapidamente"},
-          {"nome": "Visão Térmica", "descricao": "Detecta inimigos por calor"}
-        ]
-      },      
-      {
-        "nome": "Estudioso do Véu",
-        "conceito": "Após sua formação, esse Mago escolheu se espicializar e apesar de não ser capaz de se conectar com o Véu, é muito eficiente no uso das suas capacidades.",
-        "habilidades": [
-          {"nome": "Regeneração", "descricao": "Recupera vida rapidamente"},
-          {"nome": "Visão Térmica", "descricao": "Detecta inimigos por calor"}
+          {
+            "nome": "Resistência Imutavel",
+            "descricao": "Sua grande resistência faz com que você suporte mais mutações que os demais magos: Nivel 2: sofre uma mutação aleatoria da lista de mutações\n Nivel 6: Sofre uma mutação superior aleatoria da lista de mutações superiores\n Nivel 8: escolhe uma mutação aleatoria da lista de mutações\n Nivel 13: Sofre uma mutação aleatoria da lista de mutações\n Nivel 20: Sofre uma mutação aleatoria da lista de mutações",
+            "tipo": "Passiva"
+          },
+          {
+            "nome": "Primeiras aulas",
+            "descricao": "Você terminou seu treinamento inicial na academia magia, escolha duas das 5 cartas iniciais do mago."
+          }
         ]
       }
     ]
   },
   {
     "nome": "Especialista de Combate",
-    "cor": "#B03A2E",
+    "cor": "#E67E22",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Digno de atenção",
+        "descricao": "O combatente é impressinante em batalha e sua presença inspira aliados e impressiona os inimigos. Cada arquetipo oferecerá sua propria aura.",
+        "tipo": "Passiva"
+      },
+      {
+        "nome": "Combinação tatica",
+        "descricao": "Dada uma sequencia especifica de golpes um combo é ativado, gerando efeitos diversos. \nO combatente possui manobras de combate leve, pesada, bloqueio ou esquiva essas manobras postas na ordem correta ativam um combo.\nAtaque leve: Ataque normal +1 combo leve\nAtaque pesado: Aumenta um Threshold de dano, mas fica vulneravel a um ataque (proximo ataque contra você no proximo turno acerta automaticamente) +1 combo pesado\nBloqueio: Bloqueio um ataque contra si +1 combo bloqueio\nEsquiva: Esquiva um ataque contra si +1 combo esquiva.\nO usurio deve declarar quando um combo se inicia.\n\nO usuario pode realizar 5 combos a cada descanso longo nos primeiros niveis.\nO usuario pode realizar 7 combos a cada descanso longo no nivel 8.\nO usuario pode realizar 9 combos a cada descanso longo no nivel 15.\nO usuario pode realizar 11 combos a cada descanso longo no nivel 20.\n\nO usuario pode escolher aumentar 3 niveis de exaustão para executar uma manobra.\n\n Escolha uma das 3 iniciais (Ruptura Contrária, Resposta Tática, Evasão Letal)",
+        "tipo": "Passiva"
+      },
+      {
+        "nome": "Segundo round",
+        "descricao": "Uma vez a cada 5 turnos ou uma vez por combate aplica uma finta que não causa dano mas simula um ataque leve ou pesado, que adiciona +1 ao contador do respectivo combo selecionado.",
+        "tipo": "Passiva"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Antimago",
         "conceito": "Pouco se sabe sobre sua origem e sobre sua historia, mas os livros de historia os tratam como vilões e assassinos trapaceiros, enquanto algumas lendas populares os tratam como habilidosos e inteligentes guerreiros idealistas.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Antimago",
+            "descricao": "Antimagos são capazes de contar rolagens de defesas contra magia como pontos de combo de defesa.",
+            "tipo": "Passiva"
+          },
+          {
+            "nome": "Romper Encantamento",
+            "descricao": "Com um golpe certeiro, você é capaz de desestabilizar e até mesmo quebrar encantamentos e barreiras mágicas.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          }
         ]
       },
       {
-        "nome": "Caçador Mutante",
+        "nome": "Mercenario",
+        "conceito": "Parte de uma sociedade de mercenarios especializados na arte do preparo, passam dias estudandos seus alvos para uma ação certeira.",
+        "habilidades": [
+          {
+            "nome": "Armadilheiro profissional",
+            "descricao": "O mercenario tem vantagem em testes de percepção para detectar armadilhas.\nEle também tem vantagem em teste de furtividade enquanto estiver em tocaia esperando que alguém caia em sua arapuca.",
+            "tipo": "Passiva"
+          },
+          {
+            "nome": "Recurso limitado",
+            "descricao": "O armadilheiro anda com sua caixa de ferramentas sempre em mão, mas ao longo das suas aventuras os recursos vão sendo utilizados, o armadilheiro possui uma caixa com 30 de capacidade de componetes e deve reabastece-las em lojas especializadas ao longo da aventura. \n\n1 de ouro por componente.\n\nEle também possui 5 espaços para componentes especiais. (exemplo polvora, seu custo varia e é descrito na habilidade.)",
+            "tipo": "Passiva"
+          },
+          {
+            "nome": "Conhecido pelos seus",
+            "descricao": "Possui uma carta da guilda dos mercenarios.",
+            "tipo": "Passiva"
+          },
+          {
+            "nome": "Armadilha engatilhada: Polvora de sobra",
+            "descricao": "Uma armadilha que necessita de um gatilho, como uma linha onde uma criatura passa e ativa, uma placa de pressão e etc. A explosão causa 3 de dano a todos os alvos presente instantaneamente.",
+            "tipo": "Ativa",
+            "lancamento": "1h ou mais de preparo.",
+            "alcance": "4 metros",
+            "dano": "3",
+            "tipo_dano": "Fogo",
+            "custo:": "10 componentes, polvora - 3 ouro."
+          }
+        ]
+      },
+      {
+        "nome": "Pirata",
+        "conceito": "Você vez parte de uma tripulação ou tinha uma canoa que já viajou varias costas, fato é você tem alguma experiencia de navegação, roubo e em fazer dinheiro com as coisas dos outros.",
+        "habilidades": [
+          {
+            "nome": "Navegador nato",
+            "descricao": "Possui vantagem quando pilotando um barco e sofre menos penalidade de dificuldade.",
+            "tipo": "Passiva"
+          },
+          {
+            "nome": "Trato feito",
+            "descricao": "Vantagem em testes de labia quando negociando a venda de mercadorias fruto de um golpe, roubo ou extorsão.\n\nSempre consegue 10% de desconto ou a mais em negociações, em mercados comuns (Sua labia não funciona tão bem contra os seus)\n\nComeça com 100 de ouro a mais.",
+            "tipo": "Passiva"
+          },
+          {
+            "nome": "Sorte dos mares",
+            "descricao": "Pode 1 vezes por seção substituir um erro critico por um sucesso critico. \nNo nivel 10 pode 2 vezes por seção\nNo nivel 20 pode 3 vezes por seção",
+            "tipo": "Passiva"
+          },
+          {
+            "nome":"Shanties do Marujo",
+            "descricao": "Antes de um descanso ou durante a batalha, o Pirata pode entoar uma canção tradicional dos mares, evocando lembranças de jornadas, batalhas e sobrevivência.\nEssas canções funcionam como auras temáticas que afetam todos os aliados dentro de 6 metros. \n\nO Pirata conhece as 3 shanties abaixo, mas pode entonar apenas uma por vez, conforme o momento. Cada uma possui gatilhos e efeitos distintos.\n\n(“Velas ao Vento”, “Mastro Partido”, “Chicote das Ondas”)\n\nSó pode haver 1 Shanty ativa por vez.\n\nAs de descanso exigem que o pirata esteja consciente e presente durante o início do descanso.\n\nA de combate só pode ser usada 1 vez por combate, e exige voz audível (não pode estar silenciado, amordaçado ou inconsciente).\n\nAo nível 10, o Pirata pode estender a duração da shanty de combate para 3 rodadas.\nAo nível 18, pode entonar duas shanties simultâneas, mas apenas fora de combate."
+          }
+        ]
+      },     
+      {
+        "nome": "Cavaleiro",
         "conceito": "Caçadores mutantes são guerreiros mercenaios que passaram por processos de mutação que inspiraram os magos e são conhecidos por todas as partes do mundo por serem extremamente eficientes em suas caçadas.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Marca do Predador",
+            "descricao": "Marca um inimigo, tornando-o mais vulnerável aos seus ataques por um breve período.",
+            "tipo": "Ativa",
+            "lancamento": "Bônus",
+            "alcance": "18 metros",
+            "duracao": "2 rodadas"
+          },
+          {
+            "nome": "Tiro Preciso Mutagênico",
+            "descricao": "Um tiro carregado com uma substância mutagênica que causa dano e envenena o alvo.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "40 metros",
+            "dano": "1d6 + Destreza",
+            "tipo_dano": "Perfurante",
+            "duracao": "1d4 rodadas (envenenado)"
+          }
         ]
       }
     ]
   },
   {
     "nome": "Gatuno",
-    "cor": "#B03A2E",
+    "cor": "#2E4053",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Ataque Furtivo",
+        "descricao": "Um golpe inesperado e preciso que causa dano massivo a um inimigo desprevenido.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "Pessoal",
+        "dano": "2d6 + Destreza",
+        "tipo_dano": "Perfurante/Cortante"
+      },
+      {
+        "nome": "Evasão Ágil",
+        "descricao": "Sua agilidade permite que você se mova rapidamente para evitar completamente os efeitos de certas áreas de ataque.",
+        "tipo": "Reação",
+        "lancamento": "Instantâneo",
+        "alcance": "Pessoal"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Ladrão",
         "conceito": "Uma agil e esguio especialista, sua experiência e habilidade em conseguir o que quer o torna um verdadeiro sobrevivente urbano.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Mãos Leves",
+            "descricao": "Permite roubar pequenos objetos ou desarmar armadilhas com maestria e velocidade.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          },
+          {
+            "nome": "Enganação Mortal",
+            "descricao": "Usa truques e ilusões para confundir os inimigos, criando uma abertura para um ataque fatal.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "6 metros"
+          }
         ]
       },
       {
         "nome": "Assassino",
         "conceito": "Um rigoroso treinamente o tornou uma maquina especializada em matar, seja se infiltrando eu um baile de gala pela porta da frente caçando seu alvo e o envenando ou o emboscando na calada da noite, dando-lhe uma morte rapida.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Golpe Envenenado",
+            "descricao": "Imbui sua arma com um veneno potente que causa dano adicional e enfraquece o alvo.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "dano": "1d4 (veneno)",
+            "duracao": "3 rodadas",
+            "tipo_dano": "Veneno"
+          },
+          {
+            "nome": "Sombra Silenciosa",
+            "descricao": "Você se move tão furtivamente que se torna quase invisível, ideal para emboscadas e fugas.",
+            "tipo": "Ativa",
+            "lancamento": "Bônus",
+            "alcance": "Pessoal",
+            "duracao": "1 rodada"
+          }
         ]
       },
       {
-        "nome": " Psionico",
+        "nome": "Psionico",
         "conceito": "Os Psionicos são pessoas especiais que nasceram uma mutação natural, que lhes dá acesso a uma parte muito especifica do Véu que os dá um gemeo energizado e com uma profunda ligação com seu Uno (O corpo principal), permitindo que conforme sua conexão se aprimore, eles desbloqueiem habilidades unicas.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Explosão Psíquica",
+            "descricao": "Libera uma onda de energia psíquica que afeta a mente dos inimigos em uma área, causando dano e confusão.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros",
+            "forma": "Círculo",
+            "tamanho": "3 metros",
+            "dano": "2d4",
+            "tipo_dano": "Psíquico"
+          },
+          {
+            "nome": "Escudo Mental",
+            "descricao": "Cria um campo protetor de energia psíquica ao redor de si mesmo ou de um aliado, defendendo contra ataques mentais e parte do dano físico.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "6 metros",
+            "duracao": "2 rodadas"
+          }
         ]
       }
     ]
   },
   {
     "nome": "Acolito",
-    "cor": "#B03A2E",
+    "cor": "#FFD700",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Cura Divina",
+        "descricao": "Invoca a energia de seu patrono para curar ferimentos graves de um aliado.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "9 metros"
+      },
+      {
+        "nome": "Bênção Sagrada",
+        "descricao": "Concede uma bênção que aumenta temporariamente a moral e a eficácia de ataque dos aliados próximos.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "6 metros",
+        "forma": "Círculo",
+        "tamanho": "5 metros",
+        "duracao": "3 rodadas"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Paladino",
         "conceito": "Um cavaleiro que jurou servir a um Deus ou uma Criatura de poder e recebeu sua divina proteção e missão, além de uma fração de seu poder e personalidade, também podem ter seu corpo tomado sendo seu porta voz.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Aura de Proteção",
+            "descricao": "Emite uma aura sagrada que protege os aliados próximos contra dano e efeitos negativos.",
+            "tipo": "Passiva",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "forma": "Círculo",
+            "tamanho": "3 metros"
+          },
+          {
+            "nome": "Veredito Divino",
+            "descricao": "Comanda a justiça divina para golpear um inimigo com fúria sagrada, causando dano radiante.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "dano": "1d10 + Carisma",
+            "tipo_dano": "Radiante"
+          }
         ]
       },
       {
         "nome": "Sacerdote",
-        "conceito": "",
+        "conceito": "Motivado pelo unico proposito de espalhar o proposito de seu Deus e servi-lo fielmente foi capacitado por ele para faze-lo",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Restaurar Doença",
+            "descricao": "Pela fé, você remove doenças e maldições de um alvo, restaurando sua saúde.",
+            "tipo": "Ativa",
+            "lancamento": "Concentração",
+            "alcance": "Pessoal"
+          },
+          {
+            "nome": "Fúria Divina",
+            "descricao": "Invoca uma poderosa erupção de luz divina que incinera os inimigos em uma área, causando dano radiante.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros",
+            "forma": "Círculo",
+            "tamanho": "4 metros",
+            "dano": "3d6",
+            "tipo_dano": "Radiante"
+          }
         ]
       }
     ]
   },
   {
     "nome": "Druida",
-    "cor": "#B03A2E",
+    "cor": "#2E8B57",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Crescimento Desenfreado",
+        "descricao": "Manipula a flora local para criar espinhos ou vinhas que dificultam o movimento e causam dano a inimigos.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "9 metros",
+        "forma": "Área",
+        "tamanho": "5x5 metros",
+        "dano": "1d4 (por passagem)",
+        "tipo_dano": "Perfurante"
+      },
+      {
+        "nome": "Comunhão com a Natureza",
+        "descricao": "Permite que você se comunique com plantas e animais, obtendo informações sobre o ambiente e os perigos próximos.",
+        "tipo": "Ritual",
+        "lancamento": "Ritual",
+        "alcance": "Ilimitado (natureza próxima)"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Caminho Feral",
-        "conceito": "",
+        "conceito": "Os caminhos da arvore não são claros, nem mesmo para os Druidas, tão pouco se sabe qual a conexão da arvore com a fauna, seja lá qual for os Druidas ferais tem um papel nisso e são capazes de vestir sua pele em forma de arvore.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Forma Bestial",
+            "descricao": "Transforma-se em uma criatura selvagem poderosa, ganhando atributos físicos aprimorados e ataques naturais.",
+            "tipo": "Ativa",
+            "lancamento": "Bônus",
+            "alcance": "Pessoal",
+            "duracao": "Concentração (até 1 hora)"
+          },
+          {
+            "nome": "Investida Predatória",
+            "descricao": "Em sua forma bestial, você avança rapidamente sobre um inimigo, causando dano e derrubando-o.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros (movimento)",
+            "dano": "2d6 + Força",
+            "tipo_dano": "Concussão"
+          }
         ]
       },
       {
         "nome": "Caminho da Raiz",
-        "conceito": "",
+        "conceito": "O caminho da raiz é o caminho mais claro apesar de não terem conexão com a fauna suas habilidades permitem moldar a flora a vontade transferindo florestas de um lado para outro como se nada fosse semeando o mundo e o equilibrando.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Aperto de Raízes",
+            "descricao": "Invocas raízes do chão para imobilizar e esmagar inimigos em uma área, causando dano contínuo.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros",
+            "forma": "Círculo",
+            "tamanho": "4 metros",
+            "dano": "1d6 por rodada",
+            "duracao": "3 rodadas",
+            "tipo_dano": "Concussão"
+          },
+          {
+            "nome": "Escudo de Casca",
+            "descricao": "Sua pele se torna dura como casca de árvore, concedendo resistência a dano físico por um tempo limitado.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "duracao": "2 rodadas"
+          }
         ]
       },
       {
         "nome": "Xamã totemico",
-        "conceito": "",
+        "conceito": "Xamãs totemicos são os druidas que detem uma conexão com o interior da arvore e convoca espiritos atrá através de seus totems de poder.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Totem da Cura",
+            "descricao": "Invoca um totem que emana uma aura de cura, restaurando pontos de vida dos aliados próximos.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "6 metros",
+            "forma": "Círculo",
+            "tamanho": "3 metros",
+            "duracao": "3 rodadas"
+          },
+          {
+            "nome": "Espíritos da Vingança",
+            "descricao": "Convoca espíritos ancestrais que atacam seus inimigos, causando dano espectral.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros",
+            "forma": "Linha",
+            "tamanho": "10 metros",
+            "dano": "2d8",
+            "tipo_dano": "Necrótico"
+          }
         ]
       },
       {
         "nome": "Animalista",
-        "conceito": "",
+        "conceito": "Tal qual os druidas ferais, os animalistas estão conectados com a fauna de forma mais direta e intensa, sua comunicação com eles é natural, os compreende e os acompanha, por vezes são acompanhados e lutam lado a lado como uma matilha ou bando.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Chamado da Matilha",
+            "descricao": "Convoca um espírito animal para lutar ao seu lado por um tempo, auxiliando em combate.",
+            "tipo": "Ativa",
+            "lancamento": "Concentração",
+            "duracao": "5 rodadas",
+            "alcance": "6 metros"
+          },
+          {
+            "nome": "Instinto Selvagem",
+            "descricao": "Aumenta seus sentidos e reflexos, permitindo detectar ameaças ocultas e reagir mais rapidamente.",
+            "tipo": "Passiva",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          }
         ]
       }
     ]
   },
   {
     "nome": "Virtuoso",
-    "cor": "#B03A2E",
+    "cor": "#FF69B4",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Inspiração Harmônica",
+        "descricao": "Através de sua arte, você eleva o espírito dos aliados, concedendo um bônus em suas próximas ações.",
+        "tipo": "Ativa",
+        "lancamento": "Bônus",
+        "alcance": "9 metros"
+      },
+      {
+        "nome": "Performance Cativante",
+        "descricao": "Sua apresentação é tão envolvente que pode distrair ou até mesmo encantar pequenos grupos de inimigos.",
+        "tipo": "Ativa",
+        "lancamento": "Concentração",
+        "duracao": "2 rodadas",
+        "alcance": "6 metros",
+        "forma": "Círculo",
+        "tamanho": "5 metros"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Artista",
-        "conceito": "",
+        "conceito": "A virtude do artista tem varias faces, sejá qual for ela, um bom artista a apresentara muito bem.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Obra Prima Viva",
+            "descricao": "Sua arte ganha vida temporariamente, agindo como um pequeno guardião ou distração.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "duracao": "3 rodadas",
+            "alcance": "6 metros"
+          },
+          {
+            "nome": "Impacto Estético",
+            "descricao": "Um ataque que, além do dano físico, causa um dano emocional ou de 'quebra de moral' devido à sua perfeição ou impacto chocante.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "dano": "1d4 (mental)",
+            "tipo_dano": "Psíquico"
+          }
         ]
       },
       {
         "nome": "Sonhador",
-        "conceito": "Lunaticos, que vivem em um mundo de sonhos, e que os tornaram realidades através de um objeto mágico geralmente vindos de um sonho impossivel e que foi sonhado acordado, o objeto materaliza fisicamente, objetos que o usuario tenha adquirido em um sonho impossivel.",
+        "conceito": "Lunaticos, Os sonhos se tornam realidade através de um objeto magico vindos de um sonho impossivel, que foi sonhado acordado. O item materaliza fisicamente objetos que o usuario tenha adquirido em seus sonhos.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Materializar Sonho",
+            "descricao": "Concede a você a capacidade de manifestar um pequeno objeto ou efeito que você imaginou intensamente, seja para uso prático ou para confundir inimigos.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "6 metros"
+          },
+          {
+            "nome": "Pesadelo Real",
+            "descricao": "Invoca uma parte dos seus piores pesadelos para a realidade, aterrorizando inimigos e causando dano psíquico.",
+            "tipo": "Ativa",
+            "lancamento": "Concentração",
+            "duracao": "2 rodadas",
+            "alcance": "9 metros",
+            "forma": "Círculo",
+            "tamanho": "3 metros",
+            "dano": "1d8",
+            "tipo_dano": "Psíquico"
+          }
         ]
       },
       {
         "nome": "Popular",
-        "conceito": "",
+        "conceito": "Uma figura conhecida em sua comunidade, uma pequena estrela em ascensão.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Influência Carismática",
+            "descricao": "Sua popularidade e carisma permitem que você convença facilmente NPCs e obtenha favores.",
+            "tipo": "Passiva",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          },
+          {
+            "nome": "Onda de Fãs",
+            "descricao": "Em momentos de necessidade, você pode inspirar uma pequena multidão de seguidores a agir, seja para criar uma distração ou para ajudar em uma tarefa simples.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros"
+          }
         ]
       },
       {
         "nome": "Mercador",
-        "conceito": "",
+        "conceito": "Uma maquina de fazer dinheiro.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Barganha Mestre",
+            "descricao": "Você possui uma habilidade inata para negociar, conseguindo os melhores preços em compras e vendas.",
+            "tipo": "Passiva",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          },
+          {
+            "nome": "Contrato Vinculante",
+            "descricao": "Cria um contrato mágico que, quando assinado, garante que ambas as partes cumpram seus termos sob pena de sofrerem uma penalidade mística.",
+            "tipo": "Ativa",
+            "lancamento": "Ritual",
+            "alcance": "Pessoal"
+          }
+        ]
+      },
+      {
+        "nome": "Mestre Pixie",
+        "conceito": "Amigo das fadas.",
+        "habilidades": [
+          {
+            "nome": "Barganha Mestre",
+            "descricao": "Você possui uma habilidade inata para negociar, conseguindo os melhores preços em compras e vendas.",
+            "tipo": "Passiva",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          },
+          {
+            "nome": "Contrato Vinculante",
+            "descricao": "Cria um contrato mágico que, quando assinado, garante que ambas as partes cumpram seus termos sob pena de sofrerem uma penalidade mística.",
+            "tipo": "Ativa",
+            "lancamento": "Ritual",
+            "alcance": "Pessoal"
+          }
         ]
       }
     ]
   },
   {
     "nome": "Ocultista",
-    "cor": "#B03A2E",
+    "cor": "#1C1C1C",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Maldição Sombria",
+        "descricao": "Lança uma maldição que enfraquece a defesa de um inimigo e causa dano necrótico com o tempo.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "9 metros",
+        "dano": "1d4 por rodada",
+        "duracao": "2 rodadas",
+        "tipo_dano": "Necrótico"
+      },
+      {
+        "nome": "Visão do Além",
+        "descricao": "Seus olhos se abrem para o plano espiritual, revelando criaturas invisíveis e auras de dor.",
+        "tipo": "Ativa",
+        "lancamento": "Concentração",
+        "duracao": "1 minuto",
+        "alcance": "6 metros"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Demonologista",
-        "conceito": "",
+        "conceito": "Um comandante das tropas demoniacas, sejá lá o que ele deu para conseguir esse status certamente lhe garantiu um grande poder.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Convocar Diabrete",
+            "descricao": "Invoca um pequeno diabretes para lutar ao seu lado por um curto período.",
+            "tipo": "Ativa",
+            "lancamento": "Concentração",
+            "duracao": "3 rodadas",
+            "alcance": "6 metros"
+          },
+          {
+            "nome": "Pacto Sangrento",
+            "descricao": "Faz um pacto temporário com uma entidade demoníaca, ganhando um aumento temporário de poder em troca de uma porção de sua própria vitalidade.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "duracao": "2 rodadas"
+          }
         ]
       },
       {
         "nome": "Possuido",
-        "conceito": "",
+        "conceito": "Um demonio se esconde em seu corpo, enfraquecido ou desorientado, sejá o que for ele me protege e me empresta seu poder, mas nem sempre são só vantagens.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Manifestação Corrompida",
+            "descricao": "Parte da essência demoníaca dentro de você se manifesta, causando dano caótico aos inimigos próximos.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "forma": "Círculo",
+            "tamanho": "3 metros",
+            "dano": "1d10",
+            "tipo_dano": "Caótico"
+          },
+          {
+            "nome": "Voz da Tentação",
+            "descricao": "A voz do demônio em sua mente pode influenciar outros, forçando-os a obedecer seus comandos por um breve período.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "6 metros",
+            "duracao": "1 rodada"
+          }
         ]
       },
       {
         "nome": "Cavaleiro demonio",
-        "conceito": "",
+        "conceito": "Um guerreiro desleal e amaldiçoado tantas vezes em campo de batalha que foi aprisionado por toda a eternidade em uma armadura demoniaca com sua arma corrompida.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Ataque Corrompido",
+            "descricao": "Seu golpe com arma é infundido com energia demoníaca, causando dano extra e amedrontando o alvo.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "dano": "1d8 + Força + 1d4 (necrótico)",
+            "tipo_dano": "Cortante/Necrótico"
+          },
+          {
+            "nome": "Carapaça Demoníaca",
+            "descricao": "Sua armadura se torna mais resistente, desviando golpes e resistindo a dano, mas com um custo para sua sanidade.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "duracao": "3 rodadas"
+          }
         ]
       },
       {
         "nome": "Necromante",
-        "conceito": "",
+        "conceito": "Não há mal maior doque retirar as almas que descansavam após uma vida de sofrimento para sofram mais uma vez, servindo um desconhecido.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Reanimar Mortos",
+            "descricao": "Levanta um cadáver recente como um servo esquelético ou zumbi para lutar ao seu lado.",
+            "tipo": "Ativa",
+            "lancamento": "Concentração",
+            "duracao": "5 rodadas",
+            "alcance": "6 metros"
+          },
+          {
+            "nome": "Explosão Cadavérica",
+            "descricao": "Força um cadáver a explodir, causando dano necrótico e espalhando doenças em uma área.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros",
+            "forma": "Círculo",
+            "tamanho": "3 metros",
+            "dano": "2d6",
+            "tipo_dano": "Necrótico"
+          }
         ]
       }
     ]
   },
   {
     "nome": "Feiticeiro",
-    "cor": "#B03A2E",
+    "cor": "#8B008B",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Rajada de Energia",
+        "descricao": "Dispara um feixe de energia arcana que causa dano direto a um único alvo.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "20 metros",
+        "dano": "1d10",
+        "tipo_dano": "Mágico"
+      },
+      {
+        "nome": "Metamagia Espontânea",
+        "descricao": "Você pode alterar um feitiço que está prestes a lançar, mudando seu efeito ou ampliando seu poder de forma improvisada.",
+        "tipo": "Reação",
+        "lancamento": "Instantâneo",
+        "alcance": "Pessoal"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Arcano",
-        "conceito": "",
+        "conceito": "Uma conexão unica com o arcanos o permite senti-la em tudo, quase como se o Véu fosse algo vivo e um parente proximo, é comum que sejam solitarios, distraidos e estudiosos, o poder potencial de um feiticeiro é sem precedentes.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Surto Arcano",
+            "descricao": "Libera uma explosão incontrolável de energia arcana que atinge tudo em uma grande área, causando dano massivo.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "9 metros",
+            "forma": "Círculo",
+            "tamanho": "8 metros",
+            "dano": "4d8",
+            "tipo_dano": "Mágico"
+          },
+          {
+            "nome": "Conexão com o Véu",
+            "descricao": "Você pode temporariamente se fundir com o Véu, tornando-se etéreo e imune a dano físico por um curto período.",
+            "tipo": "Ativa",
+            "lancamento": "Concentração",
+            "duracao": "1 rodada",
+            "alcance": "Pessoal"
+          }
         ]
       }
     ]
   },
   {
     "nome": "Marcial",
-    "cor": "#B03A2E",
+    "cor": "#4682B4",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Ataque Furioso",
+        "descricao": "Um ataque rápido e selvagem que sacrifica precisão por mais poder, causando dano adicional.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "Pessoal",
+        "dano": "1d10 + Força",
+        "tipo_dano": "Concussão/Cortante"
+      },
+      {
+        "nome": "Resistência Inabalável",
+        "descricao": "Sua tenacidade em combate permite que você resista a golpes que derrubariam outros, reduzindo o dano recebido de um ataque.",
+        "tipo": "Reação",
+        "lancamento": "Instantâneo",
+        "alcance": "Pessoal"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Pugilista",
-        "conceito": "",
+        "conceito": "Lutador de punhos serrados com uma grande resistencia natural, seus punhos parecem duas barras metalicas, facilmente confundidas com um martelo de guerra.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
+          {
+            "nome": "Quebra-ossos",
+            "descricao": "Um soco potente que visa desabilitar um membro do inimigo, causando dano massivo e impondo um efeito negativo.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "dano": "2d8 + Força",
+            "tipo_dano": "Concussão"
+          },
+          {
+            "nome": "Punhos de Aço",
+            "descricao": "Seus punhos são como martelos, causando dano considerável mesmo sem armas e ignorando parte da armadura leve.",
+            "tipo": "Passiva",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          }
         ]
       },
       {
         "nome": "Lutador elemental",
-        "conceito": "",
+        "conceito": "Consagrado com o poder de um elemental o lutador é capaz de se tornar um com o elemento que foi designado.",
         "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Forma Ígnea",
+            "descricao": "Reveste-se em chamas, causando dano de fogo a quem o tocar e ganhando resistência a dano de fogo.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "duracao": "3 rodadas",
+            "dano": "1d6 (por toque)",
+            "tipo_dano": "Fogo"
+          },
+          {
+            "nome": "Golpe Trovão",
+            "descricao": "Seu ataque é imbuído com eletricidade, causando dano elétrico e atordoando o alvo por um breve momento.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "dano": "1d8 + Destreza + 1d4 (elétrico)",
+            "tipo_dano": "Elétrico"
+          }
         ]
-      }    
+      }
     ]
   },
   {
     "nome": "Furioso",
-    "cor": "#B03A2E",
+    "cor": "#D32F2F",
     "habilidades": [
-      {"nome": "Soco Poderoso", "descricao": "Um golpe devastador"},
-      {"nome": "Bloqueio", "descricao": "Reduz o dano recebido"}
+      {
+        "nome": "Fúria Descontrolada",
+        "descricao": "Entra em um estado de fúria cega, aumentando seu dano e resistência, mas reduzindo sua capacidade de defesa.",
+        "tipo": "Ativa",
+        "lancamento": "Bônus",
+        "duracao": "3 rodadas",
+        "alcance": "Pessoal"
+      },
+      {
+        "nome": "Corte de Sangue",
+        "descricao": "Um golpe poderoso que drena a vitalidade do inimigo, causando dano físico e curando o Furioso em uma pequena quantia.",
+        "tipo": "Ativa",
+        "lancamento": "Instantâneo",
+        "alcance": "Pessoal",
+        "dano": "1d8 + Força",
+        "tipo_dano": "Cortante"
+      }
     ],
     "arquetipos": [
       {
         "nome": "Berserker",
-        "conceito": "",
+        "conceito": "Quando em furia, sua visão se estreita e descontroladamente ataca com uma grande arma devastando o campo de batalha, quase ninguém seria capaz de fazer o que ele faz, tão pouco carregar uma arma tão poderosa em estado normal.",
         "habilidades": [
-          {"nome": "Anular Magia", "descricao": "Cancela efeitos mágicos"},
-          {"nome": "Dispersão", "descricao": "Remove buffs do inimigo"}
-        ]
-      },
-      {
-        "nome": "Furia elemental",
-        "conceito": "",
-        "habilidades": [
-          {"nome": "Armadilha Sônica", "descricao": "Paralisa mutantes"},
-          {"nome": "Besta de Energia", "descricao": "Atira projéteis de plasma"}
+          {
+            "nome": "Massacre",
+            "descricao": "Um ataque giratório devastador que atinge todos os inimigos ao seu redor, causando dano massivo e espalhando o terror.",
+            "tipo": "Ativa",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal",
+            "forma": "Círculo",
+            "tamanho": "3 metros",
+            "dano": "2d10",
+            "tipo_dano": "Cortante/Concussão"
+          },
+          {
+            "nome": "Pele de Ferro",
+            "descricao": "Em fúria, sua pele se torna quase impenetrável, concedendo uma resistência significativa a todos os tipos de dano físico.",
+            "tipo": "Passiva",
+            "lancamento": "Instantâneo",
+            "alcance": "Pessoal"
+          }
         ]
       }
     ]
   }
-  
 ]

@@ -1,13 +1,16 @@
 import streamlit as st
 import json
-import base64
 from utils.carregar_fichas_salvas import carregar_fichas_salvas
 
 # Carregar dados das classes
 with open("data/classes.json", "r", encoding="utf-8") as f:
     dados_classes = json.load(f)
 
-st.set_page_config(page_title="Ficha de Personagem", layout="wide")
+st.set_page_config(
+    page_title="Ficha de Personagem", 
+    layout="wide"
+    )
+
 st.title("📜 Ficha de Personagem")
 
 # Carregar fichas salvas e selecionar

@@ -23,7 +23,7 @@ def render_atributos():
         st.session_state["atributos_expandidos"] = True
 
     with st.expander("🧱 Atributos", expanded=st.session_state["atributos_expandidos"]):
-        st.markdown("#### 🎲 Distribuição 7 / 5 / 3")
+        st.markdown("#### 🎲 Distribuição 5 / 3 / 2  | Máximo de 3 contando o inicial")
 
         valores = {}
         totais = {}

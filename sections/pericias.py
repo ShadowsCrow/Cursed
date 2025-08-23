@@ -21,7 +21,7 @@ def render_pericias():
         st.session_state["pericias_expandidas"] = True
 
     with st.expander("📚 Perícias", expanded=st.session_state["pericias_expandidas"]):
-        st.markdown("#### 🎯 Distribuição 13 / 9 / 5")
+        st.markdown("#### 🎯 Distribuição 8 / 6 / 4  | Máximo de 2 pontos iniciais")
 
         valores = {}
         totais = {}
