@@ -1,0 +1,18 @@
+[
+  {
+    "nome": "Espada Longa Rúnica",
+    "dano": "1d8+1",
+    "tipo_dano": "Cortante",
+    "critico": 2,
+    "quantidade": 1,
+    "peso": 3.5,
+    "descricao": "Lâmina antiga gravada com runas que vibram ao ser empunhada.",
+    "efeitos": [
+      {
+        "kind": "externo",
+        "nome": "Corte Afiado",
+        "descricao": "+1 dado em ataques corpo-a-corpo por 1 cena."
+      }
+    ]
+  }
+]

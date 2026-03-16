@@ -10,7 +10,7 @@ def render_atributos():
         "Sociais": {
             "Carisma": "🎭",
             "Manipulação": "🗣️",
-            "Aparência": "✨"
+            "Proposito": "✨"
         },
         "Mentais": {
             "Percepção": "👁️",
@@ -23,7 +23,7 @@ def render_atributos():
         st.session_state["atributos_expandidos"] = True
 
     with st.expander("🧱 Atributos", expanded=st.session_state["atributos_expandidos"]):
-        st.markdown("#### 🎲 Distribuição 5 / 3 / 2  | Máximo de 3 contando o inicial")
+        st.markdown("#### 🎲 Distribuição 3 em 1, 2 em 4 e 1 em 4.")
 
         valores = {}
         totais = {}

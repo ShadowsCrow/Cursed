@@ -1,0 +1,234 @@
+{
+  "personagem": {
+    "nome": "João Melão",
+    "idade": 17,
+    "sexo": "Masculino",
+    "raca": "Elfo",
+    "classe": "Feiticeiro",
+    "classe_dados": {
+      "nome": "Feiticeiro",
+      "cor": "#8B008B",
+      "habilidades": [
+        {
+          "nome": "Rajada de Energia",
+          "descricao": "Dispara um feixe de energia arcana que causa dano direto a um único alvo.",
+          "tipo": "Ativa",
+          "lancamento": "Instantâneo",
+          "alcance": "20 metros",
+          "dano": "1d10",
+          "tipo_dano": "Mágico"
+        },
+        {
+          "nome": "Metamagia Espontânea",
+          "descricao": "Você pode alterar um feitiço que está prestes a lançar, mudando seu efeito ou ampliando seu poder de forma improvisada.",
+          "tipo": "Reação",
+          "lancamento": "Instantâneo",
+          "alcance": "Pessoal"
+        }
+      ],
+      "arquetipos": [
+        {
+          "nome": "Arcano",
+          "conceito": "Uma conexão unica com o arcanos o permite senti-la em tudo, quase como se o Véu fosse algo vivo e um parente proximo, é comum que sejam solitarios, distraidos e estudiosos, o poder potencial de um feiticeiro é sem precedentes.",
+          "habilidades": [
+            {
+              "nome": "Surto Arcano",
+              "descricao": "Libera uma explosão incontrolável de energia arcana que atinge tudo em uma grande área, causando dano massivo.",
+              "tipo": "Ativa",
+              "lancamento": "Instantâneo",
+              "alcance": "9 metros",
+              "forma": "Círculo",
+              "tamanho": "8 metros",
+              "dano": "4d8",
+              "tipo_dano": "Mágico"
+            },
+            {
+              "nome": "Conexão com o Véu",
+              "descricao": "Você pode temporariamente se fundir com o Véu, tornando-se etéreo e imune a dano físico por um curto período.",
+              "tipo": "Ativa",
+              "lancamento": "Concentração",
+              "duracao": "1 rodada",
+              "alcance": "Pessoal"
+            }
+          ]
+        }
+      ]
+    },
+    "arquetipo": "Arcano",
+    "arquetipo_dados": {
+      "nome": "Arcano",
+      "conceito": "Uma conexão unica com o arcanos o permite senti-la em tudo, quase como se o Véu fosse algo vivo e um parente proximo, é comum que sejam solitarios, distraidos e estudiosos, o poder potencial de um feiticeiro é sem precedentes.",
+      "habilidades": [
+        {
+          "nome": "Surto Arcano",
+          "descricao": "Libera uma explosão incontrolável de energia arcana que atinge tudo em uma grande área, causando dano massivo.",
+          "tipo": "Ativa",
+          "lancamento": "Instantâneo",
+          "alcance": "9 metros",
+          "forma": "Círculo",
+          "tamanho": "8 metros",
+          "dano": "4d8",
+          "tipo_dano": "Mágico"
+        },
+        {
+          "nome": "Conexão com o Véu",
+          "descricao": "Você pode temporariamente se fundir com o Véu, tornando-se etéreo e imune a dano físico por um curto período.",
+          "tipo": "Ativa",
+          "lancamento": "Concentração",
+          "duracao": "1 rodada",
+          "alcance": "Pessoal"
+        }
+      ]
+    },
+    "cor_classe": "#8B008B"
+  },
+  "personalidade": {
+    "alinhamento": "Caótico | Bom",
+    "pecado": "Orgulho",
+    "coisa_favorita": "",
+    "odeia": "",
+    "vivo_para": "",
+    "emoji_pecado": "👑",
+    "quando_me_veem": "",
+    "meu_lema": "",
+    "manias": "",
+    "medo": "",
+    "valor_inquebravel": "",
+    "religiao": ""
+  },
+  "atributos": {
+    "valores": {
+      "Força": 1,
+      "Destreza": 2,
+      "Vigor": 1,
+      "Carisma": 1,
+      "Manipulação": 1,
+      "Aparência": 2,
+      "Percepção": 2,
+      "Inteligência": 3,
+      "Raciocínio": 2
+    },
+    "totais": {
+      "Força": 1,
+      "Destreza": 2,
+      "Vigor": 1,
+      "Carisma": 1,
+      "Manipulação": 1,
+      "Aparência": 2,
+      "Percepção": 2,
+      "Inteligência": 3,
+      "Raciocínio": 2
+    },
+    "ajustes": {
+      "Força": 0,
+      "Destreza": 0,
+      "Vigor": 0,
+      "Carisma": 0,
+      "Manipulação": 0,
+      "Aparência": 0,
+      "Percepção": 0,
+      "Inteligência": 0,
+      "Raciocínio": 0
+    }
+  },
+  "pericias": {
+    "valores": {
+      "Prontidão": 3,
+      "Esportes": 0,
+      "Briga": 0,
+      "Esquiva": 0,
+      "Empatia": 0,
+      "Expressão": 0,
+      "Intimidação": 0,
+      "Liderança": 0,
+      "Conhecimento urbano": 2,
+      "Lábia": 0,
+      "Lidar com animais": 0,
+      "Oficios": 0,
+      "Pilotagem": 0,
+      "Etiqueta": 0,
+      "Longo alcance": 0,
+      "Armas Brancas": 0,
+      "Performance": 0,
+      "Prestidigitação": 2,
+      "Furtividade": 3,
+      "Sobrevivência": 2,
+      "Acadêmicos": 3,
+      "Arcanismo": 4,
+      "Finanças": 0,
+      "Investigação": 2,
+      "Direito": 0,
+      "Linguistica": 0,
+      "Medicina": 0,
+      "Ocultismo": 0,
+      "Politica": 0,
+      "Natureza": 0
+    },
+    "totais": {
+      "Prontidão": 3,
+      "Esportes": 0,
+      "Briga": 0,
+      "Esquiva": 0,
+      "Empatia": 0,
+      "Expressão": 0,
+      "Intimidação": 0,
+      "Liderança": 0,
+      "Conhecimento urbano": 2,
+      "Lábia": 0,
+      "Lidar com animais": 0,
+      "Oficios": 0,
+      "Pilotagem": 0,
+      "Etiqueta": 0,
+      "Longo alcance": 0,
+      "Armas Brancas": 0,
+      "Performance": 0,
+      "Prestidigitação": 2,
+      "Furtividade": 3,
+      "Sobrevivência": 2,
+      "Acadêmicos": 3,
+      "Arcanismo": 4,
+      "Finanças": 0,
+      "Investigação": 2,
+      "Direito": 0,
+      "Linguistica": 0,
+      "Medicina": 0,
+      "Ocultismo": 0,
+      "Politica": 0,
+      "Natureza": 0
+    },
+    "ajustes": {
+      "Prontidão": 0,
+      "Esportes": 0,
+      "Briga": 0,
+      "Esquiva": 0,
+      "Empatia": 0,
+      "Expressão": 0,
+      "Intimidação": 0,
+      "Liderança": 0,
+      "Conhecimento urbano": 0,
+      "Lábia": 0,
+      "Lidar com animais": 0,
+      "Oficios": 0,
+      "Pilotagem": 0,
+      "Etiqueta": 0,
+      "Longo alcance": 0,
+      "Armas Brancas": 0,
+      "Performance": 0,
+      "Prestidigitação": 0,
+      "Furtividade": 0,
+      "Sobrevivência": 0,
+      "Acadêmicos": 0,
+      "Arcanismo": 0,
+      "Finanças": 0,
+      "Investigação": 0,
+      "Direito": 0,
+      "Linguistica": 0,
+      "Medicina": 0,
+      "Ocultismo": 0,
+      "Politica": 0,
+      "Natureza": 0
+    }
+  },
+  "armas": [],
+  "armaduras": []
+}

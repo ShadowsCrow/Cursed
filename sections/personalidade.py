@@ -8,8 +8,8 @@ def render_personalidade():
     ]
 
     pecados_emojis = {
-        "Ira": "😡", "Gula": "🍔", "Avareza": "💰",
-        "Luxúria": "🔥", "Inveja": "👀", "Preguiça": "😴", "Soberba": "👑"
+        "Ira": "😡", "Gula": "🍔", "Ganancia": "💰",
+        "Luxúria": "🔥", "Inveja": "👀", "Preguiça": "😴", "Orgulho": "👑"
     }
 
     if "personalidade_expandida" not in st.session_state:

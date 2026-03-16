@@ -1,0 +1,23 @@
+[
+  {
+    "classe": "Druida",
+    "nome": "Ciclo Biológico",
+    "descricao": "Acelera violentamente a decomposição de um ser morto para fertilizar o solo e recuperar PP através da energia liberada na podridão.",
+    "tipo": "Ativa",
+    "lancamento": "1 Ação",
+    "duracao": "Instantânea",
+    "alcance": "Toque",
+    "uso": "Uma vez por cena"
+  },
+  {
+    "nome": "Fruto da Vitalidade",
+    "descricao": "O Druida infunde sua própria energia vital em uma semente para gerar cura. Cura ferimentos e restaura o vigor do alvo.",
+    "tipo": "Ativa",
+    "materia_prima": "Uma semente qualquer e o sacrifício de 6 PV do Druida (convertido em cura para o alvo).",
+    "lancamento": "1 Ação",
+    "duracao": "Instantânea",
+    "alcance": "Toque",
+    "cura": "1d4 + Propósito",
+    "custo": "1 PP"
+  }
+]

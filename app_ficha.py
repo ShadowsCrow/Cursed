@@ -1,118 +1,180 @@
+# app_ficha.py
 import streamlit as st
 import json
+import base64
 from utils.carregar_fichas_salvas import carregar_fichas_salvas
 
-# Carregar dados das classes
+# -----------------------------
+# Boot / dados base
+# -----------------------------
+st.set_page_config(page_title="Ficha de Personagem", layout="wide")
+
 with open("data/classes.json", "r", encoding="utf-8") as f:
     dados_classes = json.load(f)
 
-st.set_page_config(
-    page_title="Ficha de Personagem", 
-    layout="wide"
-    )
+# Carrega raças (com fallback elegante)
+try:
+    with open("data/racas.json", "r", encoding="utf-8") as f:
+        dados_racas = json.load(f)
+    if not isinstance(dados_racas, list):
+        st.warning("⚠️ Formato inesperado em data/racas.json (esperado: lista). Usando lista vazia.")
+        dados_racas = []
+except FileNotFoundError:
+    st.warning("ℹ️ data/racas.json não encontrado. O campo Raça ficará como texto livre.")
+    dados_racas = []
 
 st.title("📜 Ficha de Personagem")
 
-# Carregar fichas salvas e selecionar
+# -----------------------------
+# Seleção de fichas salvas
+# -----------------------------
 fichas = carregar_fichas_salvas()
 nomes_fichas = [f["nome"] for f in fichas]
 ficha_selecionada = st.selectbox("📂 Carregar ficha existente", ["-- Selecione uma ficha --"] + nomes_fichas)
 
-# Inicializa imagem como None
-imagem_base64 = None
+# -----------------------------
+# Função de hidratação de estado
+# -----------------------------
+def _hydrate_state_from_dados(dados: dict, ficha_nome: str):
+    st.session_state["personagem"] = dados.get("personagem", {})
+    st.session_state["personalidade"] = dados.get("personalidade", {})
 
-# Verifica se a seleção mudou
+    armas_json = dados.get("armas", dados.get("equipamentos", [])) or []
+    armaduras_json = dados.get("armaduras", []) or []
+    st.session_state["armas"] = [dict(a) for a in armas_json]
+    st.session_state["armaduras"] = [dict(p) for p in armaduras_json]
+    st.session_state.setdefault("outros", dados.get("outros", []))
+
+    # Efeitos externos (por FICHA)
+    st.session_state["efeitos_externos"] = dados.get("efeitos_externos", [])
+
+    if "imagem_base64" in st.session_state["personagem"]:
+        st.session_state["imagem_base64"] = st.session_state["personagem"]["imagem_base64"]
+    else:
+        st.session_state.pop("imagem_base64", None)
+
+    atributos_json = dados.get("atributos", {})
+    for nome, v in (atributos_json.get("valores", {}) or {}).items():
+        st.session_state[f"valor_{nome}"] = v
+    for nome, v in (atributos_json.get("ajustes", {}) or {}).items():
+        st.session_state[f"vant_{nome}"] = v
+
+    pericias_json = dados.get("pericias", {})
+    for nome, v in (pericias_json.get("valores", {}) or {}).items():
+        st.session_state[f"pericia_valor_{nome}"] = v
+    for nome, v in (pericias_json.get("ajustes", {}) or {}).items():
+        st.session_state[f"pericia_ajuste_{nome}"] = v
+
+    pers = st.session_state["personalidade"]
+    st.session_state["coisa_favorita"] = pers.get("coisa_favorita", "")
+    st.session_state["odeia"] = pers.get("odeia", "")
+    st.session_state["vivo_para"] = pers.get("vivo_para", "")
+    st.session_state["alinhamento"] = pers.get("alinhamento", "Neutro | Neutro")
+    st.session_state["pecado"] = pers.get("pecado", "Ira")
+
+    st.session_state.setdefault("armas", [])
+    st.session_state.setdefault("armaduras", [])
+    st.session_state.setdefault("outros", [])
+    st.session_state.setdefault("efeitos_externos", [])
+
+    st.session_state["armas_sync_token"] = ficha_nome
+    st.session_state["armadura_sync_token"] = ficha_nome
+    st.session_state["outros_sync_token"] = ficha_nome
+    st.session_state["ficha_carregada_nome"] = ficha_nome
+
+# -----------------------------
+# Reset quando NENHUMA ficha
+# -----------------------------
 if ficha_selecionada == "-- Selecione uma ficha --":
-    # Resetar todos os campos
-    st.session_state.pop("personagem", None)
-    st.session_state.pop("personalidade", None)
-    st.session_state.pop("imagem_base64", None)
-    st.session_state.pop("ficha_carregada_nome", None)
+    if st.session_state.get("ficha_carregada_nome") is not None:
+        st.session_state.pop("personagem", None)
+        st.session_state.pop("personalidade", None)
+        st.session_state.pop("imagem_base64", None)
+        st.session_state.pop("armas", None)
+        st.session_state.pop("armaduras", None)
+        st.session_state.pop("outros", None)
+        st.session_state.pop("efeitos_externos", None)
+        st.session_state.pop("armas_sync_token", None)
+        st.session_state.pop("armadura_sync_token", None)
+        st.session_state.pop("outros_sync_token", None)
+        st.session_state["ficha_carregada_nome"] = None
 
-    # Zera atributos e perícias conhecidos
-    atributos_comuns = ["Força", "Destreza", "Constituição", "Inteligência", "Sabedoria", "Carisma"]
-    pericias_comuns = [
-        "Adestrar Animais", "Arcanismo", "Atletismo", "Atuação", "Enganação", "Furtividade", "História",
-        "Intimidação", "Intuição", "Investigação", "Lidar com Animais", "Medicina", "Natureza", "Percepção",
-        "Persuasão", "Prestidigitação", "Religião", "Sobrevivência"
-    ]
-
-    for nome in atributos_comuns:
-        st.session_state.setdefault(f"valor_{nome}", 1)
-        st.session_state.setdefault(f"vant_{nome}", 0)
-
-    for nome in pericias_comuns:
-        st.session_state.setdefault(f"pericia_valor_{nome}", 0)
-        st.session_state.setdefault(f"pericia_ajuste_{nome}", 0)
-
-
+    st.session_state.setdefault("armas", [])
+    st.session_state.setdefault("armaduras", [])
+    st.session_state.setdefault("outros", [])
+    st.session_state.setdefault("efeitos_externos", [])
     st.warning("🧹 Ficha limpa. Nenhuma ficha selecionada.")
+
+# -----------------------------
+# Carga (deferida) da ficha
+# -----------------------------
 else:
-    if st.session_state.get("ficha_carregada_nome") != ficha_selecionada:
+    if st.session_state.get("ficha_carregada_nome") != ficha_selecionada and not st.session_state.get("__needs_hydration"):
         ficha = next((f for f in fichas if f["nome"] == ficha_selecionada), None)
         if ficha:
-            dados = ficha["dados"]
+            st.session_state["__ficha_raw"] = ficha["dados"]
+            st.session_state["__target_ficha_nome"] = ficha_selecionada
+            st.session_state["__needs_hydration"] = True
 
-            # Preencher session_state
-            st.session_state["personagem"] = dados["personagem"]
-            st.session_state["personalidade"] = dados["personalidade"]
+if st.session_state.get("__needs_hydration"):
+    dados_raw = st.session_state.get("__ficha_raw", {})
+    alvo_nome = st.session_state.get("__target_ficha_nome", None)
+    if dados_raw and alvo_nome:
+        _hydrate_state_from_dados(dados_raw, alvo_nome)
+    st.session_state["__needs_hydration"] = False
+    st.session_state.pop("__ficha_raw", None)
+    st.session_state.pop("__target_ficha_nome", None)
+    st.rerun()
 
-            
-
-            if "imagem_base64" in dados["personagem"]:
-                st.session_state["imagem_base64"] = dados["personagem"]["imagem_base64"]
-                imagem_base64 = dados["personagem"]["imagem_base64"]
-            else:
-                st.session_state.pop("imagem_base64", None)
-                imagem_base64 = None
- 
-            for nome in dados["atributos"]["valores"]:
-                st.session_state[f"valor_{nome}"] = dados["atributos"]["valores"][nome]
-                st.session_state[f"vant_{nome}"] = dados["atributos"]["ajustes"][nome]
-
-            for nome in dados["pericias"]["valores"]:
-                st.session_state[f"pericia_valor_{nome}"] = dados["pericias"]["valores"][nome]
-                st.session_state[f"pericia_ajuste_{nome}"] = dados["pericias"]["ajustes"][nome]
-
-            # Marcar ficha carregada
-            st.session_state["ficha_carregada_nome"] = ficha_selecionada
-
-            st.success(f"✅ Ficha **{ficha_selecionada}** carregada com sucesso!")
-
-
-
-# Mostrar retrato no topo (após carregar ficha!)
+# -----------------------------
+# Mostrar retrato no topo
+# -----------------------------
 from sections.retrato import render_retrato
-imagem_base64 = render_retrato(top_level=True)
+render_retrato(top_level=True)
 
-# Importar sessões
+# -----------------------------
+# Importar seções
+# -----------------------------
 from sections.info_basica import render_info_basica
 from sections.personalidade import render_personalidade
 from sections.atributos import render_atributos
 from sections.habilidades import render_habilidades
 from sections.resumo import render_resumo
 from sections.pericias import render_pericias
+from sections.equipamento_tabs import render_equipamento_tabs
+from sections.armas import render_armas
+from sections.armadura import render_armadura
+from sections.outros import render_outros
+from sections.status import render_status
+from sections.efeitos import render_efeitos
+from sections.equip_import import render_equip_import   # mantém import de equipamento
+from sections.efeitos_import import render_efeitos_import  # NOVO: import de efeito
 
-# Sessão: Informações Básicas
-personagem = render_info_basica(dados_classes)
+# -----------------------------
+# Render das seções
+# -----------------------------
+personagem = render_info_basica(dados_classes, dados_racas)
 
-# Adiciona imagem à ficha (apenas se houver)
-if imagem_base64:
-    personagem["imagem_base64"] = imagem_base64
-else:
-    personagem.pop("imagem_base64", None)
+abas_equip = [
+    ("⚔️ Armas", render_armas),
+    ("🛡️ Armadura", render_armadura),
+    ("🎒 Outros", render_outros),
+]
+equipamento_data = render_equipamento_tabs(abas_equip)
 
-# Sessão: Personalidade
 personalidade = render_personalidade()
-
-# Sessão: Atributos
 atributos = render_atributos()
-
-# Sessão: Perícias
 pericias = render_pericias()
-
-# Sessão: Habilidades
 render_habilidades(personagem["classe_dados"], personagem["arquetipo_dados"])
 
-# Sessão Final
-render_resumo(personagem, personalidade, atributos, pericias)
+armas = equipamento_data.get("⚔️ Armas", st.session_state.get("armas", []))
+armaduras = equipamento_data.get("🛡️ Armadura", st.session_state.get("armaduras", []))
+outros = equipamento_data.get("🎒 Outros", st.session_state.get("outros", []))
+
+# 🔽 Importações por código
+render_equip_import()        # Importar equipamentos (mantido)
+render_efeitos_import()      # NOVO: Importar efeitos externos (E1)
+
+status = render_status(personagem, atributos, pericias, armaduras, dados_racas)
+efeitos_info = render_efeitos(personagem, atributos, pericias, dados_racas)
+render_resumo(personagem, personalidade, atributos, pericias, armas, armaduras)

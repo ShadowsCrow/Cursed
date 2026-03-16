@@ -21,7 +21,7 @@ def render_pericias():
         st.session_state["pericias_expandidas"] = True
 
     with st.expander("📚 Perícias", expanded=st.session_state["pericias_expandidas"]):
-        st.markdown("#### 🎯 Distribuição 8 / 6 / 4  | Máximo de 2 pontos iniciais")
+        st.markdown("#### 🎯 Distribuição 3 em 1 relacionado a Especialização, 2 em 3 relacionados em Hobbie, 1 em 4 relacionado a Experiencia.")
 
         valores = {}
         totais = {}
@@ -45,12 +45,12 @@ def render_pericias():
 
                     with col_valor:
                         valor = st.number_input(
-                            "", min_value=0, max_value=5, value=0,
+                            "", min_value=0, max_value=10, value=0,
                             key=f"pericia_valor_{nome}", label_visibility="collapsed"
                         )
                     with col_ajuste:
                         ajuste = st.number_input(
-                            "", min_value=-5, max_value=5, value=0, step=1,
+                            "", min_value=-5, max_value=10, value=0, step=1,
                             key=f"pericia_ajuste_{nome}", label_visibility="collapsed"
                         )
                     with col_total:
