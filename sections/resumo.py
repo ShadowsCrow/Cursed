@@ -1,45 +1,60 @@
+# sections/resumo.py
 import streamlit as st
-from utils import persist_data as pd
+from typing import Any, Dict, List
+from utils.persist_data import salvar_ficha_json
 
-def render_resumo(personagem, personalidade, atributos, pericias=None):
-    if st.button("Salvar Ficha"):
-        st.success("🎉 Ficha salva com sucesso!")
-        st.write("## 📄 Resumo da Ficha")
-        
-        st.markdown("### 🧍 Informações Básicas")
-        st.write(f"- Nome: {personagem['nome']}")
-        st.write(f"- Classe: {personagem['classe']}")
-        st.write(f"- Arquetipo: {personagem['arquetipo']}")
-        st.write(f"- Idade: {personagem['idade']}")
-        st.write(f"- Sexo: {personagem['sexo']}")
-        st.write(f"- Raça: {personagem['raca']}")
-        st.write(f"- Alinhamento: {personagem.get('alinhamento', personalidade['alinhamento'])}")
+def _coletar_dados_para_salvar(personagem, personalidade, atributos, pericias, armas, armaduras) -> Dict[str, Any]:
+    """
+    Monta o dicionário final da ficha a partir das seções + session_state.
+    Inclui 'outros' e 'efeitos_externos' para persistir por FICHA.
+    """
+    dados: Dict[str, Any] = {
+        "personagem": personagem or {},
+        "personalidade": personalidade or {},
+        "atributos": atributos or {},
+        "pericias": pericias or {},
+        "armas": armas or [],
+        "armaduras": armaduras or [],
+        "outros": st.session_state.get("outros", []),
+        "efeitos_externos": st.session_state.get("efeitos_externos", []),
+    }
 
-        st.markdown("### 🧠 Personalidade")
-        st.write(f"- Pecado Capital: {personalidade['pecado']} {personalidade['emoji_pecado']}")
-        st.write(f"- Coisa Favorita: {personalidade['coisa_favorita']}")
-        st.write(f"- Odeia: {personalidade['odeia']}")
-        st.write(f"- Vive para: {personalidade['vivo_para']}")
+    # Se a imagem estiver em session_state, garante a cópia em personagem
+    img_b64 = st.session_state.get("imagem_base64")
+    if img_b64:
+        dados.setdefault("personagem", {})
+        dados["personagem"]["imagem_base64"] = img_b64
 
-        st.markdown("### 🛡️ Atributos")
-        for nome in atributos["valores"]:
-            valor = atributos["valores"].get(nome, 10)
-            ajuste = atributos["ajustes"].get(nome, 0)
-            base = (valor - 10) // 2
-            total = base + ajuste
-            st.write(f"- {nome}: {valor} (Base: {base:+}, Ajuste: {ajuste:+}, Total: {total:+})")
+    return dados
 
-        if pericias:
-            st.markdown("### 📘 Perícias")
-            for nome in pericias["valores"]:
-                valor = pericias["valores"].get(nome, 0)
-                ajuste = pericias["ajustes"].get(nome, 0)
-                total = pericias["totais"].get(nome, valor + ajuste)
-                st.write(f"- {nome}: {valor} (Ajuste: {ajuste:+}, Total: {total:+})")
-            
-        try:
-            nome_arquivo = pd.salvar_ficha_json(personagem, personalidade, atributos, pericias)
-            st.write(f"📂 Ficha salva como: **{nome_arquivo}** na pasta `/fichas`")
-        except Exception as e:
-            st.error("❌ Erro ao salvar a ficha.")
-            st.text(str(e))
+def render_resumo(personagem: Dict[str, Any], personalidade: Dict[str, Any],
+                  atributos: Dict[str, Any], pericias: Dict[str, Any],
+                  armas: List[Dict[str, Any]], armaduras: List[Dict[str, Any]]):
+    """
+    Seção de resumo/salvamento.
+    """
+    if "resumo_expanded" not in st.session_state:
+        st.session_state["resumo_expanded"] = True
+
+    with st.expander("🧾 Resumo & Salvar", expanded=st.session_state["resumo_expanded"]):
+        dados = _coletar_dados_para_salvar(personagem, personalidade, atributos, pericias, armas, armaduras)
+
+        st.caption("Prévia dos dados que serão salvos no JSON:")
+        st.json(dados)
+
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            salvar = st.button("💾 Salvar Ficha", use_container_width=True, key="btn_salvar_ficha")
+        with col2:
+            st.write("")
+
+        if salvar:
+            nome = (dados.get("personagem", {}) or {}).get("nome", "").strip()
+            if not nome:
+                st.error("Defina um **nome do personagem** em Informações Básicas antes de salvar.")
+            else:
+                try:
+                    salvar_ficha_json(nome, dados)
+                    st.success(f"Ficha **{nome}** salva com sucesso!")
+                except Exception as e:
+                    st.error(f"Falha ao salvar a ficha: {e}")
