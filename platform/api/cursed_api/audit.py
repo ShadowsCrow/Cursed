@@ -49,7 +49,7 @@ def listar_eventos(
     sessao_id: str | None = None,
     ator_id: str | None = None,
     personagem_id: str | None = None,
-    categoria: Literal["mesa", "permissao", "personagem", "ficha", "inventario", "efeito"] | None = None,
+    categoria: Literal["mesa", "permissao", "personagem", "ficha", "inventario", "efeito", "carta"] | None = None,
     relevancia: Literal["mecanica", "narrativa", "organizacional"] | None = None,
     antes_de: int | None = Query(default=None, ge=1),
     limite: int = Query(default=50, ge=1, le=200),

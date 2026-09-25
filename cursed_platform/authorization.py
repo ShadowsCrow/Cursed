@@ -29,6 +29,7 @@ class Acao(StrEnum):
     CORRIGIR_EVENTO = "corrigir_evento"
     ADMINISTRAR_ENTIDADES = "administrar_entidades"
     ADMINISTRAR_DESCANSO = "administrar_descanso"
+    GERENCIAR_CARTAS = "gerenciar_cartas"
 
 
 @dataclass(frozen=True)
@@ -81,6 +82,7 @@ class Autorizador:
             Acao.CORRIGIR_EVENTO,
             Acao.ADMINISTRAR_ENTIDADES,
             Acao.ADMINISTRAR_DESCANSO,
+            Acao.GERENCIAR_CARTAS,
         }:
             return DecisaoAcesso(narrador, motivo="Ação reservada ao Narrador.")
         if acao == Acao.CRIAR_PERSONAGEM:

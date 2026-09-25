@@ -324,7 +324,7 @@ class EventoAuditoriaResumo(BaseModel):
     sessao_id: str | None = None
     ator_id: str | None = None
     origem: Literal["usuario", "automacao", "migracao"]
-    categoria: Literal["mesa", "permissao", "personagem", "ficha", "inventario", "efeito"]
+    categoria: Literal["mesa", "permissao", "personagem", "ficha", "inventario", "efeito", "carta"]
     acao: str
     relevancia: Literal["mecanica", "narrativa", "organizacional"]
     personagem_id: str | None = None
@@ -474,3 +474,233 @@ class ResultadoDescansoResumo(BaseModel):
     seguranca: int | None = None
     permite_foco: bool
     resultados: list[ResultadoDescansoPersonagem]
+
+
+# ------------------------------------------------------------------ cartas
+
+class _ConteudoBase(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    titulo: str = Field(min_length=1, max_length=200)
+    texto: str = Field(min_length=1, max_length=10_000)
+    requisitos: list[str] = Field(default_factory=list, max_length=30)
+    tags: list[str] = Field(default_factory=list, max_length=30)
+    ativos: list[str] = Field(default_factory=list, max_length=10, description="Objetos do armazenamento privado.")
+
+
+class CustoAdicional(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    recurso: str = Field(min_length=1, max_length=100)
+    valor: int | None = Field(default=None, ge=0)
+    descricao: str | None = Field(default=None, max_length=500)
+
+
+class ConteudoHabilidade(_ConteudoBase):
+    """Custos permanecem separados; `custo_legado` é só texto histórico e nunca preenche os demais."""
+
+    tipo: Literal["habilidade"] = "habilidade"
+    ativacao: Literal["ativa", "passiva"] | None = None
+    custo_aprendizado: int | None = Field(default=None, ge=0)
+    descansos_minimos: int | None = Field(default=None, ge=0)
+    potencia_uso: int | None = Field(default=None, ge=0)
+    custo_uso: int | None = Field(default=None, ge=0)
+    custos_adicionais: list[CustoAdicional] = Field(default_factory=list, max_length=10)
+    custo_legado: str | None = Field(default=None, max_length=500)
+
+
+class ConteudoMagia(ConteudoHabilidade):
+    tipo: Literal["magia"] = "magia"
+    escola: str | None = Field(default=None, max_length=100)
+    grau: int | None = Field(default=None, ge=0)
+
+
+class EfeitoDeclarado(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nome: str = Field(min_length=1, max_length=200)
+    descricao: str = Field(min_length=1, max_length=10_000)
+    modificadores: list[ModificadorResumo] = Field(default_factory=list, max_length=50)
+    ativacao: Literal["enquanto_equipado", "manual"] = "enquanto_equipado"
+
+
+class ConteudoItem(_ConteudoBase):
+    tipo: Literal["item"] = "item"
+    item_tipo: Literal["arma", "armadura", "outro"]
+    dados: dict[str, Any] = Field(default_factory=dict, description="Dano, armadura, rdb, peso e demais atributos.")
+    quantidade: int = Field(default=1, ge=1)
+    efeitos: list[EfeitoDeclarado] = Field(default_factory=list, max_length=10)
+
+
+class ConteudoEfeito(_ConteudoBase):
+    tipo: Literal["efeito"] = "efeito"
+    modificadores: list[ModificadorResumo] = Field(default_factory=list, max_length=50)
+    duracao_rodadas: int | None = Field(default=None, gt=0)
+
+
+ConteudoCarta = ConteudoHabilidade | ConteudoMagia | ConteudoItem | ConteudoEfeito
+
+
+class CriarCartaRequest(BaseModel):
+    tipo: Literal["habilidade", "magia", "item", "efeito"]
+    rascunho: dict[str, Any] = Field(default_factory=dict, description="Conteúdo em edição; validado ao publicar.")
+
+
+class SalvarRascunhoRequest(BaseModel):
+    rascunho: dict[str, Any]
+    versao_esperada: int = Field(ge=0)
+
+
+class PublicarCartaRequest(BaseModel):
+    versao_esperada: int = Field(ge=0)
+
+
+class ProblemaValidacao(BaseModel):
+    campo: str
+    mensagem: str
+
+
+class ValidacaoCarta(BaseModel):
+    valida: bool
+    problemas: list[ProblemaValidacao] = Field(default_factory=list)
+    revisao_pendente: list[str] = Field(default_factory=list)
+
+
+class CartaVersaoResumo(BaseModel):
+    id: str
+    definicao_id: str
+    numero: int
+    tipo: Literal["habilidade", "magia", "item", "efeito"]
+    conteudo: dict[str, Any]
+    procedencia: dict[str, Any]
+    revisao_pendente: list[str] = Field(default_factory=list)
+    publicado_por: str
+    publicado_em: datetime
+
+
+class CartaDefinicaoResumo(BaseModel):
+    id: str
+    tipo: Literal["habilidade", "magia", "item", "efeito"]
+    versao: int = Field(description="Versão do rascunho para controle de concorrência.")
+    rascunho: dict[str, Any] | None = None
+    procedencia_rascunho: dict[str, Any] = Field(default_factory=dict)
+    versao_publicada: int | None = None
+    publicada: CartaVersaoResumo | None = None
+    arquivada: bool = False
+
+
+class ImportarCartaRequest(BaseModel):
+    codigo: str = Field(min_length=1, max_length=5_000_000)
+
+
+class PreviaImportacaoCarta(BaseModel):
+    tipo: Literal["item", "efeito"]
+    rascunho: dict[str, Any]
+    validacao: ValidacaoCarta
+    avisos: list[str] = Field(default_factory=list)
+
+
+class CartaVisivel(BaseModel):
+    """Conteúdo publicado que um participante pode ver; sem procedência nem notas do catálogo."""
+
+    versao_id: str
+    definicao_id: str
+    numero: int
+    tipo: Literal["habilidade", "magia", "item", "efeito"]
+    conteudo: dict[str, Any]
+
+
+class CartaPersonagemResumo(BaseModel):
+    id: str
+    personagem_id: str
+    tipo: Literal["habilidade", "magia", "item", "efeito"]
+    estado: Literal["disponivel", "em_aprendizado", "aprendida", "no_inventario", "aplicada", "removida"]
+    origem: Literal["concessao", "oferta"]
+    excecao_aprendizado: bool
+    item_id: str | None = None
+    efeito_id: str | None = None
+    adquirida_em: datetime
+    carta: CartaVisivel
+    versao_mais_recente: int | None = Field(default=None, description="Somente para o Narrador.")
+
+
+class ConcederCartaRequest(BaseModel):
+    versao_id: str = Field(min_length=1, max_length=100)
+    excecao_aprendizado: bool = False
+    motivo: str | None = Field(default=None, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class TransicaoCartaRequest(BaseModel):
+    motivo: str | None = Field(default=None, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class AquisicaoCartasResposta(BaseModel):
+    versao: int
+    cartas: list[CartaPersonagemResumo]
+
+
+class CriarOfertaRequest(BaseModel):
+    titulo: str = Field(min_length=1, max_length=200)
+    versao_ids: list[str] = Field(min_length=1, max_length=20)
+    personagem_ids: list[str] = Field(min_length=1, max_length=20)
+    min_escolhas: int = Field(default=1, ge=0)
+    max_escolhas: int = Field(default=1, ge=1)
+    expira_em: datetime | None = None
+
+
+class DestinatarioOferta(BaseModel):
+    personagem_id: str
+    estado: Literal["pendente", "respondida", "expirada", "cancelada"]
+    escolhas: list[str] = Field(default_factory=list)
+    respondido_em: datetime | None = None
+
+
+class OfertaResumo(BaseModel):
+    id: str
+    titulo: str
+    estado: Literal["aberta", "encerrada", "cancelada"]
+    min_escolhas: int
+    max_escolhas: int
+    expira_em: datetime | None = None
+    expirada: bool
+    criado_em: datetime
+    candidatas: list[CartaVisivel]
+    destinatarios: list[DestinatarioOferta] = Field(description="Jogadores veem apenas os próprios personagens.")
+
+
+class ResponderOfertaRequest(BaseModel):
+    escolhas: list[str] = Field(default_factory=list, max_length=20)
+    versao_esperada: int = Field(ge=0)
+
+
+class ApresentarCartaRequest(BaseModel):
+    versao_id: str = Field(min_length=1, max_length=100)
+    destinatarios: list[str] = Field(default_factory=list, max_length=50, description="Usuários; vazio = toda a mesa.")
+
+
+class ApresentacaoResumo(BaseModel):
+    id: str
+    estado: Literal["apresentada", "recolhida"]
+    apresentada_em: datetime
+    carta: CartaVisivel
+    destinatarios: list[str] | None = Field(default=None, description="Somente para o Narrador.")
+
+
+class DiferencaCarta(BaseModel):
+    campo: str
+    antes: Any = None
+    depois: Any = None
+
+
+class PreviaMigracaoCarta(BaseModel):
+    origem_numero: int
+    destino_numero: int
+    diferencas: list[DiferencaCarta]
+    observacao: str | None = None
+
+
+class MigrarCartaRequest(BaseModel):
+    versao_destino_id: str = Field(min_length=1, max_length=100)
+    versao_esperada: int = Field(ge=0)

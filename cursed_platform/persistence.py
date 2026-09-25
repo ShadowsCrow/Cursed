@@ -8,7 +8,7 @@ from typing import Any
 
 from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, DDL, DateTime, ForeignKey, ForeignKeyConstraint,
-    Index, Integer, JSON, Numeric, String, UniqueConstraint, event, func, true,
+    Index, Integer, JSON, Numeric, String, UniqueConstraint, event, false as sa_false, func, true,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -277,7 +277,7 @@ class FonteEfeitoRegistro(Base):
     descricao: Mapped[str | None] = mapped_column(String(500))
 
 
-CATEGORIAS_AUDITORIA = ("mesa", "permissao", "personagem", "ficha", "inventario", "efeito")
+CATEGORIAS_AUDITORIA = ("mesa", "permissao", "personagem", "ficha", "inventario", "efeito", "carta")
 RELEVANCIAS_AUDITORIA = ("mecanica", "narrativa", "organizacional")
 
 
@@ -287,7 +287,7 @@ class EventoAuditoriaRegistro(Base):
     __tablename__ = "audit_events"
     __table_args__ = (
         CheckConstraint(
-            "categoria IN ('mesa', 'permissao', 'personagem', 'ficha', 'inventario', 'efeito')",
+            "categoria IN ('mesa', 'permissao', 'personagem', 'ficha', 'inventario', 'efeito', 'carta')",
             name="ck_audit_events_categoria",
         ),
         CheckConstraint(
@@ -352,3 +352,201 @@ for _comando in AUDITORIA_IMUTAVEL_POSTGRES:
     event.listen(
         EventoAuditoriaRegistro.__table__, "after_create", DDL(_comando).execute_if(dialect="postgresql")
     )
+
+
+# ------------------------------------------------------------------ cartas
+
+TIPOS_CARTA = "tipo IN ('habilidade', 'magia', 'item', 'efeito')"
+
+
+class CartaDefinicaoRegistro(Base):
+    """Carta do catálogo da mesa: rascunho editável e ponteiro para a última versão publicada."""
+
+    __tablename__ = "card_definitions"
+    __table_args__ = (
+        CheckConstraint(TIPOS_CARTA, name="ck_card_definitions_tipo"),
+        CheckConstraint("versao >= 0", name="ck_card_definitions_versao"),
+        UniqueConstraint("mesa_id", "id", name="uq_card_definitions_mesa_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(
+        String(100), ForeignKey("rpg_tables.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    criado_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    rascunho: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    versao_publicada: Mapped[int | None] = mapped_column(Integer)
+    arquivada: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
+class CartaVersaoRegistro(Base):
+    """Versão publicada e imutável de uma carta."""
+
+    __tablename__ = "card_versions"
+    __table_args__ = (
+        CheckConstraint(TIPOS_CARTA, name="ck_card_versions_tipo"),
+        CheckConstraint("numero > 0", name="ck_card_versions_numero"),
+        UniqueConstraint("definicao_id", "numero", name="uq_card_versions_numero"),
+        UniqueConstraint("mesa_id", "id", name="uq_card_versions_mesa_id"),
+        ForeignKeyConstraint(
+            ["mesa_id", "definicao_id"], ["card_definitions.mesa_id", "card_definitions.id"],
+            name="fk_card_versions_definition",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    definicao_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    numero: Mapped[int] = mapped_column(Integer, nullable=False)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    conteudo: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    procedencia: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    revisao_pendente: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    publicado_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    publicado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class CartaPersonagemRegistro(Base):
+    """Posse de uma versão de carta por um personagem, com ciclo próprio do tipo."""
+
+    __tablename__ = "character_cards"
+    __table_args__ = (
+        CheckConstraint(TIPOS_CARTA, name="ck_character_cards_tipo"),
+        CheckConstraint(
+            "estado IN ('disponivel', 'em_aprendizado', 'aprendida', 'no_inventario', 'aplicada', 'removida')",
+            name="ck_character_cards_estado",
+        ),
+        CheckConstraint("origem IN ('concessao', 'oferta')", name="ck_character_cards_origem"),
+        ForeignKeyConstraint(
+            ["mesa_id", "personagem_id"], ["characters.mesa_id", "characters.id"],
+            name="fk_character_cards_character",
+        ),
+        ForeignKeyConstraint(
+            ["mesa_id", "versao_id"], ["card_versions.mesa_id", "card_versions.id"],
+            name="fk_character_cards_version",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    personagem_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    definicao_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    versao_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False)
+    origem: Mapped[str] = mapped_column(String(20), nullable=False)
+    excecao_aprendizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    item_id: Mapped[str | None] = mapped_column(String(100))
+    efeito_id: Mapped[str | None] = mapped_column(String(100))
+    adquirida_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class OfertaCartasRegistro(Base):
+    __tablename__ = "card_offers"
+    __table_args__ = (
+        CheckConstraint("estado IN ('aberta', 'encerrada', 'cancelada')", name="ck_card_offers_estado"),
+        CheckConstraint(
+            "min_escolhas >= 0 AND max_escolhas >= 1 AND min_escolhas <= max_escolhas",
+            name="ck_card_offers_limites",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(
+        String(100), ForeignKey("rpg_tables.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    titulo: Mapped[str] = mapped_column(String(200), nullable=False)
+    criado_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    expira_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    min_escolhas: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_escolhas: Mapped[int] = mapped_column(Integer, nullable=False)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="aberta")
+
+
+class OfertaCandidatoRegistro(Base):
+    __tablename__ = "card_offer_candidates"
+
+    oferta_id: Mapped[str] = mapped_column(
+        String(100), ForeignKey("card_offers.id", ondelete="CASCADE"), primary_key=True
+    )
+    versao_id: Mapped[str] = mapped_column(String(100), ForeignKey("card_versions.id"), primary_key=True)
+    ordem: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class OfertaDestinatarioRegistro(Base):
+    __tablename__ = "card_offer_recipients"
+    __table_args__ = (
+        CheckConstraint(
+            "estado IN ('pendente', 'respondida', 'expirada', 'cancelada')",
+            name="ck_card_offer_recipients_estado",
+        ),
+    )
+
+    oferta_id: Mapped[str] = mapped_column(
+        String(100), ForeignKey("card_offers.id", ondelete="CASCADE"), primary_key=True
+    )
+    personagem_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="pendente")
+    respondido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    respondido_por: Mapped[str | None] = mapped_column(String(100))
+
+
+class OfertaEscolhaRegistro(Base):
+    __tablename__ = "card_offer_choices"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["oferta_id", "versao_id"], ["card_offer_candidates.oferta_id", "card_offer_candidates.versao_id"],
+            name="fk_card_offer_choices_candidate",
+        ),
+        ForeignKeyConstraint(
+            ["oferta_id", "personagem_id"],
+            ["card_offer_recipients.oferta_id", "card_offer_recipients.personagem_id"],
+            name="fk_card_offer_choices_recipient",
+        ),
+    )
+
+    oferta_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    personagem_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    versao_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+
+
+class ApresentacaoCartaRegistro(Base):
+    """Carta mostrada temporariamente, sem posse. `destinatarios` vazio significa toda a mesa."""
+
+    __tablename__ = "card_presentations"
+    __table_args__ = (
+        CheckConstraint("estado IN ('apresentada', 'recolhida')", name="ck_card_presentations_estado"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(
+        String(100), ForeignKey("rpg_tables.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    versao_id: Mapped[str] = mapped_column(String(100), ForeignKey("card_versions.id"), nullable=False)
+    destinatarios: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="apresentada")
+    apresentada_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    apresentada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    recolhida_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+VERSOES_IMUTAVEIS_SQLITE = (
+    "CREATE TRIGGER card_versions_no_update BEFORE UPDATE ON card_versions "
+    "BEGIN SELECT RAISE(ABORT, 'card_versions é imutável'); END",
+    "CREATE TRIGGER card_versions_no_delete BEFORE DELETE ON card_versions "
+    "BEGIN SELECT RAISE(ABORT, 'card_versions é imutável'); END",
+)
+VERSOES_IMUTAVEIS_POSTGRES = (
+    "CREATE FUNCTION card_versions_imutavel() RETURNS trigger LANGUAGE plpgsql AS $$ "
+    "BEGIN RAISE EXCEPTION 'card_versions é imutável'; END $$",
+    "CREATE TRIGGER card_versions_no_change BEFORE UPDATE OR DELETE ON card_versions "
+    "FOR EACH ROW EXECUTE FUNCTION card_versions_imutavel()",
+)
+for _comando in VERSOES_IMUTAVEIS_SQLITE:
+    event.listen(CartaVersaoRegistro.__table__, "after_create", DDL(_comando).execute_if(dialect="sqlite"))
+for _comando in VERSOES_IMUTAVEIS_POSTGRES:
+    event.listen(CartaVersaoRegistro.__table__, "after_create", DDL(_comando).execute_if(dialect="postgresql"))

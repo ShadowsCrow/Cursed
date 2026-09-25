@@ -251,6 +251,98 @@
         "title": "AplicarEfeitoRequest",
         "type": "object"
       },
+      "ApresentacaoResumo": {
+        "properties": {
+          "apresentada_em": {
+            "format": "date-time",
+            "title": "Apresentada Em",
+            "type": "string"
+          },
+          "carta": {
+            "$ref": "#/components/schemas/CartaVisivel"
+          },
+          "destinatarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Somente para o Narrador.",
+            "title": "Destinatarios"
+          },
+          "estado": {
+            "enum": [
+              "apresentada",
+              "recolhida"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "apresentada_em",
+          "carta"
+        ],
+        "title": "ApresentacaoResumo",
+        "type": "object"
+      },
+      "ApresentarCartaRequest": {
+        "properties": {
+          "destinatarios": {
+            "description": "Usuários; vazio = toda a mesa.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Destinatarios",
+            "type": "array"
+          },
+          "versao_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Versao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versao_id"
+        ],
+        "title": "ApresentarCartaRequest",
+        "type": "object"
+      },
+      "AquisicaoCartasResposta": {
+        "properties": {
+          "cartas": {
+            "items": {
+              "$ref": "#/components/schemas/CartaPersonagemResumo"
+            },
+            "title": "Cartas",
+            "type": "array"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "cartas"
+        ],
+        "title": "AquisicaoCartasResposta",
+        "type": "object"
+      },
       "AtualizarFichaComando": {
         "additionalProperties": false,
         "properties": {
@@ -336,6 +428,322 @@
           "escopo"
         ],
         "title": "CanalPrivado",
+        "type": "object"
+      },
+      "CartaDefinicaoResumo": {
+        "properties": {
+          "arquivada": {
+            "default": false,
+            "title": "Arquivada",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "procedencia_rascunho": {
+            "additionalProperties": true,
+            "title": "Procedencia Rascunho",
+            "type": "object"
+          },
+          "publicada": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CartaVersaoResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rascunho": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rascunho"
+          },
+          "tipo": {
+            "enum": [
+              "habilidade",
+              "magia",
+              "item",
+              "efeito"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versao": {
+            "description": "Versão do rascunho para controle de concorrência.",
+            "title": "Versao",
+            "type": "integer"
+          },
+          "versao_publicada": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Versao Publicada"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "versao"
+        ],
+        "title": "CartaDefinicaoResumo",
+        "type": "object"
+      },
+      "CartaPersonagemResumo": {
+        "properties": {
+          "adquirida_em": {
+            "format": "date-time",
+            "title": "Adquirida Em",
+            "type": "string"
+          },
+          "carta": {
+            "$ref": "#/components/schemas/CartaVisivel"
+          },
+          "efeito_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Efeito Id"
+          },
+          "estado": {
+            "enum": [
+              "disponivel",
+              "em_aprendizado",
+              "aprendida",
+              "no_inventario",
+              "aplicada",
+              "removida"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "excecao_aprendizado": {
+            "title": "Excecao Aprendizado",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "origem": {
+            "enum": [
+              "concessao",
+              "oferta"
+            ],
+            "title": "Origem",
+            "type": "string"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "habilidade",
+              "magia",
+              "item",
+              "efeito"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versao_mais_recente": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Somente para o Narrador.",
+            "title": "Versao Mais Recente"
+          }
+        },
+        "required": [
+          "id",
+          "personagem_id",
+          "tipo",
+          "estado",
+          "origem",
+          "excecao_aprendizado",
+          "adquirida_em",
+          "carta"
+        ],
+        "title": "CartaPersonagemResumo",
+        "type": "object"
+      },
+      "CartaVersaoResumo": {
+        "properties": {
+          "conteudo": {
+            "additionalProperties": true,
+            "title": "Conteudo",
+            "type": "object"
+          },
+          "definicao_id": {
+            "title": "Definicao Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "procedencia": {
+            "additionalProperties": true,
+            "title": "Procedencia",
+            "type": "object"
+          },
+          "publicado_em": {
+            "format": "date-time",
+            "title": "Publicado Em",
+            "type": "string"
+          },
+          "publicado_por": {
+            "title": "Publicado Por",
+            "type": "string"
+          },
+          "revisao_pendente": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Revisao Pendente",
+            "type": "array"
+          },
+          "tipo": {
+            "enum": [
+              "habilidade",
+              "magia",
+              "item",
+              "efeito"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "definicao_id",
+          "numero",
+          "tipo",
+          "conteudo",
+          "procedencia",
+          "publicado_por",
+          "publicado_em"
+        ],
+        "title": "CartaVersaoResumo",
+        "type": "object"
+      },
+      "CartaVisivel": {
+        "description": "Conteúdo publicado que um participante pode ver; sem procedência nem notas do catálogo.",
+        "properties": {
+          "conteudo": {
+            "additionalProperties": true,
+            "title": "Conteudo",
+            "type": "object"
+          },
+          "definicao_id": {
+            "title": "Definicao Id",
+            "type": "string"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "tipo": {
+            "enum": [
+              "habilidade",
+              "magia",
+              "item",
+              "efeito"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versao_id": {
+            "title": "Versao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versao_id",
+          "definicao_id",
+          "numero",
+          "tipo",
+          "conteudo"
+        ],
+        "title": "CartaVisivel",
+        "type": "object"
+      },
+      "ConcederCartaRequest": {
+        "properties": {
+          "excecao_aprendizado": {
+            "default": false,
+            "title": "Excecao Aprendizado",
+            "type": "boolean"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          },
+          "versao_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Versao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versao_id",
+          "versao_esperada"
+        ],
+        "title": "ConcederCartaRequest",
         "type": "object"
       },
       "ConfirmarDescansoRequest": {
@@ -457,6 +865,31 @@
         "title": "CorrigirEventoRequest",
         "type": "object"
       },
+      "CriarCartaRequest": {
+        "properties": {
+          "rascunho": {
+            "additionalProperties": true,
+            "description": "Conteúdo em edição; validado ao publicar.",
+            "title": "Rascunho",
+            "type": "object"
+          },
+          "tipo": {
+            "enum": [
+              "habilidade",
+              "magia",
+              "item",
+              "efeito"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo"
+        ],
+        "title": "CriarCartaRequest",
+        "type": "object"
+      },
       "CriarConviteRequest": {
         "properties": {
           "validade_dias": {
@@ -532,6 +965,65 @@
         "title": "CriarMesaRequest",
         "type": "object"
       },
+      "CriarOfertaRequest": {
+        "properties": {
+          "expira_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expira Em"
+          },
+          "max_escolhas": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Max Escolhas",
+            "type": "integer"
+          },
+          "min_escolhas": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Min Escolhas",
+            "type": "integer"
+          },
+          "personagem_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Personagem Ids",
+            "type": "array"
+          },
+          "titulo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Titulo",
+            "type": "string"
+          },
+          "versao_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Versao Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "titulo",
+          "versao_ids",
+          "personagem_ids"
+        ],
+        "title": "CriarOfertaRequest",
+        "type": "object"
+      },
       "CriarPersonagemRequest": {
         "properties": {
           "ficha": {
@@ -555,6 +1047,68 @@
           "aprovar"
         ],
         "title": "DecidirPedidoRequest",
+        "type": "object"
+      },
+      "DestinatarioOferta": {
+        "properties": {
+          "escolhas": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Escolhas",
+            "type": "array"
+          },
+          "estado": {
+            "enum": [
+              "pendente",
+              "respondida",
+              "expirada",
+              "cancelada"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "respondido_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondido Em"
+          }
+        },
+        "required": [
+          "personagem_id",
+          "estado"
+        ],
+        "title": "DestinatarioOferta",
+        "type": "object"
+      },
+      "DiferencaCarta": {
+        "properties": {
+          "antes": {
+            "title": "Antes"
+          },
+          "campo": {
+            "title": "Campo",
+            "type": "string"
+          },
+          "depois": {
+            "title": "Depois"
+          }
+        },
+        "required": [
+          "campo"
+        ],
+        "title": "DiferencaCarta",
         "type": "object"
       },
       "EfeitoComandoResposta": {
@@ -797,7 +1351,8 @@
               "personagem",
               "ficha",
               "inventario",
-              "efeito"
+              "efeito",
+              "carta"
             ],
             "title": "Categoria",
             "type": "string"
@@ -1152,6 +1707,21 @@
         "title": "ImportacaoResultado",
         "type": "object"
       },
+      "ImportarCartaRequest": {
+        "properties": {
+          "codigo": {
+            "maxLength": 5000000,
+            "minLength": 1,
+            "title": "Codigo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ],
+        "title": "ImportarCartaRequest",
+        "type": "object"
+      },
       "ImportarCodigoRequest": {
         "properties": {
           "codigo": {
@@ -1301,6 +1871,27 @@
         "title": "MesaResumo",
         "type": "object"
       },
+      "MigrarCartaRequest": {
+        "properties": {
+          "versao_destino_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Versao Destino Id",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_destino_id",
+          "versao_esperada"
+        ],
+        "title": "MigrarCartaRequest",
+        "type": "object"
+      },
       "ModificadorResumo": {
         "properties": {
           "alvo": {
@@ -1363,6 +1954,84 @@
           "campo"
         ],
         "title": "MudancaAuditoria",
+        "type": "object"
+      },
+      "OfertaResumo": {
+        "properties": {
+          "candidatas": {
+            "items": {
+              "$ref": "#/components/schemas/CartaVisivel"
+            },
+            "title": "Candidatas",
+            "type": "array"
+          },
+          "criado_em": {
+            "format": "date-time",
+            "title": "Criado Em",
+            "type": "string"
+          },
+          "destinatarios": {
+            "description": "Jogadores veem apenas os próprios personagens.",
+            "items": {
+              "$ref": "#/components/schemas/DestinatarioOferta"
+            },
+            "title": "Destinatarios",
+            "type": "array"
+          },
+          "estado": {
+            "enum": [
+              "aberta",
+              "encerrada",
+              "cancelada"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "expira_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expira Em"
+          },
+          "expirada": {
+            "title": "Expirada",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max_escolhas": {
+            "title": "Max Escolhas",
+            "type": "integer"
+          },
+          "min_escolhas": {
+            "title": "Min Escolhas",
+            "type": "integer"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "estado",
+          "min_escolhas",
+          "max_escolhas",
+          "expirada",
+          "criado_em",
+          "candidatas",
+          "destinatarios"
+        ],
+        "title": "OfertaResumo",
         "type": "object"
       },
       "PaginaAuditoria": {
@@ -1700,6 +2369,40 @@
         "title": "PreviaDescansoRequest",
         "type": "object"
       },
+      "PreviaImportacaoCarta": {
+        "properties": {
+          "avisos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Avisos",
+            "type": "array"
+          },
+          "rascunho": {
+            "additionalProperties": true,
+            "title": "Rascunho",
+            "type": "object"
+          },
+          "tipo": {
+            "enum": [
+              "item",
+              "efeito"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "validacao": {
+            "$ref": "#/components/schemas/ValidacaoCarta"
+          }
+        },
+        "required": [
+          "tipo",
+          "rascunho",
+          "validacao"
+        ],
+        "title": "PreviaImportacaoCarta",
+        "type": "object"
+      },
       "PreviaImportacaoRequest": {
         "properties": {
           "codigo": {
@@ -1755,6 +2458,97 @@
           "efeitos"
         ],
         "title": "PreviaImportacaoResumo",
+        "type": "object"
+      },
+      "PreviaMigracaoCarta": {
+        "properties": {
+          "destino_numero": {
+            "title": "Destino Numero",
+            "type": "integer"
+          },
+          "diferencas": {
+            "items": {
+              "$ref": "#/components/schemas/DiferencaCarta"
+            },
+            "title": "Diferencas",
+            "type": "array"
+          },
+          "observacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacao"
+          },
+          "origem_numero": {
+            "title": "Origem Numero",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "origem_numero",
+          "destino_numero",
+          "diferencas"
+        ],
+        "title": "PreviaMigracaoCarta",
+        "type": "object"
+      },
+      "ProblemaValidacao": {
+        "properties": {
+          "campo": {
+            "title": "Campo",
+            "type": "string"
+          },
+          "mensagem": {
+            "title": "Mensagem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "campo",
+          "mensagem"
+        ],
+        "title": "ProblemaValidacao",
+        "type": "object"
+      },
+      "PublicarCartaRequest": {
+        "properties": {
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "PublicarCartaRequest",
+        "type": "object"
+      },
+      "ResponderOfertaRequest": {
+        "properties": {
+          "escolhas": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Escolhas",
+            "type": "array"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "ResponderOfertaRequest",
         "type": "object"
       },
       "ResultadoDescansoPersonagem": {
@@ -2025,6 +2819,26 @@
         "title": "RevelacaoContrato",
         "type": "object"
       },
+      "SalvarRascunhoRequest": {
+        "properties": {
+          "rascunho": {
+            "additionalProperties": true,
+            "title": "Rascunho",
+            "type": "object"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rascunho",
+          "versao_esperada"
+        ],
+        "title": "SalvarRascunhoRequest",
+        "type": "object"
+      },
       "SituacionalResumo": {
         "properties": {
           "contexto": {
@@ -2080,6 +2894,32 @@
         "title": "TransferirPersonagemRequest",
         "type": "object"
       },
+      "TransicaoCartaRequest": {
+        "properties": {
+          "motivo": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "TransicaoCartaRequest",
+        "type": "object"
+      },
       "TransicaoEfeitoRequest": {
         "properties": {
           "motivo": {
@@ -2104,6 +2944,33 @@
           "versao_esperada"
         ],
         "title": "TransicaoEfeitoRequest",
+        "type": "object"
+      },
+      "ValidacaoCarta": {
+        "properties": {
+          "problemas": {
+            "items": {
+              "$ref": "#/components/schemas/ProblemaValidacao"
+            },
+            "title": "Problemas",
+            "type": "array"
+          },
+          "revisao_pendente": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Revisao Pendente",
+            "type": "array"
+          },
+          "valida": {
+            "title": "Valida",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valida"
+        ],
+        "title": "ValidacaoCarta",
         "type": "object"
       },
       "ValidationError": {
@@ -2350,6 +3217,169 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/apresentacoes": {
+      "get": {
+        "operationId": "listar_apresentacoes_mesas__mesa_id__apresentacoes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApresentacaoResumo"
+                  },
+                  "title": "Response Listar Apresentacoes Mesas  Mesa Id  Apresentacoes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Apresentacoes",
+        "tags": [
+          "Cartas"
+        ]
+      },
+      "post": {
+        "description": "Mostra a carta sem criar posse para nenhum personagem.",
+        "operationId": "apresentar_carta_mesas__mesa_id__apresentacoes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApresentarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApresentacaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Apresentar Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/recolhimento": {
+      "post": {
+        "operationId": "recolher_carta_mesas__mesa_id__apresentacoes__apresentacao_id__recolhimento_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "apresentacao_id",
+            "required": true,
+            "schema": {
+              "title": "Apresentacao Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApresentacaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recolher Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/auditoria": {
       "get": {
         "description": "Eventos do mais recente ao mais antigo; jogadores recebem somente o que podem ver.",
@@ -2425,7 +3455,8 @@
                     "personagem",
                     "ficha",
                     "inventario",
-                    "efeito"
+                    "efeito",
+                    "carta"
                   ],
                   "type": "string"
                 },
@@ -2634,6 +3665,477 @@
         "summary": "Listar Canais",
         "tags": [
           "Canais privados"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/cartas": {
+      "get": {
+        "operationId": "listar_catalogo_mesas__mesa_id__cartas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CartaDefinicaoResumo"
+                  },
+                  "title": "Response Listar Catalogo Mesas  Mesa Id  Cartas Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Catalogo",
+        "tags": [
+          "Cartas"
+        ]
+      },
+      "post": {
+        "operationId": "criar_carta_mesas__mesa_id__cartas_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartaDefinicaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/cartas/importacoes": {
+      "post": {
+        "description": "Cria um rascunho a partir do código; publicar continua sendo uma decisão do Narrador.",
+        "operationId": "importar_carta_mesas__mesa_id__cartas_importacoes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartaDefinicaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Importar Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/cartas/importacoes/previa": {
+      "post": {
+        "description": "Mostra conteúdo, procedência e avisos sem alterar o catálogo.",
+        "operationId": "previsualizar_importacao_carta_mesas__mesa_id__cartas_importacoes_previa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaImportacaoCarta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Previsualizar Importacao Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/cartas/{carta_id}/publicacao": {
+      "post": {
+        "operationId": "publicar_carta_mesas__mesa_id__cartas__carta_id__publicacao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "carta_id",
+            "required": true,
+            "schema": {
+              "title": "Carta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartaVersaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publicar Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": {
+      "put": {
+        "description": "Rascunhos não geram auditoria: somente a publicação é uma alteração confirmada.",
+        "operationId": "salvar_rascunho_mesas__mesa_id__cartas__carta_id__rascunho_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "carta_id",
+            "required": true,
+            "schema": {
+              "title": "Carta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalvarRascunhoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartaDefinicaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Salvar Rascunho",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/cartas/{carta_id}/validacao": {
+      "post": {
+        "operationId": "validar_rascunho_mesas__mesa_id__cartas__carta_id__validacao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "carta_id",
+            "required": true,
+            "schema": {
+              "title": "Carta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidacaoCarta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Validar Rascunho",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/cartas/{carta_id}/versoes": {
+      "get": {
+        "operationId": "listar_versoes_mesas__mesa_id__cartas__carta_id__versoes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "carta_id",
+            "required": true,
+            "schema": {
+              "title": "Carta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CartaVersaoResumo"
+                  },
+                  "title": "Response Listar Versoes Mesas  Mesa Id  Cartas  Carta Id  Versoes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Versoes",
+        "tags": [
+          "Cartas"
         ]
       }
     },
@@ -2920,6 +4422,243 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/ofertas": {
+      "get": {
+        "operationId": "listar_ofertas_mesas__mesa_id__ofertas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OfertaResumo"
+                  },
+                  "title": "Response Listar Ofertas Mesas  Mesa Id  Ofertas Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Ofertas",
+        "tags": [
+          "Cartas"
+        ]
+      },
+      "post": {
+        "operationId": "criar_oferta_mesas__mesa_id__ofertas_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarOfertaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfertaResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Oferta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/ofertas/{oferta_id}/cancelamento": {
+      "post": {
+        "operationId": "cancelar_oferta_mesas__mesa_id__ofertas__oferta_id__cancelamento_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "oferta_id",
+            "required": true,
+            "schema": {
+              "title": "Oferta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfertaResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancelar Oferta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/ofertas/{oferta_id}/respostas/{personagem_id}": {
+      "post": {
+        "operationId": "responder_oferta_mesas__mesa_id__ofertas__oferta_id__respostas__personagem_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "oferta_id",
+            "required": true,
+            "schema": {
+              "title": "Oferta Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponderOfertaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AquisicaoCartasResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Responder Oferta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/participantes": {
       "get": {
         "operationId": "listar_participantes_mesas__mesa_id__participantes_get",
@@ -3193,6 +4932,369 @@
         "summary": "Excluir Personagem",
         "tags": [
           "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas": {
+      "get": {
+        "operationId": "listar_cartas_do_personagem_mesas__mesa_id__personagens__personagem_id__cartas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CartaPersonagemResumo"
+                  },
+                  "title": "Response Listar Cartas Do Personagem Mesas  Mesa Id  Personagens  Personagem Id  Cartas Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Cartas Do Personagem",
+        "tags": [
+          "Cartas"
+        ]
+      },
+      "post": {
+        "operationId": "conceder_carta_mesas__mesa_id__personagens__personagem_id__cartas_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConcederCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AquisicaoCartasResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Conceder Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas/{carta_id}/migracao": {
+      "post": {
+        "operationId": "migrar_carta_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__migracao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "carta_id",
+            "required": true,
+            "schema": {
+              "title": "Carta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MigrarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AquisicaoCartasResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Migrar Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas/{carta_id}/migracao/previa": {
+      "get": {
+        "operationId": "previsualizar_migracao_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__migracao_previa_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "carta_id",
+            "required": true,
+            "schema": {
+              "title": "Carta Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versao_destino_id",
+            "required": true,
+            "schema": {
+              "title": "Versao Destino Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaMigracaoCarta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Previsualizar Migracao",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas/{carta_id}/transicoes/{acao}": {
+      "post": {
+        "operationId": "transicionar_carta_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__transicoes__acao__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "carta_id",
+            "required": true,
+            "schema": {
+              "title": "Carta Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "acao",
+            "required": true,
+            "schema": {
+              "enum": [
+                "iniciar_aprendizado",
+                "interromper_aprendizado",
+                "concluir_aprendizado",
+                "remover"
+              ],
+              "title": "Acao",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransicaoCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AquisicaoCartasResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Transicionar Carta",
+        "tags": [
+          "Cartas"
         ]
       }
     },

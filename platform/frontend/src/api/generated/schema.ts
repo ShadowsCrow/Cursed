@@ -51,6 +51,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/apresentacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Apresentacoes */
+        get: operations["listar_apresentacoes_mesas__mesa_id__apresentacoes_get"];
+        put?: never;
+        /**
+         * Apresentar Carta
+         * @description Mostra a carta sem criar posse para nenhum personagem.
+         */
+        post: operations["apresentar_carta_mesas__mesa_id__apresentacoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/recolhimento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recolher Carta */
+        post: operations["recolher_carta_mesas__mesa_id__apresentacoes__apresentacao_id__recolhimento_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/auditoria": {
         parameters: {
             query?: never;
@@ -97,6 +135,135 @@ export interface paths {
         };
         /** Listar Canais */
         get: operations["listar_canais_mesas__mesa_id__canais_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/cartas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Catalogo */
+        get: operations["listar_catalogo_mesas__mesa_id__cartas_get"];
+        put?: never;
+        /** Criar Carta */
+        post: operations["criar_carta_mesas__mesa_id__cartas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/cartas/importacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Importar Carta
+         * @description Cria um rascunho a partir do código; publicar continua sendo uma decisão do Narrador.
+         */
+        post: operations["importar_carta_mesas__mesa_id__cartas_importacoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/cartas/importacoes/previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Previsualizar Importacao Carta
+         * @description Mostra conteúdo, procedência e avisos sem alterar o catálogo.
+         */
+        post: operations["previsualizar_importacao_carta_mesas__mesa_id__cartas_importacoes_previa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/cartas/{carta_id}/publicacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publicar Carta */
+        post: operations["publicar_carta_mesas__mesa_id__cartas__carta_id__publicacao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Salvar Rascunho
+         * @description Rascunhos não geram auditoria: somente a publicação é uma alteração confirmada.
+         */
+        put: operations["salvar_rascunho_mesas__mesa_id__cartas__carta_id__rascunho_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/cartas/{carta_id}/validacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validar Rascunho */
+        post: operations["validar_rascunho_mesas__mesa_id__cartas__carta_id__validacao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/cartas/{carta_id}/versoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Versoes */
+        get: operations["listar_versoes_mesas__mesa_id__cartas__carta_id__versoes_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -202,6 +369,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/ofertas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Ofertas */
+        get: operations["listar_ofertas_mesas__mesa_id__ofertas_get"];
+        put?: never;
+        /** Criar Oferta */
+        post: operations["criar_oferta_mesas__mesa_id__ofertas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/ofertas/{oferta_id}/cancelamento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancelar Oferta */
+        post: operations["cancelar_oferta_mesas__mesa_id__ofertas__oferta_id__cancelamento_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/ofertas/{oferta_id}/respostas/{personagem_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Responder Oferta */
+        post: operations["responder_oferta_mesas__mesa_id__ofertas__oferta_id__respostas__personagem_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/participantes": {
         parameters: {
             query?: never;
@@ -269,6 +488,75 @@ export interface paths {
         post?: never;
         /** Excluir Personagem */
         delete: operations["excluir_personagem_mesas__mesa_id__personagens__personagem_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Cartas Do Personagem */
+        get: operations["listar_cartas_do_personagem_mesas__mesa_id__personagens__personagem_id__cartas_get"];
+        put?: never;
+        /** Conceder Carta */
+        post: operations["conceder_carta_mesas__mesa_id__personagens__personagem_id__cartas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas/{carta_id}/migracao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Migrar Carta */
+        post: operations["migrar_carta_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__migracao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas/{carta_id}/migracao/previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Previsualizar Migracao */
+        get: operations["previsualizar_migracao_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__migracao_previa_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/cartas/{carta_id}/transicoes/{acao}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transicionar Carta */
+        post: operations["transicionar_carta_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__transicoes__acao__post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -630,6 +918,44 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** ApresentacaoResumo */
+        ApresentacaoResumo: {
+            /**
+             * Apresentada Em
+             * Format: date-time
+             */
+            apresentada_em: string;
+            carta: components["schemas"]["CartaVisivel"];
+            /**
+             * Destinatarios
+             * @description Somente para o Narrador.
+             */
+            destinatarios?: string[] | null;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "apresentada" | "recolhida";
+            /** Id */
+            id: string;
+        };
+        /** ApresentarCartaRequest */
+        ApresentarCartaRequest: {
+            /**
+             * Destinatarios
+             * @description Usuários; vazio = toda a mesa.
+             */
+            destinatarios?: string[];
+            /** Versao Id */
+            versao_id: string;
+        };
+        /** AquisicaoCartasResposta */
+        AquisicaoCartasResposta: {
+            /** Cartas */
+            cartas: components["schemas"]["CartaPersonagemResumo"][];
+            /** Versao */
+            versao: number;
+        };
         /** AtualizarFichaComando */
         AtualizarFichaComando: {
             /** Ator Id */
@@ -661,6 +987,142 @@ export interface components {
             personagem_id?: string | null;
             /** Topico */
             topico: string;
+        };
+        /** CartaDefinicaoResumo */
+        CartaDefinicaoResumo: {
+            /**
+             * Arquivada
+             * @default false
+             */
+            arquivada: boolean;
+            /** Id */
+            id: string;
+            /** Procedencia Rascunho */
+            procedencia_rascunho?: {
+                [key: string]: unknown;
+            };
+            publicada?: components["schemas"]["CartaVersaoResumo"] | null;
+            /** Rascunho */
+            rascunho?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "habilidade" | "magia" | "item" | "efeito";
+            /**
+             * Versao
+             * @description Versão do rascunho para controle de concorrência.
+             */
+            versao: number;
+            /** Versao Publicada */
+            versao_publicada?: number | null;
+        };
+        /** CartaPersonagemResumo */
+        CartaPersonagemResumo: {
+            /**
+             * Adquirida Em
+             * Format: date-time
+             */
+            adquirida_em: string;
+            carta: components["schemas"]["CartaVisivel"];
+            /** Efeito Id */
+            efeito_id?: string | null;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "disponivel" | "em_aprendizado" | "aprendida" | "no_inventario" | "aplicada" | "removida";
+            /** Excecao Aprendizado */
+            excecao_aprendizado: boolean;
+            /** Id */
+            id: string;
+            /** Item Id */
+            item_id?: string | null;
+            /**
+             * Origem
+             * @enum {string}
+             */
+            origem: "concessao" | "oferta";
+            /** Personagem Id */
+            personagem_id: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "habilidade" | "magia" | "item" | "efeito";
+            /**
+             * Versao Mais Recente
+             * @description Somente para o Narrador.
+             */
+            versao_mais_recente?: number | null;
+        };
+        /** CartaVersaoResumo */
+        CartaVersaoResumo: {
+            /** Conteudo */
+            conteudo: {
+                [key: string]: unknown;
+            };
+            /** Definicao Id */
+            definicao_id: string;
+            /** Id */
+            id: string;
+            /** Numero */
+            numero: number;
+            /** Procedencia */
+            procedencia: {
+                [key: string]: unknown;
+            };
+            /**
+             * Publicado Em
+             * Format: date-time
+             */
+            publicado_em: string;
+            /** Publicado Por */
+            publicado_por: string;
+            /** Revisao Pendente */
+            revisao_pendente?: string[];
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "habilidade" | "magia" | "item" | "efeito";
+        };
+        /**
+         * CartaVisivel
+         * @description Conteúdo publicado que um participante pode ver; sem procedência nem notas do catálogo.
+         */
+        CartaVisivel: {
+            /** Conteudo */
+            conteudo: {
+                [key: string]: unknown;
+            };
+            /** Definicao Id */
+            definicao_id: string;
+            /** Numero */
+            numero: number;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "habilidade" | "magia" | "item" | "efeito";
+            /** Versao Id */
+            versao_id: string;
+        };
+        /** ConcederCartaRequest */
+        ConcederCartaRequest: {
+            /**
+             * Excecao Aprendizado
+             * @default false
+             */
+            excecao_aprendizado: boolean;
+            /** Motivo */
+            motivo?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
+            /** Versao Id */
+            versao_id: string;
         };
         /** ConfirmarDescansoRequest */
         ConfirmarDescansoRequest: {
@@ -702,6 +1164,21 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** CriarCartaRequest */
+        CriarCartaRequest: {
+            /**
+             * Rascunho
+             * @description Conteúdo em edição; validado ao publicar.
+             */
+            rascunho?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "habilidade" | "magia" | "item" | "efeito";
+        };
         /** CriarConviteRequest */
         CriarConviteRequest: {
             /**
@@ -733,6 +1210,27 @@ export interface components {
             /** Nome */
             nome: string;
         };
+        /** CriarOfertaRequest */
+        CriarOfertaRequest: {
+            /** Expira Em */
+            expira_em?: string | null;
+            /**
+             * Max Escolhas
+             * @default 1
+             */
+            max_escolhas: number;
+            /**
+             * Min Escolhas
+             * @default 1
+             */
+            min_escolhas: number;
+            /** Personagem Ids */
+            personagem_ids: string[];
+            /** Titulo */
+            titulo: string;
+            /** Versao Ids */
+            versao_ids: string[];
+        };
         /** CriarPersonagemRequest */
         CriarPersonagemRequest: {
             ficha: components["schemas"]["FichaContrato"];
@@ -741,6 +1239,29 @@ export interface components {
         DecidirPedidoRequest: {
             /** Aprovar */
             aprovar: boolean;
+        };
+        /** DestinatarioOferta */
+        DestinatarioOferta: {
+            /** Escolhas */
+            escolhas?: string[];
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "pendente" | "respondida" | "expirada" | "cancelada";
+            /** Personagem Id */
+            personagem_id: string;
+            /** Respondido Em */
+            respondido_em?: string | null;
+        };
+        /** DiferencaCarta */
+        DiferencaCarta: {
+            /** Antes */
+            antes?: unknown;
+            /** Campo */
+            campo: string;
+            /** Depois */
+            depois?: unknown;
         };
         /** EfeitoComandoResposta */
         EfeitoComandoResposta: {
@@ -820,7 +1341,7 @@ export interface components {
              * Categoria
              * @enum {string}
              */
-            categoria: "mesa" | "permissao" | "personagem" | "ficha" | "inventario" | "efeito";
+            categoria: "mesa" | "permissao" | "personagem" | "ficha" | "inventario" | "efeito" | "carta";
             /** Correlacao Id */
             correlacao_id?: string | null;
             /** Corrige Evento Id */
@@ -953,6 +1474,11 @@ export interface components {
             /** Versao */
             versao: number;
         };
+        /** ImportarCartaRequest */
+        ImportarCartaRequest: {
+            /** Codigo */
+            codigo: string;
+        };
         /** ImportarCodigoRequest */
         ImportarCodigoRequest: {
             /** Codigo */
@@ -1015,6 +1541,13 @@ export interface components {
              */
             papel: "narrador" | "jogador";
         };
+        /** MigrarCartaRequest */
+        MigrarCartaRequest: {
+            /** Versao Destino Id */
+            versao_destino_id: string;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** ModificadorResumo */
         ModificadorResumo: {
             /** Alvo */
@@ -1039,6 +1572,38 @@ export interface components {
             depois?: unknown;
             /** Rotulo */
             rotulo?: string | null;
+        };
+        /** OfertaResumo */
+        OfertaResumo: {
+            /** Candidatas */
+            candidatas: components["schemas"]["CartaVisivel"][];
+            /**
+             * Criado Em
+             * Format: date-time
+             */
+            criado_em: string;
+            /**
+             * Destinatarios
+             * @description Jogadores veem apenas os próprios personagens.
+             */
+            destinatarios: components["schemas"]["DestinatarioOferta"][];
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "aberta" | "encerrada" | "cancelada";
+            /** Expira Em */
+            expira_em?: string | null;
+            /** Expirada */
+            expirada: boolean;
+            /** Id */
+            id: string;
+            /** Max Escolhas */
+            max_escolhas: number;
+            /** Min Escolhas */
+            min_escolhas: number;
+            /** Titulo */
+            titulo: string;
         };
         /** PaginaAuditoria */
         PaginaAuditoria: {
@@ -1151,6 +1716,21 @@ export interface components {
              */
             tipo: "curto" | "longo";
         };
+        /** PreviaImportacaoCarta */
+        PreviaImportacaoCarta: {
+            /** Avisos */
+            avisos?: string[];
+            /** Rascunho */
+            rascunho: {
+                [key: string]: unknown;
+            };
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "item" | "efeito";
+            validacao: components["schemas"]["ValidacaoCarta"];
+        };
         /** PreviaImportacaoRequest */
         PreviaImportacaoRequest: {
             /** Codigo */
@@ -1168,6 +1748,36 @@ export interface components {
              * @enum {string}
              */
             tipo: "efeito" | "equipamento";
+        };
+        /** PreviaMigracaoCarta */
+        PreviaMigracaoCarta: {
+            /** Destino Numero */
+            destino_numero: number;
+            /** Diferencas */
+            diferencas: components["schemas"]["DiferencaCarta"][];
+            /** Observacao */
+            observacao?: string | null;
+            /** Origem Numero */
+            origem_numero: number;
+        };
+        /** ProblemaValidacao */
+        ProblemaValidacao: {
+            /** Campo */
+            campo: string;
+            /** Mensagem */
+            mensagem: string;
+        };
+        /** PublicarCartaRequest */
+        PublicarCartaRequest: {
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /** ResponderOfertaRequest */
+        ResponderOfertaRequest: {
+            /** Escolhas */
+            escolhas?: string[];
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** ResultadoDescansoPersonagem */
         ResultadoDescansoPersonagem: {
@@ -1257,6 +1867,15 @@ export interface components {
             /** Nome Publico */
             nome_publico?: string | null;
         };
+        /** SalvarRascunhoRequest */
+        SalvarRascunhoRequest: {
+            /** Rascunho */
+            rascunho: {
+                [key: string]: unknown;
+            };
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** SituacionalResumo */
         SituacionalResumo: {
             /** Contexto */
@@ -1275,12 +1894,28 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** TransicaoCartaRequest */
+        TransicaoCartaRequest: {
+            /** Motivo */
+            motivo?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** TransicaoEfeitoRequest */
         TransicaoEfeitoRequest: {
             /** Motivo */
             motivo?: string | null;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /** ValidacaoCarta */
+        ValidacaoCarta: {
+            /** Problemas */
+            problemas?: components["schemas"]["ProblemaValidacao"][];
+            /** Revisao Pendente */
+            revisao_pendente?: string[];
+            /** Valida */
+            valida: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -1428,13 +2063,111 @@ export interface operations {
             };
         };
     };
+    listar_apresentacoes_mesas__mesa_id__apresentacoes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApresentacaoResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apresentar_carta_mesas__mesa_id__apresentacoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApresentarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApresentacaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recolher_carta_mesas__mesa_id__apresentacoes__apresentacao_id__recolhimento_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                apresentacao_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApresentacaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_eventos_mesas__mesa_id__auditoria_get: {
         parameters: {
             query?: {
                 sessao_id?: string | null;
                 ator_id?: string | null;
                 personagem_id?: string | null;
-                categoria?: ("mesa" | "permissao" | "personagem" | "ficha" | "inventario" | "efeito") | null;
+                categoria?: ("mesa" | "permissao" | "personagem" | "ficha" | "inventario" | "efeito" | "carta") | null;
                 relevancia?: ("mecanica" | "narrativa" | "organizacional") | null;
                 antes_de?: number | null;
                 limite?: number;
@@ -1521,6 +2254,278 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CanalPrivado"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_catalogo_mesas__mesa_id__cartas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaDefinicaoResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    criar_carta_mesas__mesa_id__cartas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaDefinicaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    importar_carta_mesas__mesa_id__cartas_importacoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaDefinicaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previsualizar_importacao_carta_mesas__mesa_id__cartas_importacoes_previa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviaImportacaoCarta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publicar_carta_mesas__mesa_id__cartas__carta_id__publicacao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                carta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaVersaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    salvar_rascunho_mesas__mesa_id__cartas__carta_id__rascunho_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                carta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SalvarRascunhoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaDefinicaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validar_rascunho_mesas__mesa_id__cartas__carta_id__validacao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                carta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidacaoCarta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_versoes_mesas__mesa_id__cartas__carta_id__versoes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                carta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaVersaoResumo"][];
                 };
             };
             /** @description Validation Error */
@@ -1705,6 +2710,141 @@ export interface operations {
             };
         };
     };
+    listar_ofertas_mesas__mesa_id__ofertas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfertaResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    criar_oferta_mesas__mesa_id__ofertas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarOfertaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfertaResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelar_oferta_mesas__mesa_id__ofertas__oferta_id__cancelamento_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                oferta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfertaResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    responder_oferta_mesas__mesa_id__ofertas__oferta_id__respostas__personagem_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                oferta_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResponderOfertaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AquisicaoCartasResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_participantes_mesas__mesa_id__participantes_get: {
         parameters: {
             query?: never;
@@ -1854,6 +2994,184 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_cartas_do_personagem_mesas__mesa_id__personagens__personagem_id__cartas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaPersonagemResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conceder_carta_mesas__mesa_id__personagens__personagem_id__cartas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConcederCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AquisicaoCartasResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    migrar_carta_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__migracao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                carta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MigrarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AquisicaoCartasResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previsualizar_migracao_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__migracao_previa_get: {
+        parameters: {
+            query: {
+                versao_destino_id: string;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                carta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviaMigracaoCarta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transicionar_carta_mesas__mesa_id__personagens__personagem_id__cartas__carta_id__transicoes__acao__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                carta_id: string;
+                acao: "iniciar_aprendizado" | "interromper_aprendizado" | "concluir_aprendizado" | "remover";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransicaoCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AquisicaoCartasResposta"];
+                };
             };
             /** @description Validation Error */
             422: {

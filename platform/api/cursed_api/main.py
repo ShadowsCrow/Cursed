@@ -18,6 +18,8 @@ from .live_sheet import router as live_sheet_router
 from .audit import router as audit_router
 from .narrator import router as narrator_router
 from .rest import router as rest_router
+from .cards import router as cards_router
+from .card_lifecycle import router as card_lifecycle_router
 
 
 class HealthResponse(BaseModel):
@@ -49,6 +51,8 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(audit_router)
     api.include_router(narrator_router)
     api.include_router(rest_router)
+    api.include_router(cards_router)
+    api.include_router(card_lifecycle_router)
 
     @api.get("/health", response_model=HealthResponse, tags=["Operação"])
     def health() -> HealthResponse:
