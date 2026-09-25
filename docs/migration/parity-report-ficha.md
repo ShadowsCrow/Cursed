@@ -12,7 +12,7 @@ contra a API real (SQLite local). O livro de regras não foi alterado.
 | Carregamento | `test_complex_sheet_round_trip` | Aprovada para o JSON da ficha; ver divergência D2 |
 | Edição | `test_character_update_conflict` | Aprovada |
 | Equipamento | `test_equip_and_unequip_recalculates_effects` | Aprovada |
-| Efeitos | `test_effect_lifecycle_audit` | **Aberta** (D1) |
+| Efeitos | `test_effect_lifecycle_audit` | Aprovada (após 7.2 e 8.3) |
 | Importação | `test_portable_import_preview_and_rejection` | Aprovada |
 | Persistência | `test_persistent_snapshot_after_restart` | Aprovada |
 
@@ -25,7 +25,7 @@ Divergências **abertas** impedem o corte do Streamlit.
 
 | # | Divergência | Situação | Destino |
 | --- | --- | --- | --- |
-| D1 | Aplicar, ajustar, suspender e encerrar efeitos pelo Narrador, com auditoria, ainda não existem. A ativação por equipamento já funciona. | Aberta | 7.2 e 8.3 |
+| D1 | Aplicar, ajustar, suspender e encerrar efeitos pelo Narrador, com auditoria. | Resolvida (7.2 e 8.3) | — |
 | D2 | Uma ficha legada mantém `armas`, `armaduras`, `outros` e `efeitos_externos` no JSON, preservados, mas esses itens só aparecem no inventário e nos efeitos da ficha nova depois da migração para as tabelas. | Aberta | 11.1, 11.2 e 11.4 |
 | D3 | Deslocamento e Capacidade de carga do Status não são calculados, porque dependem do catálogo de raças. | Aberta | Antes do piloto (12.6) |
 | D4 | Com a política exigindo aprovação para `inventario` ou `efeitos`, o jogador recebe recusa com orientação, em vez de uma solicitação pendente. As solicitações existem apenas para edição da ficha. | Aberta | 7.x ou 8.x |

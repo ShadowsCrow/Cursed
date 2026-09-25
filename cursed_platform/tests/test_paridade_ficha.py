@@ -146,9 +146,27 @@ class ParidadeFichaTest(unittest.TestCase):
         self.client.post(f"{base}/inventario/{item_id}/equipar", json={"equipado": False, "versao_esperada": 2})
         self.assertEqual(investigacao(), (2, []))
 
-    @unittest.skip("Aberta: aplicar/ajustar/encerrar efeitos pelo Narrador e auditoria dependem de 7.2 e 8.3.")
     def test_effect_lifecycle_audit(self):
-        """Ativo/suspenso por equipamento já é verificado; ciclo completo com auditoria ainda não existe."""
+        personagem_id = self.criar({"personagem": {"nome": "Teste"}, "pericias": {"valores": {"Esquiva": 2}}})
+        base = f"/mesas/mesa/personagens/{personagem_id}"
+        self.actor = "mestre"
+        aplicado = self.client.post(f"{base}/efeitos", json={
+            "nome": "Atordoado", "descricao": "−1 em Esquiva.", "duracao_rodadas": 2, "origem": "Golpe na nuca",
+            "modificadores": [{"alvo": "pericia:esquiva", "valor": -1}], "versao_esperada": 0,
+        }).json()["efeito"]
+        caminho = f"{base}/efeitos/{aplicado['id']}"
+        self.client.patch(caminho, json={"duracao_rodadas": 1, "versao_esperada": 1})
+        self.client.post(f"{caminho}/suspender", json={"versao_esperada": 2})
+        self.client.post(f"{caminho}/encerrar", json={"versao_esperada": 3, "motivo": "Fim do combate"})
+        acoes = [e["acao"] for e in self.client.get("/mesas/mesa/auditoria", params={"categoria": "efeito"}).json()["eventos"]]
+        self.assertEqual(acoes, ["efeito.encerrado", "efeito.suspenso", "efeito.ajustado", "efeito.aplicado"])
+
+        self.actor = "jogador"
+        negado = self.client.post(f"{base}/efeitos", json={"nome": "X", "descricao": "Y", "versao_esperada": 4})
+        self.assertEqual(negado.status_code, 403)
+        self.assertEqual(self.client.get(f"{base}/efeitos").json(), [])
+        esquiva = next(v for v in self.client.get(f"{base}/valores-derivados").json() if v["chave"] == "pericia:esquiva")
+        self.assertEqual(esquiva["total"], 2)
 
     def test_portable_import_preview_and_rejection(self):
         personagem_id = self.criar({"personagem": {"nome": "Teste"}})
