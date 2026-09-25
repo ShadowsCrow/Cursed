@@ -10,7 +10,7 @@ export type CategoriaAuditoria = EventoAuditoriaResumo["categoria"];
 export type RelevanciaAuditoria = EventoAuditoriaResumo["relevancia"];
 
 export const CATEGORIAS_AUDITORIA: CategoriaAuditoria[] = [
-  "mesa", "permissao", "personagem", "ficha", "inventario", "efeito",
+  "mesa", "permissao", "personagem", "ficha", "inventario", "efeito", "carta",
 ];
 export const RELEVANCIAS_AUDITORIA: RelevanciaAuditoria[] = ["mecanica", "narrativa", "organizacional"];
 
