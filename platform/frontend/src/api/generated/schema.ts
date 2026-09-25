@@ -157,6 +157,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Efeitos */
+        get: operations["listar_efeitos_mesas__mesa_id__personagens__personagem_id__efeitos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/personagens/{personagem_id}/ficha": {
         parameters: {
             query?: never;
@@ -168,6 +185,94 @@ export interface paths {
         get: operations["ler_ficha_mesas__mesa_id__personagens__personagem_id__ficha_get"];
         /** Gravar Ficha */
         put: operations["gravar_ficha_mesas__mesa_id__personagens__personagem_id__ficha_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/importacoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Importar Codigo */
+        post: operations["importar_codigo_mesas__mesa_id__personagens__personagem_id__importacoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/importacoes/previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Previsualizar Importacao
+         * @description Valida o código e mostra o que será criado, sem gravar nada.
+         */
+        post: operations["previsualizar_importacao_mesas__mesa_id__personagens__personagem_id__importacoes_previa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Inventario */
+        get: operations["listar_inventario_mesas__mesa_id__personagens__personagem_id__inventario_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/equipar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Equipar Item */
+        post: operations["equipar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__equipar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/permissoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Permissoes */
+        get: operations["ler_permissoes_mesas__mesa_id__personagens__personagem_id__permissoes_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -206,6 +311,23 @@ export interface paths {
          * @description Narrador define o proprietário; `null` deixa o personagem sob controle exclusivo do Narrador.
          */
         post: operations["transferir_personagem_mesas__mesa_id__personagens__personagem_id__transferencia_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/valores-derivados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Valores Derivados */
+        get: operations["listar_valores_derivados_mesas__mesa_id__personagens__personagem_id__valores_derivados_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -337,6 +459,52 @@ export interface components {
             /** Aprovar */
             aprovar: boolean;
         };
+        /** EfeitoPrevia */
+        EfeitoPrevia: {
+            /** Ativacao */
+            ativacao?: string | null;
+            /** Descricao */
+            descricao: string;
+            /** Modificadores */
+            modificadores?: components["schemas"]["ModificadorResumo"][];
+            /** Nome */
+            nome: string;
+        };
+        /** EfeitoResumo */
+        EfeitoResumo: {
+            /** Ativacao */
+            ativacao?: string | null;
+            /** Descricao */
+            descricao: string;
+            /** Duracao Rodadas */
+            duracao_rodadas?: number | null;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "ativo" | "suspenso";
+            /** Fontes */
+            fontes?: components["schemas"]["FonteEfeitoResumo"][];
+            /** Id */
+            id: string;
+            /** Modificadores */
+            modificadores?: components["schemas"]["ModificadorResumo"][];
+            /** Nome */
+            nome: string;
+        };
+        /** EquiparItemRequest */
+        EquiparItemRequest: {
+            /** Equipado */
+            equipado: boolean;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /** EquiparItemResposta */
+        EquiparItemResposta: {
+            item: components["schemas"]["ItemInventarioResumo"];
+            /** Versao */
+            versao: number;
+        };
         /**
          * FichaContrato
          * @description Representação compatível de uma ficha transportada pela API.
@@ -387,6 +555,31 @@ export interface components {
             /** Versao */
             versao: number;
         };
+        /** FonteEfeitoResumo */
+        FonteEfeitoResumo: {
+            /** Descricao */
+            descricao?: string | null;
+            /** Equipamento Id */
+            equipamento_id?: string | null;
+            /** Tipo */
+            tipo: string;
+        };
+        /** FonteValorResumo */
+        FonteValorResumo: {
+            /** Descricao */
+            descricao: string;
+            /** Efeito Id */
+            efeito_id?: string | null;
+            /** Item Id */
+            item_id?: string | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "base" | "ajuste" | "atributo" | "pericia" | "equipamento" | "efeito";
+            /** Valor */
+            valor: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -396,6 +589,64 @@ export interface components {
         HealthResponse: {
             /** Status */
             status: string;
+        };
+        /** ImportacaoResultado */
+        ImportacaoResultado: {
+            /** Efeitos */
+            efeitos: components["schemas"]["EfeitoResumo"][];
+            item?: components["schemas"]["ItemInventarioResumo"] | null;
+            /** Versao */
+            versao: number;
+        };
+        /** ImportarCodigoRequest */
+        ImportarCodigoRequest: {
+            /** Codigo */
+            codigo: string;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /** ItemInventarioResumo */
+        ItemInventarioResumo: {
+            /** Cargas Atuais */
+            cargas_atuais?: number | null;
+            /** Cargas Maximas */
+            cargas_maximas?: number | null;
+            /** Dados */
+            dados?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Efeitos
+             * @description Efeitos cuja fonte é este item.
+             */
+            efeitos?: string[];
+            /** Equipado */
+            equipado: boolean;
+            /** Id */
+            id: string;
+            /** Nome */
+            nome: string;
+            /** Quantidade */
+            quantidade: number;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "arma" | "armadura" | "outro";
+        };
+        /** ItemPrevia */
+        ItemPrevia: {
+            /** Dados */
+            dados?: {
+                [key: string]: unknown;
+            };
+            /** Nome */
+            nome: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "arma" | "armadura" | "outro";
         };
         /** MesaResumo */
         MesaResumo: {
@@ -408,6 +659,15 @@ export interface components {
              * @enum {string}
              */
             papel: "narrador" | "jogador";
+        };
+        /** ModificadorResumo */
+        ModificadorResumo: {
+            /** Alvo */
+            alvo: string;
+            /** Contexto */
+            contexto?: string | null;
+            /** Valor */
+            valor: number;
         };
         /** ParticipanteResumo */
         ParticipanteResumo: {
@@ -439,6 +699,24 @@ export interface components {
             solicitante_id: string;
             /** Versao Base */
             versao_base: number;
+        };
+        /** PermissoesFicha */
+        PermissoesFicha: {
+            /** Campos Bloqueados */
+            campos_bloqueados?: string[];
+            /** Campos Exigem Aprovacao */
+            campos_exigem_aprovacao?: string[];
+            /** Editar */
+            editar: boolean;
+            /** Excluir */
+            excluir: boolean;
+            /**
+             * Papel
+             * @enum {string}
+             */
+            papel: "narrador" | "jogador";
+            /** Transferir */
+            transferir: boolean;
         };
         /** PersonagemResumo */
         PersonagemResumo: {
@@ -480,6 +758,35 @@ export interface components {
             /** Permitir Exclusao Propria */
             permitir_exclusao_propria: boolean;
         };
+        /** PreviaImportacaoRequest */
+        PreviaImportacaoRequest: {
+            /** Codigo */
+            codigo: string;
+        };
+        /** PreviaImportacaoResumo */
+        PreviaImportacaoResumo: {
+            /** Avisos */
+            avisos?: string[];
+            /** Efeitos */
+            efeitos: components["schemas"]["EfeitoPrevia"][];
+            item?: components["schemas"]["ItemPrevia"] | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "efeito" | "equipamento";
+        };
+        /** SituacionalResumo */
+        SituacionalResumo: {
+            /** Contexto */
+            contexto: string;
+            /** Descricao */
+            descricao: string;
+            /** Efeito Id */
+            efeito_id: string;
+            /** Valor */
+            valor: number;
+        };
         /** TransferirPersonagemRequest */
         TransferirPersonagemRequest: {
             /** Proprietario Id */
@@ -499,6 +806,24 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** ValorDerivadoResumo */
+        ValorDerivadoResumo: {
+            /** Chave */
+            chave: string;
+            /** Fontes */
+            fontes: components["schemas"]["FonteValorResumo"][];
+            /**
+             * Grupo
+             * @enum {string}
+             */
+            grupo: "atributo" | "pericia" | "status";
+            /** Rotulo */
+            rotulo: string;
+            /** Situacionais */
+            situacionais?: components["schemas"]["SituacionalResumo"][];
+            /** Total */
+            total: number;
         };
     };
     responses: never;
@@ -842,6 +1167,38 @@ export interface operations {
             };
         };
     };
+    listar_efeitos_mesas__mesa_id__personagens__personagem_id__efeitos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EfeitoResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ler_ficha_mesas__mesa_id__personagens__personagem_id__ficha_get: {
         parameters: {
             query?: never;
@@ -919,6 +1276,179 @@ export interface operations {
             };
         };
     };
+    importar_codigo_mesas__mesa_id__personagens__personagem_id__importacoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportarCodigoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacaoResultado"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previsualizar_importacao_mesas__mesa_id__personagens__personagem_id__importacoes_previa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviaImportacaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviaImportacaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_inventario_mesas__mesa_id__personagens__personagem_id__inventario_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemInventarioResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    equipar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__equipar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquiparItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EquiparItemResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_permissoes_mesas__mesa_id__personagens__personagem_id__permissoes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissoesFicha"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     restaurar_personagem_mesas__mesa_id__personagens__personagem_id__restauracao_post: {
         parameters: {
             query: {
@@ -976,6 +1506,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PersonagemResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_valores_derivados_mesas__mesa_id__personagens__personagem_id__valores_derivados_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValorDerivadoResumo"][];
                 };
             };
             /** @description Validation Error */

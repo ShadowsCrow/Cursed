@@ -174,6 +174,146 @@
         "title": "DecidirPedidoRequest",
         "type": "object"
       },
+      "EfeitoPrevia": {
+        "properties": {
+          "ativacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativacao"
+          },
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "modificadores": {
+            "items": {
+              "$ref": "#/components/schemas/ModificadorResumo"
+            },
+            "title": "Modificadores",
+            "type": "array"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "descricao"
+        ],
+        "title": "EfeitoPrevia",
+        "type": "object"
+      },
+      "EfeitoResumo": {
+        "properties": {
+          "ativacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativacao"
+          },
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "duracao_rodadas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Rodadas"
+          },
+          "estado": {
+            "enum": [
+              "ativo",
+              "suspenso"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "fontes": {
+            "items": {
+              "$ref": "#/components/schemas/FonteEfeitoResumo"
+            },
+            "title": "Fontes",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "modificadores": {
+            "items": {
+              "$ref": "#/components/schemas/ModificadorResumo"
+            },
+            "title": "Modificadores",
+            "type": "array"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "descricao",
+          "estado"
+        ],
+        "title": "EfeitoResumo",
+        "type": "object"
+      },
+      "EquiparItemRequest": {
+        "properties": {
+          "equipado": {
+            "title": "Equipado",
+            "type": "boolean"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "equipado",
+          "versao_esperada"
+        ],
+        "title": "EquiparItemRequest",
+        "type": "object"
+      },
+      "EquiparItemResposta": {
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/ItemInventarioResumo"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "item"
+        ],
+        "title": "EquiparItemResposta",
+        "type": "object"
+      },
       "FichaContrato": {
         "additionalProperties": true,
         "description": "Representação compatível de uma ficha transportada pela API.",
@@ -261,6 +401,94 @@
         "title": "FichaSnapshot",
         "type": "object"
       },
+      "FonteEfeitoResumo": {
+        "properties": {
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "equipamento_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipamento Id"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo"
+        ],
+        "title": "FonteEfeitoResumo",
+        "type": "object"
+      },
+      "FonteValorResumo": {
+        "properties": {
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "efeito_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Efeito Id"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "tipo": {
+            "enum": [
+              "base",
+              "ajuste",
+              "atributo",
+              "pericia",
+              "equipamento",
+              "efeito"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "tipo",
+          "descricao",
+          "valor"
+        ],
+        "title": "FonteValorResumo",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -285,6 +513,159 @@
           "status"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "ImportacaoResultado": {
+        "properties": {
+          "efeitos": {
+            "items": {
+              "$ref": "#/components/schemas/EfeitoResumo"
+            },
+            "title": "Efeitos",
+            "type": "array"
+          },
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemInventarioResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "efeitos"
+        ],
+        "title": "ImportacaoResultado",
+        "type": "object"
+      },
+      "ImportarCodigoRequest": {
+        "properties": {
+          "codigo": {
+            "maxLength": 5000000,
+            "minLength": 1,
+            "title": "Codigo",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "codigo",
+          "versao_esperada"
+        ],
+        "title": "ImportarCodigoRequest",
+        "type": "object"
+      },
+      "ItemInventarioResumo": {
+        "properties": {
+          "cargas_atuais": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargas Atuais"
+          },
+          "cargas_maximas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargas Maximas"
+          },
+          "dados": {
+            "additionalProperties": true,
+            "title": "Dados",
+            "type": "object"
+          },
+          "efeitos": {
+            "description": "Efeitos cuja fonte é este item.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Efeitos",
+            "type": "array"
+          },
+          "equipado": {
+            "title": "Equipado",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "quantidade": {
+            "title": "Quantidade",
+            "type": "integer"
+          },
+          "tipo": {
+            "enum": [
+              "arma",
+              "armadura",
+              "outro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "nome",
+          "quantidade",
+          "equipado"
+        ],
+        "title": "ItemInventarioResumo",
+        "type": "object"
+      },
+      "ItemPrevia": {
+        "properties": {
+          "dados": {
+            "additionalProperties": true,
+            "title": "Dados",
+            "type": "object"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "arma",
+              "armadura",
+              "outro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "nome"
+        ],
+        "title": "ItemPrevia",
         "type": "object"
       },
       "MesaResumo": {
@@ -312,6 +693,35 @@
           "papel"
         ],
         "title": "MesaResumo",
+        "type": "object"
+      },
+      "ModificadorResumo": {
+        "properties": {
+          "alvo": {
+            "title": "Alvo",
+            "type": "string"
+          },
+          "contexto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contexto"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "alvo",
+          "valor"
+        ],
+        "title": "ModificadorResumo",
         "type": "object"
       },
       "ParticipanteResumo": {
@@ -389,6 +799,52 @@
           "ficha_proposta"
         ],
         "title": "PedidoAlteracaoResumo",
+        "type": "object"
+      },
+      "PermissoesFicha": {
+        "properties": {
+          "campos_bloqueados": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Campos Bloqueados",
+            "type": "array"
+          },
+          "campos_exigem_aprovacao": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Campos Exigem Aprovacao",
+            "type": "array"
+          },
+          "editar": {
+            "title": "Editar",
+            "type": "boolean"
+          },
+          "excluir": {
+            "title": "Excluir",
+            "type": "boolean"
+          },
+          "papel": {
+            "enum": [
+              "narrador",
+              "jogador"
+            ],
+            "title": "Papel",
+            "type": "string"
+          },
+          "transferir": {
+            "title": "Transferir",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "papel",
+          "editar",
+          "excluir",
+          "transferir"
+        ],
+        "title": "PermissoesFicha",
         "type": "object"
       },
       "PersonagemResumo": {
@@ -513,6 +969,91 @@
         "title": "PoliticaMesaContrato",
         "type": "object"
       },
+      "PreviaImportacaoRequest": {
+        "properties": {
+          "codigo": {
+            "maxLength": 5000000,
+            "minLength": 1,
+            "title": "Codigo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ],
+        "title": "PreviaImportacaoRequest",
+        "type": "object"
+      },
+      "PreviaImportacaoResumo": {
+        "properties": {
+          "avisos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Avisos",
+            "type": "array"
+          },
+          "efeitos": {
+            "items": {
+              "$ref": "#/components/schemas/EfeitoPrevia"
+            },
+            "title": "Efeitos",
+            "type": "array"
+          },
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemPrevia"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tipo": {
+            "enum": [
+              "efeito",
+              "equipamento"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "efeitos"
+        ],
+        "title": "PreviaImportacaoResumo",
+        "type": "object"
+      },
+      "SituacionalResumo": {
+        "properties": {
+          "contexto": {
+            "title": "Contexto",
+            "type": "string"
+          },
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "efeito_id": {
+            "title": "Efeito Id",
+            "type": "string"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "descricao",
+          "valor",
+          "contexto",
+          "efeito_id"
+        ],
+        "title": "SituacionalResumo",
+        "type": "object"
+      },
       "TransferirPersonagemRequest": {
         "properties": {
           "proprietario_id": {
@@ -578,6 +1119,54 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "ValorDerivadoResumo": {
+        "properties": {
+          "chave": {
+            "title": "Chave",
+            "type": "string"
+          },
+          "fontes": {
+            "items": {
+              "$ref": "#/components/schemas/FonteValorResumo"
+            },
+            "title": "Fontes",
+            "type": "array"
+          },
+          "grupo": {
+            "enum": [
+              "atributo",
+              "pericia",
+              "status"
+            ],
+            "title": "Grupo",
+            "type": "string"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "situacionais": {
+            "items": {
+              "$ref": "#/components/schemas/SituacionalResumo"
+            },
+            "title": "Situacionais",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "number"
+          }
+        },
+        "required": [
+          "chave",
+          "rotulo",
+          "grupo",
+          "total",
+          "fontes"
+        ],
+        "title": "ValorDerivadoResumo",
         "type": "object"
       }
     },
@@ -1120,6 +1709,66 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos": {
+      "get": {
+        "operationId": "listar_efeitos_mesas__mesa_id__personagens__personagem_id__efeitos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EfeitoResumo"
+                  },
+                  "title": "Response Listar Efeitos Mesas  Mesa Id  Personagens  Personagem Id  Efeitos Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Efeitos",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/personagens/{personagem_id}/ficha": {
       "get": {
         "operationId": "ler_ficha_mesas__mesa_id__personagens__personagem_id__ficha_get",
@@ -1247,6 +1896,330 @@
         "summary": "Gravar Ficha",
         "tags": [
           "Fichas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/importacoes": {
+      "post": {
+        "operationId": "importar_codigo_mesas__mesa_id__personagens__personagem_id__importacoes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportarCodigoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacaoResultado"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Importar Codigo",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/importacoes/previa": {
+      "post": {
+        "description": "Valida o código e mostra o que será criado, sem gravar nada.",
+        "operationId": "previsualizar_importacao_mesas__mesa_id__personagens__personagem_id__importacoes_previa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviaImportacaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaImportacaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Previsualizar Importacao",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario": {
+      "get": {
+        "operationId": "listar_inventario_mesas__mesa_id__personagens__personagem_id__inventario_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ItemInventarioResumo"
+                  },
+                  "title": "Response Listar Inventario Mesas  Mesa Id  Personagens  Personagem Id  Inventario Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Inventario",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/equipar": {
+      "post": {
+        "operationId": "equipar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__equipar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EquiparItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquiparItemResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Equipar Item",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/permissoes": {
+      "get": {
+        "operationId": "ler_permissoes_mesas__mesa_id__personagens__personagem_id__permissoes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissoesFicha"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Permissoes",
+        "tags": [
+          "Ficha viva"
         ]
       }
     },
@@ -1380,6 +2353,66 @@
         "summary": "Transferir Personagem",
         "tags": [
           "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/valores-derivados": {
+      "get": {
+        "operationId": "listar_valores_derivados_mesas__mesa_id__personagens__personagem_id__valores_derivados_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ValorDerivadoResumo"
+                  },
+                  "title": "Response Listar Valores Derivados Mesas  Mesa Id  Personagens  Personagem Id  Valores Derivados Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Valores Derivados",
+        "tags": [
+          "Ficha viva"
         ]
       }
     },

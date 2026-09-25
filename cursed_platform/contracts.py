@@ -188,3 +188,115 @@ class AplicarEfeitoComando(ComandoBase):
     tipo: Literal["aplicar_efeito"] = "aplicar_efeito"
     personagem_id: str = Field(min_length=1, max_length=100)
     efeito: EfeitoContrato
+
+
+class PermissoesFicha(BaseModel):
+    papel: Literal["narrador", "jogador"]
+    editar: bool
+    excluir: bool
+    transferir: bool
+    campos_bloqueados: list[str] = Field(default_factory=list)
+    campos_exigem_aprovacao: list[str] = Field(default_factory=list)
+
+
+class ItemInventarioResumo(BaseModel):
+    id: str
+    tipo: Literal["arma", "armadura", "outro"]
+    nome: str
+    quantidade: int
+    equipado: bool
+    cargas_atuais: int | None = None
+    cargas_maximas: int | None = None
+    dados: dict[str, Any] = Field(default_factory=dict)
+    efeitos: list[str] = Field(default_factory=list, description="Efeitos cuja fonte é este item.")
+
+
+class EquiparItemRequest(BaseModel):
+    equipado: bool
+    versao_esperada: int = Field(ge=0)
+
+
+class EquiparItemResposta(BaseModel):
+    versao: int
+    item: ItemInventarioResumo
+
+
+class ModificadorResumo(BaseModel):
+    alvo: str
+    valor: float
+    contexto: str | None = None
+
+
+class FonteEfeitoResumo(BaseModel):
+    tipo: str
+    descricao: str | None = None
+    equipamento_id: str | None = None
+
+
+class EfeitoResumo(BaseModel):
+    id: str
+    nome: str
+    descricao: str
+    estado: Literal["ativo", "suspenso"]
+    duracao_rodadas: int | None = None
+    ativacao: str | None = None
+    modificadores: list[ModificadorResumo] = Field(default_factory=list)
+    fontes: list[FonteEfeitoResumo] = Field(default_factory=list)
+
+
+class FonteValorResumo(BaseModel):
+    tipo: Literal["base", "ajuste", "atributo", "pericia", "equipamento", "efeito"]
+    descricao: str
+    valor: float
+    efeito_id: str | None = None
+    item_id: str | None = None
+
+
+class SituacionalResumo(BaseModel):
+    descricao: str
+    valor: float
+    contexto: str
+    efeito_id: str
+
+
+class ValorDerivadoResumo(BaseModel):
+    chave: str
+    rotulo: str
+    grupo: Literal["atributo", "pericia", "status"]
+    total: float
+    fontes: list[FonteValorResumo]
+    situacionais: list[SituacionalResumo] = Field(default_factory=list)
+
+
+class PreviaImportacaoRequest(BaseModel):
+    codigo: str = Field(min_length=1, max_length=5_000_000)
+
+
+class ImportarCodigoRequest(PreviaImportacaoRequest):
+    versao_esperada: int = Field(ge=0)
+
+
+class EfeitoPrevia(BaseModel):
+    nome: str
+    descricao: str
+    ativacao: str | None = None
+    modificadores: list[ModificadorResumo] = Field(default_factory=list)
+
+
+class ItemPrevia(BaseModel):
+    tipo: Literal["arma", "armadura", "outro"]
+    nome: str
+    dados: dict[str, Any] = Field(default_factory=dict)
+
+
+class PreviaImportacaoResumo(BaseModel):
+    tipo: Literal["efeito", "equipamento"]
+    item: ItemPrevia | None = None
+    efeitos: list[EfeitoPrevia]
+    avisos: list[str] = Field(default_factory=list)
+
+
+class ImportacaoResultado(BaseModel):
+    versao: int
+    item: ItemInventarioResumo | None = None
+    efeitos: list[EfeitoResumo]

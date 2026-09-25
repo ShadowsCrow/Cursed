@@ -14,6 +14,7 @@ from .sheets import router as sheets_router
 from .tables import router as tables_router
 from .characters import router as characters_router
 from .channels import router as channels_router
+from .live_sheet import router as live_sheet_router
 
 
 class HealthResponse(BaseModel):
@@ -41,6 +42,7 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(tables_router)
     api.include_router(characters_router)
     api.include_router(channels_router)
+    api.include_router(live_sheet_router)
 
     @api.get("/health", response_model=HealthResponse, tags=["Operação"])
     def health() -> HealthResponse:
