@@ -53,7 +53,7 @@ describe("shells de Narrador e jogador", () => {
     const playerMobile = screen.getByRole("navigation", { name: "Navegação móvel da mesa" });
     for (const nav of [playerDesktop, playerMobile]) {
       expect(within(nav).getByRole("button", { name: "Minha ficha" })).toBeTruthy();
-      expect(within(nav).queryByRole("button", { name: "Registro" })).toBeNull();
+      expect(within(nav).getByRole("button", { name: "Registro" })).toBeTruthy();
     }
   });
 

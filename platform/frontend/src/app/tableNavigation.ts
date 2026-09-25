@@ -14,6 +14,7 @@ export const tableNavigation: Record<TableRole, { id: TableView; label: string; 
   jogador: [
     { id: "character", label: "Minha ficha", icon: "shield" },
     { id: "overview", label: "Grupo", icon: "users" },
+    { id: "activity", label: "Registro", icon: "scroll" },
     { id: "cards", label: "Biblioteca", icon: "cards" },
     { id: "room", label: "Sala", icon: "map" },
   ],

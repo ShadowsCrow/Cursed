@@ -60,12 +60,12 @@
 
 ## 7. Auditoria de alterações
 
-- [ ] 7.1 Modelar eventos semânticos append-only com ator, alvo, mesa, sessão, categoria, origem, correlação, resumo e visibilidade e verificar integridade e índices de consulta
-- [ ] 7.2 Integrar auditoria transacional aos comandos de personagem, inventário, efeito e permissão e verificar que falhas não deixam evento sem alteração nem alteração sem evento
-- [ ] 7.3 Consolidar edições intermediárias em uma única ação confirmada e verificar que digitação, foco e prévias não poluem o log
-- [ ] 7.4 Criar timeline do Narrador com filtros por sessão, ator, personagem, categoria e relevância e verificar combinações de filtros
-- [ ] 7.5 Implementar correção/restauração como novo comando vinculado ao evento anterior e verificar preservação de ambos os registros
-- [ ] 7.6 Sanitizar eventos conforme visibilidade e verificar que jogadores não descobrem NPCs, cartas ou detalhes ocultos por API, realtime ou interface
+- [x] 7.1 Modelar eventos semânticos append-only com ator, alvo, mesa, sessão, categoria, origem, correlação, resumo e visibilidade e verificar integridade e índices de consulta
+- [x] 7.2 Integrar auditoria transacional aos comandos de personagem, inventário, efeito e permissão e verificar que falhas não deixam evento sem alteração nem alteração sem evento
+- [x] 7.3 Consolidar edições intermediárias em uma única ação confirmada e verificar que digitação, foco e prévias não poluem o log
+- [x] 7.4 Criar timeline do Narrador com filtros por sessão, ator, personagem, categoria e relevância e verificar combinações de filtros
+- [x] 7.5 Implementar correção/restauração como novo comando vinculado ao evento anterior e verificar preservação de ambos os registros
+- [x] 7.6 Sanitizar eventos conforme visibilidade e verificar que jogadores não descobrem NPCs, cartas ou detalhes ocultos por API, realtime ou interface
 
 ## 8. Ferramentas do Narrador
 

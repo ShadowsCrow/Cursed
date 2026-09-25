@@ -25,7 +25,7 @@ describe("prévia navegável", () => {
     const mobileNav = screen.getByRole("navigation", { name: "Navegação móvel da mesa" });
     expect(within(desktopNav).getByRole("button", { name: "Minha ficha" })).toBeTruthy();
     expect(within(mobileNav).getByRole("button", { name: "Minha ficha" })).toBeTruthy();
-    expect(within(desktopNav).queryByRole("button", { name: "Registro" })).toBeNull();
+    expect(within(desktopNav).getByRole("button", { name: "Registro" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Ari Teste", level: 1 })).toBeTruthy();
   });
 

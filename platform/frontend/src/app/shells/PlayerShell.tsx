@@ -1,5 +1,6 @@
 import type { components } from "../../api/generated/schema";
 import { Portrait } from "../../ui/Display";
+import { AuditLog } from "../audit/AuditLog";
 import { CharacterList } from "../characters/CharacterList";
 import type { ApiClient } from "../characters/types";
 import type { TableView } from "../tableNavigation";
@@ -10,7 +11,7 @@ type Mesa = components["schemas"]["MesaResumo"];
 const playerCopy: Record<TableView, { eyebrow: string; title: string; description: string }> = {
   overview: { eyebrow: "GRUPO", title: "Sua companhia", description: "Os personagens visíveis do grupo aparecerão aqui quando as consultas de ficha estiverem disponíveis." },
   character: { eyebrow: "MINHA FICHA", title: "Seu personagem em foco", description: "Abra, crie ou exclua suas fichas conforme a política definida pelo Narrador desta mesa." },
-  activity: { eyebrow: "REGISTRO", title: "Registro", description: "" },
+  activity: { eyebrow: "REGISTRO", title: "Registro", description: "As ações que dizem respeito a você e ao grupo, na ordem em que aconteceram." },
   cards: { eyebrow: "BIBLIOTECA", title: "Suas cartas", description: "Habilidades, magias e itens autorizados aparecerão aqui quando o catálogo estiver conectado." },
   room: { eyebrow: "SALA", title: "Cena compartilhada", description: "A sala mostrará somente a cena e os elementos revelados ao grupo quando o módulo estiver ativo." },
 };
@@ -60,12 +61,14 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
     >
       {view === "character" ? (
         <CharacterList api={api} mesaId={mesa.id} userId={userId} role="jogador" onOpen={onOpenCharacter} />
+      ) : view === "activity" ? (
+        <AuditLog api={api} mesaId={mesa.id} role="jogador" />
       ) : (
         <section className="panel panel--wide workspace-status">
           <div>
             <span className="eyebrow">MESA ATIVA</span>
             <h2>{mesa.nome}</h2>
-            <p>O acesso e a navegação refletem seu papel de jogador nesta mesa. Registro, cartas e sala ainda não são apresentados nesta área.</p>
+            <p>O acesso e a navegação refletem seu papel de jogador nesta mesa. Cartas e sala ainda não são apresentadas nesta área.</p>
           </div>
           <span className="workspace-status__pill">Jogador</span>
         </section>

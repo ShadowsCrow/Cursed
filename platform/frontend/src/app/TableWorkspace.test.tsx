@@ -36,14 +36,14 @@ describe("shell autenticado da mesa", () => {
     expect(await screen.findByRole("heading", { name: "Seu personagem em foco" })).toBeTruthy();
     expect(screen.getByText("Caminhos de Sal", { selector: ".sidebar__campaign strong" })).toBeTruthy();
     expect(within(screen.getByRole("navigation", { name: "Navegação da mesa" })).getByRole("button", { name: "Minha ficha" })).toBeTruthy();
-    expect(within(screen.getByRole("navigation", { name: "Navegação móvel da mesa" })).queryByRole("button", { name: "Registro" })).toBeNull();
+    expect(within(screen.getByRole("navigation", { name: "Navegação móvel da mesa" })).getByRole("button", { name: "Registro" })).toBeTruthy();
     expect(get).toHaveBeenCalledWith("/mesas");
   });
 
-  it("não apresenta uma mesa fora da lista autorizada, nem aceita um painel exclusivo por URL", async () => {
-    renderTable("/mesas/mesa-b?painel=activity", [{ id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" }]);
+  it("não apresenta uma mesa fora da lista autorizada, nem aceita um painel inexistente por URL", async () => {
+    renderTable("/mesas/mesa-b?painel=inexistente", [{ id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" }]);
     expect(await screen.findByRole("heading", { name: "Seu personagem em foco" })).toBeTruthy();
-    expect(screen.queryByRole("navigation", { name: "Navegação da mesa" })?.textContent).not.toContain("Registro");
+    expect(within(screen.getByRole("navigation", { name: "Navegação da mesa" })).getByRole("button", { name: "Registro" })).toBeTruthy();
     cleanup();
     renderTable("/mesas/mesa-oculta", [{ id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" }]);
     expect(await screen.findByRole("heading", { name: "Mesa indisponível" })).toBeTruthy();
