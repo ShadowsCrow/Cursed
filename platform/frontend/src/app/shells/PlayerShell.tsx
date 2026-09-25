@@ -1,5 +1,7 @@
 import type { components } from "../../api/generated/schema";
 import { Portrait } from "../../ui/Display";
+import { CharacterList } from "../characters/CharacterList";
+import type { ApiClient } from "../characters/types";
 import type { TableView } from "../tableNavigation";
 import { WorkspaceChrome } from "./WorkspaceChrome";
 
@@ -7,7 +9,7 @@ type Mesa = components["schemas"]["MesaResumo"];
 
 const playerCopy: Record<TableView, { eyebrow: string; title: string; description: string }> = {
   overview: { eyebrow: "GRUPO", title: "Sua companhia", description: "Os personagens visíveis do grupo aparecerão aqui quando as consultas de ficha estiverem disponíveis." },
-  character: { eyebrow: "MINHA FICHA", title: "Seu personagem em foco", description: "As suas fichas e recursos de jogo serão exibidos aqui quando a gestão de personagens estiver conectada." },
+  character: { eyebrow: "MINHA FICHA", title: "Seu personagem em foco", description: "Abra, crie ou exclua suas fichas conforme a política definida pelo Narrador desta mesa." },
   activity: { eyebrow: "REGISTRO", title: "Registro", description: "" },
   cards: { eyebrow: "BIBLIOTECA", title: "Suas cartas", description: "Habilidades, magias e itens autorizados aparecerão aqui quando o catálogo estiver conectado." },
   room: { eyebrow: "SALA", title: "Cena compartilhada", description: "A sala mostrará somente a cena e os elementos revelados ao grupo quando o módulo estiver ativo." },
@@ -31,6 +33,9 @@ export interface PlayerShellProps {
   view: TableView;
   onNavigate: (view: TableView) => void;
   onSignOut: () => void;
+  api: ApiClient;
+  userId: string;
+  onOpenCharacter: (personagemId: string) => void;
 }
 
 /**
@@ -38,7 +43,7 @@ export interface PlayerShellProps {
  * um cartão exclusivo de "seu personagem" na barra lateral — sem a fila de
  * pendências nem os atalhos que só fazem sentido para o Narrador.
  */
-export function PlayerShell({ mesa, view, onNavigate, onSignOut }: PlayerShellProps) {
+export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter }: PlayerShellProps) {
   const copy = playerCopy[view];
   return (
     <WorkspaceChrome
@@ -53,14 +58,18 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut }: PlayerShellPr
       headerDescription={copy.description}
       sidebarExtra={<PlayerSnapshotPanel />}
     >
-      <section className="panel panel--wide workspace-status">
-        <div>
-          <span className="eyebrow">MESA ATIVA</span>
-          <h2>{mesa.nome}</h2>
-          <p>O acesso e a navegação refletem seu papel de jogador nesta mesa. Personagens, registro, cartas e sala ainda não são apresentados nesta área.</p>
-        </div>
-        <span className="workspace-status__pill">Jogador</span>
-      </section>
+      {view === "character" ? (
+        <CharacterList api={api} mesaId={mesa.id} userId={userId} role="jogador" onOpen={onOpenCharacter} />
+      ) : (
+        <section className="panel panel--wide workspace-status">
+          <div>
+            <span className="eyebrow">MESA ATIVA</span>
+            <h2>{mesa.nome}</h2>
+            <p>O acesso e a navegação refletem seu papel de jogador nesta mesa. Registro, cartas e sala ainda não são apresentados nesta área.</p>
+          </div>
+          <span className="workspace-status__pill">Jogador</span>
+        </section>
+      )}
     </WorkspaceChrome>
   );
 }

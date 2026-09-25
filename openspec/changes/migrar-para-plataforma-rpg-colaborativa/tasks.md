@@ -48,14 +48,14 @@
 
 ## 6. Gestão de personagens e ficha viva
 
-- [ ] 6.1 Implementar lista, criação, abertura, transferência e exclusão recuperável de personagens e verificar permissões de jogador e Narrador ponta a ponta
-- [ ] 6.2 Implementar cabeçalho visual da ficha com retrato, identidade, PV, PP e recursos relevantes e verificar carregamento com dados completos e ausentes
-- [ ] 6.3 Implementar navegação modular para informações básicas, personalidade, atributos, perícias, habilidades, equipamentos, inventário, status e efeitos e verificar preservação do contexto ao alternar seções
-- [ ] 6.4 Implementar modo de leitura como padrão e edição contextual autorizada e verificar que usuários sem permissão não recebem controles nem conseguem enviar o comando correspondente
-- [ ] 6.5 Implementar efeitos ativos como ícones com detalhes por hover, foco, clique e toque e verificar acessibilidade e conteúdo completo
-- [ ] 6.6 Implementar inventário e equipamento como estados visuais distintos, incluindo equipar e desequipar, e verificar atualização dos efeitos e valores derivados
-- [ ] 6.7 Implementar explicação das fontes de valores derivados e verificar um caso com contribuição simultânea de atributo, equipamento e efeito
-- [ ] 6.8 Implementar importação de efeito, equipamento e conteúdo portátil em diálogo com pré-visualização e verificar sucesso, cancelamento e erro sem mutação parcial
+- [x] 6.1 Implementar lista, criação, abertura, transferência e exclusão recuperável de personagens e verificar permissões de jogador e Narrador ponta a ponta
+- [x] 6.2 Implementar cabeçalho visual da ficha com retrato, identidade, PV, PP e recursos relevantes e verificar carregamento com dados completos e ausentes
+- [x] 6.3 Implementar navegação modular para informações básicas, personalidade, atributos, perícias, habilidades, equipamentos, inventário, status e efeitos e verificar preservação do contexto ao alternar seções
+- [x] 6.4 Implementar modo de leitura como padrão e edição contextual autorizada e verificar que usuários sem permissão não recebem controles nem conseguem enviar o comando correspondente
+- [x] 6.5 Implementar efeitos ativos como ícones com detalhes por hover, foco, clique e toque e verificar acessibilidade e conteúdo completo
+- [x] 6.6 Implementar inventário e equipamento como estados visuais distintos, incluindo equipar e desequipar, e verificar atualização dos efeitos e valores derivados
+- [x] 6.7 Implementar explicação das fontes de valores derivados e verificar um caso com contribuição simultânea de atributo, equipamento e efeito
+- [x] 6.8 Implementar importação de efeito, equipamento e conteúdo portátil em diálogo com pré-visualização e verificar sucesso, cancelamento e erro sem mutação parcial
 - [ ] 6.9 Validar a ficha nova contra as jornadas de paridade e registrar divergências restantes sem alterar o livro de regras
 
 ## 7. Auditoria de alterações

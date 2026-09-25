@@ -97,6 +97,27 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .page-intro p { margin: .5rem 0 0; color: var(--muted); max-width: 56rem; }
 .body-copy { color: #b9b7c2; line-height: 1.8; }
 
+/* Formulários usados em diálogos, painéis e popovers de edição contextual */
+label { display: grid; gap: .3rem; margin: 0 0 .6rem; font-size: .72rem; font-weight: 700; color: var(--muted); }
+input, textarea, select { width: 100%; padding: .6rem .75rem; border-radius: .5rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+textarea { min-height: 5rem; resize: vertical; }
+[role="alert"] { color: var(--red); font-size: .74rem; margin: .3rem 0; }
+
+.editable-field { display: grid; gap: .15rem; }
+.editable-field strong { font-size: .85rem; }
+.editable-field__popover { min-width: 18rem; }
+
+.effect-icon--suspenso { opacity: .5; filter: grayscale(.5); border-style: dashed; }
+
+.resource--unregistered .resource__head { color: var(--quiet); }
+.resource--unregistered p { margin: 0; }
+
+.import-preview ul { margin: .3rem 0; padding-left: 1.1rem; }
+.import-preview li { margin: .2rem 0; }
+
+.character-list-reset { list-style: none; margin: 0; padding: 0; }
+.character-tile__actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
 .hero-panel { overflow: hidden; position: relative; min-height: 316px; border: 1px solid #7b604460; border-radius: var(--radius-lg); background: radial-gradient(circle at 79% 35%,#795c585b,transparent 28%),radial-gradient(circle at 55% 90%,#392e4c,transparent 36%),linear-gradient(110deg,#292535,#211d2a 54%,#372929); display: flex; align-items: center; padding: clamp(2rem,4vw,3.4rem); box-shadow: var(--shadow-card); }
 .hero-panel::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg,transparent 55%,#e8bf6b12),repeating-linear-gradient(120deg,transparent 0 56px,#fff1 57px,transparent 58px); opacity: .35; }
 .hero-panel--player { background: radial-gradient(circle at 80% 35%,#72588070,transparent 31%),linear-gradient(110deg,#292535,#221f31 56%,#332c42); }

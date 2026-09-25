@@ -1,0 +1,88 @@
+import { Glyph } from "../../../ui/Display";
+import { Popover } from "../../../ui/primitives";
+import type { ValorDerivadoResumo } from "../types";
+
+const tipoFonteLabel: Record<string, string> = {
+  base: "Valor base",
+  ajuste: "Ajuste manual",
+  atributo: "Atributo",
+  pericia: "Perícia",
+  equipamento: "Equipamento",
+  efeito: "Efeito",
+};
+
+function comSinal(valor: number): string {
+  return valor >= 0 ? `+${valor}` : `${valor}`;
+}
+
+/**
+ * Um valor derivado com seu total e, sob demanda (popover acessível), a lista
+ * completa de fontes com sinal e os modificadores situacionais separados —
+ * deixando explícito que os situacionais não entram no total (design 7.1).
+ */
+export function DerivedValueRow({ valor }: { valor: ValorDerivadoResumo }) {
+  const situacionais = valor.situacionais ?? [];
+  return (
+    <div>
+      <span>
+        <strong>{valor.rotulo}</strong>
+        <small>{valor.fontes.length} {valor.fontes.length === 1 ? "fonte" : "fontes"}{situacionais.length > 0 ? ` · ${situacionais.length} situacional${situacionais.length > 1 ? "is" : ""}` : ""}</small>
+      </span>
+      <Popover label={`Fontes de ${valor.rotulo}`} triggerContent={<b>{comSinal(valor.total)}</b>} triggerClassName="derived-value__trigger">
+        <dl>
+          <dt>Total</dt>
+          <dd>{valor.total}</dd>
+          {valor.fontes.map((fonte, index) => (
+            <div key={`${fonte.tipo}-${index}`}>
+              <dt>{tipoFonteLabel[fonte.tipo] ?? fonte.tipo}{fonte.descricao ? ` — ${fonte.descricao}` : ""}</dt>
+              <dd>{comSinal(fonte.valor)}</dd>
+            </div>
+          ))}
+        </dl>
+        {situacionais.length > 0 && (
+          <>
+            <p className="eyebrow">Situacionais — não entram no total</p>
+            <dl>
+              {situacionais.map((situacional, index) => (
+                <div key={`${situacional.efeito_id}-${index}`}>
+                  <dt>{situacional.descricao} · {situacional.contexto}</dt>
+                  <dd>{comSinal(situacional.valor)}</dd>
+                </div>
+              ))}
+            </dl>
+          </>
+        )}
+      </Popover>
+    </div>
+  );
+}
+
+export function DerivedValueGroup({
+  eyebrow,
+  title,
+  valores,
+  grupo,
+  emptyMessage,
+}: {
+  eyebrow: string;
+  title: string;
+  valores: ValorDerivadoResumo[];
+  grupo: ValorDerivadoResumo["grupo"];
+  emptyMessage: string;
+}) {
+  const filtrados = valores.filter((valor) => valor.grupo === grupo);
+  return (
+    <section className="panel">
+      <div className="section-heading">
+        <div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2></div>
+      </div>
+      {filtrados.length === 0 ? (
+        <p className="preview-note"><Glyph name="eye" size={16} /> {emptyMessage}</p>
+      ) : (
+        <div className="attribute-list">
+          {filtrados.map((valor) => <DerivedValueRow key={valor.chave} valor={valor} />)}
+        </div>
+      )}
+    </section>
+  );
+}

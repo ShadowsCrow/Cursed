@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Route, Routes, useParams } from "react-router";
+import { Link, Route, Routes, useNavigate, useParams } from "react-router";
 import type { Session } from "@supabase/supabase-js";
 
 import { signInWithPassword, signOut } from "../auth/supabase";
+import { CharacterSheetPage } from "./characters/sheet/CharacterSheetPage";
 import type { createPlatformClients } from "./clients";
 import { TableWorkspace } from "./TableWorkspace";
 import { routePatterns, routes } from "./routes";
@@ -84,17 +85,24 @@ export function TablePage({ clients, userId, onSignOut }: { clients: Clients; us
   if (mesas.isError) return <main className="page"><ErrorNotice error={mesas.error} /><Link to={routes.home()}>Voltar às mesas</Link></main>;
   const mesa = mesas.data.find((item) => item.id === mesaId);
   if (!mesa) return <main className="page"><h1>Mesa indisponível</h1><p>Esta mesa não está entre as suas mesas ativas.</p><Link to={routes.home()}>Voltar às mesas</Link></main>;
-  return <TableWorkspace mesa={mesa} onSignOut={onSignOut} />;
+  return <TableWorkspace mesa={mesa} api={clients.api} userId={userId} onSignOut={onSignOut} />;
 }
 
-function CharacterPage() {
+function CharacterPage({ clients, userId }: { clients: Clients; userId: string }) {
   const { mesaId, personagemId } = useParams<"mesaId" | "personagemId">();
+  const navigate = useNavigate();
+  if (!mesaId || !personagemId) {
+    return <main className="page"><h1>Personagem indisponível</h1><Link to={routes.home()}>Voltar às mesas</Link></main>;
+  }
   return (
     <main className="page">
-      <Link to={routes.table(mesaId ?? "")}>Voltar à mesa</Link>
-      <h1>Personagem</h1>
-      <p>Identificador: {personagemId}</p>
-      <p>A ficha viva será adicionada nas próximas tarefas.</p>
+      <CharacterSheetPage
+        api={clients.api}
+        mesaId={mesaId}
+        personagemId={personagemId}
+        userId={userId}
+        onBack={() => navigate(routes.table(mesaId))}
+      />
     </main>
   );
 }
@@ -133,7 +141,7 @@ export function App({ clients }: { clients: Clients }) {
     <Routes>
       <Route path={routePatterns.home} element={<Tables clients={clients} userId={session.user.id} onSignOut={onSignOut} />} />
       <Route path={routePatterns.table} element={<TablePage clients={clients} userId={session.user.id} onSignOut={onSignOut} />} />
-      <Route path={routePatterns.character} element={<CharacterPage />} />
+      <Route path={routePatterns.character} element={<CharacterPage clients={clients} userId={session.user.id} />} />
       <Route path="*" element={<main className="page"><h1>Página não encontrada</h1><Link to={routes.home()}>Ir às mesas</Link></main>} />
     </Routes>
   );
