@@ -51,6 +51,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/canais": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Canais */
+        get: operations["listar_canais_mesas__mesa_id__canais_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/convites": {
         parameters: {
             query?: never;
@@ -234,6 +251,18 @@ export interface components {
             tipo: "atualizar_ficha";
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /** CanalPrivado */
+        CanalPrivado: {
+            /**
+             * Escopo
+             * @enum {string}
+             */
+            escopo: "mesa" | "narrador" | "personagem";
+            /** Personagem Id */
+            personagem_id?: string | null;
+            /** Topico */
+            topico: string;
         };
         /** ConviteCriado */
         ConviteCriado: {
@@ -498,6 +527,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MesaResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_canais_mesas__mesa_id__canais_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CanalPrivado"][];
                 };
             };
             /** @description Validation Error */

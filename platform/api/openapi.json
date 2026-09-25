@@ -68,6 +68,40 @@
         "title": "AtualizarFichaComando",
         "type": "object"
       },
+      "CanalPrivado": {
+        "properties": {
+          "escopo": {
+            "enum": [
+              "mesa",
+              "narrador",
+              "personagem"
+            ],
+            "title": "Escopo",
+            "type": "string"
+          },
+          "personagem_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personagem Id"
+          },
+          "topico": {
+            "title": "Topico",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topico",
+          "escopo"
+        ],
+        "title": "CanalPrivado",
+        "type": "object"
+      },
       "ConviteCriado": {
         "properties": {
           "codigo": {
@@ -589,6 +623,57 @@
         "summary": "Criar Mesa",
         "tags": [
           "Mesas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/canais": {
+      "get": {
+        "operationId": "listar_canais_mesas__mesa_id__canais_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CanalPrivado"
+                  },
+                  "title": "Response Listar Canais Mesas  Mesa Id  Canais Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Canais",
+        "tags": [
+          "Canais privados"
         ]
       }
     },

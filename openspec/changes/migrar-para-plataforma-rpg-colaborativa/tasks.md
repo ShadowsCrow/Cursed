@@ -35,7 +35,7 @@
 - [x] 4.3 Implementar papéis contextualizados por mesa e verificar que o mesmo usuário pode ser Narrador em uma mesa e jogador em outra
 - [x] 4.4 Implementar serviço central de autorização por ação, propriedade, política e visibilidade com negação por padrão e verificar matriz de allow/deny
 - [x] 4.5 Implementar políticas para criar, editar e excluir personagens próprios, inclusive campos bloqueados ou sujeitos a aprovação, e verificar cada combinação configurável
-- [ ] 4.6 Proteger arquivos e tópicos privados com as mesmas associações de mesa e verificar que um usuário externo não consegue enumerar nem receber recursos
+- [x] 4.6 Proteger arquivos e tópicos privados com as mesmas associações de mesa e verificar que um usuário externo não consegue enumerar nem receber recursos
 
 ## 5. Fundação do frontend e design system
 

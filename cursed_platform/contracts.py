@@ -101,6 +101,12 @@ class ParticipanteResumo(BaseModel):
     papel: Literal["narrador", "jogador"]
 
 
+class CanalPrivado(BaseModel):
+    topico: str
+    escopo: Literal["mesa", "narrador", "personagem"]
+    personagem_id: str | None = None
+
+
 class PoliticaMesaContrato(BaseModel):
     permitir_criacao_propria: bool
     permitir_edicao_propria: bool

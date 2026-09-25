@@ -23,6 +23,7 @@ class Acao(StrEnum):
     EDITAR_FICHA = "editar_ficha"
     EXCLUIR_PERSONAGEM = "excluir_personagem"
     APLICAR_EFEITO = "aplicar_efeito"
+    LER_CONTEUDO_NARRADOR = "ler_conteudo_narrador"
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,7 @@ class Autorizador:
             Acao.CONFIGURAR_POLITICAS,
             Acao.DECIDIR_ALTERACAO,
             Acao.APLICAR_EFEITO,
+            Acao.LER_CONTEUDO_NARRADOR,
         }:
             return DecisaoAcesso(narrador, motivo="Ação reservada ao Narrador.")
         if acao == Acao.CRIAR_PERSONAGEM:

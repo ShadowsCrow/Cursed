@@ -13,6 +13,7 @@ from cursed_platform.config import PlatformSettings, load_settings
 from .sheets import router as sheets_router
 from .tables import router as tables_router
 from .characters import router as characters_router
+from .channels import router as channels_router
 
 
 class HealthResponse(BaseModel):
@@ -39,6 +40,7 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(sheets_router)
     api.include_router(tables_router)
     api.include_router(characters_router)
+    api.include_router(channels_router)
 
     @api.get("/health", response_model=HealthResponse, tags=["Operação"])
     def health() -> HealthResponse:
