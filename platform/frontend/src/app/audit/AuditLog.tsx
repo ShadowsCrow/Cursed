@@ -24,6 +24,7 @@ const categoriaLabel: Record<CategoriaAuditoria, string> = {
   ficha: "Ficha",
   inventario: "Inventário",
   efeito: "Efeito",
+  carta: "Carta",
 };
 
 const categoriaIcon: Record<CategoriaAuditoria, GlyphName> = {
@@ -33,6 +34,7 @@ const categoriaIcon: Record<CategoriaAuditoria, GlyphName> = {
   ficha: "scroll",
   inventario: "bag",
   efeito: "bolt",
+  carta: "cards",
 };
 
 const relevanciaLabel: Record<RelevanciaAuditoria, string> = {
