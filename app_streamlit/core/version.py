@@ -1,0 +1,5 @@
+APP_NAME = "Cursed"
+APP_ID = "Cursed"
+APP_PUBLISHER = "ShadowsCrow"
+APP_VERSION = "1.0.0"
+CURRENT_SCHEMA_VERSION = 2

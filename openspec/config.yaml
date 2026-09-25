@@ -1,0 +1,91 @@
+schema: spec-driven
+
+context: |
+  Language: Português (Brasil)
+  All artifacts must be written in Português (Brasil).
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  Projeto: Cursed, um RPG de fantasia medieval focado em narrativa, apoiado por
+  mecânicas gamificadas e por uma ficha/aplicação digital iniciada em app_streamlit/app/ficha.py.
+
+  Separação entre livro de regras e aplicação:
+  - As páginas em rules/sistema são o livro de regras para a mesa. Devem explicar o que acontece na ficção, quais escolhas existem, quais números se aplicam e quando cada efeito termina, sem pressupor o uso da aplicação.
+  - Não incluir nessas páginas nomes de arquivos JSON, campos de dados, identificadores internos, codecs, formatos de compartilhamento, planos de interface ou estado atual da implementação.
+  - Contratos de dados, automação, migração e interface pertencem às especificações e aos documentos técnicos do OpenSpec. A aplicação deve representar as regras de mesa, não definir sua redação.
+
+  Objetivo e experiência desejada:
+  - A narrativa, as consequências e a identidade dos personagens e do grupo são o objetivo principal das regras.
+  - O sistema deve valorizar e recompensar soluções criativas, oferecendo ferramentas mecânicas para sustentá-las sem substituir interpretação, improvisação ou agência.
+  - A escassez de recursos deve ser mais presente do que em D&D e deve gerar escolhas relevantes, tensão e preparação.
+  - A dificuldade deve ser elevada o bastante para que o combate seja uma decisão arriscada e frequentemente evitável, sem deixar de ser divertido quando acontece.
+  - O combate deve permitir personalização perceptível, expressão das escolhas do personagem e estilos distintos de jogo.
+  - Classes devem ter identidade forte e serem mecanicamente distintas entre si e das soluções mais comuns do mercado de fantasia medieval.
+  - Habilidades podem e devem enfatizar utilidade, criatividade e interação com a ficção, não apenas dano ou eficiência em combate.
+
+  Modularidade e identidade coletiva:
+  - Mecânicas especializadas devem ser modulares e ativadas conforme o tema, o objetivo e as necessidades da campanha; nem todo módulo precisa estar ativo em toda mesa.
+  - Módulos devem existir para servir a uma experiência narrativa identificável, e não apenas para simular detalhes.
+  - Sistemas futuros podem representar projetos coletivos, como bases móveis, quando criarem pertencimento, investimento, progresso e identidade própria para o grupo.
+  - Toda alteração de regras deve identificar explicitamente se pertence ao núcleo, a um módulo opcional ou a uma ferramenta exclusiva do mestre.
+
+  Complexidade e suporte digital:
+  - Complexidade é aceitável quando cria agência, escolhas relevantes, tensão, personalização ou consequências narrativas.
+  - Contabilidade, cálculos ou etapas que não mudam decisões relevantes devem ser automatizados, condensados ou simplificados.
+  - A existência da aplicação permite cálculos e rastreamento mais sofisticados; portanto, uma regra não deve ser simplificada apenas por envolver aritmética.
+  - Mesmo quando automatizada, a regra deve apresentar ao jogador causas, escolhas e consequências compreensíveis.
+  - Ainda não está decidido se a aplicação será obrigatória para jogar ou apenas uma facilitadora; nenhuma especificação deve presumir uma dessas alternativas sem nova decisão.
+  - Alterações devem considerar conjuntamente os documentos em rules/sistema, os dados estruturados em app_streamlit/data/catalogs e o comportamento da aplicação.
+
+  Criação e evolução de habilidades e magias:
+  - O projeto inclui um framework de balanceamento e criação destinado ao mestre; o jogador não interage diretamente com esse framework.
+  - O framework deve permitir ao mestre solicitar uma habilidade ou magia para uma potência ou grau desejado, avaliar uma criação já descrita e ajustá-la a um alvo de balanceamento.
+  - A IA pode interpretar o pedido e propor conteúdo, mas o framework/calculadora deve aplicar critérios reproduzíveis para classificar e equilibrar a criação, evitando depender apenas de julgamento arbitrário da IA.
+  - A avaliação deve contemplar, conforme aplicável, Grau, Custo de Aprendizado, Descansos Mínimos, potência e custo de uso, requisitos, limitações e demais componentes definidos pelo framework.
+  - Criações novas devem preservar a identidade das classes, seus diferenciais e o espaço mecânico ocupado por outras habilidades.
+  - Habilidades e magias prontas devem coexistir com a criação assistida; o mestre não deve ser obrigado a inventar conteúdo constantemente.
+  - A integração futura desse framework à aplicação deve partir de app_streamlit/app/ficha.py, mas sua implementação não faz parte automaticamente de toda revisão de regras.
+  - Para uma futura representação digital das criações, preservar separados custo_aprendizado, potencia_uso, custo_uso e custo_adicional. O campo legado custo pode misturar PP com outros recursos e exige revisão caso a caso antes de migrar. Passivas contínuas sem ativação têm custo_uso 0; criações ainda indefinidas podem permanecer sem esses valores. Não inferir custo_uso a partir de custo sem calcular Potência de Uso.
+  - Pendente de integração dos dados de classe: explicitar as escolas concedidas por cada classe e arquétipo, começando por Mago e Mutante Arcano, Feiticeiro, Acolito, Druida, Ocultista, Gatuno Psionico e Virtuoso Mestre Pixie. Registrar se o acesso é inicial, adquirido por nível ou condicionado a escolha. Até lá, o livro de regras não presume acesso a todas as escolas pelo nome da classe.
+
+  Autoridade do mestre sobre a evolução:
+  - O mestre decide livremente quando criar e introduzir habilidades ou magias durante a aventura, sem depender de um gatilho narrativo obrigatório.
+  - O mestre pode oferecer uma ou várias opções, impor uma evolução específica, criar trilhas ou organizar oportunidades de outra forma adequada à campanha.
+  - O sistema não deve mecanizar quantidade, frequência, composição ou formato dessas ofertas; o framework equilibra o conteúdo criado, não governa sua distribuição na campanha.
+  - Ter acesso a uma oportunidade de evolução não concede automaticamente a habilidade: como regra geral, ela ainda exige Custo de Aprendizado em PP e treino pela mecânica de aprendizado, inclusive os Descansos Mínimos aplicáveis, salvo exceção explicitamente definida pelo mestre ou por outra regra.
+
+  Critérios para revisão das regras existentes:
+  - Não presumir que uma mecânica complexa deve ser simplificada. Primeiro identificar sua finalidade narrativa, as decisões que produz, a carga manual restante após automação e suas interações com outras regras.
+  - Distinguir profundidade de complexidade operacional: preservar opções e consequências valiosas, mas reduzir consultas, exceções redundantes e manutenção sem decisão.
+  - Avaliar cada subsistema quanto a complexidade, contribuição narrativa, potencial de diversão, potencial de conversão em uma versão mais divertida, agência, carga operacional e adequação ao núcleo ou a módulos.
+  - Permanecem abertas, e não devem ser tratadas como decisões consolidadas, as revisões de Críticos naturais e desempate de dois 20; Descanso, recuperação e aprendizado; Condições e tipos de dano; Exaustão e Estresse; Carga e equipamentos; e o próprio framework de habilidades e magias.
+  - Para Carga, são direções em estudo, não regras finais: slots influenciados por Força e tamanho; agrupamento de miudezas; moedas considerando peso e volume; itens utilitários ocupando slots ou frações; recipientes alterando capacidade; interação simplificada com Exaustão; e regras para erguer, arrastar, nadar e afundar.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+rules:
+  proposal:
+    - Declare o problema narrativo ou de experiência de jogo antes da solução mecânica.
+    - Classifique a mudança como núcleo, módulo opcional ou ferramenta exclusiva do Narrador.
+    - Inclua uma seção de Non-goals para evitar expansão acidental do escopo.
+  specs:
+    - Use cenários observáveis de mesa e, quando aplicável, cenários de automação pela aplicação digital.
+    - Diferencie claramente decisões do jogador de cálculos automáticos do sistema digital.
+  design:
+    - Explique o impacto sobre escassez, risco de combate, ritmo narrativo e carga cognitiva.
+    - Registre interações com outras mecânicas e os arquivos ou dados que precisarão de migração.
+  tasks:
+    - Separe atualizações de regras, dados, interface, migração e verificação.
+    - Inclua validação de mesa para qualquer mudança mecânica relevante.
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

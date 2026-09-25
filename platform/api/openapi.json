@@ -1,0 +1,1218 @@
+{
+  "components": {
+    "schemas": {
+      "AceitarConviteRequest": {
+        "properties": {
+          "codigo": {
+            "minLength": 1,
+            "title": "Codigo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ],
+        "title": "AceitarConviteRequest",
+        "type": "object"
+      },
+      "AtualizarFichaComando": {
+        "additionalProperties": false,
+        "properties": {
+          "ator_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Ator Id",
+            "type": "string"
+          },
+          "ficha": {
+            "$ref": "#/components/schemas/FichaContrato"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "mesa_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Mesa Id",
+            "type": "string"
+          },
+          "personagem_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "tipo": {
+            "const": "atualizar_ficha",
+            "default": "atualizar_ficha",
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "mesa_id",
+          "ator_id",
+          "versao_esperada",
+          "personagem_id",
+          "ficha"
+        ],
+        "title": "AtualizarFichaComando",
+        "type": "object"
+      },
+      "ConviteCriado": {
+        "properties": {
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "expira_em": {
+            "format": "date-time",
+            "title": "Expira Em",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "expira_em"
+        ],
+        "title": "ConviteCriado",
+        "type": "object"
+      },
+      "CriarConviteRequest": {
+        "properties": {
+          "validade_dias": {
+            "default": 7,
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Validade Dias",
+            "type": "integer"
+          }
+        },
+        "title": "CriarConviteRequest",
+        "type": "object"
+      },
+      "CriarMesaRequest": {
+        "properties": {
+          "nome": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome"
+        ],
+        "title": "CriarMesaRequest",
+        "type": "object"
+      },
+      "CriarPersonagemRequest": {
+        "properties": {
+          "ficha": {
+            "$ref": "#/components/schemas/FichaContrato"
+          }
+        },
+        "required": [
+          "ficha"
+        ],
+        "title": "CriarPersonagemRequest",
+        "type": "object"
+      },
+      "DecidirPedidoRequest": {
+        "properties": {
+          "aprovar": {
+            "title": "Aprovar",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "aprovar"
+        ],
+        "title": "DecidirPedidoRequest",
+        "type": "object"
+      },
+      "FichaContrato": {
+        "additionalProperties": true,
+        "description": "Representação compatível de uma ficha transportada pela API.",
+        "properties": {
+          "armaduras": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Armaduras",
+            "type": "array"
+          },
+          "armas": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Armas",
+            "type": "array"
+          },
+          "atributos": {
+            "additionalProperties": true,
+            "title": "Atributos",
+            "type": "object"
+          },
+          "efeitos_externos": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Efeitos Externos",
+            "type": "array"
+          },
+          "outros": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Outros",
+            "type": "array"
+          },
+          "pericias": {
+            "additionalProperties": true,
+            "title": "Pericias",
+            "type": "object"
+          },
+          "personagem": {
+            "additionalProperties": true,
+            "title": "Personagem",
+            "type": "object"
+          },
+          "personalidade": {
+            "additionalProperties": true,
+            "title": "Personalidade",
+            "type": "object"
+          }
+        },
+        "title": "FichaContrato",
+        "type": "object"
+      },
+      "FichaSnapshot": {
+        "properties": {
+          "ficha": {
+            "$ref": "#/components/schemas/FichaContrato"
+          },
+          "mesa_id": {
+            "title": "Mesa Id",
+            "type": "string"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mesa_id",
+          "personagem_id",
+          "versao",
+          "ficha"
+        ],
+        "title": "FichaSnapshot",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "MesaResumo": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "papel": {
+            "enum": [
+              "narrador",
+              "jogador"
+            ],
+            "title": "Papel",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "papel"
+        ],
+        "title": "MesaResumo",
+        "type": "object"
+      },
+      "ParticipanteResumo": {
+        "properties": {
+          "papel": {
+            "enum": [
+              "narrador",
+              "jogador"
+            ],
+            "title": "Papel",
+            "type": "string"
+          },
+          "usuario_id": {
+            "title": "Usuario Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "usuario_id",
+          "papel"
+        ],
+        "title": "ParticipanteResumo",
+        "type": "object"
+      },
+      "PedidoAlteracaoResumo": {
+        "properties": {
+          "campos_alterados": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Campos Alterados",
+            "type": "array"
+          },
+          "estado": {
+            "enum": [
+              "pendente",
+              "aprovado",
+              "rejeitado"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "ficha_proposta": {
+            "$ref": "#/components/schemas/FichaContrato"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "mesa_id": {
+            "title": "Mesa Id",
+            "type": "string"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "solicitante_id": {
+            "title": "Solicitante Id",
+            "type": "string"
+          },
+          "versao_base": {
+            "title": "Versao Base",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "mesa_id",
+          "personagem_id",
+          "solicitante_id",
+          "versao_base",
+          "campos_alterados",
+          "estado",
+          "ficha_proposta"
+        ],
+        "title": "PedidoAlteracaoResumo",
+        "type": "object"
+      },
+      "PoliticaMesaContrato": {
+        "properties": {
+          "campos_bloqueados": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Campos Bloqueados",
+            "type": "array"
+          },
+          "campos_exigem_aprovacao": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Campos Exigem Aprovacao",
+            "type": "array"
+          },
+          "permitir_criacao_propria": {
+            "title": "Permitir Criacao Propria",
+            "type": "boolean"
+          },
+          "permitir_edicao_propria": {
+            "title": "Permitir Edicao Propria",
+            "type": "boolean"
+          },
+          "permitir_exclusao_propria": {
+            "title": "Permitir Exclusao Propria",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "permitir_criacao_propria",
+          "permitir_edicao_propria",
+          "permitir_exclusao_propria"
+        ],
+        "title": "PoliticaMesaContrato",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "API autoritativa da plataforma colaborativa Cursed.",
+    "title": "Cursed — Plataforma Colaborativa",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/convites/aceitar": {
+      "post": {
+        "operationId": "aceitar_convite_convites_aceitar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AceitarConviteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MesaResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Aceitar Convite",
+        "tags": [
+          "Mesas"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "Operação"
+        ]
+      }
+    },
+    "/mesas": {
+      "get": {
+        "operationId": "listar_mesas_mesas_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MesaResumo"
+                  },
+                  "title": "Response Listar Mesas Mesas Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Mesas",
+        "tags": [
+          "Mesas"
+        ]
+      },
+      "post": {
+        "operationId": "criar_mesa_mesas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarMesaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MesaResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Mesa",
+        "tags": [
+          "Mesas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/convites": {
+      "post": {
+        "operationId": "criar_convite_mesas__mesa_id__convites_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarConviteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConviteCriado"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Convite",
+        "tags": [
+          "Mesas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/participantes": {
+      "get": {
+        "operationId": "listar_participantes_mesas__mesa_id__participantes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ParticipanteResumo"
+                  },
+                  "title": "Response Listar Participantes Mesas  Mesa Id  Participantes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Participantes",
+        "tags": [
+          "Mesas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/participantes/{usuario_id}": {
+      "delete": {
+        "operationId": "remover_participante_mesas__mesa_id__participantes__usuario_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "usuario_id",
+            "required": true,
+            "schema": {
+              "title": "Usuario Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remover Participante",
+        "tags": [
+          "Mesas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens": {
+      "post": {
+        "operationId": "criar_personagem_mesas__mesa_id__personagens_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarPersonagemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Personagem",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}": {
+      "delete": {
+        "operationId": "excluir_personagem_mesas__mesa_id__personagens__personagem_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versao_esperada",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Versao Esperada",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Excluir Personagem",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/ficha": {
+      "get": {
+        "operationId": "ler_ficha_mesas__mesa_id__personagens__personagem_id__ficha_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Ficha",
+        "tags": [
+          "Fichas"
+        ]
+      },
+      "put": {
+        "operationId": "gravar_ficha_mesas__mesa_id__personagens__personagem_id__ficha_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarFichaComando"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PedidoAlteracaoResumo"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Gravar Ficha",
+        "tags": [
+          "Fichas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/politicas": {
+      "get": {
+        "operationId": "ler_politicas_mesas__mesa_id__politicas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaMesaContrato"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Politicas",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      },
+      "put": {
+        "operationId": "configurar_politicas_mesas__mesa_id__politicas_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoliticaMesaContrato"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaMesaContrato"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Configurar Politicas",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/solicitacoes": {
+      "get": {
+        "operationId": "listar_solicitacoes_mesas__mesa_id__solicitacoes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PedidoAlteracaoResumo"
+                  },
+                  "title": "Response Listar Solicitacoes Mesas  Mesa Id  Solicitacoes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Solicitacoes",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/solicitacoes/{pedido_id}/decisao": {
+      "post": {
+        "operationId": "decidir_solicitacao_mesas__mesa_id__solicitacoes__pedido_id__decisao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pedido_id",
+            "required": true,
+            "schema": {
+              "title": "Pedido Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecidirPedidoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PedidoAlteracaoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decidir Solicitacao",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      }
+    }
+  }
+}

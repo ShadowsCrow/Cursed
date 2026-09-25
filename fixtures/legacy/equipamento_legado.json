@@ -1,0 +1,5 @@
+{
+  "tipo": "outro",
+  "item": {"nome": "Lanterna de fixture", "quantidade": 1},
+  "efeitos": [{"kind": "externo", "nome": "Luz de teste", "descricao": "Ilumina uma área pequena."}]
+}

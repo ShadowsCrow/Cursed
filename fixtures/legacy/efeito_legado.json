@@ -1,0 +1,5 @@
+{
+  "nome": "Luz de teste",
+  "descricao": "Ilumina uma área pequena.",
+  "modificadores": [{"alvo": "pericia:investigacao", "valor": 1}]
+}

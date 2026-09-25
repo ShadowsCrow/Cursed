@@ -1,0 +1,16 @@
+{
+  "personagem": {
+    "nome": "Ari Teste",
+    "raca": "Humano",
+    "classe": "Guerreiro",
+    "arquetipo": "Sentinela",
+    "cor_classe": "#345678"
+  },
+  "personalidade": {"alinhamento": "Neutro", "meu_lema": "Proteger o grupo."},
+  "atributos": {"valores": {"Força": 2}, "totais": {"Força": 2}, "ajustes": {"Força": 0}},
+  "pericias": {"valores": {"Prontidão": 1}, "totais": {"Prontidão": 1}, "ajustes": {"Prontidão": 0}},
+  "armas": [],
+  "armaduras": [],
+  "outros": [],
+  "efeitos_externos": []
+}

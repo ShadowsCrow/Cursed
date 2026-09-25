@@ -1,0 +1,19 @@
+{
+  "personagem": {
+    "nome": "Nara Exemplo",
+    "idade": 28,
+    "raca": "Elfo",
+    "classe": "Feiticeiro",
+    "arquetipo": "Arcano",
+    "cor_classe": "#8B008B",
+    "habilidades": [{"nome": "Rajada de Energia", "tipo": "Ativa", "dano": "1d10"}]
+  },
+  "personalidade": {"alinhamento": "Caótico | Bom", "pecado": "Orgulho", "meu_lema": "A magia encontra uma saída."},
+  "atributos": {"valores": {"Força": 1, "Inteligência": 3}, "totais": {"Força": 1, "Inteligência": 4}, "ajustes": {"Força": 0, "Inteligência": 1}},
+  "pericias": {"valores": {"Arcanismo": 4, "Furtividade": 3}, "totais": {"Arcanismo": 5, "Furtividade": 3}, "ajustes": {"Arcanismo": 1, "Furtividade": 0}},
+  "armas": [{"nome": "Adaga de treino", "dano": "1d4", "origem": "fixture"}],
+  "armaduras": [{"nome": "Manto reforçado", "defesa": 1, "origem": "fixture"}],
+  "outros": [{"nome": "Lanterna de Nara", "quantidade": 1, "origem": "fixture"}],
+  "efeitos_externos": [{"nome": "Marca de teste", "descricao": "+2 em Arcanismo.", "modificadores": [{"alvo": "pericia:arcanismo", "valor": 2}], "origem": {"tipo": "fixture", "id": "efeito-1"}}],
+  "campo_desconhecido": {"preservar": true}
+}
