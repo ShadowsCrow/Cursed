@@ -126,7 +126,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Listar Personagens
+         * @description Personagens que o ator pode abrir; excluídos recuperáveis somente para o Narrador.
+         */
+        get: operations["listar_personagens_mesas__mesa_id__personagens_get"];
         put?: never;
         /** Criar Personagem */
         post: operations["criar_personagem_mesas__mesa_id__personagens_post"];
@@ -165,6 +169,43 @@ export interface paths {
         /** Gravar Ficha */
         put: operations["gravar_ficha_mesas__mesa_id__personagens__personagem_id__ficha_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/restauracao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restaurar Personagem */
+        post: operations["restaurar_personagem_mesas__mesa_id__personagens__personagem_id__restauracao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/transferencia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transferir Personagem
+         * @description Narrador define o proprietário; `null` deixa o personagem sob controle exclusivo do Narrador.
+         */
+        post: operations["transferir_personagem_mesas__mesa_id__personagens__personagem_id__transferencia_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -399,6 +440,33 @@ export interface components {
             /** Versao Base */
             versao_base: number;
         };
+        /** PersonagemResumo */
+        PersonagemResumo: {
+            /** Excluido Em */
+            excluido_em?: string | null;
+            /** Id */
+            id: string;
+            /** Mesa Id */
+            mesa_id: string;
+            /** Nome */
+            nome: string;
+            /** Proprietario Id */
+            proprietario_id: string | null;
+            /** Restauravel Ate */
+            restauravel_ate?: string | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "personagem" | "npc" | "monstro";
+            /** Versao */
+            versao: number;
+            /**
+             * Visibilidade
+             * @enum {string}
+             */
+            visibilidade: "mesa" | "narrador";
+        };
         /** PoliticaMesaContrato */
         PoliticaMesaContrato: {
             /** Campos Bloqueados */
@@ -411,6 +479,13 @@ export interface components {
             permitir_edicao_propria: boolean;
             /** Permitir Exclusao Propria */
             permitir_exclusao_propria: boolean;
+        };
+        /** TransferirPersonagemRequest */
+        TransferirPersonagemRequest: {
+            /** Proprietario Id */
+            proprietario_id?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -667,6 +742,39 @@ export interface operations {
             };
         };
     };
+    listar_personagens_mesas__mesa_id__personagens_get: {
+        parameters: {
+            query?: {
+                excluidos?: boolean;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonagemResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     criar_personagem_mesas__mesa_id__personagens_post: {
         parameters: {
             query?: never;
@@ -798,6 +906,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PedidoAlteracaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restaurar_personagem_mesas__mesa_id__personagens__personagem_id__restauracao_post: {
+        parameters: {
+            query: {
+                versao_esperada: number;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonagemResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transferir_personagem_mesas__mesa_id__personagens__personagem_id__transferencia_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferirPersonagemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonagemResumo"];
                 };
             };
             /** @description Validation Error */

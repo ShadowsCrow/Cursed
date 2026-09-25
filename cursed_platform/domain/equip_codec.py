@@ -21,7 +21,7 @@ def _texto(valor: Any) -> str:
 
 def _sanitize_token(raw: str) -> str:
     texto = unicodedata.normalize("NFKC", raw or "")
-    texto = texto.replace("â€“", "-").replace("â€”", "-").replace("âˆ’", "-")
+    texto = texto.replace("–", "-").replace("—", "-").replace("−", "-")
     ignorados = {"\u200b", "\u200c", "\u200d", "\ufeff"}
     return "".join(
         caractere
@@ -39,14 +39,14 @@ def _encode_payload(prefixo: str, payload: Mapping[str, Any]) -> str:
 
 def _decode_payload(codigo: str, prefixo: str) -> Dict[str, Any]:
     if not isinstance(codigo, str) or not codigo.strip():
-        raise ValueError("CÃ³digo vazio.")
+        raise ValueError("Código vazio.")
     codigo = codigo.strip()
     esperado = f"{prefixo}:"
     if not codigo.startswith(esperado):
-        raise ValueError(f"Formato invÃ¡lido (prefixo esperado: {esperado}).")
+        raise ValueError(f"Formato inválido (prefixo esperado: {esperado}).")
     token = _sanitize_token(codigo[len(esperado) :])
     if not token:
-        raise ValueError("Token base64 ausente apÃ³s sanitizaÃ§Ã£o.")
+        raise ValueError("Token base64 ausente após sanitização.")
     padding = (-len(token)) % 4
     try:
         comprimido = base64.urlsafe_b64decode((token + "=" * padding).encode("ascii"))
@@ -59,18 +59,18 @@ def _decode_payload(codigo: str, prefixo: str) -> Dict[str, Any]:
     except ValueError:
         raise
     except Exception as erro:
-        raise ValueError(f"CÃ³digo invÃ¡lido: {erro}") from erro
+        raise ValueError(f"Código inválido: {erro}") from erro
     if not isinstance(payload, dict):
-        raise ValueError("Payload invÃ¡lido: era esperado um objeto JSON.")
+        raise ValueError("Payload inválido: era esperado um objeto JSON.")
     return payload
 
 
 def _normalizar_base(tipo: Any, item: Any) -> tuple[str, Dict[str, Any]]:
     tipo_normalizado = _texto(tipo).casefold()
     if tipo_normalizado not in VALID_TYPES:
-        raise ValueError("Tipo invÃ¡lido (use arma, armadura ou outro).")
+        raise ValueError("Tipo inválido (use arma, armadura ou outro).")
     if not isinstance(item, Mapping) or not item:
-        raise ValueError("Item invÃ¡lido: era esperado um objeto nÃ£o vazio.")
+        raise ValueError("Item inválido: era esperado um objeto não vazio.")
     return tipo_normalizado, deepcopy(dict(item))
 
 
@@ -80,7 +80,7 @@ def normalizar_equipamento_eq1(payload: Any) -> Dict[str, Any]:
     tipo, item = _normalizar_base(payload.get("tipo"), payload.get("item"))
     efeitos = payload.get("efeitos", [])
     if not isinstance(efeitos, list):
-        raise ValueError("Efeitos invÃ¡lidos: era esperada uma lista.")
+        raise ValueError("Efeitos inválidos: era esperada uma lista.")
     normalizados: List[Dict[str, Any]] = []
     for efeito in efeitos:
         if not isinstance(efeito, Mapping):
@@ -138,7 +138,7 @@ def normalizar_equipamento_eq2(payload: Any) -> Dict[str, Any]:
     tipo, item = _normalizar_base(payload.get("tipo"), payload.get("item"))
     efeitos = payload.get("efeitos", [])
     if not isinstance(efeitos, list):
-        raise ValueError("Efeitos invÃ¡lidos: era esperada uma lista.")
+        raise ValueError("Efeitos inválidos: era esperada uma lista.")
 
     normalizados: List[Dict[str, Any]] = []
     for efeito in efeitos:
@@ -196,7 +196,7 @@ def encode_equipment(
         return encode_equipment_eq1(tipo, item, efeitos)
     if versao == 2:
         return encode_equipment_eq2(tipo, item, efeitos)
-    raise ValueError(f"VersÃ£o de equipamento nÃ£o suportada: {versao}")
+    raise ValueError(f"Versão de equipamento não suportada: {versao}")
 
 
 def decode_equipment(code: str) -> Dict[str, Any]:
@@ -205,6 +205,6 @@ def decode_equipment(code: str) -> Dict[str, Any]:
         return decode_equipment_eq1(code)
     if prefixo == "EQ2":
         return decode_equipment_eq2(code)
-    raise ValueError("Formato invÃ¡lido (prefixos aceitos: EQ1: ou EQ2:).")
+    raise ValueError("Formato inválido (prefixos aceitos: EQ1: ou EQ2:).")
 
 

@@ -56,7 +56,7 @@ def _numero(valor: Any) -> int | float | None:
 
 
 def normalizar_modificador(valor: Any) -> Dict[str, Any]:
-    """Metadado numÃƒÂ©rico opcional; a descriÃƒÂ§ÃƒÂ£o continua sendo a regra."""
+    """Metadado numérico opcional; a descrição continua sendo a regra."""
     if not isinstance(valor, Mapping):
         raise ValueError("Um modificador precisa ser um objeto.")
     validar_conteudo_declarativo(valor)
@@ -64,13 +64,13 @@ def normalizar_modificador(valor: Any) -> Dict[str, Any]:
     alvo = _texto(modificador.get("alvo"))
     numero = _numero(modificador.get("valor"))
     if not alvo or numero is None:
-        raise ValueError("Modificador precisa de alvo e valor numÃƒÂ©rico finito.")
+        raise ValueError("Modificador precisa de alvo e valor numérico finito.")
     modificador["alvo"] = alvo
     modificador["valor"] = numero
     if "quando" in modificador:
         quando = _texto(modificador["quando"])
         if not quando:
-            raise ValueError("O contexto do modificador nÃƒÂ£o pode ser vazio.")
+            raise ValueError("O contexto do modificador não pode ser vazio.")
         modificador["quando"] = quando
     return modificador
 
@@ -95,13 +95,13 @@ def validar_conteudo_declarativo(valor: Any) -> None:
     if perigosos:
         raise ValueError(
             "Efeitos estruturados aceitam somente dados declarativos; "
-            f"campos executÃƒÂ¡veis encontrados: {', '.join(perigosos)}"
+            f"campos executáveis encontrados: {', '.join(perigosos)}"
         )
 
 
 def normalizar_operacao(valor: Any, *, estrito: bool = False) -> Dict[str, Any]:
     if not isinstance(valor, Mapping):
-        raise ValueError("A operaÃƒÂ§ÃƒÂ£o precisa ser um objeto.")
+        raise ValueError("A operação precisa ser um objeto.")
     operacao = deepcopy(dict(valor))
     tipo = _texto(operacao.get("tipo")).casefold()
     alvo = _texto(operacao.get("alvo"))
@@ -109,9 +109,9 @@ def normalizar_operacao(valor: Any, *, estrito: bool = False) -> Dict[str, Any]:
     if estrito:
         validar_conteudo_declarativo(operacao)
         if tipo not in TIPOS_OPERACAO:
-            raise ValueError(f"Tipo de operaÃƒÂ§ÃƒÂ£o desconhecido: {tipo or '<vazio>'}")
+            raise ValueError(f"Tipo de operação desconhecido: {tipo or '<vazio>'}")
         if not alvo:
-            raise ValueError("A operaÃƒÂ§ÃƒÂ£o precisa declarar um alvo.")
+            raise ValueError("A operação precisa declarar um alvo.")
 
     operacao["tipo"] = tipo
     operacao["alvo"] = alvo
@@ -119,19 +119,19 @@ def normalizar_operacao(valor: Any, *, estrito: bool = False) -> Dict[str, Any]:
     if tipo == "modificador":
         numero = _numero(operacao.get("valor"))
         if estrito and numero is None:
-            raise ValueError("Uma operaÃƒÂ§ÃƒÂ£o modificador precisa de valor numÃƒÂ©rico.")
+            raise ValueError("Uma operação modificador precisa de valor numérico.")
         if numero is not None:
             operacao["valor"] = numero
     elif tipo == "restricao":
         modo = _texto(operacao.get("modo")).casefold()
         if estrito and not modo:
-            raise ValueError("Uma operaÃƒÂ§ÃƒÂ£o restricao precisa declarar o modo.")
+            raise ValueError("Uma operação restricao precisa declarar o modo.")
         operacao["modo"] = modo
     elif tipo == "alteracao_recurso":
         recurso = _texto(operacao.get("recurso")).casefold()
         numero = _numero(operacao.get("valor"))
         if estrito and (not recurso or numero is None):
-            raise ValueError("alteracao_recurso precisa de recurso e valor numÃƒÂ©rico.")
+            raise ValueError("alteracao_recurso precisa de recurso e valor numérico.")
         operacao["recurso"] = recurso
         if numero is not None:
             operacao["valor"] = numero
@@ -180,7 +180,7 @@ def normalizar_efeito(
     modificadores = [normalizar_modificador(item) for item in modificadores_brutos]
     substitui = [_texto(item) for item in substitui_bruto]
     if estrito and any(not item for item in substitui):
-        raise ValueError("As associaÃƒÂ§ÃƒÂµes substituÃƒÂ­das precisam ser nomes vÃƒÂ¡lidos.")
+        raise ValueError("As associações substituídas precisam ser nomes válidos.")
     versao_padrao = 2 if operacoes else 1
     try:
         versao = int(efeito.get("versao", versao_padrao))
@@ -209,14 +209,14 @@ def normalizar_efeito(
 
 def validar_catalogo(efeitos: Any) -> List[Dict[str, Any]]:
     if not isinstance(efeitos, list):
-        raise ValueError("O catÃƒÂ¡logo de efeitos precisa ser uma lista.")
+        raise ValueError("O catálogo de efeitos precisa ser uma lista.")
     normalizados: List[Dict[str, Any]] = []
     associacoes: set[str] = set()
     for bruto in efeitos:
         efeito = normalizar_efeito(bruto, estrito=True, exigir_associacao=True)
         associacao = efeito["associacao"]
         if associacao in associacoes:
-            raise ValueError(f"AssociaÃƒÂ§ÃƒÂ£o de efeito duplicada: {associacao}")
+            raise ValueError(f"Associação de efeito duplicada: {associacao}")
         associacoes.add(associacao)
         normalizados.append(efeito)
     return normalizados
@@ -233,7 +233,7 @@ def indexar_catalogo(efeitos: Iterable[Mapping[str, Any]]) -> Dict[str, Dict[str
         efeito = normalizar_efeito(bruto, estrito=True, exigir_associacao=True)
         associacao = efeito["associacao"]
         if associacao in indice:
-            raise ValueError(f"AssociaÃƒÂ§ÃƒÂ£o de efeito duplicada: {associacao}")
+            raise ValueError(f"Associação de efeito duplicada: {associacao}")
         indice[associacao] = efeito
     return indice
 
@@ -244,7 +244,7 @@ def resolver_efeitos_ativos(
     *,
     estrito: bool = False,
 ) -> Dict[str, Any]:
-    """Resolve diretamente os efeitos ligados pela mesa, sem aplicaÃƒÂ§ÃƒÂ£o intermediÃƒÂ¡ria."""
+    """Resolve diretamente os efeitos ligados pela mesa, sem aplicação intermediária."""
     if not isinstance(associacoes_ativas, (list, tuple, set)):
         associacoes_ativas = []
     indice = indexar_catalogo(catalogo)
@@ -258,7 +258,7 @@ def resolver_efeitos_ativos(
         vistos.add(associacao)
         efeito = indice.get(associacao)
         if efeito is None:
-            mensagem = f"Efeito default nÃƒÂ£o encontrado: {associacao or '<vazio>'}"
+            mensagem = f"Efeito default não encontrado: {associacao or '<vazio>'}"
             if estrito:
                 raise ValueError(mensagem)
             avisos.append(mensagem)
@@ -273,7 +273,7 @@ def calcular_modificadores(
     alvo: str,
     contextos: Iterable[str] = (),
 ) -> Dict[str, Any]:
-    """Soma apenas modificadores declarados e pertinentes ÃƒÂ  rolagem."""
+    """Soma apenas modificadores declarados e pertinentes à rolagem."""
     lista = [normalizar_efeito(item) for item in efeitos_ativos]
     substituidas = {
         associacao

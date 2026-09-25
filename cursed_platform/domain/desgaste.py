@@ -13,18 +13,18 @@ HISTORY_LIMIT = 100
 
 FAIXAS: Dict[str, List[Dict[str, Any]]] = {
     "exaustao": [
-        {"min": 0, "max": 5, "id": "estavel", "nome": "EstÃ¡vel", "efeito": "Sem penalidade."},
-        {"min": 6, "max": 8, "id": "cansado", "nome": "Cansado", "efeito": "Ã¢Ë†â€™1 em testes fÃƒÂ­sicos."},
-        {"min": 9, "max": 11, "id": "exausto", "nome": "Exausto", "efeito": "Ã¢Ë†â€™2 em testes fÃƒÂ­sicos e Ã¢Ë†â€™1 em Defesas."},
-        {"min": 12, "max": 14, "id": "no_limite", "nome": "No Limite", "efeito": "Ã¢Ë†â€™3 em testes fÃƒÂ­sicos, Ã¢Ë†â€™1 em testes mentais e sociais e Ã¢Ë†â€™3 m de Movimento."},
-        {"min": 15, "max": 15, "id": "colapso_fisico", "nome": "Colapso FÃ­sico", "efeito": "Inconsciente e incapaz de realizar aÃƒÂ§ÃƒÂµes atÃƒÂ© receber auxÃƒÂ­lio ou recuperaÃƒÂ§ÃƒÂ£o aplicÃƒÂ¡vel."},
+        {"min": 0, "max": 5, "id": "estavel", "nome": "Estável", "efeito": "Sem penalidade."},
+        {"min": 6, "max": 8, "id": "cansado", "nome": "Cansado", "efeito": "−1 em testes físicos."},
+        {"min": 9, "max": 11, "id": "exausto", "nome": "Exausto", "efeito": "−2 em testes físicos e −1 em Defesas."},
+        {"min": 12, "max": 14, "id": "no_limite", "nome": "No Limite", "efeito": "−3 em testes físicos, −1 em testes mentais e sociais e −3 m de Movimento."},
+        {"min": 15, "max": 15, "id": "colapso_fisico", "nome": "Colapso Físico", "efeito": "Inconsciente e incapaz de realizar ações até receber auxílio ou recuperação aplicável."},
     ],
     "estresse": [
         {"min": 0, "max": 4, "id": "controlado", "nome": "Controlado", "efeito": "Sem penalidade."},
-        {"min": 5, "max": 6, "id": "pressionado", "nome": "Pressionado", "efeito": "Ã¢Ë†â€™1 em testes mentais e sociais."},
-        {"min": 7, "max": 8, "id": "abalado", "nome": "Abalado", "efeito": "Ã¢Ë†â€™2 em testes mentais e sociais e Ã¢Ë†â€™1 em testes fÃƒÂ­sicos."},
-        {"min": 9, "max": 9, "id": "a_beira", "nome": "Ã€ Beira", "efeito": "Ã¢Ë†â€™3 em testes mentais e sociais, Ã¢Ë†â€™1 em testes fÃƒÂ­sicos e nÃƒÂ£o pode assumir Estresse voluntariamente."},
-        {"min": 10, "max": 10, "id": "colapso_mental", "nome": "Colapso Mental", "efeito": "ManifestaÃƒÂ§ÃƒÂ£o de colapso e afastamento da participaÃƒÂ§ÃƒÂ£o efetiva atÃƒÂ© auxÃƒÂ­lio ou fim do conflito imediato."},
+        {"min": 5, "max": 6, "id": "pressionado", "nome": "Pressionado", "efeito": "−1 em testes mentais e sociais."},
+        {"min": 7, "max": 8, "id": "abalado", "nome": "Abalado", "efeito": "−2 em testes mentais e sociais e −1 em testes físicos."},
+        {"min": 9, "max": 9, "id": "a_beira", "nome": "À Beira", "efeito": "−3 em testes mentais e sociais, −1 em testes físicos e não pode assumir Estresse voluntariamente."},
+        {"min": 10, "max": 10, "id": "colapso_mental", "nome": "Colapso Mental", "efeito": "Manifestação de colapso e afastamento da participação efetiva até auxílio ou fim do conflito imediato."},
     ],
 }
 
@@ -72,7 +72,7 @@ def normalizar_desgaste(valor: Any) -> Dict[str, int]:
 
 def obter_faixa(recurso: str, valor: Any) -> Dict[str, Any]:
     if recurso not in MAXIMOS:
-        raise ValueError(f"Recurso de desgaste invÃƒÂ¡lido: {recurso}")
+        raise ValueError(f"Recurso de desgaste inválido: {recurso}")
     atual = _clamp(valor, 0, MAXIMOS[recurso])
     for faixa in FAIXAS[recurso]:
         if faixa["min"] <= atual <= faixa["max"]:
@@ -134,7 +134,7 @@ def normalizar_origem(origem: Any, *, exigir: bool = False) -> Dict[str, str]:
     nome = _texto(dados.get("nome"))
     identificador = _texto(dados.get("id"))
     if exigir and not nome:
-        raise ValueError("A origem precisa de um nome ou descriÃƒÂ§ÃƒÂ£o curta.")
+        raise ValueError("A origem precisa de um nome ou descrição curta.")
     saida = {"tipo": tipo, "nome": nome}
     if identificador:
         saida["id"] = identificador
@@ -221,9 +221,9 @@ def normalizar_efeito_aplicado(valor: Any, *, estrito: bool = False) -> Dict[str
     if estrito and not nome:
         raise ValueError("O efeito persistente precisa de um nome.")
     if estrito and not descricao:
-        raise ValueError("O efeito persistente precisa de uma descriÃƒÂ§ÃƒÂ£o.")
+        raise ValueError("O efeito persistente precisa de uma descrição.")
     if estrito and not consequencia:
-        raise ValueError("O efeito persistente precisa declarar sua consequÃƒÂªncia.")
+        raise ValueError("O efeito persistente precisa declarar sua consequência.")
     if estrito and categoria == "trauma" and not gatilho:
         raise ValueError("Um Trauma precisa declarar seu gatilho.")
 
@@ -329,13 +329,13 @@ def adicionar_ou_resolver_efeito(
     novo = normalizar_efeito_aplicado(efeito, estrito=True)
     decisao = _normalizar_texto(decisao_equivalente).replace(" ", "_")
     if decisao not in {"intensificar", "atualizar", "manter"}:
-        raise ValueError("DecisÃƒÂ£o equivalente invÃƒÂ¡lida; use intensificar, atualizar ou manter.")
+        raise ValueError("Decisão equivalente inválida; use intensificar, atualizar ou manter.")
     for indice, existente in enumerate(lista):
         if not efeitos_equivalentes(existente, novo):
             continue
         if decisao == "manter":
             mantido = _registrar_historico_consequencia(
-                existente, "mantido", justificativa="Nova ocorrÃƒÂªncia equivalente mantida no registro existente"
+                existente, "mantido", justificativa="Nova ocorrência equivalente mantida no registro existente"
             )
             lista[indice] = mantido
             return lista, mantido, "mantido"
@@ -349,7 +349,7 @@ def adicionar_ou_resolver_efeito(
                 atualizado["criado_em"] = criado_em
             atualizado = normalizar_efeito_aplicado(atualizado, estrito=True)
             atualizado = _registrar_historico_consequencia(
-                atualizado, "atualizado", justificativa="Nova ocorrÃƒÂªncia equivalente atualizou o registro"
+                atualizado, "atualizado", justificativa="Nova ocorrência equivalente atualizou o registro"
             )
             lista[indice] = atualizado
             return lista, atualizado, "atualizado"
@@ -361,7 +361,7 @@ def adicionar_ou_resolver_efeito(
         atualizado["tratamento"]["estado"] = "ativo"
         atualizado["estado"] = "ativo"
         atualizado = _registrar_historico_consequencia(
-            atualizado, "intensificado", justificativa="Nova ocorrÃƒÂªncia equivalente intensificou o registro"
+            atualizado, "intensificado", justificativa="Nova ocorrência equivalente intensificou o registro"
         )
         lista[indice] = atualizado
         return lista, atualizado, "intensificado"
@@ -374,7 +374,7 @@ def adicionar_ou_resolver_efeito(
 def adicionar_ou_intensificar_efeito(
     efeitos: Any, efeito: Mapping[str, Any]
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], str]:
-    """Compatibilidade: resolve qualquer consequÃƒÂªncia equivalente por intensificaÃƒÂ§ÃƒÂ£o."""
+    """Compatibilidade: resolve qualquer consequência equivalente por intensificação."""
     return adicionar_ou_resolver_efeito(efeitos, efeito, decisao_equivalente="intensificar")
 
 
@@ -394,10 +394,10 @@ def normalizar_estado_desgaste(estado: Any) -> Dict[str, Any]:
 
 def simular_alteracao(desgaste: Any, recurso: str, delta: Any) -> Dict[str, Any]:
     if recurso not in MAXIMOS:
-        raise ValueError(f"Recurso de desgaste invÃƒÂ¡lido: {recurso}")
+        raise ValueError(f"Recurso de desgaste inválido: {recurso}")
     mudanca = _inteiro(delta)
     if mudanca == 0:
-        raise ValueError("A alteraÃƒÂ§ÃƒÂ£o precisa ser diferente de zero.")
+        raise ValueError("A alteração precisa ser diferente de zero.")
     antes = normalizar_desgaste(desgaste)
     bruto = antes[recurso] + mudanca
     depois = deepcopy(antes)
@@ -438,15 +438,15 @@ def simular_esforco(
 ) -> Dict[str, Any]:
     quantidade = _inteiro(pontos)
     if quantidade < 1 or quantidade > 3:
-        raise ValueError("O esforÃƒÂ§o precisa assumir de 1 a 3 pontos.")
+        raise ValueError("O esforço precisa assumir de 1 a 3 pontos.")
     dados = normalizar_desgaste(desgaste)
     if tipo == "fisico":
         if dados["exaustao"] >= 15:
-            raise ValueError("Um personagem em Colapso FÃƒÂ­sico nÃƒÂ£o pode usar EsforÃƒÂ§o fÃƒÂ­sico.")
+            raise ValueError("Um personagem em Colapso Físico não pode usar Esforço físico.")
         movimento = _inteiro(bonus_movimento)
         teste = quantidade - movimento if bonus_teste is None else _inteiro(bonus_teste)
         if teste < 0 or movimento < 0 or teste + movimento != quantidade:
-            raise ValueError("Distribua cada ponto entre bÃƒÂ´nus de teste e Movimento.")
+            raise ValueError("Distribua cada ponto entre bônus de teste e Movimento.")
         previa = simular_alteracao(dados, "exaustao", quantidade)
         previa.update(
             {
@@ -459,7 +459,7 @@ def simular_esforco(
         return previa
     if tipo == "mental":
         if dados["estresse"] >= 9:
-            raise ValueError("Um personagem Ãƒâ‚¬ Beira ou em Colapso Mental nÃƒÂ£o pode usar EsforÃƒÂ§o mental.")
+            raise ValueError("Um personagem À Beira ou em Colapso Mental não pode usar Esforço mental.")
         previa = simular_alteracao(dados, "estresse", quantidade)
         previa.update(
             {
@@ -470,7 +470,7 @@ def simular_esforco(
             }
         )
         return previa
-    raise ValueError("Tipo de esforÃƒÂ§o invÃƒÂ¡lido; use 'fisico' ou 'mental'.")
+    raise ValueError("Tipo de esforço inválido; use 'fisico' ou 'mental'.")
 
 
 def _proxima_ordem(historico: Iterable[Mapping[str, Any]]) -> int:
@@ -511,7 +511,7 @@ def aplicar_alteracao(
     if simulacao["trauma_requerido"] and trauma is None:
         raise ValueError("O Colapso Mental precisa criar ou intensificar um Trauma relacionado.")
     if simulacao["consequencia_contextual_requerida"] and efeito_declarado is None:
-        raise ValueError("ExaustÃƒÂ£o excedente precisa de uma consequÃƒÂªncia fÃƒÂ­sica contextual.")
+        raise ValueError("Exaustão excedente precisa de uma consequência física contextual.")
 
     antes_desgaste = deepcopy(novo["desgaste"])
     antes_efeitos = deepcopy(novo["efeitos_aplicados"])
@@ -551,11 +551,11 @@ def aplicar_alteracao(
 
 
 def encerrar_colapso_mental(
-    estado: Any, origem: Any, *, justificativa: str = "AuxÃƒÂ­lio pertinente ou fim do conflito imediato"
+    estado: Any, origem: Any, *, justificativa: str = "Auxílio pertinente ou fim do conflito imediato"
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     normalizado = normalizar_estado_desgaste(estado)
     if normalizado["desgaste"]["estresse"] != 10:
-        raise ValueError("O personagem nÃƒÂ£o estÃƒÂ¡ em Colapso Mental.")
+        raise ValueError("O personagem não está em Colapso Mental.")
     return aplicar_alteracao(normalizado, "estresse", -2, origem, justificativa=justificativa)
 
 
@@ -571,7 +571,7 @@ def administrar_efeito(
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     justificativa_limpa = _texto(justificativa)
     if not justificativa_limpa:
-        raise ValueError("A administraÃƒÂ§ÃƒÂ£o manual de um efeito exige uma justificativa curta.")
+        raise ValueError("A administração manual de um efeito exige uma justificativa curta.")
     origem_normalizada = normalizar_origem(origem, exigir=True)
     novo = normalizar_estado_desgaste(estado)
     antes_desgaste = deepcopy(novo["desgaste"])
@@ -581,7 +581,7 @@ def administrar_efeito(
 
     if acao_normalizada == "criar":
         if efeito is None:
-            raise ValueError("Informe o efeito que serÃƒÂ¡ criado.")
+            raise ValueError("Informe o efeito que será criado.")
         dados = deepcopy(dict(efeito))
         dados.setdefault("origem", origem_normalizada)
         novo["efeitos_aplicados"], efeito_final, _ = adicionar_ou_intensificar_efeito(
@@ -594,7 +594,7 @@ def administrar_efeito(
             None,
         )
         if indice is None:
-            raise ValueError("Efeito aplicado nÃƒÂ£o encontrado.")
+            raise ValueError("Efeito aplicado não encontrado.")
         atual = deepcopy(novo["efeitos_aplicados"][indice])
         afetados.append(atual["id"])
         if acao_normalizada == "editar":
@@ -640,7 +640,7 @@ def administrar_efeito(
         elif acao_normalizada == "remover":
             novo["efeitos_aplicados"].pop(indice)
         else:
-            raise ValueError(f"AÃƒÂ§ÃƒÂ£o administrativa invÃƒÂ¡lida: {acao}")
+            raise ValueError(f"Ação administrativa inválida: {acao}")
 
     evento = _registrar_evento(
         novo,
@@ -720,17 +720,17 @@ def progredir_aflicao(
     lista = normalizar_efeitos_aplicados(efeitos)
     indice = next((i for i, item in enumerate(lista) if item["id"] == efeito_id), None)
     if indice is None:
-        raise ValueError("AfliÃƒÂ§ÃƒÂ£o nÃƒÂ£o encontrada.")
+        raise ValueError("Aflição não encontrada.")
     atual = deepcopy(lista[indice])
     if atual["categoria"] != "aflicao":
-        raise ValueError("Somente uma AfliÃƒÂ§ÃƒÂ£o pode usar progressÃƒÂ£o de AfliÃƒÂ§ÃƒÂ£o.")
+        raise ValueError("Somente uma Aflição pode usar progressão de Aflição.")
     if atual["estado"] == "encerrado":
-        raise ValueError("Uma AfliÃƒÂ§ÃƒÂ£o encerrada nÃƒÂ£o pode progredir.")
+        raise ValueError("Uma Aflição encerrada não pode progredir.")
     progressao = atual["progressao"]
     gatilhos = {_normalizar_texto(item) for item in progressao.get("gatilhos_avanco", [])}
     gatilho_normalizado = _normalizar_texto(gatilho)
     if gatilhos and gatilho_normalizado not in gatilhos:
-        raise ValueError("O gatilho informado nÃƒÂ£o progride esta AfliÃƒÂ§ÃƒÂ£o.")
+        raise ValueError("O gatilho informado não progride esta Aflição.")
     estagios = progressao.get("estagios", [])
     if not estagios:
         return lista, atual, "estavel"
@@ -765,13 +765,13 @@ def suprimir_sintoma_aflicao(
     lista = normalizar_efeitos_aplicados(efeitos)
     indice = next((i for i, item in enumerate(lista) if item["id"] == efeito_id), None)
     if indice is None:
-        raise ValueError("AfliÃƒÂ§ÃƒÂ£o nÃƒÂ£o encontrada.")
+        raise ValueError("Aflição não encontrada.")
     atual = deepcopy(lista[indice])
     if atual["categoria"] != "aflicao":
-        raise ValueError("Somente AfliÃƒÂ§ÃƒÂµes possuem sintomas suprimÃƒÂ­veis.")
+        raise ValueError("Somente Aflições possuem sintomas suprimíveis.")
     condicao_id = _normalizar_texto(condicao).replace(" ", "_")
     if not condicao_id:
-        raise ValueError("Informe a condiÃƒÂ§ÃƒÂ£o que serÃƒÂ¡ suprimida.")
+        raise ValueError("Informe a condição que será suprimida.")
     suprimidos = set(atual.get("sintomas_suprimidos", []))
     suprimidos.add(condicao_id)
     atual["sintomas_suprimidos"] = sorted(suprimidos)
@@ -792,7 +792,7 @@ def restaurar_sintoma_aflicao(
     lista = normalizar_efeitos_aplicados(efeitos)
     indice = next((i for i, item in enumerate(lista) if item["id"] == efeito_id), None)
     if indice is None:
-        raise ValueError("AfliÃƒÂ§ÃƒÂ£o nÃƒÂ£o encontrada.")
+        raise ValueError("Aflição não encontrada.")
     atual = deepcopy(lista[indice])
     condicao_id = _normalizar_texto(condicao).replace(" ", "_")
     atual["sintomas_suprimidos"] = [
@@ -816,12 +816,12 @@ def desfazer_evento(estado: Any, evento_id: str | None = None) -> Tuple[Dict[str
     novo = normalizar_estado_desgaste(estado)
     alvo = ultimo_evento_desfazivel(novo["historico_desgaste"])
     if alvo is None:
-        raise ValueError("NÃƒÂ£o existe alteraÃƒÂ§ÃƒÂ£o segura para desfazer.")
+        raise ValueError("Não existe alteração segura para desfazer.")
     if evento_id and alvo.get("id") != evento_id:
-        raise ValueError("HÃƒÂ¡ uma alteraÃƒÂ§ÃƒÂ£o posterior; faÃƒÂ§a uma correÃƒÂ§ÃƒÂ£o manual rastreÃƒÂ¡vel.")
+        raise ValueError("Há uma alteração posterior; faça uma correção manual rastreável.")
     snapshot = alvo.get("_snapshot_antes")
     if not isinstance(snapshot, Mapping):
-        raise ValueError("O evento nÃƒÂ£o possui dados suficientes para uma reversÃƒÂ£o segura.")
+        raise ValueError("O evento não possui dados suficientes para uma reversão segura.")
 
     antes_reversao = {
         "desgaste": deepcopy(novo["desgaste"]),
@@ -838,8 +838,8 @@ def desfazer_evento(estado: Any, evento_id: str | None = None) -> Tuple[Dict[str
         novo,
         {
             "tipo": "desfazer",
-            "origem": {"tipo": "sistema", "nome": "CorreÃƒÂ§ÃƒÂ£o por desfazer"},
-            "justificativa": f"ReversÃƒÂ£o do evento {alvo.get('id')}",
+            "origem": {"tipo": "sistema", "nome": "Correção por desfazer"},
+            "justificativa": f"Reversão do evento {alvo.get('id')}",
             "antes": antes_reversao["desgaste"],
             "depois": deepcopy(novo["desgaste"]),
             "efeitos_afetados": deepcopy(alvo.get("efeitos_afetados", [])),

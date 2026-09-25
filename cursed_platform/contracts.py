@@ -130,6 +130,23 @@ class CriarPersonagemRequest(BaseModel):
     ficha: FichaContrato
 
 
+class PersonagemResumo(BaseModel):
+    id: str
+    mesa_id: str
+    nome: str
+    tipo: Literal["personagem", "npc", "monstro"]
+    visibilidade: Literal["mesa", "narrador"]
+    proprietario_id: str | None
+    versao: int
+    excluido_em: datetime | None = None
+    restauravel_ate: datetime | None = None
+
+
+class TransferirPersonagemRequest(BaseModel):
+    proprietario_id: str | None = Field(default=None, min_length=1, max_length=100)
+    versao_esperada: int = Field(ge=0)
+
+
 class PedidoAlteracaoResumo(BaseModel):
     id: str
     mesa_id: str

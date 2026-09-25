@@ -24,6 +24,8 @@ class Acao(StrEnum):
     EXCLUIR_PERSONAGEM = "excluir_personagem"
     APLICAR_EFEITO = "aplicar_efeito"
     LER_CONTEUDO_NARRADOR = "ler_conteudo_narrador"
+    TRANSFERIR_PERSONAGEM = "transferir_personagem"
+    RESTAURAR_PERSONAGEM = "restaurar_personagem"
 
 
 @dataclass(frozen=True)
@@ -71,6 +73,8 @@ class Autorizador:
             Acao.DECIDIR_ALTERACAO,
             Acao.APLICAR_EFEITO,
             Acao.LER_CONTEUDO_NARRADOR,
+            Acao.TRANSFERIR_PERSONAGEM,
+            Acao.RESTAURAR_PERSONAGEM,
         }:
             return DecisaoAcesso(narrador, motivo="Ação reservada ao Narrador.")
         if acao == Acao.CRIAR_PERSONAGEM:

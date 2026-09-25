@@ -391,6 +391,89 @@
         "title": "PedidoAlteracaoResumo",
         "type": "object"
       },
+      "PersonagemResumo": {
+        "properties": {
+          "excluido_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excluido Em"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "mesa_id": {
+            "title": "Mesa Id",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "proprietario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proprietario Id"
+          },
+          "restauravel_ate": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restauravel Ate"
+          },
+          "tipo": {
+            "enum": [
+              "personagem",
+              "npc",
+              "monstro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          },
+          "visibilidade": {
+            "enum": [
+              "mesa",
+              "narrador"
+            ],
+            "title": "Visibilidade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "mesa_id",
+          "nome",
+          "tipo",
+          "visibilidade",
+          "proprietario_id",
+          "versao"
+        ],
+        "title": "PersonagemResumo",
+        "type": "object"
+      },
       "PoliticaMesaContrato": {
         "properties": {
           "campos_bloqueados": {
@@ -428,6 +511,33 @@
           "permitir_exclusao_propria"
         ],
         "title": "PoliticaMesaContrato",
+        "type": "object"
+      },
+      "TransferirPersonagemRequest": {
+        "properties": {
+          "proprietario_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proprietario Id"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "TransferirPersonagemRequest",
         "type": "object"
       },
       "ValidationError": {
@@ -835,6 +945,66 @@
       }
     },
     "/mesas/{mesa_id}/personagens": {
+      "get": {
+        "description": "Personagens que o ator pode abrir; excluídos recuperáveis somente para o Narrador.",
+        "operationId": "listar_personagens_mesas__mesa_id__personagens_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "excluidos",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Excluidos",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PersonagemResumo"
+                  },
+                  "title": "Response Listar Personagens Mesas  Mesa Id  Personagens Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Personagens",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      },
       "post": {
         "operationId": "criar_personagem_mesas__mesa_id__personagens_post",
         "parameters": [
@@ -1077,6 +1247,139 @@
         "summary": "Gravar Ficha",
         "tags": [
           "Fichas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/restauracao": {
+      "post": {
+        "operationId": "restaurar_personagem_mesas__mesa_id__personagens__personagem_id__restauracao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versao_esperada",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Versao Esperada",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonagemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Restaurar Personagem",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/transferencia": {
+      "post": {
+        "description": "Narrador define o proprietário; `null` deixa o personagem sob controle exclusivo do Narrador.",
+        "operationId": "transferir_personagem_mesas__mesa_id__personagens__personagem_id__transferencia_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferirPersonagemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonagemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Transferir Personagem",
+        "tags": [
+          "Personagens e políticas"
         ]
       }
     },

@@ -19,7 +19,7 @@ def _texto(valor: Any) -> str:
 
 def _sanitize_token(raw: str) -> str:
     texto = unicodedata.normalize("NFKC", raw or "")
-    texto = texto.replace("â€“", "-").replace("â€”", "-").replace("âˆ’", "-")
+    texto = texto.replace("–", "-").replace("—", "-").replace("−", "-")
     ignorados = {"\u200b", "\u200c", "\u200d", "\ufeff"}
     return "".join(
         caractere
@@ -37,11 +37,11 @@ def _encode_payload(prefixo: str, payload: Mapping[str, Any]) -> str:
 
 def _decode_payload(codigo: str, prefixo: str) -> Dict[str, Any]:
     if not isinstance(codigo, str) or not codigo.strip():
-        raise ValueError("CÃ³digo vazio.")
+        raise ValueError("Código vazio.")
     codigo = codigo.strip()
     esperado = f"{prefixo}:"
     if not codigo.startswith(esperado):
-        raise ValueError(f"Formato invÃ¡lido (prefixo esperado: {esperado}).")
+        raise ValueError(f"Formato inválido (prefixo esperado: {esperado}).")
     token = _sanitize_token(codigo[len(esperado) :])
     if not token:
         raise ValueError("Token base64 ausente.")
@@ -57,9 +57,9 @@ def _decode_payload(codigo: str, prefixo: str) -> Dict[str, Any]:
     except ValueError:
         raise
     except Exception as erro:
-        raise ValueError(f"CÃ³digo invÃ¡lido: {erro}") from erro
+        raise ValueError(f"Código inválido: {erro}") from erro
     if not isinstance(payload, dict):
-        raise ValueError("Payload invÃ¡lido: era esperado um objeto JSON.")
+        raise ValueError("Payload inválido: era esperado um objeto JSON.")
     return payload
 
 
@@ -69,7 +69,7 @@ def normalizar_efeito_e1(effect: Any) -> Dict[str, Any]:
     nome = _texto(effect.get("nome"))
     descricao = _texto(effect.get("descricao"))
     if not nome or not descricao:
-        raise ValueError("O efeito E1 precisa de nome e descriÃ§Ã£o.")
+        raise ValueError("O efeito E1 precisa de nome e descrição.")
     payload: Dict[str, Any] = {"nome": nome, "descricao": descricao}
     imagem = effect.get("imagem_base64")
     if isinstance(imagem, str) and imagem.strip():
@@ -82,7 +82,7 @@ def normalizar_efeito_e1(effect: Any) -> Dict[str, Any]:
     if "substitui" in effect:
         brutos = effect["substitui"]
         if not isinstance(brutos, list) or any(not _texto(item) for item in brutos):
-            raise ValueError("As associaÃ§Ãµes substituÃ­das precisam formar uma lista vÃ¡lida.")
+            raise ValueError("As associações substituídas precisam formar uma lista válida.")
         payload["substitui"] = [_texto(item) for item in brutos]
     return payload
 
@@ -100,7 +100,7 @@ def normalizar_efeito_e2(effect: Any) -> Dict[str, Any]:
     if efeito["versao"] != 2:
         raise ValueError("O efeito E2 precisa declarar versao 2.")
     if not efeito["operacoes"]:
-        raise ValueError("O efeito E2 precisa declarar ao menos uma operaÃ§Ã£o.")
+        raise ValueError("O efeito E2 precisa declarar ao menos uma operação.")
     efeito = deepcopy(efeito)
     efeito["versao"] = 2
     validar_conteudo_declarativo(efeito)
@@ -120,7 +120,7 @@ def encode_effect(effect: Mapping[str, Any], *, versao: int = 1) -> str:
         return encode_effect_e1(effect)
     if versao == 2:
         return encode_effect_e2(effect)
-    raise ValueError(f"VersÃ£o de efeito nÃ£o suportada: {versao}")
+    raise ValueError(f"Versão de efeito não suportada: {versao}")
 
 
 def decode_effect(code: str) -> Dict[str, Any]:
@@ -129,6 +129,6 @@ def decode_effect(code: str) -> Dict[str, Any]:
         return decode_effect_e1(code)
     if prefixo == "E2":
         return decode_effect_e2(code)
-    raise ValueError("Formato invÃ¡lido (prefixos aceitos: E1: ou E2:).")
+    raise ValueError("Formato inválido (prefixos aceitos: E1: ou E2:).")
 
 

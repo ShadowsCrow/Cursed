@@ -94,6 +94,15 @@ A ficha terá um cabeçalho de identidade e recursos, uma faixa de estado ativo 
 
 Valores derivados mostrarão suas fontes. Essa explicabilidade preserva agência e reduz carga cognitiva: a aplicação pode calcular, mas o jogador continua entendendo por que o resultado mudou. A escassez de PV, PP, cargas e outros recursos continuará visível, sustentando tensão e preparação sem exigir contabilidade manual redundante.
 
+### 7.1 Inventário, efeitos e valores derivados na ficha viva
+
+Decidido durante a implementação da seção 6:
+
+- Inventário, equipamentos e efeitos aplicados usam as tabelas relacionais como fonte de verdade na nova plataforma. As listas `armas`, `armaduras`, `outros` e `efeitos_externos` do JSON da ficha deixam de ser editadas pela nova interface e servem apenas como formato de importação e migração.
+- Equipar e desequipar são comandos sobre o item, versionados pela versão do personagem. Efeitos cuja fonte é um equipamento ficam ativos somente enquanto o item está equipado.
+- Um valor derivado exibe total e fontes: valor base, ajuste manual e modificadores sem condição de efeitos ativos, inclusive de itens equipados. Modificadores condicionados a um contexto aparecem à parte como situacionais e não entram no total. A regra de mesa não muda; a aplicação apenas torna a soma explícita.
+- PV, PP e outros recursos não existem na ficha legada e não recebem fórmula nesta mudança. A ficha pode trazer uma seção `recursos` com valores atuais e máximos; na ausência, a interface informa que o recurso não foi registrado.
+
 ### 8. Cartas como apresentação comum e ciclos de domínio distintos
 
 Habilidades, magias e itens compartilharão anatomia visual, arte, tags e versionamento, mas não uma única máquina de estados.

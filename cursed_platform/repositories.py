@@ -97,6 +97,47 @@ class FichaRepository:
             )
         )
 
+    def listar_excluidos(self, mesa_id: str) -> list[PersonagemRegistro]:
+        return list(
+            self.session.scalars(
+                select(PersonagemRegistro).where(
+                    PersonagemRegistro.mesa_id == mesa_id,
+                    PersonagemRegistro.excluido_em.is_not(None),
+                )
+            )
+        )
+
+    def prazo_restauracao(self, personagem: PersonagemRegistro) -> datetime | None:
+        """Último instante em que um personagem excluído ainda pode ser restaurado."""
+        mesa = self.session.get(MesaRegistro, personagem.mesa_id)
+        if mesa is None or personagem.excluido_em is None:
+            return None
+        if mesa.retencao_personagens_dias < 1:
+            raise ValueError("A retenção de personagens precisa ser positiva.")
+        exclusao = personagem.excluido_em
+        if exclusao.tzinfo is None:
+            exclusao = exclusao.replace(tzinfo=UTC)
+        return exclusao + timedelta(days=mesa.retencao_personagens_dias)
+
+    def transferir(
+        self,
+        mesa_id: str,
+        personagem_id: str,
+        versao_esperada: int,
+        proprietario_id: str | None,
+    ) -> bool:
+        resultado = self.session.execute(
+            update(PersonagemRegistro)
+            .where(
+                PersonagemRegistro.id == personagem_id,
+                PersonagemRegistro.mesa_id == mesa_id,
+                PersonagemRegistro.versao == versao_esperada,
+                PersonagemRegistro.excluido_em.is_(None),
+            )
+            .values(proprietario_id=proprietario_id, versao=PersonagemRegistro.versao + 1)
+        )
+        return resultado.rowcount == 1
+
     def substituir_se_versao(
         self,
         mesa_id: str,
@@ -150,17 +191,9 @@ class FichaRepository:
         *,
         agora: datetime | None = None,
     ) -> bool:
-        mesa = self.session.get(MesaRegistro, mesa_id)
         personagem = self.get(mesa_id, personagem_id, incluir_excluido=True)
-        if mesa is None or personagem is None or personagem.excluido_em is None:
-            return False
-        if mesa.retencao_personagens_dias < 1:
-            raise ValueError("A retenção de personagens precisa ser positiva.")
-        momento = agora or datetime.now(UTC)
-        exclusao = personagem.excluido_em
-        if exclusao.tzinfo is None:
-            exclusao = exclusao.replace(tzinfo=UTC)
-        if momento > exclusao + timedelta(days=mesa.retencao_personagens_dias):
+        prazo = self.prazo_restauracao(personagem) if personagem is not None else None
+        if prazo is None or (agora or datetime.now(UTC)) > prazo:
             return False
         resultado = self.session.execute(
             update(PersonagemRegistro)
