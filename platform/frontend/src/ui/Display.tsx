@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Popover } from "./primitives/Popover";
+
 export type GlyphName =
   | "spark" | "grid" | "users" | "scroll" | "cards" | "map" | "shield"
   | "chevron" | "arrow" | "moon" | "heart" | "bolt" | "book" | "sword"
@@ -33,27 +35,190 @@ export function Glyph({ name, size = 20, className = "" }: { name: GlyphName; si
   return <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 
-export function Portrait({ name, hue = "violet", size = "normal" }: { name: string; hue?: "violet" | "copper" | "teal" | "rose"; size?: "normal" | "large" }) {
+export interface PortraitProps {
+  name: string;
+  /** URL de um retrato real; quando ausente, mostra as iniciais como retrato ilustrativo. */
+  imageUrl?: string | null;
+  hue?: "violet" | "copper" | "teal" | "rose";
+  size?: "normal" | "large";
+}
+
+export function Portrait({ name, imageUrl, hue = "violet", size = "normal" }: PortraitProps) {
   const initials = name.split(" ").slice(0, 2).map((part) => part[0]).join("");
-  return <span className={`portrait portrait--${hue} portrait--${size}`} aria-label={`Retrato ilustrativo de ${name}`} role="img"><span>{initials}</span></span>;
+  if (imageUrl) {
+    return (
+      <span className={`portrait portrait--image portrait--${size}`}>
+        <img src={imageUrl} alt={`Retrato de ${name}`} />
+      </span>
+    );
+  }
+  return (
+    <span className={`portrait portrait--${hue} portrait--${size}`} aria-label={`Retrato ilustrativo de ${name}`} role="img">
+      <span>{initials}</span>
+    </span>
+  );
 }
 
-export function ResourceBar({ label, current, max, kind }: { label: string; current: number; max: number; kind: "life" | "power" | "focus" }) {
-  const percentage = max > 0 ? Math.min(100, Math.max(0, current / max * 100)) : 0;
-  return <div className={`resource resource--${kind}`}>
-    <div className="resource__head"><span>{label}</span><strong>{current} <span>/ {max}</span></strong></div>
-    <div className="resource__track" role="progressbar" aria-label={label} aria-valuenow={current} aria-valuemin={0} aria-valuemax={max}><span style={{ width: `${percentage}%` }} /></div>
-  </div>;
+export interface ResourceBarProps {
+  label: string;
+  current: number;
+  max: number;
+  kind: "life" | "power" | "focus";
 }
 
-export function EffectIcon({ name, symbol, tone = "violet", description }: { name: string; symbol: string; tone?: "violet" | "gold" | "teal"; description: string }) {
-  return <button className={`effect-icon effect-icon--${tone}`} type="button" title={`${name}: ${description}`} aria-label={`${name}: ${description}`}><span aria-hidden="true">{symbol}</span></button>;
+export function ResourceBar({ label, current, max, kind }: ResourceBarProps) {
+  const safeMax = Math.max(max, 0);
+  const isEmpty = safeMax > 0 && current <= 0;
+  const isOverflow = current > safeMax && safeMax > 0;
+  const percentage = safeMax > 0 ? Math.min(100, Math.max(0, (current / safeMax) * 100)) : 0;
+  const valueText = safeMax > 0
+    ? `${current} de ${safeMax}${isOverflow ? ", acima do máximo" : isEmpty ? ", esgotado" : ""}`
+    : `${current}, sem máximo definido`;
+  const stateClass = isOverflow ? "resource--overflow" : isEmpty ? "resource--empty" : "";
+  return (
+    <div className={`resource resource--${kind} ${stateClass}`.trim()}>
+      <div className="resource__head">
+        <span>{label}</span>
+        <strong>{current} <span>/ {safeMax}</span></strong>
+      </div>
+      <div
+        className="resource__track"
+        role="progressbar"
+        aria-label={label}
+        aria-valuenow={current}
+        aria-valuemin={0}
+        aria-valuemax={Math.max(safeMax, current)}
+        aria-valuetext={valueText}
+      >
+        <span style={{ width: `${percentage}%` }} />
+      </div>
+      {isOverflow && <span className="resource__note resource__note--overflow">Acima do máximo</span>}
+      {isEmpty && <span className="resource__note resource__note--empty">Esgotado</span>}
+    </div>
+  );
 }
 
-export function EquipmentSlot({ category, item, detail, icon }: { category: string; item: string; detail: string; icon: GlyphName }) {
-  return <article className="equipment-slot"><span className="equipment-slot__icon"><Glyph name={icon} size={22} /></span><div><span className="eyebrow">{category}</span><strong>{item}</strong><small>{detail}</small></div></article>;
+export interface EffectIconProps {
+  name: string;
+  symbol: string;
+  tone?: "violet" | "gold" | "teal";
+  /** Descrição completa do efeito, sempre exibida nos detalhes. */
+  description: string;
+  /** Origem do efeito (quem ou o que o concedeu), quando conhecida. */
+  origin?: string;
+  duration?: string;
+  /** Condição que encerra o efeito, quando definida. */
+  endCondition?: string;
 }
 
-export function ContentCard({ kind, title, description, meta, emblem }: { kind: string; title: string; description: string; meta: string; emblem: string }) {
-  return <article className="content-card"><div className="content-card__art" aria-hidden="true"><span>{emblem}</span></div><div className="content-card__body"><span className="eyebrow">{kind}</span><h3>{title}</h3><p>{description}</p><span className="content-card__meta">{meta}</span></div></article>;
+/**
+ * Ícone de efeito ativo. O símbolo é apenas um resumo visual; o conteúdo
+ * completo (nome, descrição, origem, duração e encerramento) fica disponível
+ * por hover, foco de teclado, clique ou toque através de um popover acessível.
+ */
+export function EffectIcon({ name, symbol, tone = "violet", description, origin, duration, endCondition }: EffectIconProps) {
+  return (
+    <Popover label={name} triggerContent={<span aria-hidden="true">{symbol}</span>} triggerClassName={`effect-icon effect-icon--${tone}`}>
+      <dl className="effect-detail">
+        <dt>Nome</dt>
+        <dd>{name}</dd>
+        <dt>Descrição</dt>
+        <dd>{description}</dd>
+        {origin && (<><dt>Origem</dt><dd>{origin}</dd></>)}
+        {duration && (<><dt>Duração</dt><dd>{duration}</dd></>)}
+        {endCondition && (<><dt>Encerramento</dt><dd>{endCondition}</dd></>)}
+      </dl>
+    </Popover>
+  );
+}
+
+export type EquipmentSlotState = "vazio" | "ocupado" | "desabilitado";
+
+export interface EquipmentSlotProps {
+  category: string;
+  state: EquipmentSlotState;
+  icon: GlyphName;
+  /** Nome do item; obrigatório quando ocupado. */
+  item?: string;
+  detail?: string;
+  /** Motivo pelo qual o slot está desabilitado, se houver. */
+  disabledReason?: string;
+  onAction?: () => void;
+  actionLabel?: string;
+}
+
+/** Slot de equipamento com três estados visuais distintos: vazio, ocupado e desabilitado. */
+export function EquipmentSlot({ category, state, icon, item, detail, disabledReason, onAction, actionLabel }: EquipmentSlotProps) {
+  return (
+    <article className={`equipment-slot equipment-slot--${state}`} aria-disabled={state === "desabilitado" || undefined}>
+      <span className="equipment-slot__icon"><Glyph name={icon} size={22} /></span>
+      <div className="equipment-slot__body">
+        <span className="eyebrow">{category}</span>
+        {state === "ocupado" && (
+          <>
+            <strong>{item}</strong>
+            {detail && <small>{detail}</small>}
+          </>
+        )}
+        {state === "vazio" && <strong className="equipment-slot__placeholder">Vazio</strong>}
+        {state === "desabilitado" && (
+          <>
+            <strong className="equipment-slot__placeholder">{item ?? "Indisponível"}</strong>
+            {disabledReason && <small>{disabledReason}</small>}
+          </>
+        )}
+      </div>
+      {onAction && state !== "desabilitado" && (
+        <button type="button" className="equipment-slot__action" onClick={onAction}>
+          {actionLabel ?? (state === "vazio" ? "Equipar" : "Desequipar")}
+        </button>
+      )}
+    </article>
+  );
+}
+
+export type CardType = "habilidade" | "magia" | "item" | "efeito";
+
+export interface CardCost {
+  label: string;
+  value: string;
+}
+
+export interface ContentCardProps {
+  kind: string;
+  title: string;
+  description: string;
+  meta: string;
+  emblem: string;
+  type?: CardType;
+  /**
+   * Custos separados por campo (ex.: custo de aprendizado, custo de uso).
+   * Só é exibido quando fornecido — nenhum valor é presumido a partir de `meta`.
+   */
+  costs?: CardCost[];
+}
+
+/** Carta base compartilhada por habilidades, magias, itens e efeitos. */
+export function ContentCard({ kind, title, description, meta, emblem, type, costs }: ContentCardProps) {
+  return (
+    <article className={`content-card ${type ? `content-card--${type}` : ""}`.trim()}>
+      <div className="content-card__art" aria-hidden="true"><span>{emblem}</span></div>
+      <div className="content-card__body">
+        <span className="eyebrow">{kind}</span>
+        <h3>{title}</h3>
+        <p>{description}</p>
+        {costs && costs.length > 0 && (
+          <dl className="content-card__costs">
+            {costs.map((cost) => (
+              <div key={cost.label} className="content-card__cost">
+                <dt>{cost.label}</dt>
+                <dd>{cost.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        <span className="content-card__meta">{meta}</span>
+      </div>
+    </article>
+  );
 }

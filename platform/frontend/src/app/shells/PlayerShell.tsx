@@ -1,0 +1,66 @@
+import type { components } from "../../api/generated/schema";
+import { Portrait } from "../../ui/Display";
+import type { TableView } from "../tableNavigation";
+import { WorkspaceChrome } from "./WorkspaceChrome";
+
+type Mesa = components["schemas"]["MesaResumo"];
+
+const playerCopy: Record<TableView, { eyebrow: string; title: string; description: string }> = {
+  overview: { eyebrow: "GRUPO", title: "Sua companhia", description: "Os personagens visíveis do grupo aparecerão aqui quando as consultas de ficha estiverem disponíveis." },
+  character: { eyebrow: "MINHA FICHA", title: "Seu personagem em foco", description: "As suas fichas e recursos de jogo serão exibidos aqui quando a gestão de personagens estiver conectada." },
+  activity: { eyebrow: "REGISTRO", title: "Registro", description: "" },
+  cards: { eyebrow: "BIBLIOTECA", title: "Suas cartas", description: "Habilidades, magias e itens autorizados aparecerão aqui quando o catálogo estiver conectado." },
+  room: { eyebrow: "SALA", title: "Cena compartilhada", description: "A sala mostrará somente a cena e os elementos revelados ao grupo quando o módulo estiver ativo." },
+};
+
+/** Cartão do próprio personagem, exclusivo do jogador, sempre visível na barra lateral. */
+function PlayerSnapshotPanel() {
+  return (
+    <section className="player-aside-nav" aria-label="Seu personagem">
+      <span className="eyebrow">SEU PERSONAGEM</span>
+      <div className="player-aside-nav__identity">
+        <Portrait name="Jogador" hue="violet" />
+        <p>Seus recursos aparecerão aqui quando a ficha estiver conectada.</p>
+      </div>
+    </section>
+  );
+}
+
+export interface PlayerShellProps {
+  mesa: Mesa;
+  view: TableView;
+  onNavigate: (view: TableView) => void;
+  onSignOut: () => void;
+}
+
+/**
+ * Shell do jogador: layout de uma só coluna focado no próprio personagem, com
+ * um cartão exclusivo de "seu personagem" na barra lateral — sem a fila de
+ * pendências nem os atalhos que só fazem sentido para o Narrador.
+ */
+export function PlayerShell({ mesa, view, onNavigate, onSignOut }: PlayerShellProps) {
+  const copy = playerCopy[view];
+  return (
+    <WorkspaceChrome
+      role="jogador"
+      mesaNome={mesa.nome}
+      view={view}
+      onNavigate={onNavigate}
+      onSignOut={onSignOut}
+      roleLabel="Você é jogador"
+      headerTitle={copy.title}
+      headerEyebrow={copy.eyebrow}
+      headerDescription={copy.description}
+      sidebarExtra={<PlayerSnapshotPanel />}
+    >
+      <section className="panel panel--wide workspace-status">
+        <div>
+          <span className="eyebrow">MESA ATIVA</span>
+          <h2>{mesa.nome}</h2>
+          <p>O acesso e a navegação refletem seu papel de jogador nesta mesa. Personagens, registro, cartas e sala ainda não são apresentados nesta área.</p>
+        </div>
+        <span className="workspace-status__pill">Jogador</span>
+      </section>
+    </WorkspaceChrome>
+  );
+}

@@ -1,0 +1,148 @@
+/* Primitivas acessíveis: diálogo, painel lateral, confirmação, popover, tooltip e menu. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  background: #05050ab3;
+  backdrop-filter: blur(2px);
+}
+.overlay--dialog { align-items: center; justify-content: center; padding: var(--space-4); }
+.overlay--panel { align-items: stretch; justify-content: flex-end; }
+
+.dialog {
+  width: min(32rem, 100%);
+  max-height: min(88vh, 44rem);
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+}
+.dialog:focus { outline: none; }
+
+.side-panel {
+  width: min(26rem, 100%);
+  height: 100%;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+.side-panel--start { border-left: 0; border-right: 1px solid var(--border); }
+.overlay--panel:has(.side-panel--start) { justify-content: flex-start; }
+.side-panel:focus { outline: none; }
+
+.dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.dialog__title { margin: 0; font: 600 1.3rem var(--font-display); color: var(--text); }
+.dialog__description { margin: 0; color: var(--muted); font-size: .82rem; }
+.dialog__body { display: grid; gap: var(--space-3); }
+.dialog__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+}
+.dialog__close:hover { color: var(--text); }
+
+.confirmation__actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+.button--danger { background: linear-gradient(140deg, #ef9a90, var(--red)); color: #2c1414; }
+
+.popover, .tooltip-wrapper, .menu { position: relative; display: inline-flex; }
+.popover__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+.popover__surface, .tooltip-surface, .menu__surface {
+  position: absolute;
+  z-index: 40;
+  bottom: calc(100% + .5rem);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.popover__surface--bottom { bottom: auto; top: calc(100% + .5rem); }
+.popover__surface {
+  min-width: 16rem;
+  max-width: 20rem;
+  display: grid;
+  gap: .35rem;
+  padding: .85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+  color: var(--text);
+  font-size: .76rem;
+}
+.popover__surface dt { color: var(--gold); font-size: .63rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.popover__surface dd { margin: 0 0 .5rem; color: var(--muted); }
+
+.tooltip-surface {
+  width: max-content;
+  max-width: 15rem;
+  padding: .4rem .6rem;
+  border-radius: .4rem;
+  background: #0a0a10ee;
+  color: var(--text);
+  font-size: .68rem;
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+}
+
+.menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid var(--border);
+  border-radius: .55rem;
+  background: var(--surface-raised);
+  color: var(--text);
+  padding: .5rem .8rem;
+  font-size: .75rem;
+  font-weight: 700;
+}
+.menu__surface {
+  left: 0;
+  transform: none;
+  top: calc(100% + .4rem);
+  bottom: auto;
+  min-width: 12rem;
+  display: grid;
+  padding: .35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+}
+.menu__item {
+  text-align: left;
+  border: 0;
+  background: none;
+  color: var(--text);
+  padding: .55rem .65rem;
+  border-radius: .4rem;
+  font-size: .76rem;
+}
+.menu__item:hover:not(:disabled), .menu__item:focus-visible { background: #ffffff0f; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog, .side-panel { transition: transform var(--motion-normal), opacity var(--motion-normal); }
+}

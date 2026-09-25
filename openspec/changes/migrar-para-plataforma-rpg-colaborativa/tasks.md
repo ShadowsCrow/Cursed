@@ -40,11 +40,11 @@
 ## 5. Fundação do frontend e design system
 
 - [x] 5.1 Criar aplicação React/TypeScript com Vite, rotas tipadas, cache remoto e tratamento global de erro e verificar build, lint e teste inicial
-- [ ] 5.2 Criar shells distintos para Narrador e jogador com navegação responsiva e verificar acesso por papel em desktop e viewport móvel
+- [x] 5.2 Criar shells distintos para Narrador e jogador com navegação responsiva e verificar acesso por papel em desktop e viewport móvel
 - [x] 5.3 Definir tokens visuais do Cursed para cor, tipografia, superfície, espaçamento, elevação, movimento e estados e verificar uma página de referência dos tokens
-- [ ] 5.4 Implementar primitivas acessíveis de diálogo, painel lateral, popover, tooltip, menu e confirmação e verificar teclado, foco, toque e leitor de tela automatizado
-- [ ] 5.5 Criar componentes de retrato, barras de recurso, ícone de efeito, slot de equipamento e carta base e verificar seus estados em catálogo visual isolado
-- [ ] 5.6 Implementar estado de conectividade e distinção entre prévia local e confirmação remota e verificar falha de comando simulada
+- [x] 5.4 Implementar primitivas acessíveis de diálogo, painel lateral, popover, tooltip, menu e confirmação e verificar teclado, foco, toque e leitor de tela automatizado
+- [x] 5.5 Criar componentes de retrato, barras de recurso, ícone de efeito, slot de equipamento e carta base e verificar seus estados em catálogo visual isolado
+- [x] 5.6 Implementar estado de conectividade e distinção entre prévia local e confirmação remota e verificar falha de comando simulada
 
 ## 6. Gestão de personagens e ficha viva
 

@@ -11,7 +11,11 @@ execute `npm install` e `npm run generate:client`. O cliente gerado fica em
 `src/api/generated/schema.ts`; `src/api/client.ts` o usa com `openapi-fetch`.
 Execute `npm run dev` e abra `http://localhost:5173/preview` para navegar na
 prévia visual com dados fictícios, sem configurar banco ou Supabase. Alterne
-entre Narrador e jogador no topo. Nenhuma ação dessa prévia grava dados.
+entre Narrador e jogador no topo. Nenhuma ação dessa prévia grava dados. Em
+`http://localhost:5173/preview/componentes` fica o catálogo visual isolado das
+primitivas de acessibilidade (diálogo, painel lateral, confirmação, popover,
+tooltip e menu) e dos componentes de retrato, barra de recurso, ícone de
+efeito, slot de equipamento e carta base, em todos os seus estados.
 
 Para a aplicação autenticada, copie `.env.example` para `.env` com valores de
 desenvolvimento e abra `http://localhost:5173/`. Use `npm run build`,
