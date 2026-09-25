@@ -56,7 +56,7 @@
 - [x] 6.6 Implementar inventário e equipamento como estados visuais distintos, incluindo equipar e desequipar, e verificar atualização dos efeitos e valores derivados
 - [x] 6.7 Implementar explicação das fontes de valores derivados e verificar um caso com contribuição simultânea de atributo, equipamento e efeito
 - [x] 6.8 Implementar importação de efeito, equipamento e conteúdo portátil em diálogo com pré-visualização e verificar sucesso, cancelamento e erro sem mutação parcial
-- [ ] 6.9 Validar a ficha nova contra as jornadas de paridade e registrar divergências restantes sem alterar o livro de regras
+- [x] 6.9 Validar a ficha nova contra as jornadas de paridade e registrar divergências restantes sem alterar o livro de regras
 
 ## 7. Auditoria de alterações
 
