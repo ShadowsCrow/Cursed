@@ -85,6 +85,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .button--primary { background: linear-gradient(140deg,#f1d399,#d4a965); color: #292116; box-shadow: 0 8px 22px #e4bd7822; }
 .button--secondary { border-color: #8e719f7d; color: #dfd4ef; background: var(--violet-soft); }
 .button--ghost { color: #e7e0d4; border-color: #ffffff3f; background: #ffffff0a; }
+.button--danger { border-color: #df887d55; color: var(--red); background: var(--red-soft); }
 .panel { padding: clamp(1.1rem,1.8vw,1.6rem); border: 1px solid var(--border-subtle); background: linear-gradient(155deg,#20212a,#191a22); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); min-width: 0; }
 .panel--wide { width: 100%; }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: .7rem; margin-bottom: 1.1rem; }
@@ -108,6 +109,11 @@ textarea { min-height: 5rem; resize: vertical; }
 .editable-field__popover { min-width: 18rem; }
 
 .effect-icon--suspenso { opacity: .5; filter: grayscale(.5); border-style: dashed; }
+
+.modifiers-editor__row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: .5rem; align-items: end; margin-bottom: .6rem; }
+.effect-admin-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); display: grid; gap: .6rem; }
+.effect-admin-list__row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.effect-admin-list__actions { display: flex; gap: .4rem; flex-wrap: wrap; }
 
 .resource--unregistered .resource__head { color: var(--quiet); }
 .resource--unregistered p { margin: 0; }
@@ -300,6 +306,32 @@ textarea { min-height: 5rem; resize: vertical; }
 .command-preview-demo__status--previa-local { color: var(--gold); background: var(--gold-soft); }
 .command-preview-demo__status--erro { color: var(--red); background: var(--red-soft); }
 .command-preview-demo__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
+
+fieldset { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: .75rem .9rem 1rem; margin: 0 0 .8rem; }
+fieldset legend { padding: 0 .35rem; color: var(--gold); font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+fieldset label { display: flex; align-items: center; gap: .5rem; font-weight: 600; color: var(--text); }
+label input[type="checkbox"], label input[type="radio"] { width: auto; }
+
+.visibility-preview { margin: .8rem 0; padding: .8rem .9rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-md); display: grid; gap: .5rem; }
+.visibility-preview__card { display: flex; align-items: center; gap: .7rem; font-weight: 700; }
+
+.public-entities-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .9rem; }
+.public-entity-card { display: grid; justify-items: center; gap: .5rem; padding: .8rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: #ffffff05; text-align: center; font-size: .78rem; font-weight: 700; }
+
+.rest-notas { display: grid; gap: .2rem; margin-bottom: .8rem; }
+.rest-alvo { padding: .55rem 0; border-top: 1px solid var(--border-subtle); }
+.rest-alvo:first-child { border-top: 0; }
+.rest-alvo__detalhes { margin: .5rem 0 .3rem 1.6rem; display: grid; gap: .4rem; max-width: 26rem; }
+.rest-alvo__ajustes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+.rest-alvo__ajustes label { display: grid; gap: .2rem; font-size: .64rem; }
+
+.rest-results { display: grid; gap: .9rem; margin: 1rem 0; }
+.rest-results__personagem { padding: .8rem .9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); display: grid; gap: .5rem; background: #ffffff05; }
+.rest-results__personagem header { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.rest-table-wrap { overflow-x: auto; }
+.rest-table { width: 100%; border-collapse: collapse; font-size: .72rem; }
+.rest-table th, .rest-table td { padding: .35rem .5rem; border-top: 1px solid var(--border-subtle); text-align: left; }
+.rest-table thead th { color: var(--quiet); font-size: .62rem; text-transform: uppercase; letter-spacing: .04em; border-top: 0; }
 
 .audit-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem; margin-bottom: 1.1rem; }
 .audit-filters label { display: grid; gap: .25rem; color: var(--muted); font-size: .66rem; font-weight: 700; letter-spacing: .03em; }

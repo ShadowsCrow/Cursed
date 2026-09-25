@@ -1,4 +1,4 @@
-import { asArray, asNumber, asRecord, asString, type FichaContrato } from "../types";
+import { asArray, asNumber, asRecord, asString, imagemDataUrl, type FichaContrato } from "../types";
 
 export interface PersonagemInfo {
   nome: string;
@@ -7,6 +7,8 @@ export interface PersonagemInfo {
   arquetipo?: string;
   idade?: number;
   habilidades: Record<string, unknown>[];
+  /** URL de dados do retrato (`personagem.imagem_base64`), quando a ficha traz um. */
+  imagemUrl?: string;
 }
 
 export function personagemInfo(ficha: FichaContrato): PersonagemInfo {
@@ -18,6 +20,7 @@ export function personagemInfo(ficha: FichaContrato): PersonagemInfo {
     arquetipo: asString(p.arquetipo),
     idade: asNumber(p.idade),
     habilidades: asArray(p.habilidades).map(asRecord),
+    imagemUrl: imagemDataUrl(asString(p.imagem_base64)),
   };
 }
 

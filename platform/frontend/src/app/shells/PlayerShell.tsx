@@ -2,6 +2,7 @@ import type { components } from "../../api/generated/schema";
 import { Portrait } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
 import { CharacterList } from "../characters/CharacterList";
+import { PublicEntities } from "../characters/PublicEntities";
 import type { ApiClient } from "../characters/types";
 import type { TableView } from "../tableNavigation";
 import { WorkspaceChrome } from "./WorkspaceChrome";
@@ -63,6 +64,18 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
         <CharacterList api={api} mesaId={mesa.id} userId={userId} role="jogador" onOpen={onOpenCharacter} />
       ) : view === "activity" ? (
         <AuditLog api={api} mesaId={mesa.id} role="jogador" />
+      ) : view === "overview" ? (
+        <div className="screen-content">
+          <section className="panel panel--wide workspace-status">
+            <div>
+              <span className="eyebrow">MESA ATIVA</span>
+              <h2>{mesa.nome}</h2>
+              <p>O acesso e a navegação refletem seu papel de jogador nesta mesa. Cartas e sala ainda não são apresentadas nesta área.</p>
+            </div>
+            <span className="workspace-status__pill">Jogador</span>
+          </section>
+          <PublicEntities api={api} mesaId={mesa.id} />
+        </div>
       ) : (
         <section className="panel panel--wide workspace-status">
           <div>

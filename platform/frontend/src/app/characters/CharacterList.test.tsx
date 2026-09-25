@@ -37,9 +37,10 @@ interface ApiFixture {
   participantes?: ParticipanteResumo[];
   post?: (path: string, options: unknown) => Promise<{ data?: unknown; error?: unknown }>;
   del?: (path: string, options: unknown) => Promise<{ data?: unknown; error?: unknown }>;
+  put?: (path: string, options: unknown) => Promise<{ data?: unknown; error?: unknown }>;
 }
 
-function createApi(fixture: ApiFixture = {}): { api: ApiClient; GET: ReturnType<typeof vi.fn>; POST: ReturnType<typeof vi.fn>; DELETE: ReturnType<typeof vi.fn> } {
+function createApi(fixture: ApiFixture = {}): { api: ApiClient; GET: ReturnType<typeof vi.fn>; POST: ReturnType<typeof vi.fn>; DELETE: ReturnType<typeof vi.fn>; PUT: ReturnType<typeof vi.fn> } {
   const GET = vi.fn(async (path: string, options: { params?: { query?: { excluidos?: boolean } } }) => {
     if (path === "/mesas/{mesa_id}/personagens") {
       const excluidos = options?.params?.query?.excluidos ?? false;
@@ -51,8 +52,9 @@ function createApi(fixture: ApiFixture = {}): { api: ApiClient; GET: ReturnType<
   });
   const POST = vi.fn(fixture.post ?? (async () => ({ data: undefined, error: { detail: "Não simulado." } })));
   const DELETE = vi.fn(fixture.del ?? (async () => ({ data: undefined, error: undefined })));
-  const api = { GET, POST, DELETE } as unknown as ApiClient;
-  return { api, GET, POST, DELETE };
+  const PUT = vi.fn(fixture.put ?? (async () => ({ data: undefined, error: { detail: "Não simulado." } })));
+  const api = { GET, POST, DELETE, PUT } as unknown as ApiClient;
+  return { api, GET, POST, DELETE, PUT };
 }
 
 function renderList(props: Partial<Parameters<typeof CharacterList>[0]> & { api: ApiClient }) {
@@ -90,8 +92,8 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
     expect(onOpen).toHaveBeenCalledWith("pj-1");
   });
 
-  it("Narrador cria um personagem informando o nome e é levado à nova ficha", async () => {
-    const created = { mesa_id: "mesa-1", personagem_id: "novo-id", versao: 0, ficha: { personagem: { nome: "Recém-criado" } } };
+  it("Narrador cria uma entidade oculta por padrão e é levado à nova ficha (8.1)", async () => {
+    const created = personagem({ id: "npc-novo", nome: "Emboscada", tipo: "npc", visibilidade: "narrador", proprietario_id: null });
     const { api, POST } = createApi({
       ativos: [],
       post: async () => ({ data: created, error: undefined }),
@@ -99,35 +101,80 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
     const onOpen = vi.fn();
     renderList({ api, role: "narrador", onOpen });
 
-    fireEvent.click(await screen.findByRole("button", { name: /Criar personagem/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Nova entidade/ }));
     const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Nome"), { target: { value: "Recém-criado" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Criar personagem" }));
+    fireEvent.change(within(dialog).getByLabelText("Nome"), { target: { value: "Emboscada" } });
+    fireEvent.change(within(dialog).getByLabelText("Tipo"), { target: { value: "npc" } });
+    // Visibilidade padrão já é "Oculta"; confirmamos sem alterá-la.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Criar entidade" }));
 
-    await waitFor(() => expect(onOpen).toHaveBeenCalledWith("novo-id"));
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith("npc-novo"));
     expect(POST).toHaveBeenCalledWith(
-      "/mesas/{mesa_id}/personagens",
-      expect.objectContaining({ body: { ficha: { personagem: { nome: "Recém-criado" } } } }),
+      "/mesas/{mesa_id}/entidades",
+      expect.objectContaining({
+        body: { tipo: "npc", visibilidade: "narrador", proprietario_id: null, ficha: { personagem: { nome: "Emboscada" } } },
+      }),
     );
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("erro do servidor ao criar aparece no diálogo, que permanece aberto e não navega", async () => {
+  it("Narrador pode escolher tipo, visibilidade e proprietário ao criar uma entidade", async () => {
+    const created = personagem({ id: "pj-2", nome: "Aliado", proprietario_id: "usuario-2" });
+    const { api, POST } = createApi({
+      ativos: [],
+      participantes: [{ usuario_id: "usuario-2", papel: "jogador" }],
+      post: async () => ({ data: created, error: undefined }),
+    });
+    renderList({ api, role: "narrador", onOpen: vi.fn() });
+
+    fireEvent.click(await screen.findByRole("button", { name: /Nova entidade/ }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Nome"), { target: { value: "Aliado" } });
+    fireEvent.click(within(dialog).getByLabelText("Visível para a mesa"));
+    fireEvent.change(within(dialog).getByLabelText("Proprietário (opcional)"), { target: { value: "usuario-2" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Criar entidade" }));
+
+    await waitFor(() =>
+      expect(POST).toHaveBeenCalledWith(
+        "/mesas/{mesa_id}/entidades",
+        expect.objectContaining({
+          body: { tipo: "personagem", visibilidade: "mesa", proprietario_id: "usuario-2", ficha: { personagem: { nome: "Aliado" } } },
+        }),
+      ),
+    );
+  });
+
+  it("erro do servidor ao criar entidade aparece no diálogo, que permanece aberto e não navega", async () => {
     const { api } = createApi({
       ativos: [],
-      post: async () => ({ data: undefined, error: { detail: "Nome do personagem obrigatório." } }),
+      post: async () => ({ data: undefined, error: { detail: "Nome da entidade obrigatório." } }),
     });
     const onOpen = vi.fn();
     renderList({ api, role: "narrador", onOpen });
 
-    fireEvent.click(await screen.findByRole("button", { name: /Criar personagem/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Nova entidade/ }));
     const dialog = screen.getByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText("Nome"), { target: { value: "X" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Criar personagem" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Criar entidade" }));
 
-    expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Nome do personagem obrigatório.");
+    expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Nome da entidade obrigatório.");
     expect(screen.getByRole("dialog")).toBeTruthy();
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("Jogador não vê nenhum controle de criação de entidade oculta, tipo ou visibilidade", async () => {
+    const { api } = createApi({ ativos: [personagem({ id: "pj-1", nome: "Ficha própria" })] });
+    renderList({ api, role: "jogador", onOpen: vi.fn() });
+
+    expect(await screen.findByRole("button", { name: /Criar personagem/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Nova entidade/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /Criar personagem/ }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByLabelText("Tipo")).toBeNull();
+    expect(within(dialog).queryByText("Visibilidade inicial")).toBeNull();
+    expect(within(dialog).queryByLabelText("Proprietário (opcional)")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Visibilidade" })).toBeNull();
   });
 
   it("Narrador transfere um personagem para um participante e para controle exclusivo do Narrador", async () => {
@@ -148,6 +195,31 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
         expect.objectContaining({ body: { proprietario_id: "usuario-2", versao_esperada: 4 } }),
       ),
     );
+  });
+
+  it("Narrador revela parcialmente uma entidade oculta (8.2): PUT envia a revelação exata", async () => {
+    const alvo = personagem({ id: "npc-1", nome: "Vilão Oculto", tipo: "npc", visibilidade: "narrador", proprietario_id: null, versao: 7 });
+    const { api, PUT } = createApi({
+      ativos: [alvo],
+      put: async () => ({ data: { ...alvo, revelacao: { nome_publico: "Figura encapuzada", imagem: true } }, error: undefined }),
+    });
+    renderList({ api, role: "narrador", onOpen: vi.fn() });
+
+    fireEvent.click(await screen.findByRole("button", { name: "Visibilidade" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Nome público"), { target: { value: "Figura encapuzada" } });
+    fireEvent.click(within(dialog).getByLabelText("Mostrar retrato"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar visibilidade" }));
+
+    await waitFor(() =>
+      expect(PUT).toHaveBeenCalledWith(
+        "/mesas/{mesa_id}/personagens/{personagem_id}/visibilidade",
+        expect.objectContaining({
+          body: { visibilidade: "narrador", revelacao: { nome_publico: "Figura encapuzada", imagem: true }, versao_esperada: 7 },
+        }),
+      ),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
   it("Narrador exclui um personagem após confirmar, e a lixeira permite restaurar com prazo visível", async () => {
@@ -229,6 +301,24 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
     });
     renderList({ api, role: "narrador", onOpen: vi.fn() });
     await screen.findByText("Nara Exemplo");
+    const results = await axe.run(document.body, { rules: { region: { enabled: false } } });
+    expect(results.violations).toEqual([]);
+  });
+
+  it("o diálogo 'Nova entidade' não apresenta violações de acessibilidade detectáveis automaticamente", async () => {
+    const { api } = createApi({ ativos: [], participantes: [{ usuario_id: "usuario-2", papel: "jogador" }] });
+    renderList({ api, role: "narrador", onOpen: vi.fn() });
+    fireEvent.click(await screen.findByRole("button", { name: /Nova entidade/ }));
+    await screen.findByRole("dialog");
+    const results = await axe.run(document.body, { rules: { region: { enabled: false } } });
+    expect(results.violations).toEqual([]);
+  });
+
+  it("o diálogo de Visibilidade não apresenta violações de acessibilidade detectáveis automaticamente", async () => {
+    const { api } = createApi({ ativos: [personagem({ id: "npc-1", nome: "Vilão Oculto", tipo: "npc", visibilidade: "narrador" })] });
+    renderList({ api, role: "narrador", onOpen: vi.fn() });
+    fireEvent.click(await screen.findByRole("button", { name: "Visibilidade" }));
+    await screen.findByRole("dialog");
     const results = await axe.run(document.body, { rules: { region: { enabled: false } } });
     expect(results.violations).toEqual([]);
   });

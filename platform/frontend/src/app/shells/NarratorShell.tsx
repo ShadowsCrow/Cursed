@@ -2,6 +2,8 @@ import type { components } from "../../api/generated/schema";
 import { Glyph } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
 import { CharacterList } from "../characters/CharacterList";
+import { PublicEntities } from "../characters/PublicEntities";
+import { RestDialog } from "../characters/RestDialog";
 import type { ApiClient } from "../characters/types";
 import type { TableView } from "../tableNavigation";
 import { WorkspaceChrome } from "./WorkspaceChrome";
@@ -17,11 +19,12 @@ const narratorCopy: Record<TableView, { eyebrow: string; title: string; descript
 };
 
 /** Ferramentas exclusivas do Narrador, sempre visíveis na barra lateral, em toda seção da mesa. */
-function NarratorToolsPanel() {
+function NarratorToolsPanel({ api, mesaId }: { api: ApiClient; mesaId: string }) {
   return (
     <section className="narrator-aside-nav" aria-label="Ferramentas do Narrador">
       <span className="eyebrow">ATALHOS DO NARRADOR</span>
-      <p>Auditoria, ofertas de cartas e preparação de descanso chegam nas próximas etapas.</p>
+      <p>Auditoria e ofertas de cartas chegam nas próximas etapas.</p>
+      <RestDialog api={api} mesaId={mesaId} />
     </section>
   );
 }
@@ -54,29 +57,41 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
       headerTitle={copy.title}
       headerEyebrow={copy.eyebrow}
       headerDescription={copy.description}
-      sidebarExtra={<NarratorToolsPanel />}
+      sidebarExtra={<NarratorToolsPanel api={api} mesaId={mesa.id} />}
     >
       {view === "character" ? (
         <CharacterList api={api} mesaId={mesa.id} userId={userId} role="narrador" onOpen={onOpenCharacter} />
       ) : view === "activity" ? (
         <AuditLog api={api} mesaId={mesa.id} role="narrador" />
-      ) : (
-        <div className="workspace-status-row">
-          <section className="panel panel--wide workspace-status">
-            <div>
-              <span className="eyebrow">MESA ATIVA</span>
-              <h2>{mesa.nome}</h2>
-              <p>O acesso e a navegação refletem seu papel de Narrador nesta mesa. Cartas e sala ainda não são apresentadas nesta área.</p>
-            </div>
-            <span className="workspace-status__pill">Narrador</span>
-          </section>
-          <aside className="panel narrator-aside" aria-label="Fila do Narrador">
-            <span className="eyebrow">FILA DO NARRADOR</span>
-            <h2>Pendências</h2>
-            <p className="body-copy">Solicitações de aprovação, pedidos de descanso e ofertas de cartas aparecerão aqui quando as ferramentas do Narrador forem conectadas.</p>
-            <div className="narrator-aside__foot"><Glyph name="scroll" size={16} /><span>Somente o Narrador vê este painel.</span></div>
-          </aside>
+      ) : view === "overview" ? (
+        <div className="screen-content">
+          <div className="workspace-status-row">
+            <section className="panel panel--wide workspace-status">
+              <div>
+                <span className="eyebrow">MESA ATIVA</span>
+                <h2>{mesa.nome}</h2>
+                <p>O acesso e a navegação refletem seu papel de Narrador nesta mesa. Cartas e sala ainda não são apresentadas nesta área.</p>
+              </div>
+              <span className="workspace-status__pill">Narrador</span>
+            </section>
+            <aside className="panel narrator-aside" aria-label="Fila do Narrador">
+              <span className="eyebrow">FILA DO NARRADOR</span>
+              <h2>Pendências</h2>
+              <p className="body-copy">Solicitações de aprovação e ofertas de cartas aparecerão aqui quando as ferramentas do Narrador forem conectadas.</p>
+              <div className="narrator-aside__foot"><Glyph name="scroll" size={16} /><span>Somente o Narrador vê este painel.</span></div>
+            </aside>
+          </div>
+          <PublicEntities api={api} mesaId={mesa.id} />
         </div>
+      ) : (
+        <section className="panel panel--wide workspace-status">
+          <div>
+            <span className="eyebrow">MESA ATIVA</span>
+            <h2>{mesa.nome}</h2>
+            <p>O acesso e a navegação refletem seu papel de Narrador nesta mesa. Cartas e sala ainda não são apresentadas nesta área.</p>
+          </div>
+          <span className="workspace-status__pill">Narrador</span>
+        </section>
       )}
     </WorkspaceChrome>
   );

@@ -21,6 +21,14 @@ export type ParticipanteResumo = components["schemas"]["ParticipanteResumo"];
 export type PoliticaMesaContrato = components["schemas"]["PoliticaMesaContrato"];
 export type PedidoAlteracaoResumo = components["schemas"]["PedidoAlteracaoResumo"];
 export type AtualizarFichaComando = components["schemas"]["AtualizarFichaComando"];
+export type EfeitoComandoResposta = components["schemas"]["EfeitoComandoResposta"];
+export type EntidadePublica = components["schemas"]["EntidadePublica"];
+export type RevelacaoContrato = components["schemas"]["RevelacaoContrato"];
+export type AlvoDescanso = components["schemas"]["AlvoDescanso"];
+export type ResultadoDescansoResumo = components["schemas"]["ResultadoDescansoResumo"];
+export type ResultadoDescansoPersonagem = components["schemas"]["ResultadoDescansoPersonagem"];
+export type ResultadoRecursoDescanso = components["schemas"]["ResultadoRecursoDescanso"];
+export type ResultadoTrilhaDescanso = components["schemas"]["ResultadoTrilhaDescanso"];
 
 /**
  * Extrai uma mensagem legível de um erro devolvido pelo cliente HTTP gerado.
@@ -56,4 +64,14 @@ export function asNumber(value: unknown): number | undefined {
 
 export function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+/**
+ * Retratos trafegam como Base64 puro (`personagem.imagem_base64`, ou o campo
+ * `imagem` de `EntidadePublica`), sem tipo MIME associado. Seguimos a mesma
+ * convenção da interface legada (`app_streamlit/app/sections/retrato.py`) e
+ * assumimos PNG ao montar a URL de dados.
+ */
+export function imagemDataUrl(base64: string | null | undefined): string | undefined {
+  return base64 ? `data:image/png;base64,${base64}` : undefined;
 }

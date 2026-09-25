@@ -21,7 +21,7 @@ export function SheetHeader({ ficha }: { ficha: FichaContrato }) {
   return (
     <section className="character-hero">
       <div className="character-hero__portrait">
-        <Portrait name={info.nome} hue="violet" size="large" />
+        <Portrait name={info.nome} imageUrl={info.imagemUrl} hue="violet" size="large" />
       </div>
       <div className="character-hero__identity">
         <span className="eyebrow">{eyebrow || "Identidade não preenchida"}</span>

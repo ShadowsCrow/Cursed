@@ -4,11 +4,13 @@ import { useCommandPreview, type UseCommandPreviewResult } from "../../connectiv
 import {
   extractErrorMessage,
   type ApiClient,
+  type EfeitoComandoResposta,
   type EfeitoResumo,
   type FichaContrato,
   type FichaSnapshot,
   type ImportacaoResultado,
   type ItemInventarioResumo,
+  type ModificadorResumo,
   type PedidoAlteracaoResumo,
   type PermissoesFicha,
   type PreviaImportacaoResumo,
@@ -184,6 +186,108 @@ export function useEquipCommand({
       void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
       return resposta.item;
     },
+  });
+}
+
+/** Aplica/ajusta/encerra um efeito e atualiza a versão do personagem, os efeitos e os valores derivados em cache. */
+function useEfeitoComandoResultado(api: ApiClient, mesaId: string, personagemId: string) {
+  const queryClient = useQueryClient();
+  return (data: EfeitoComandoResposta) => {
+    queryClient.setQueryData(sheetKeys.ficha(mesaId, personagemId), (old?: FichaSnapshot) =>
+      old ? { ...old, versao: data.versao } : old,
+    );
+    void queryClient.invalidateQueries({ queryKey: sheetKeys.efeitos(mesaId, personagemId) });
+    void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
+  };
+}
+
+export interface AplicarEfeitoVariaveis {
+  associacao?: string | null;
+  nome?: string | null;
+  descricao?: string | null;
+  modificadores?: ModificadorResumo[];
+  duracaoRodadas?: number | null;
+  origem?: string | null;
+  motivo?: string | null;
+  versaoEsperada: number;
+}
+
+/** Comando do Narrador (8.3): aplica um efeito do catálogo (`associacao`) ou personalizado (`nome`/`descricao`). */
+export function useAplicarEfeito(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useEfeitoComandoResultado(api, mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (variaveis: AplicarEfeitoVariaveis) => {
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/efeitos", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+        body: {
+          associacao: variaveis.associacao ?? null,
+          nome: variaveis.nome ?? null,
+          descricao: variaveis.descricao ?? null,
+          modificadores: variaveis.modificadores,
+          duracao_rodadas: variaveis.duracaoRodadas ?? null,
+          origem: variaveis.origem ?? null,
+          motivo: variaveis.motivo ?? null,
+          versao_esperada: variaveis.versaoEsperada,
+        },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível aplicar o efeito."));
+      return data as EfeitoComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
+
+export interface AjustarEfeitoVariaveis {
+  efeitoId: string;
+  descricao?: string | null;
+  duracaoRodadas?: number | null;
+  modificadores?: ModificadorResumo[] | null;
+  motivo?: string | null;
+  versaoEsperada: number;
+}
+
+/** Comando do Narrador (8.3): só os campos enviados mudam; `duracaoRodadas: null` remove a duração. */
+export function useAjustarEfeito(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useEfeitoComandoResultado(api, mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (variaveis: AjustarEfeitoVariaveis) => {
+      const { data, error } = await api.PATCH("/mesas/{mesa_id}/personagens/{personagem_id}/efeitos/{efeito_id}", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId, efeito_id: variaveis.efeitoId } },
+        body: {
+          descricao: variaveis.descricao,
+          duracao_rodadas: variaveis.duracaoRodadas,
+          modificadores: variaveis.modificadores,
+          motivo: variaveis.motivo ?? null,
+          versao_esperada: variaveis.versaoEsperada,
+        },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível ajustar o efeito."));
+      return data as EfeitoComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
+
+export interface TransicionarEfeitoVariaveis {
+  efeitoId: string;
+  acao: "suspender" | "retomar" | "encerrar";
+  motivo?: string | null;
+  versaoEsperada: number;
+}
+
+/** Comando do Narrador (8.3): suspende, retoma ou encerra um efeito; 409 indica transição inválida no estado atual. */
+export function useTransicionarEfeito(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useEfeitoComandoResultado(api, mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (variaveis: TransicionarEfeitoVariaveis) => {
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/efeitos/{efeito_id}/{acao}", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId, efeito_id: variaveis.efeitoId, acao: variaveis.acao } },
+        body: { motivo: variaveis.motivo ?? null, versao_esperada: variaveis.versaoEsperada },
+      });
+      if (error) throw new Error(extractErrorMessage(error, `Não foi possível ${variaveis.acao} o efeito.`));
+      return data as EfeitoComandoResposta;
+    },
+    onSuccess: onResultado,
   });
 }
 

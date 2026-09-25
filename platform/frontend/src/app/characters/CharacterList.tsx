@@ -2,7 +2,11 @@ import { useRef, useState } from "react";
 
 import { Glyph, Portrait } from "../../ui/Display";
 import { Confirmation, Dialog, Menu, type MenuItem } from "../../ui/primitives";
+import { CreateEntityDialog, type NovaEntidade } from "./CreateEntityDialog";
+import { VisibilityDialog } from "./VisibilityDialog";
 import {
+  useAlterarVisibilidade,
+  useCriarEntidade,
   useCriarPersonagem,
   useExcluirPersonagem,
   usePersonagens,
@@ -116,6 +120,7 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
   const [tab, setTab] = useState<"ativos" | "lixeira">("ativos");
   const [createOpen, setCreateOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PersonagemResumo | null>(null);
+  const [visibilityTarget, setVisibilityTarget] = useState<PersonagemResumo | null>(null);
   const [rowError, setRowError] = useState<Record<string, string>>({});
 
   const personagens = usePersonagens(api, mesaId, tab === "lixeira");
@@ -123,9 +128,11 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
   const participantes = useParticipantes(api, mesaId, { enabled: role === "narrador" });
 
   const criar = useCriarPersonagem(api, mesaId);
+  const criarEntidade = useCriarEntidade(api, mesaId);
   const excluir = useExcluirPersonagem(api, mesaId);
   const transferir = useTransferirPersonagem(api, mesaId);
   const restaurar = useRestaurarPersonagem(api, mesaId);
+  const alterarVisibilidade = useAlterarVisibilidade(api, mesaId);
 
   function setError(id: string, message: string | null) {
     setRowError((prev) => {
@@ -143,6 +150,32 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
           setCreateOpen(false);
           criar.reset();
           if (data) onOpen(data.personagem_id);
+        },
+      },
+    );
+  }
+
+  function handleCreateEntity(entidade: NovaEntidade) {
+    criarEntidade.mutate(entidade, {
+      onSuccess: (data) => {
+        setCreateOpen(false);
+        criarEntidade.reset();
+        if (data) onOpen(data.id);
+      },
+    });
+  }
+
+  function handleVisibilitySubmit(
+    visibilidade: "mesa" | "narrador",
+    revelacao: { nome_publico: string | null; imagem: boolean },
+  ) {
+    if (!visibilityTarget) return;
+    alterarVisibilidade.mutate(
+      { personagemId: visibilityTarget.id, visibilidade, revelacao, versaoEsperada: visibilityTarget.versao },
+      {
+        onSuccess: () => {
+          setVisibilityTarget(null);
+          alterarVisibilidade.reset();
         },
       },
     );
@@ -187,7 +220,7 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
         </div>
         {podeCriar ? (
           <button type="button" className="button button--primary" onClick={() => setCreateOpen(true)}>
-            <Glyph name="spark" size={16} /> Criar personagem
+            <Glyph name="spark" size={16} /> {role === "narrador" ? "Nova entidade" : "Criar personagem"}
           </button>
         ) : (
           politica.isSuccess && <p className="preview-note">Criação de personagem não permitida nesta mesa.</p>
@@ -223,10 +256,21 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
                     {tab === "lixeira" && prazo ? ` · Recuperável até ${prazo}` : ""}
                   </small>
                 </span>
+                {role === "narrador" && personagem.tipo !== "personagem" && (
+                  <span className="tag">{tipoLabel[personagem.tipo]}</span>
+                )}
+                {role === "narrador" && personagem.visibilidade === "narrador" && (
+                  <span className="tag tag--accent">Oculto</span>
+                )}
                 <div className="character-tile__actions">
                   {tab === "ativos" && (
                     <button type="button" className="button button--secondary" onClick={() => onOpen(personagem.id)}>
                       Abrir
+                    </button>
+                  )}
+                  {tab === "ativos" && role === "narrador" && (
+                    <button type="button" className="button button--ghost" onClick={() => setVisibilityTarget(personagem)}>
+                      Visibilidade
                     </button>
                   )}
                   {tab === "ativos" && role === "narrador" && (
@@ -254,13 +298,34 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
         </ul>
       )}
 
-      <CreateCharacterDialog
-        open={createOpen}
-        onClose={() => { setCreateOpen(false); criar.reset(); }}
-        onCreate={handleCreate}
-        pending={criar.isPending}
-        error={criar.isError ? criar.error.message : null}
-      />
+      {role === "narrador" ? (
+        <CreateEntityDialog
+          open={createOpen}
+          onClose={() => { setCreateOpen(false); criarEntidade.reset(); }}
+          onCreate={handleCreateEntity}
+          pending={criarEntidade.isPending}
+          error={criarEntidade.isError ? criarEntidade.error.message : null}
+          participantes={participantes.data ?? []}
+        />
+      ) : (
+        <CreateCharacterDialog
+          open={createOpen}
+          onClose={() => { setCreateOpen(false); criar.reset(); }}
+          onCreate={handleCreate}
+          pending={criar.isPending}
+          error={criar.isError ? criar.error.message : null}
+        />
+      )}
+
+      {visibilityTarget && (
+        <VisibilityDialog
+          personagem={visibilityTarget}
+          onClose={() => { setVisibilityTarget(null); alterarVisibilidade.reset(); }}
+          onSubmit={handleVisibilitySubmit}
+          pending={alterarVisibilidade.isPending}
+          error={alterarVisibilidade.isError ? alterarVisibilidade.error.message : null}
+        />
+      )}
 
       <Confirmation
         open={pendingDelete !== null}

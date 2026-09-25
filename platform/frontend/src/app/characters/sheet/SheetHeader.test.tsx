@@ -34,4 +34,16 @@ describe("SheetHeader — 6.2 cabeçalho visual da ficha", () => {
     const notices = screen.getAllByText("Não registrado");
     expect(notices).toHaveLength(2);
   });
+
+  it("mostra o retrato real quando a ficha traz personagem.imagem_base64 (6.2 correção)", () => {
+    const ficha = {
+      personagem: { nome: "Nara Exemplo", imagem_base64: "ZmFrZS1wbmc=" },
+    } as unknown as FichaContrato;
+
+    render(<SheetHeader ficha={ficha} />);
+
+    const img = screen.getByRole("img", { name: "Retrato de Nara Exemplo" }) as HTMLImageElement;
+    expect(img.src).toBe("data:image/png;base64,ZmFrZS1wbmc=");
+    expect(screen.queryByRole("img", { name: "Retrato ilustrativo de Nara Exemplo" })).toBeNull();
+  });
 });

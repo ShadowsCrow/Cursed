@@ -34,9 +34,11 @@ function PreviewContent({ previa }: { previa: PreviaImportacaoResumo }) {
         </div>
       )}
       {previa.avisos && previa.avisos.length > 0 && (
-        <ul role="alert">
-          {previa.avisos.map((aviso, index) => <li key={index}>{aviso}</li>)}
-        </ul>
+        <div role="status">
+          <ul>
+            {previa.avisos.map((aviso, index) => <li key={index}>{aviso}</li>)}
+          </ul>
+        </div>
       )}
     </div>
   );

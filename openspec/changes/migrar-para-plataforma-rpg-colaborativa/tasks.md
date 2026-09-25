@@ -69,11 +69,11 @@
 
 ## 8. Ferramentas do Narrador
 
-- [ ] 8.1 Implementar criação e administração de personagens, NPCs e monstros ocultos e verificar ausência total desses recursos para jogadores não autorizados
-- [ ] 8.2 Implementar visibilidade granular de entidade e verificar revelação somente de nome público e imagem sem atributos ou anotações privadas
-- [ ] 8.3 Implementar comando de aplicação, ajuste, suspensão e encerramento de efeitos e verificar origem, duração, recálculo e auditoria
-- [ ] 8.4 Implementar preparação de descanso com seleção de alvos, parâmetros e pré-visualização e verificar que cancelar não modifica dados
-- [ ] 8.5 Implementar confirmação transacional de descanso usando as regras de domínio vigentes e verificar resultados por personagem e evento de auditoria
+- [x] 8.1 Implementar criação e administração de personagens, NPCs e monstros ocultos e verificar ausência total desses recursos para jogadores não autorizados
+- [x] 8.2 Implementar visibilidade granular de entidade e verificar revelação somente de nome público e imagem sem atributos ou anotações privadas
+- [x] 8.3 Implementar comando de aplicação, ajuste, suspensão e encerramento de efeitos e verificar origem, duração, recálculo e auditoria
+- [x] 8.4 Implementar preparação de descanso com seleção de alvos, parâmetros e pré-visualização e verificar que cancelar não modifica dados
+- [x] 8.5 Implementar confirmação transacional de descanso usando as regras de domínio vigentes e verificar resultados por personagem e evento de auditoria
 - [ ] 8.6 Realizar validação de mesa dos fluxos de efeito e descanso com Narrador e jogadores e registrar resultados sem consolidar mudanças de regra não aprovadas
 
 ## 9. Catálogo e sistema de cartas

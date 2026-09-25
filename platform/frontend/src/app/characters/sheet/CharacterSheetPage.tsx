@@ -203,7 +203,12 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
       <div hidden={secao !== "efeitos"}>
         {efeitosQuery.isPending && <p>Carregando efeitos…</p>}
         {efeitosQuery.isError && <p role="alert">{efeitosQuery.error.message}</p>}
-        {efeitosQuery.isSuccess && <EffectsPanel efeitos={efeitosQuery.data} />}
+        {efeitosQuery.isSuccess && (
+          <EffectsPanel
+            efeitos={efeitosQuery.data}
+            admin={permissoes?.papel === "narrador" ? { api, mesaId, personagemId, versao, onVersaoConfirmada: bumpVersao } : undefined}
+          />
+        )}
       </div>
 
       {permissoes && !permissoes.editar && (
