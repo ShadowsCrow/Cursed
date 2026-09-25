@@ -28,7 +28,7 @@ Divergências **abertas** impedem o corte do Streamlit.
 | D1 | Aplicar, ajustar, suspender e encerrar efeitos pelo Narrador, com auditoria. | Resolvida (7.2 e 8.3) | — |
 | D2 | Uma ficha legada mantém `armas`, `armaduras`, `outros` e `efeitos_externos` no JSON, preservados, mas esses itens só aparecem no inventário e nos efeitos da ficha nova depois da migração para as tabelas. | Aberta | 11.1, 11.2 e 11.4 |
 | D3 | Deslocamento e Capacidade de carga do Status não são calculados, porque dependem do catálogo de raças. | Aberta | Antes do piloto (12.6) |
-| D4 | Com a política exigindo aprovação para `inventario` ou `efeitos`, o jogador recebe recusa com orientação, em vez de uma solicitação pendente. As solicitações existem apenas para edição da ficha. | Aberta | 7.x ou 8.x |
+| D4 | Com a política exigindo aprovação para `inventario` ou `efeitos`, o jogador recebe recusa com orientação, em vez de uma solicitação pendente. As solicitações existem apenas para edição da ficha. | Aberta | Antes do piloto (12.6) |
 | D5 | A peça de armadura da `ficha_complexa` usa `defesa`, mas o Streamlit lê `armadura`. As duas aplicações somam zero para essa peça. O migrador não deve adivinhar o significado. | Pendência de revisão | 11.5 |
 | D6 | Totais de atributos, perícias e Status passam a incluir modificadores sem condição de efeitos ativos. Na `ficha_complexa`, Arcanismo é 5 no Streamlit e será 7 depois de migrar "Marca de teste" (+2). Modificadores com contexto continuam fora do total. | Aprovada (design 7.1) | — |
 | D7 | O "bônus externo" manual do Status do Streamlit não era persistido e foi substituído por efeitos com origem visível. Não há perda de dados. | Aprovada (design 7.1) | — |
