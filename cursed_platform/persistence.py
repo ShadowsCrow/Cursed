@@ -7,8 +7,8 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
-    Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint,
-    Integer, JSON, Numeric, String, UniqueConstraint, func, true,
+    BigInteger, Boolean, CheckConstraint, DDL, DateTime, ForeignKey, ForeignKeyConstraint,
+    Index, Integer, JSON, Numeric, String, UniqueConstraint, event, func, true,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -273,3 +273,80 @@ class FonteEfeitoRegistro(Base):
     equipamento_id: Mapped[str | None] = mapped_column(String(100))
     referencia_id: Mapped[str | None] = mapped_column(String(100))
     descricao: Mapped[str | None] = mapped_column(String(500))
+
+
+CATEGORIAS_AUDITORIA = ("mesa", "permissao", "personagem", "ficha", "inventario", "efeito")
+RELEVANCIAS_AUDITORIA = ("mecanica", "narrativa", "organizacional")
+
+
+class EventoAuditoriaRegistro(Base):
+    """Evento semântico append-only; correções geram novos eventos vinculados."""
+
+    __tablename__ = "audit_events"
+    __table_args__ = (
+        CheckConstraint(
+            "categoria IN ('mesa', 'permissao', 'personagem', 'ficha', 'inventario', 'efeito')",
+            name="ck_audit_events_categoria",
+        ),
+        CheckConstraint(
+            "relevancia IN ('mecanica', 'narrativa', 'organizacional')", name="ck_audit_events_relevancia"
+        ),
+        CheckConstraint("origem IN ('usuario', 'automacao', 'migracao')", name="ck_audit_events_origem"),
+        CheckConstraint("visibilidade IN ('mesa', 'narrador')", name="ck_audit_events_visibilidade"),
+        Index("ix_audit_events_mesa_seq", "mesa_id", "id"),
+        Index("ix_audit_events_mesa_personagem", "mesa_id", "personagem_id", "id"),
+        Index("ix_audit_events_mesa_categoria", "mesa_id", "categoria", "id"),
+        Index("ix_audit_events_mesa_ator", "mesa_id", "ator_id", "id"),
+        Index("ix_audit_events_mesa_sessao", "mesa_id", "sessao_id", "id"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
+    mesa_id: Mapped[str] = mapped_column(
+        String(100), ForeignKey("rpg_tables.id", ondelete="RESTRICT"), nullable=False
+    )
+    sessao_id: Mapped[str | None] = mapped_column(String(100), ForeignKey("table_sessions.id"))
+    ocorrido_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    ator_id: Mapped[str | None] = mapped_column(String(100))
+    origem: Mapped[str] = mapped_column(String(20), nullable=False, default="usuario")
+    categoria: Mapped[str] = mapped_column(String(20), nullable=False)
+    acao: Mapped[str] = mapped_column(String(60), nullable=False)
+    relevancia: Mapped[str] = mapped_column(String(20), nullable=False)
+    visibilidade: Mapped[str] = mapped_column(String(20), nullable=False, default="mesa")
+    personagem_id: Mapped[str | None] = mapped_column(String(100))
+    alvo_tipo: Mapped[str | None] = mapped_column(String(40))
+    alvo_id: Mapped[str | None] = mapped_column(String(100))
+    correlacao_id: Mapped[str | None] = mapped_column(String(100), index=True)
+    corrige_evento_id: Mapped[int | None] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), ForeignKey("audit_events.id")
+    )
+    resumo: Mapped[str] = mapped_column(String(500), nullable=False)
+    detalhes: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+
+# Imutabilidade garantida pelo banco, também quando o esquema nasce de create_all.
+AUDITORIA_IMUTAVEL_SQLITE = (
+    "CREATE TRIGGER audit_events_no_update BEFORE UPDATE ON audit_events "
+    "BEGIN SELECT RAISE(ABORT, 'audit_events é append-only'); END",
+    "CREATE TRIGGER audit_events_no_delete BEFORE DELETE ON audit_events "
+    "BEGIN SELECT RAISE(ABORT, 'audit_events é append-only'); END",
+)
+AUDITORIA_IMUTAVEL_POSTGRES = (
+    "CREATE FUNCTION audit_events_append_only() RETURNS trigger LANGUAGE plpgsql AS $$ "
+    "BEGIN RAISE EXCEPTION 'audit_events é append-only'; END $$",
+    "CREATE TRIGGER audit_events_no_change BEFORE UPDATE OR DELETE ON audit_events "
+    "FOR EACH ROW EXECUTE FUNCTION audit_events_append_only()",
+    "CREATE TRIGGER audit_events_no_truncate BEFORE TRUNCATE ON audit_events "
+    "FOR EACH STATEMENT EXECUTE FUNCTION audit_events_append_only()",
+)
+for _comando in AUDITORIA_IMUTAVEL_SQLITE:
+    event.listen(
+        EventoAuditoriaRegistro.__table__, "after_create", DDL(_comando).execute_if(dialect="sqlite")
+    )
+for _comando in AUDITORIA_IMUTAVEL_POSTGRES:
+    event.listen(
+        EventoAuditoriaRegistro.__table__, "after_create", DDL(_comando).execute_if(dialect="postgresql")
+    )

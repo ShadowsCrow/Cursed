@@ -300,3 +300,42 @@ class ImportacaoResultado(BaseModel):
     versao: int
     item: ItemInventarioResumo | None = None
     efeitos: list[EfeitoResumo]
+
+
+class MudancaAuditoria(BaseModel):
+    campo: str
+    antes: Any = None
+    depois: Any = None
+    rotulo: str | None = None
+    completo: bool = True
+
+
+class EventoAuditoriaResumo(BaseModel):
+    id: int
+    ocorrido_em: datetime
+    sessao_id: str | None = None
+    ator_id: str | None = None
+    origem: Literal["usuario", "automacao", "migracao"]
+    categoria: Literal["mesa", "permissao", "personagem", "ficha", "inventario", "efeito"]
+    acao: str
+    relevancia: Literal["mecanica", "narrativa", "organizacional"]
+    personagem_id: str | None = None
+    alvo_tipo: str | None = None
+    alvo_id: str | None = None
+    resumo: str
+    mudancas: list[MudancaAuditoria] = Field(default_factory=list)
+    motivo: str | None = None
+    correlacao_id: str | None = None
+    corrige_evento_id: int | None = None
+    corrigido_por: list[int] = Field(default_factory=list)
+    corrigivel: bool = False
+
+
+class PaginaAuditoria(BaseModel):
+    eventos: list[EventoAuditoriaResumo]
+    proximo_cursor: int | None = None
+
+
+class CorrigirEventoRequest(BaseModel):
+    motivo: str | None = Field(default=None, max_length=300)
+    versao_esperada: int = Field(ge=0)

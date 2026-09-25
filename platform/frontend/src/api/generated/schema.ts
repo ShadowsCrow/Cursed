@@ -51,6 +51,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/auditoria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Eventos
+         * @description Eventos do mais recente ao mais antigo; jogadores recebem somente o que podem ver.
+         */
+        get: operations["listar_eventos_mesas__mesa_id__auditoria_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/auditoria/{evento_id}/correcao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Corrigir Evento */
+        post: operations["corrigir_evento_mesas__mesa_id__auditoria__evento_id__correcao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/canais": {
         parameters: {
             query?: never;
@@ -437,6 +474,13 @@ export interface components {
              */
             expira_em: string;
         };
+        /** CorrigirEventoRequest */
+        CorrigirEventoRequest: {
+            /** Motivo */
+            motivo?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** CriarConviteRequest */
         CriarConviteRequest: {
             /**
@@ -504,6 +548,60 @@ export interface components {
             item: components["schemas"]["ItemInventarioResumo"];
             /** Versao */
             versao: number;
+        };
+        /** EventoAuditoriaResumo */
+        EventoAuditoriaResumo: {
+            /** Acao */
+            acao: string;
+            /** Alvo Id */
+            alvo_id?: string | null;
+            /** Alvo Tipo */
+            alvo_tipo?: string | null;
+            /** Ator Id */
+            ator_id?: string | null;
+            /**
+             * Categoria
+             * @enum {string}
+             */
+            categoria: "mesa" | "permissao" | "personagem" | "ficha" | "inventario" | "efeito";
+            /** Correlacao Id */
+            correlacao_id?: string | null;
+            /** Corrige Evento Id */
+            corrige_evento_id?: number | null;
+            /** Corrigido Por */
+            corrigido_por?: number[];
+            /**
+             * Corrigivel
+             * @default false
+             */
+            corrigivel: boolean;
+            /** Id */
+            id: number;
+            /** Motivo */
+            motivo?: string | null;
+            /** Mudancas */
+            mudancas?: components["schemas"]["MudancaAuditoria"][];
+            /**
+             * Ocorrido Em
+             * Format: date-time
+             */
+            ocorrido_em: string;
+            /**
+             * Origem
+             * @enum {string}
+             */
+            origem: "usuario" | "automacao" | "migracao";
+            /** Personagem Id */
+            personagem_id?: string | null;
+            /**
+             * Relevancia
+             * @enum {string}
+             */
+            relevancia: "mecanica" | "narrativa" | "organizacional";
+            /** Resumo */
+            resumo: string;
+            /** Sessao Id */
+            sessao_id?: string | null;
         };
         /**
          * FichaContrato
@@ -668,6 +766,29 @@ export interface components {
             contexto?: string | null;
             /** Valor */
             valor: number;
+        };
+        /** MudancaAuditoria */
+        MudancaAuditoria: {
+            /** Antes */
+            antes?: unknown;
+            /** Campo */
+            campo: string;
+            /**
+             * Completo
+             * @default true
+             */
+            completo: boolean;
+            /** Depois */
+            depois?: unknown;
+            /** Rotulo */
+            rotulo?: string | null;
+        };
+        /** PaginaAuditoria */
+        PaginaAuditoria: {
+            /** Eventos */
+            eventos: components["schemas"]["EventoAuditoriaResumo"][];
+            /** Proximo Cursor */
+            proximo_cursor?: number | null;
         };
         /** ParticipanteResumo */
         ParticipanteResumo: {
@@ -927,6 +1048,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MesaResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_eventos_mesas__mesa_id__auditoria_get: {
+        parameters: {
+            query?: {
+                sessao_id?: string | null;
+                ator_id?: string | null;
+                personagem_id?: string | null;
+                categoria?: ("mesa" | "permissao" | "personagem" | "ficha" | "inventario" | "efeito") | null;
+                relevancia?: ("mecanica" | "narrativa" | "organizacional") | null;
+                antes_de?: number | null;
+                limite?: number;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginaAuditoria"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    corrigir_evento_mesas__mesa_id__auditoria__evento_id__correcao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                evento_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrigirEventoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventoAuditoriaResumo"];
                 };
             };
             /** @description Validation Error */

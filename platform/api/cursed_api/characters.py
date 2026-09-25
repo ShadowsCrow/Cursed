@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cursed_platform import auditoria
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CriarPersonagemRequest, DecidirPedidoRequest, FichaContrato,
@@ -20,7 +21,7 @@ from cursed_platform.persistence import MesaRegistro, PedidoAlteracaoRegistro, P
 from cursed_platform.repositories import FichaRepository, MesaRepository
 
 from .auth import Ator, get_actor
-from .dependencies import get_session
+from .dependencies import get_correlacao, get_session
 from .sheets import FichaSnapshot
 
 
@@ -74,15 +75,25 @@ def ler_politicas(
 def configurar_politicas(
     mesa_id: str, politica: PoliticaMesaContrato,
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> PoliticaMesaContrato:
     _exigir(session, Acao.CONFIGURAR_POLITICAS, mesa_id, ator)
     mesa = session.get(MesaRegistro, mesa_id)
     assert mesa is not None
+    anterior = _politica(mesa).model_dump()
     mesa.permitir_criacao_propria = politica.permitir_criacao_propria
     mesa.permitir_edicao_propria = politica.permitir_edicao_propria
     mesa.permitir_exclusao_propria = politica.permitir_exclusao_propria
     mesa.campos_bloqueados = politica.campos_bloqueados
     mesa.campos_exigem_aprovacao = politica.campos_exigem_aprovacao
+    alteracoes = auditoria.mudancas(anterior, politica.model_dump())
+    if alteracoes:
+        auditoria.registrar(
+            session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="permissao",
+            acao="politica.alterada", relevancia="organizacional",
+            resumo=auditoria.resumo_mudancas("Políticas da mesa", alteracoes),
+            alvo_tipo="mesa", alvo_id=mesa_id, mudancas=alteracoes, correlacao_id=correlacao,
+        )
     session.commit()
     return _politica(mesa)
 
@@ -138,12 +149,15 @@ def listar_personagens(
 def transferir_personagem(
     mesa_id: str, personagem_id: str, pedido: TransferirPersonagemRequest,
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> PersonagemResumo:
     """Narrador define o proprietário; `null` deixa o personagem sob controle exclusivo do Narrador."""
     _exigir(session, Acao.TRANSFERIR_PERSONAGEM, mesa_id, ator)
     fichas = FichaRepository(session)
-    if fichas.get(mesa_id, personagem_id) is None:
+    atual = fichas.get(mesa_id, personagem_id)
+    if atual is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recurso não encontrado.")
+    proprietario_anterior = atual.proprietario_id
     if pedido.proprietario_id is not None:
         membro = MesaRepository(session).membro(mesa_id, pedido.proprietario_id)
         if membro is None or not membro.ativo:
@@ -154,10 +168,18 @@ def transferir_personagem(
     if not fichas.transferir(mesa_id, personagem_id, pedido.versao_esperada, pedido.proprietario_id):
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Versão desatualizada.")
-    session.commit()
     personagem = fichas.get(mesa_id, personagem_id)
     assert personagem is not None
     session.refresh(personagem)
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="personagem",
+        acao="personagem.transferido", relevancia="organizacional", personagem=personagem,
+        resumo=f"{auditoria.nome_personagem(personagem)}: proprietário alterado",
+        mudancas=[{"campo": "proprietario_id", "antes": proprietario_anterior,
+                   "depois": pedido.proprietario_id, "completo": True}],
+        correlacao_id=correlacao,
+    )
+    session.commit()
     return _personagem_resumo(personagem)
 
 
@@ -168,6 +190,7 @@ def restaurar_personagem(
     mesa_id: str, personagem_id: str,
     versao_esperada: int = Query(ge=0),
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> PersonagemResumo:
     _exigir(session, Acao.RESTAURAR_PERSONAGEM, mesa_id, ator)
     fichas = FichaRepository(session)
@@ -180,8 +203,13 @@ def restaurar_personagem(
     if not fichas.restaurar(mesa_id, personagem_id, versao_esperada):
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Versão desatualizada.")
-    session.commit()
     session.refresh(personagem)
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="personagem",
+        acao="personagem.restaurado", relevancia="organizacional", personagem=personagem,
+        resumo=f"{auditoria.nome_personagem(personagem)}: restaurado da lixeira", correlacao_id=correlacao,
+    )
+    session.commit()
     return _personagem_resumo(personagem)
 
 
@@ -192,6 +220,7 @@ def restaurar_personagem(
 def criar_personagem(
     mesa_id: str, pedido: CriarPersonagemRequest,
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> FichaSnapshot:
     _exigir(session, Acao.CRIAR_PERSONAGEM, mesa_id, ator)
     payload = FichaDraft.de_payload(pedido.ficha.model_dump(mode="json")).para_payload()
@@ -199,10 +228,17 @@ def criar_personagem(
     if not isinstance(nome, str) or not nome.strip():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Nome do personagem obrigatório.")
     personagem_id = uuid4().hex
-    session.add(PersonagemRegistro(
+    personagem = PersonagemRegistro(
         id=personagem_id, mesa_id=mesa_id, proprietario_id=ator.usuario_id,
         tipo="personagem", visibilidade="mesa", versao=0, ficha=payload,
-    ))
+    )
+    session.add(personagem)
+    session.flush()
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="personagem",
+        acao="personagem.criado", relevancia="organizacional", personagem=personagem,
+        resumo=f"{auditoria.nome_personagem(personagem)}: personagem criado", correlacao_id=correlacao,
+    )
     session.commit()
     return FichaSnapshot(
         mesa_id=mesa_id, personagem_id=personagem_id, versao=0,
@@ -218,13 +254,22 @@ def excluir_personagem(
     mesa_id: str, personagem_id: str,
     versao_esperada: int = Query(ge=0),
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> None:
     _exigir(session, Acao.EXCLUIR_PERSONAGEM, mesa_id, ator, personagem_id)
-    if not FichaRepository(session).excluir(
+    fichas = FichaRepository(session)
+    personagem = fichas.get(mesa_id, personagem_id)
+    assert personagem is not None
+    if not fichas.excluir(
         mesa_id, personagem_id, versao_esperada, ator.usuario_id,
     ):
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Versão desatualizada.")
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="personagem",
+        acao="personagem.excluido", relevancia="organizacional", personagem=personagem,
+        resumo=f"{auditoria.nome_personagem(personagem)}: enviado à lixeira", correlacao_id=correlacao,
+    )
     session.commit()
 
 
@@ -248,6 +293,7 @@ def listar_solicitacoes(
 def decidir_solicitacao(
     mesa_id: str, pedido_id: str, decisao: DecidirPedidoRequest,
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> PedidoAlteracaoResumo:
     _exigir(session, Acao.DECIDIR_ALTERACAO, mesa_id, ator)
     pedido = session.scalar(
@@ -259,6 +305,10 @@ def decidir_solicitacao(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação não encontrada.")
     if pedido.estado != "pendente":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Solicitação já decidida.")
+    personagem = FichaRepository(session).get(mesa_id, pedido.personagem_id)
+    if personagem is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação não encontrada.")
+    anterior = FichaDraft.de_payload(personagem.ficha).para_payload()
     if decisao.aprovar and not FichaRepository(session).substituir_se_versao(
         mesa_id, pedido.personagem_id, pedido.versao_base, pedido.ficha_proposta,
     ):
@@ -267,5 +317,19 @@ def decidir_solicitacao(
     pedido.estado = "aprovado" if decisao.aprovar else "rejeitado"
     pedido.decidido_por = ator.usuario_id
     pedido.decidido_em = datetime.now(UTC)
+    decisao_texto = "aprovada" if decisao.aprovar else "rejeitada"
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="ficha",
+        acao=f"solicitacao.{decisao_texto}",
+        relevancia=auditoria.relevancia_da_ficha(pedido.campos_alterados), personagem=personagem,
+        resumo=(
+            f"{auditoria.nome_personagem(personagem)}: solicitação {decisao_texto} "
+            f"({len(pedido.campos_alterados)} campo(s))"
+        ),
+        mudancas=auditoria.mudancas(anterior, pedido.ficha_proposta) if decisao.aprovar else [],
+        detalhes={"solicitante_id": pedido.solicitante_id, "pedido_id": pedido.id,
+                  "campos_propostos": pedido.campos_alterados},
+        correlacao_id=correlacao,
+    )
     session.commit()
     return _resumo(pedido)

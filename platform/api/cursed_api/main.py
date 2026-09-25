@@ -15,6 +15,7 @@ from .tables import router as tables_router
 from .characters import router as characters_router
 from .channels import router as channels_router
 from .live_sheet import router as live_sheet_router
+from .audit import router as audit_router
 
 
 class HealthResponse(BaseModel):
@@ -32,7 +33,7 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
         CORSMiddleware,
         allow_origins=list(configuracao.cors_origins),
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_headers=["Authorization", "Content-Type", "X-Correlation-ID"],
     )
     api.state.settings = configuracao
     api.state.session_factory = sessionmaker(
@@ -43,6 +44,7 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(characters_router)
     api.include_router(channels_router)
     api.include_router(live_sheet_router)
+    api.include_router(audit_router)
 
     @api.get("/health", response_model=HealthResponse, tags=["Operação"])
     def health() -> HealthResponse:

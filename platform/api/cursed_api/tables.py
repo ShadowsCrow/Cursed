@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from cursed_platform import auditoria
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     AceitarConviteRequest, ConviteCriado, CriarConviteRequest,
@@ -20,7 +21,7 @@ from cursed_platform.persistence import ConviteMesaRegistro, MembroRegistro, Mes
 from cursed_platform.repositories import MesaRepository
 
 from .auth import Ator, get_actor
-from .dependencies import get_session
+from .dependencies import get_correlacao, get_session
 
 
 router = APIRouter(tags=["Mesas"])
@@ -45,6 +46,7 @@ def criar_mesa(
     pedido: CriarMesaRequest,
     ator: Ator = Depends(get_actor),
     session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> MesaResumo:
     nome = pedido.nome.strip()
     if not nome:
@@ -53,6 +55,11 @@ def criar_mesa(
     session.add(MesaRegistro(id=mesa_id, nome=nome, narrador_id=ator.usuario_id))
     session.flush()
     session.add(MembroRegistro(mesa_id=mesa_id, usuario_id=ator.usuario_id, papel="narrador"))
+    session.flush()
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="mesa.criada",
+        relevancia="organizacional", resumo=f"Mesa criada: {nome}"[:500], correlacao_id=correlacao,
+    )
     session.commit()
     return MesaResumo(id=mesa_id, nome=nome, papel="narrador")
 
@@ -74,6 +81,7 @@ def criar_convite(
     pedido: CriarConviteRequest,
     ator: Ator = Depends(get_actor),
     session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> ConviteCriado:
     _mesa_e_narrador(session, mesa_id, ator, Acao.CONVIDAR)
     codigo = secrets.token_urlsafe(32)
@@ -87,6 +95,11 @@ def criar_convite(
             expira_em=expira_em,
         )
     )
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="convite.criado",
+        relevancia="organizacional", resumo=f"Convite criado, válido por {pedido.validade_dias} dia(s)",
+        visibilidade="narrador", correlacao_id=correlacao,
+    )
     session.commit()
     return ConviteCriado(codigo=codigo, expira_em=expira_em)
 
@@ -96,6 +109,7 @@ def aceitar_convite(
     pedido: AceitarConviteRequest,
     ator: Ator = Depends(get_actor),
     session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> MesaResumo:
     digest = sha256(pedido.codigo.encode("utf-8")).hexdigest()
     convite = session.scalar(select(ConviteMesaRegistro).where(ConviteMesaRegistro.token_hash == digest))
@@ -129,6 +143,12 @@ def aceitar_convite(
     else:
         membro.ativo = True
         membro.papel = "jogador"
+    session.flush()
+    auditoria.registrar(
+        session, mesa_id=mesa.id, ator_id=ator.usuario_id, categoria="mesa", acao="participante.entrou",
+        relevancia="organizacional", resumo="Participante entrou na mesa por convite",
+        alvo_tipo="participante", alvo_id=ator.usuario_id, correlacao_id=correlacao,
+    )
     session.commit()
     return MesaResumo(id=mesa.id, nome=mesa.nome, papel="jogador")
 
@@ -157,6 +177,7 @@ def remover_participante(
     usuario_id: str,
     ator: Ator = Depends(get_actor),
     session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> None:
     _mesa_e_narrador(session, mesa_id, ator, Acao.REMOVER_PARTICIPANTE)
     if usuario_id == ator.usuario_id:
@@ -165,4 +186,9 @@ def remover_participante(
     if membro is None or not membro.ativo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participante não encontrado.")
     membro.ativo = False
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="permissao", acao="participante.removido",
+        relevancia="organizacional", resumo="Participante removido da mesa",
+        alvo_tipo="participante", alvo_id=usuario_id, correlacao_id=correlacao,
+    )
     session.commit()

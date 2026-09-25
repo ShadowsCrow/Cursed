@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import ficha_viva
+from cursed_platform import auditoria, ficha_viva
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     EfeitoPrevia, EfeitoResumo, EquiparItemRequest, EquiparItemResposta, FonteEfeitoResumo,
@@ -18,7 +18,7 @@ from cursed_platform.policies import avaliar_campos
 from cursed_platform.repositories import FichaRepository
 
 from .auth import Ator, get_actor
-from .dependencies import get_session
+from .dependencies import get_correlacao, get_session
 
 
 router = APIRouter(prefix="/mesas/{mesa_id}/personagens/{personagem_id}", tags=["Ficha viva"])
@@ -146,20 +146,41 @@ def listar_valores_derivados(
 def equipar_item(
     mesa_id: str, personagem_id: str, item_id: str, pedido: EquiparItemRequest,
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> EquiparItemResposta:
     personagem = _exigir_edicao(session, mesa_id, personagem_id, ator, "inventario.equipado")
     item = session.get(ItemInventarioRegistro, item_id)
     if item is None or item.mesa_id != mesa_id or item.personagem_id != personagem_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item não encontrado.")
+    if item.equipado == pedido.equipado:
+        # Repetir o estado atual não é uma alteração: sem nova versão nem evento.
+        return EquiparItemResposta(
+            versao=personagem.versao, item=_item_resumo(item, ficha_viva.efeitos(session, mesa_id, personagem_id)),
+        )
+    estados_antes = {e.id: e.estado for e in ficha_viva.efeitos(session, mesa_id, personagem_id)}
     try:
         versao = ficha_viva.definir_equipado(session, personagem, item, pedido.equipado, pedido.versao_esperada)
     except ficha_viva.ConflitoVersao:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Versão da ficha desatualizada.") from None
-    session.commit()
-    return EquiparItemResposta(
-        versao=versao, item=_item_resumo(item, ficha_viva.efeitos(session, mesa_id, personagem_id)),
+    session.flush()
+    efeitos_depois = ficha_viva.efeitos(session, mesa_id, personagem_id)
+    alterados = [
+        {"campo": f"efeitos.{e.id}.estado", "antes": estados_antes.get(e.id), "depois": e.estado,
+         "completo": True, "rotulo": e.nome}
+        for e in efeitos_depois if estados_antes.get(e.id) != e.estado
+    ]
+    verbo = "equipado" if pedido.equipado else "desequipado"
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="inventario", acao=f"item.{verbo}",
+        relevancia="mecanica", personagem=personagem, alvo_tipo="item", alvo_id=item.id,
+        resumo=f"{auditoria.nome_personagem(personagem)}: {item.nome} {verbo}",
+        mudancas=[{"campo": "equipado", "antes": not pedido.equipado, "depois": pedido.equipado,
+                   "completo": True, "rotulo": item.nome}, *alterados],
+        correlacao_id=correlacao,
     )
+    session.commit()
+    return EquiparItemResposta(versao=versao, item=_item_resumo(item, efeitos_depois))
 
 
 def _preparar(codigo: str) -> ficha_viva.PreviaImportacao:
@@ -204,6 +225,7 @@ def previsualizar_importacao(
 def importar_codigo(
     mesa_id: str, personagem_id: str, pedido: ImportarCodigoRequest,
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
 ) -> ImportacaoResultado:
     _personagem(session, mesa_id, personagem_id, ator, Acao.EDITAR_FICHA)
     previa = _preparar(pedido.codigo)
@@ -216,6 +238,21 @@ def importar_codigo(
     except Exception:
         session.rollback()
         raise
+    nomes = ", ".join(e.nome for e in criados) or "sem efeitos"
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id,
+        categoria="inventario" if item is not None else "efeito", acao="importacao.aplicada",
+        relevancia="mecanica", personagem=personagem,
+        alvo_tipo="item" if item is not None else "efeito",
+        alvo_id=item.id if item is not None else (criados[0].id if criados else None),
+        resumo=(
+            f"{auditoria.nome_personagem(personagem)}: importou "
+            + (f"{item.nome} ({nomes})" if item is not None else nomes)
+        ),
+        detalhes={"item_id": item.id if item is not None else None, "efeitos": [e.id for e in criados],
+                  "avisos": previa.avisos},
+        correlacao_id=correlacao,
+    )
     session.commit()
     atuais = ficha_viva.efeitos(session, mesa_id, personagem_id)
     ids = {registro.id for registro in criados}

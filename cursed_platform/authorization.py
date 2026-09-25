@@ -26,6 +26,7 @@ class Acao(StrEnum):
     LER_CONTEUDO_NARRADOR = "ler_conteudo_narrador"
     TRANSFERIR_PERSONAGEM = "transferir_personagem"
     RESTAURAR_PERSONAGEM = "restaurar_personagem"
+    CORRIGIR_EVENTO = "corrigir_evento"
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,7 @@ class Autorizador:
             Acao.LER_CONTEUDO_NARRADOR,
             Acao.TRANSFERIR_PERSONAGEM,
             Acao.RESTAURAR_PERSONAGEM,
+            Acao.CORRIGIR_EVENTO,
         }:
             return DecisaoAcesso(narrador, motivo="Ação reservada ao Narrador.")
         if acao == Acao.CRIAR_PERSONAGEM:

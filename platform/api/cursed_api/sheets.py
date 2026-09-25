@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from cursed_platform import auditoria
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import AtualizarFichaComando, FichaContrato, PedidoAlteracaoResumo
 from cursed_platform.domain.ficha import FichaDraft
@@ -95,9 +96,15 @@ def gravar_ficha(
     mesa = session.get(MesaRegistro, mesa_id)
     membro = session.get(MembroRegistro, (mesa_id, ator.usuario_id))
     assert mesa is not None and membro is not None
+    anterior = FichaDraft.de_payload(personagem.ficha).para_payload()
+    alterados = campos_alterados(anterior, payload)
+    if not alterados:
+        # Confirmação sem diferença não é uma alteração: sem nova versão nem evento.
+        return FichaSnapshot(
+            mesa_id=mesa_id, personagem_id=personagem_id, versao=personagem.versao,
+            ficha=FichaContrato.model_validate(anterior),
+        )
     if membro.papel == "jogador":
-        anterior = FichaDraft.de_payload(personagem.ficha).para_payload()
-        alterados = campos_alterados(anterior, payload)
         politica = avaliar_campos(
             alterados,
             bloqueados=mesa.campos_bloqueados,
@@ -117,6 +124,17 @@ def gravar_ficha(
                 estado="pendente",
             )
             session.add(pedido)
+            auditoria.registrar(
+                session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="ficha",
+                acao="solicitacao.criada", relevancia=auditoria.relevancia_da_ficha(alterados),
+                personagem=personagem,
+                resumo=(
+                    f"{auditoria.nome_personagem(personagem)}: alteração enviada para aprovação "
+                    f"({len(alterados)} campo(s))"
+                ),
+                detalhes={"pedido_id": pedido.id, "campos_propostos": sorted(alterados)},
+                correlacao_id=comando.id,
+            )
             session.commit()
             resumo = PedidoAlteracaoResumo(
                 id=pedido.id, mesa_id=mesa_id, personagem_id=personagem_id,
@@ -130,6 +148,13 @@ def gravar_ficha(
     ):
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Versão da ficha desatualizada.")
+    alteracoes = auditoria.mudancas(anterior, payload)
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="ficha", acao="ficha.atualizada",
+        relevancia=auditoria.relevancia_da_ficha(alterados), personagem=personagem,
+        resumo=auditoria.resumo_mudancas(auditoria.nome_personagem(personagem), alteracoes),
+        mudancas=alteracoes, correlacao_id=comando.id,
+    )
     session.commit()
     return FichaSnapshot(
         mesa_id=mesa_id,

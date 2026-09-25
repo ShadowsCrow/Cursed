@@ -121,6 +121,32 @@
         "title": "ConviteCriado",
         "type": "object"
       },
+      "CorrigirEventoRequest": {
+        "properties": {
+          "motivo": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "CorrigirEventoRequest",
+        "type": "object"
+      },
       "CriarConviteRequest": {
         "properties": {
           "validade_dias": {
@@ -312,6 +338,175 @@
           "item"
         ],
         "title": "EquiparItemResposta",
+        "type": "object"
+      },
+      "EventoAuditoriaResumo": {
+        "properties": {
+          "acao": {
+            "title": "Acao",
+            "type": "string"
+          },
+          "alvo_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alvo Id"
+          },
+          "alvo_tipo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alvo Tipo"
+          },
+          "ator_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ator Id"
+          },
+          "categoria": {
+            "enum": [
+              "mesa",
+              "permissao",
+              "personagem",
+              "ficha",
+              "inventario",
+              "efeito"
+            ],
+            "title": "Categoria",
+            "type": "string"
+          },
+          "correlacao_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlacao Id"
+          },
+          "corrige_evento_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrige Evento Id"
+          },
+          "corrigido_por": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Corrigido Por",
+            "type": "array"
+          },
+          "corrigivel": {
+            "default": false,
+            "title": "Corrigivel",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "mudancas": {
+            "items": {
+              "$ref": "#/components/schemas/MudancaAuditoria"
+            },
+            "title": "Mudancas",
+            "type": "array"
+          },
+          "ocorrido_em": {
+            "format": "date-time",
+            "title": "Ocorrido Em",
+            "type": "string"
+          },
+          "origem": {
+            "enum": [
+              "usuario",
+              "automacao",
+              "migracao"
+            ],
+            "title": "Origem",
+            "type": "string"
+          },
+          "personagem_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personagem Id"
+          },
+          "relevancia": {
+            "enum": [
+              "mecanica",
+              "narrativa",
+              "organizacional"
+            ],
+            "title": "Relevancia",
+            "type": "string"
+          },
+          "resumo": {
+            "title": "Resumo",
+            "type": "string"
+          },
+          "sessao_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessao Id"
+          }
+        },
+        "required": [
+          "id",
+          "ocorrido_em",
+          "origem",
+          "categoria",
+          "acao",
+          "relevancia",
+          "resumo"
+        ],
+        "title": "EventoAuditoriaResumo",
         "type": "object"
       },
       "FichaContrato": {
@@ -722,6 +917,68 @@
           "valor"
         ],
         "title": "ModificadorResumo",
+        "type": "object"
+      },
+      "MudancaAuditoria": {
+        "properties": {
+          "antes": {
+            "title": "Antes"
+          },
+          "campo": {
+            "title": "Campo",
+            "type": "string"
+          },
+          "completo": {
+            "default": true,
+            "title": "Completo",
+            "type": "boolean"
+          },
+          "depois": {
+            "title": "Depois"
+          },
+          "rotulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rotulo"
+          }
+        },
+        "required": [
+          "campo"
+        ],
+        "title": "MudancaAuditoria",
+        "type": "object"
+      },
+      "PaginaAuditoria": {
+        "properties": {
+          "eventos": {
+            "items": {
+              "$ref": "#/components/schemas/EventoAuditoriaResumo"
+            },
+            "title": "Eventos",
+            "type": "array"
+          },
+          "proximo_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proximo Cursor"
+          }
+        },
+        "required": [
+          "eventos"
+        ],
+        "title": "PaginaAuditoria",
         "type": "object"
       },
       "ParticipanteResumo": {
@@ -1322,6 +1579,242 @@
         "summary": "Criar Mesa",
         "tags": [
           "Mesas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/auditoria": {
+      "get": {
+        "description": "Eventos do mais recente ao mais antigo; jogadores recebem somente o que podem ver.",
+        "operationId": "listar_eventos_mesas__mesa_id__auditoria_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sessao_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sessao Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ator_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ator Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "personagem_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Personagem Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categoria",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "mesa",
+                    "permissao",
+                    "personagem",
+                    "ficha",
+                    "inventario",
+                    "efeito"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Categoria"
+            }
+          },
+          {
+            "in": "query",
+            "name": "relevancia",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "mecanica",
+                    "narrativa",
+                    "organizacional"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Relevancia"
+            }
+          },
+          {
+            "in": "query",
+            "name": "antes_de",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Antes De"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limite",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limite",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaAuditoria"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Eventos",
+        "tags": [
+          "Auditoria"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/auditoria/{evento_id}/correcao": {
+      "post": {
+        "operationId": "corrigir_evento_mesas__mesa_id__auditoria__evento_id__correcao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evento_id",
+            "required": true,
+            "schema": {
+              "title": "Evento Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrigirEventoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoAuditoriaResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Corrigir Evento",
+        "tags": [
+          "Auditoria"
         ]
       }
     },
