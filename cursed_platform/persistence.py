@@ -131,6 +131,8 @@ class PersonagemRegistro(Base):
     visibilidade: Mapped[str] = mapped_column(String(20), nullable=False, default="mesa")
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     ficha: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    # Informações públicas escolhidas pelo Narrador: {"nome_publico": str | None, "imagem": bool}.
+    revelacao: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     excluido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     excluido_por: Mapped[str | None] = mapped_column(String(100))
 

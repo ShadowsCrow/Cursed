@@ -122,6 +122,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/descansos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar Descanso
+         * @description Recalcula no servidor e aplica a todos os alvos, ou a nenhum.
+         */
+        post: operations["confirmar_descanso_mesas__mesa_id__descansos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/descansos/previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Previsualizar Descanso
+         * @description Resultado previsto por personagem; nada é gravado.
+         */
+        post: operations["previsualizar_descanso_mesas__mesa_id__descansos_previa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/entidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Criar Entidade
+         * @description Personagem, NPC ou monstro do Narrador; oculto por padrão.
+         */
+        post: operations["criar_entidade_mesas__mesa_id__entidades_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/entidades-publicas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Entidades Publicas
+         * @description O que qualquer participante vê: nome público e retrato, nunca a ficha.
+         */
+        get: operations["listar_entidades_publicas_mesas__mesa_id__entidades_publicas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/participantes": {
         parameters: {
             query?: never;
@@ -204,7 +284,42 @@ export interface paths {
         /** Listar Efeitos */
         get: operations["listar_efeitos_mesas__mesa_id__personagens__personagem_id__efeitos_get"];
         put?: never;
+        /** Aplicar Efeito */
+        post: operations["aplicar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos/{efeito_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Ajustar Efeito */
+        patch: operations["ajustar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos__efeito_id__patch"];
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos/{efeito_id}/{acao}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transicionar Efeito */
+        post: operations["transicionar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos__efeito_id___acao__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -371,6 +486,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/visibilidade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Alterar Visibilidade */
+        put: operations["alterar_visibilidade_mesas__mesa_id__personagens__personagem_id__visibilidade_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/politicas": {
         parameters: {
             query?: never;
@@ -432,6 +564,72 @@ export interface components {
             /** Codigo */
             codigo: string;
         };
+        /**
+         * AjustarEfeitoRequest
+         * @description Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração.
+         */
+        AjustarEfeitoRequest: {
+            /** Descricao */
+            descricao?: string | null;
+            /** Duracao Rodadas */
+            duracao_rodadas?: number | null;
+            /** Modificadores */
+            modificadores?: components["schemas"]["ModificadorResumo"][] | null;
+            /** Motivo */
+            motivo?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /** AlterarVisibilidadeRequest */
+        AlterarVisibilidadeRequest: {
+            revelacao?: components["schemas"]["RevelacaoContrato"];
+            /** Versao Esperada */
+            versao_esperada: number;
+            /**
+             * Visibilidade
+             * @enum {string}
+             */
+            visibilidade: "mesa" | "narrador";
+        };
+        /** AlvoDescanso */
+        AlvoDescanso: {
+            /**
+             * Ajustes
+             * @description Substitui a quantidade calculada pela regra (recuperação ou redução).
+             */
+            ajustes?: {
+                [key: string]: number;
+            };
+            /** Foco */
+            foco?: ("pv" | "pp" | "exaustao" | "estresse") | null;
+            /** Personagem Id */
+            personagem_id: string;
+        };
+        /** AplicarEfeitoRequest */
+        AplicarEfeitoRequest: {
+            /**
+             * Associacao
+             * @description Efeito do catálogo.
+             */
+            associacao?: string | null;
+            /** Descricao */
+            descricao?: string | null;
+            /** Duracao Rodadas */
+            duracao_rodadas?: number | null;
+            /** Modificadores */
+            modificadores?: components["schemas"]["ModificadorResumo"][];
+            /** Motivo */
+            motivo?: string | null;
+            /** Nome */
+            nome?: string | null;
+            /**
+             * Origem
+             * @description O que causou o efeito na ficção.
+             */
+            origem?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** AtualizarFichaComando */
         AtualizarFichaComando: {
             /** Ator Id */
@@ -464,6 +662,29 @@ export interface components {
             /** Topico */
             topico: string;
         };
+        /** ConfirmarDescansoRequest */
+        ConfirmarDescansoRequest: {
+            /** Alvos */
+            alvos: components["schemas"]["AlvoDescanso"][];
+            /** Conforto */
+            conforto?: number | null;
+            /** Motivo */
+            motivo?: string | null;
+            /** Seguranca */
+            seguranca?: number | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "curto" | "longo";
+            /**
+             * Versoes
+             * @description Versão esperada de cada personagem selecionado.
+             */
+            versoes: {
+                [key: string]: number;
+            };
+        };
         /** ConviteCriado */
         ConviteCriado: {
             /** Codigo */
@@ -489,6 +710,24 @@ export interface components {
              */
             validade_dias: number;
         };
+        /** CriarEntidadeRequest */
+        CriarEntidadeRequest: {
+            ficha: components["schemas"]["FichaContrato"];
+            /** Proprietario Id */
+            proprietario_id?: string | null;
+            revelacao?: components["schemas"]["RevelacaoContrato"];
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "personagem" | "npc" | "monstro";
+            /**
+             * Visibilidade
+             * @default narrador
+             * @enum {string}
+             */
+            visibilidade: "mesa" | "narrador";
+        };
         /** CriarMesaRequest */
         CriarMesaRequest: {
             /** Nome */
@@ -502,6 +741,12 @@ export interface components {
         DecidirPedidoRequest: {
             /** Aprovar */
             aprovar: boolean;
+        };
+        /** EfeitoComandoResposta */
+        EfeitoComandoResposta: {
+            efeito: components["schemas"]["EfeitoResumo"];
+            /** Versao */
+            versao: number;
         };
         /** EfeitoPrevia */
         EfeitoPrevia: {
@@ -526,7 +771,7 @@ export interface components {
              * Estado
              * @enum {string}
              */
-            estado: "ativo" | "suspenso";
+            estado: "ativo" | "suspenso" | "encerrado";
             /** Fontes */
             fontes?: components["schemas"]["FonteEfeitoResumo"][];
             /** Id */
@@ -535,6 +780,18 @@ export interface components {
             modificadores?: components["schemas"]["ModificadorResumo"][];
             /** Nome */
             nome: string;
+        };
+        /** EntidadePublica */
+        EntidadePublica: {
+            /** Id */
+            id: string;
+            /**
+             * Imagem
+             * @description Retrato em base64, quando revelado.
+             */
+            imagem?: string | null;
+            /** Nome Publico */
+            nome_publico?: string | null;
         };
         /** EquiparItemRequest */
         EquiparItemRequest: {
@@ -853,6 +1110,7 @@ export interface components {
             proprietario_id: string | null;
             /** Restauravel Ate */
             restauravel_ate?: string | null;
+            revelacao?: components["schemas"]["RevelacaoContrato"] | null;
             /**
              * Tipo
              * @enum {string}
@@ -879,6 +1137,20 @@ export interface components {
             /** Permitir Exclusao Propria */
             permitir_exclusao_propria: boolean;
         };
+        /** PreviaDescansoRequest */
+        PreviaDescansoRequest: {
+            /** Alvos */
+            alvos: components["schemas"]["AlvoDescanso"][];
+            /** Conforto */
+            conforto?: number | null;
+            /** Seguranca */
+            seguranca?: number | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "curto" | "longo";
+        };
         /** PreviaImportacaoRequest */
         PreviaImportacaoRequest: {
             /** Codigo */
@@ -897,6 +1169,94 @@ export interface components {
              */
             tipo: "efeito" | "equipamento";
         };
+        /** ResultadoDescansoPersonagem */
+        ResultadoDescansoPersonagem: {
+            /** Altera */
+            altera: boolean;
+            /** Avisos */
+            avisos?: string[];
+            /** Foco */
+            foco?: ("pv" | "pp" | "exaustao" | "estresse") | null;
+            /** Nome */
+            nome: string;
+            /** Personagem Id */
+            personagem_id: string;
+            /** Recursos */
+            recursos: components["schemas"]["ResultadoRecursoDescanso"][];
+            /** Trilhas */
+            trilhas: components["schemas"]["ResultadoTrilhaDescanso"][];
+            /** Versao */
+            versao: number;
+        };
+        /** ResultadoDescansoResumo */
+        ResultadoDescansoResumo: {
+            /** Conforto */
+            conforto?: number | null;
+            /** Permite Foco */
+            permite_foco: boolean;
+            /** Resultados */
+            resultados: components["schemas"]["ResultadoDescansoPersonagem"][];
+            /** Seguranca */
+            seguranca?: number | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "curto" | "longo";
+        };
+        /** ResultadoRecursoDescanso */
+        ResultadoRecursoDescanso: {
+            /** Antes */
+            antes?: number | null;
+            /** Aplicado */
+            aplicado: number;
+            /** Aviso */
+            aviso?: string | null;
+            /** Calculado */
+            calculado?: number | null;
+            /** Depois */
+            depois?: number | null;
+            /** Maximo */
+            maximo?: number | null;
+            /**
+             * Recurso
+             * @enum {string}
+             */
+            recurso: "pv" | "pp";
+        };
+        /** ResultadoTrilhaDescanso */
+        ResultadoTrilhaDescanso: {
+            /** Antes */
+            antes: number;
+            /** Aplicado */
+            aplicado: number;
+            /** Calculado */
+            calculado: number;
+            /** Depois */
+            depois: number;
+            /** Faixa Antes */
+            faixa_antes: string;
+            /** Faixa Depois */
+            faixa_depois: string;
+            /**
+             * Trilha
+             * @enum {string}
+             */
+            trilha: "exaustao" | "estresse";
+        };
+        /**
+         * RevelacaoContrato
+         * @description Informações públicas de uma entidade; em entidades ocultas, nada além disso é exposto.
+         */
+        RevelacaoContrato: {
+            /**
+             * Imagem
+             * @default false
+             */
+            imagem: boolean;
+            /** Nome Publico */
+            nome_publico?: string | null;
+        };
         /** SituacionalResumo */
         SituacionalResumo: {
             /** Contexto */
@@ -912,6 +1272,13 @@ export interface components {
         TransferirPersonagemRequest: {
             /** Proprietario Id */
             proprietario_id?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /** TransicaoEfeitoRequest */
+        TransicaoEfeitoRequest: {
+            /** Motivo */
+            motivo?: string | null;
             /** Versao Esperada */
             versao_esperada: number;
         };
@@ -1202,6 +1569,142 @@ export interface operations {
             };
         };
     };
+    confirmar_descanso_mesas__mesa_id__descansos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmarDescansoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoDescansoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previsualizar_descanso_mesas__mesa_id__descansos_previa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviaDescansoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoDescansoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    criar_entidade_mesas__mesa_id__entidades_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarEntidadeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonagemResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_entidades_publicas_mesas__mesa_id__entidades_publicas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntidadePublica"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_participantes_mesas__mesa_id__participantes_get: {
         parameters: {
             query?: never;
@@ -1382,6 +1885,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EfeitoResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    aplicar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AplicarEfeitoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EfeitoComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ajustar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos__efeito_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                efeito_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AjustarEfeitoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EfeitoComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transicionar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos__efeito_id___acao__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                efeito_id: string;
+                acao: "suspender" | "retomar" | "encerrar";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransicaoEfeitoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EfeitoComandoResposta"];
                 };
             };
             /** @description Validation Error */
@@ -1734,6 +2348,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ValorDerivadoResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alterar_visibilidade_mesas__mesa_id__personagens__personagem_id__visibilidade_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlterarVisibilidadeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonagemResumo"];
                 };
             };
             /** @description Validation Error */

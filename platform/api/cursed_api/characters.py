@@ -13,7 +13,7 @@ from cursed_platform import auditoria
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CriarPersonagemRequest, DecidirPedidoRequest, FichaContrato,
-    PedidoAlteracaoResumo, PersonagemResumo, PoliticaMesaContrato,
+    PedidoAlteracaoResumo, PersonagemResumo, PoliticaMesaContrato, RevelacaoContrato,
     TransferirPersonagemRequest,
 )
 from cursed_platform.domain.ficha import FichaDraft
@@ -109,6 +109,7 @@ def _personagem_resumo(
         proprietario_id=personagem.proprietario_id, versao=personagem.versao,
         excluido_em=personagem.excluido_em,
         restauravel_ate=fichas.prazo_restauracao(personagem) if fichas else None,
+        revelacao=RevelacaoContrato(**personagem.revelacao) if personagem.revelacao else None,
     )
 
 

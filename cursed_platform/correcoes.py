@@ -25,7 +25,7 @@ class CorrecaoConflitante(ValueError):
 
 def tipo_correcao(evento: EventoAuditoriaRegistro) -> str | None:
     reverte = (evento.detalhes or {}).get("reverte")
-    if evento.acao in {"ficha.atualizada", "solicitacao.aprovada"} or reverte == "ficha":
+    if evento.acao in {"ficha.atualizada", "solicitacao.aprovada", "descanso.aplicado"} or reverte == "ficha":
         return "ficha"
     if evento.acao in {"item.equipado", "item.desequipado"} or reverte == "equipamento":
         return "equipamento"

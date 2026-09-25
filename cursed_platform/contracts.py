@@ -130,6 +130,13 @@ class CriarPersonagemRequest(BaseModel):
     ficha: FichaContrato
 
 
+class RevelacaoContrato(BaseModel):
+    """Informações públicas de uma entidade; em entidades ocultas, nada além disso é exposto."""
+
+    nome_publico: str | None = Field(default=None, max_length=200)
+    imagem: bool = False
+
+
 class PersonagemResumo(BaseModel):
     id: str
     mesa_id: str
@@ -138,6 +145,7 @@ class PersonagemResumo(BaseModel):
     visibilidade: Literal["mesa", "narrador"]
     proprietario_id: str | None
     versao: int
+    revelacao: RevelacaoContrato | None = None
     excluido_em: datetime | None = None
     restauravel_ate: datetime | None = None
 
@@ -237,7 +245,7 @@ class EfeitoResumo(BaseModel):
     id: str
     nome: str
     descricao: str
-    estado: Literal["ativo", "suspenso"]
+    estado: Literal["ativo", "suspenso", "encerrado"]
     duracao_rodadas: int | None = None
     ativacao: str | None = None
     modificadores: list[ModificadorResumo] = Field(default_factory=list)
@@ -339,3 +347,130 @@ class PaginaAuditoria(BaseModel):
 class CorrigirEventoRequest(BaseModel):
     motivo: str | None = Field(default=None, max_length=300)
     versao_esperada: int = Field(ge=0)
+
+
+class CriarEntidadeRequest(BaseModel):
+    tipo: Literal["personagem", "npc", "monstro"]
+    visibilidade: Literal["mesa", "narrador"] = "narrador"
+    proprietario_id: str | None = Field(default=None, min_length=1, max_length=100)
+    revelacao: RevelacaoContrato = Field(default_factory=RevelacaoContrato)
+    ficha: FichaContrato
+
+
+class AlterarVisibilidadeRequest(BaseModel):
+    visibilidade: Literal["mesa", "narrador"]
+    revelacao: RevelacaoContrato = Field(default_factory=RevelacaoContrato)
+    versao_esperada: int = Field(ge=0)
+
+
+class EntidadePublica(BaseModel):
+    id: str
+    nome_publico: str | None = None
+    imagem: str | None = Field(default=None, description="Retrato em base64, quando revelado.")
+
+
+class AplicarEfeitoRequest(BaseModel):
+    associacao: str | None = Field(default=None, max_length=200, description="Efeito do catálogo.")
+    nome: str | None = Field(default=None, max_length=200)
+    descricao: str | None = Field(default=None, max_length=10_000)
+    modificadores: list[ModificadorResumo] = Field(default_factory=list, max_length=50)
+    duracao_rodadas: int | None = Field(default=None, gt=0)
+    origem: str | None = Field(default=None, max_length=500, description="O que causou o efeito na ficção.")
+    motivo: str | None = Field(default=None, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class AjustarEfeitoRequest(BaseModel):
+    """Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração."""
+
+    descricao: str | None = Field(default=None, max_length=10_000)
+    duracao_rodadas: int | None = Field(default=None, gt=0)
+    modificadores: list[ModificadorResumo] | None = Field(default=None, max_length=50)
+    motivo: str | None = Field(default=None, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class TransicaoEfeitoRequest(BaseModel):
+    motivo: str | None = Field(default=None, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class EfeitoComandoResposta(BaseModel):
+    versao: int
+    efeito: EfeitoResumo
+
+
+CampoDescanso = Literal["pv", "pp", "exaustao", "estresse"]
+
+
+class AlvoDescanso(BaseModel):
+    personagem_id: str = Field(min_length=1, max_length=100)
+    foco: CampoDescanso | None = None
+    ajustes: dict[CampoDescanso, int] = Field(
+        default_factory=dict, description="Substitui a quantidade calculada pela regra (recuperação ou redução).",
+    )
+
+    @field_validator("ajustes")
+    @classmethod
+    def validar_ajustes(cls, ajustes: dict[str, int]) -> dict[str, int]:
+        if any(valor < 0 for valor in ajustes.values()):
+            raise ValueError("Ajustes não podem ser negativos.")
+        return ajustes
+
+
+class PreviaDescansoRequest(BaseModel):
+    tipo: Literal["curto", "longo"]
+    conforto: int | None = Field(default=None, ge=0, le=4)
+    seguranca: int | None = Field(default=None, ge=0, le=4)
+    alvos: list[AlvoDescanso] = Field(min_length=1, max_length=50)
+
+    @field_validator("alvos")
+    @classmethod
+    def validar_alvos(cls, alvos: list[AlvoDescanso]) -> list[AlvoDescanso]:
+        if len({alvo.personagem_id for alvo in alvos}) != len(alvos):
+            raise ValueError("Cada personagem pode aparecer uma única vez.")
+        return alvos
+
+
+class ConfirmarDescansoRequest(PreviaDescansoRequest):
+    versoes: dict[str, int] = Field(description="Versão esperada de cada personagem selecionado.")
+    motivo: str | None = Field(default=None, max_length=300)
+
+
+class ResultadoRecursoDescanso(BaseModel):
+    recurso: Literal["pv", "pp"]
+    antes: int | None = None
+    maximo: int | None = None
+    calculado: int | None = None
+    aplicado: int
+    depois: int | None = None
+    aviso: str | None = None
+
+
+class ResultadoTrilhaDescanso(BaseModel):
+    trilha: Literal["exaustao", "estresse"]
+    antes: int
+    calculado: int
+    aplicado: int
+    depois: int
+    faixa_antes: str
+    faixa_depois: str
+
+
+class ResultadoDescansoPersonagem(BaseModel):
+    personagem_id: str
+    nome: str
+    versao: int
+    foco: CampoDescanso | None = None
+    recursos: list[ResultadoRecursoDescanso]
+    trilhas: list[ResultadoTrilhaDescanso]
+    avisos: list[str] = Field(default_factory=list)
+    altera: bool
+
+
+class ResultadoDescansoResumo(BaseModel):
+    tipo: Literal["curto", "longo"]
+    conforto: int | None = None
+    seguranca: int | None = None
+    permite_foco: bool
+    resultados: list[ResultadoDescansoPersonagem]

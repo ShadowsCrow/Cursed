@@ -15,6 +15,242 @@
         "title": "AceitarConviteRequest",
         "type": "object"
       },
+      "AjustarEfeitoRequest": {
+        "description": "Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração.",
+        "properties": {
+          "descricao": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "duracao_rodadas": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Rodadas"
+          },
+          "modificadores": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ModificadorResumo"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modificadores"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "AjustarEfeitoRequest",
+        "type": "object"
+      },
+      "AlterarVisibilidadeRequest": {
+        "properties": {
+          "revelacao": {
+            "$ref": "#/components/schemas/RevelacaoContrato"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          },
+          "visibilidade": {
+            "enum": [
+              "mesa",
+              "narrador"
+            ],
+            "title": "Visibilidade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "visibilidade",
+          "versao_esperada"
+        ],
+        "title": "AlterarVisibilidadeRequest",
+        "type": "object"
+      },
+      "AlvoDescanso": {
+        "properties": {
+          "ajustes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Substitui a quantidade calculada pela regra (recuperação ou redução).",
+            "propertyNames": {
+              "enum": [
+                "pv",
+                "pp",
+                "exaustao",
+                "estresse"
+              ]
+            },
+            "title": "Ajustes",
+            "type": "object"
+          },
+          "foco": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pv",
+                  "pp",
+                  "exaustao",
+                  "estresse"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foco"
+          },
+          "personagem_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Personagem Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "personagem_id"
+        ],
+        "title": "AlvoDescanso",
+        "type": "object"
+      },
+      "AplicarEfeitoRequest": {
+        "properties": {
+          "associacao": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Efeito do catálogo.",
+            "title": "Associacao"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "duracao_rodadas": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracao Rodadas"
+          },
+          "modificadores": {
+            "items": {
+              "$ref": "#/components/schemas/ModificadorResumo"
+            },
+            "maxItems": 50,
+            "title": "Modificadores",
+            "type": "array"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "nome": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "origem": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "O que causou o efeito na ficção.",
+            "title": "Origem"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "AplicarEfeitoRequest",
+        "type": "object"
+      },
       "AtualizarFichaComando": {
         "additionalProperties": false,
         "properties": {
@@ -102,6 +338,80 @@
         "title": "CanalPrivado",
         "type": "object"
       },
+      "ConfirmarDescansoRequest": {
+        "properties": {
+          "alvos": {
+            "items": {
+              "$ref": "#/components/schemas/AlvoDescanso"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Alvos",
+            "type": "array"
+          },
+          "conforto": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conforto"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "seguranca": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seguranca"
+          },
+          "tipo": {
+            "enum": [
+              "curto",
+              "longo"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versoes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Versão esperada de cada personagem selecionado.",
+            "title": "Versoes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "tipo",
+          "alvos",
+          "versoes"
+        ],
+        "title": "ConfirmarDescansoRequest",
+        "type": "object"
+      },
       "ConviteCriado": {
         "properties": {
           "codigo": {
@@ -160,6 +470,53 @@
         "title": "CriarConviteRequest",
         "type": "object"
       },
+      "CriarEntidadeRequest": {
+        "properties": {
+          "ficha": {
+            "$ref": "#/components/schemas/FichaContrato"
+          },
+          "proprietario_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proprietario Id"
+          },
+          "revelacao": {
+            "$ref": "#/components/schemas/RevelacaoContrato"
+          },
+          "tipo": {
+            "enum": [
+              "personagem",
+              "npc",
+              "monstro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "visibilidade": {
+            "default": "narrador",
+            "enum": [
+              "mesa",
+              "narrador"
+            ],
+            "title": "Visibilidade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "ficha"
+        ],
+        "title": "CriarEntidadeRequest",
+        "type": "object"
+      },
       "CriarMesaRequest": {
         "properties": {
           "nome": {
@@ -198,6 +555,23 @@
           "aprovar"
         ],
         "title": "DecidirPedidoRequest",
+        "type": "object"
+      },
+      "EfeitoComandoResposta": {
+        "properties": {
+          "efeito": {
+            "$ref": "#/components/schemas/EfeitoResumo"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "efeito"
+        ],
+        "title": "EfeitoComandoResposta",
         "type": "object"
       },
       "EfeitoPrevia": {
@@ -267,7 +641,8 @@
           "estado": {
             "enum": [
               "ativo",
-              "suspenso"
+              "suspenso",
+              "encerrado"
             ],
             "title": "Estado",
             "type": "string"
@@ -302,6 +677,42 @@
           "estado"
         ],
         "title": "EfeitoResumo",
+        "type": "object"
+      },
+      "EntidadePublica": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "imagem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Retrato em base64, quando revelado.",
+            "title": "Imagem"
+          },
+          "nome_publico": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome Publico"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "EntidadePublica",
         "type": "object"
       },
       "EquiparItemRequest": {
@@ -1153,6 +1564,16 @@
             ],
             "title": "Restauravel Ate"
           },
+          "revelacao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RevelacaoContrato"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "tipo": {
             "enum": [
               "personagem",
@@ -1226,6 +1647,59 @@
         "title": "PoliticaMesaContrato",
         "type": "object"
       },
+      "PreviaDescansoRequest": {
+        "properties": {
+          "alvos": {
+            "items": {
+              "$ref": "#/components/schemas/AlvoDescanso"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Alvos",
+            "type": "array"
+          },
+          "conforto": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conforto"
+          },
+          "seguranca": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seguranca"
+          },
+          "tipo": {
+            "enum": [
+              "curto",
+              "longo"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "alvos"
+        ],
+        "title": "PreviaDescansoRequest",
+        "type": "object"
+      },
       "PreviaImportacaoRequest": {
         "properties": {
           "codigo": {
@@ -1283,6 +1757,274 @@
         "title": "PreviaImportacaoResumo",
         "type": "object"
       },
+      "ResultadoDescansoPersonagem": {
+        "properties": {
+          "altera": {
+            "title": "Altera",
+            "type": "boolean"
+          },
+          "avisos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Avisos",
+            "type": "array"
+          },
+          "foco": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pv",
+                  "pp",
+                  "exaustao",
+                  "estresse"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foco"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "recursos": {
+            "items": {
+              "$ref": "#/components/schemas/ResultadoRecursoDescanso"
+            },
+            "title": "Recursos",
+            "type": "array"
+          },
+          "trilhas": {
+            "items": {
+              "$ref": "#/components/schemas/ResultadoTrilhaDescanso"
+            },
+            "title": "Trilhas",
+            "type": "array"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "personagem_id",
+          "nome",
+          "versao",
+          "recursos",
+          "trilhas",
+          "altera"
+        ],
+        "title": "ResultadoDescansoPersonagem",
+        "type": "object"
+      },
+      "ResultadoDescansoResumo": {
+        "properties": {
+          "conforto": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conforto"
+          },
+          "permite_foco": {
+            "title": "Permite Foco",
+            "type": "boolean"
+          },
+          "resultados": {
+            "items": {
+              "$ref": "#/components/schemas/ResultadoDescansoPersonagem"
+            },
+            "title": "Resultados",
+            "type": "array"
+          },
+          "seguranca": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seguranca"
+          },
+          "tipo": {
+            "enum": [
+              "curto",
+              "longo"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "permite_foco",
+          "resultados"
+        ],
+        "title": "ResultadoDescansoResumo",
+        "type": "object"
+      },
+      "ResultadoRecursoDescanso": {
+        "properties": {
+          "antes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Antes"
+          },
+          "aplicado": {
+            "title": "Aplicado",
+            "type": "integer"
+          },
+          "aviso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aviso"
+          },
+          "calculado": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculado"
+          },
+          "depois": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depois"
+          },
+          "maximo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximo"
+          },
+          "recurso": {
+            "enum": [
+              "pv",
+              "pp"
+            ],
+            "title": "Recurso",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recurso",
+          "aplicado"
+        ],
+        "title": "ResultadoRecursoDescanso",
+        "type": "object"
+      },
+      "ResultadoTrilhaDescanso": {
+        "properties": {
+          "antes": {
+            "title": "Antes",
+            "type": "integer"
+          },
+          "aplicado": {
+            "title": "Aplicado",
+            "type": "integer"
+          },
+          "calculado": {
+            "title": "Calculado",
+            "type": "integer"
+          },
+          "depois": {
+            "title": "Depois",
+            "type": "integer"
+          },
+          "faixa_antes": {
+            "title": "Faixa Antes",
+            "type": "string"
+          },
+          "faixa_depois": {
+            "title": "Faixa Depois",
+            "type": "string"
+          },
+          "trilha": {
+            "enum": [
+              "exaustao",
+              "estresse"
+            ],
+            "title": "Trilha",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trilha",
+          "antes",
+          "calculado",
+          "aplicado",
+          "depois",
+          "faixa_antes",
+          "faixa_depois"
+        ],
+        "title": "ResultadoTrilhaDescanso",
+        "type": "object"
+      },
+      "RevelacaoContrato": {
+        "description": "Informações públicas de uma entidade; em entidades ocultas, nada além disso é exposto.",
+        "properties": {
+          "imagem": {
+            "default": false,
+            "title": "Imagem",
+            "type": "boolean"
+          },
+          "nome_publico": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome Publico"
+          }
+        },
+        "title": "RevelacaoContrato",
+        "type": "object"
+      },
       "SituacionalResumo": {
         "properties": {
           "contexto": {
@@ -1336,6 +2078,32 @@
           "versao_esperada"
         ],
         "title": "TransferirPersonagemRequest",
+        "type": "object"
+      },
+      "TransicaoEfeitoRequest": {
+        "properties": {
+          "motivo": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "TransicaoEfeitoRequest",
         "type": "object"
       },
       "ValidationError": {
@@ -1926,6 +2694,232 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/descansos": {
+      "post": {
+        "description": "Recalcula no servidor e aplica a todos os alvos, ou a nenhum.",
+        "operationId": "confirmar_descanso_mesas__mesa_id__descansos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmarDescansoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoDescansoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirmar Descanso",
+        "tags": [
+          "Ferramentas do Narrador"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/descansos/previa": {
+      "post": {
+        "description": "Resultado previsto por personagem; nada é gravado.",
+        "operationId": "previsualizar_descanso_mesas__mesa_id__descansos_previa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviaDescansoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoDescansoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Previsualizar Descanso",
+        "tags": [
+          "Ferramentas do Narrador"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/entidades": {
+      "post": {
+        "description": "Personagem, NPC ou monstro do Narrador; oculto por padrão.",
+        "operationId": "criar_entidade_mesas__mesa_id__entidades_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarEntidadeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonagemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Entidade",
+        "tags": [
+          "Ferramentas do Narrador"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/entidades-publicas": {
+      "get": {
+        "description": "O que qualquer participante vê: nome público e retrato, nunca a ficha.",
+        "operationId": "listar_entidades_publicas_mesas__mesa_id__entidades_publicas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EntidadePublica"
+                  },
+                  "title": "Response Listar Entidades Publicas Mesas  Mesa Id  Entidades Publicas Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Entidades Publicas",
+        "tags": [
+          "Ferramentas do Narrador"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/participantes": {
       "get": {
         "operationId": "listar_participantes_mesas__mesa_id__participantes_get",
@@ -2259,6 +3253,234 @@
         "summary": "Listar Efeitos",
         "tags": [
           "Ficha viva"
+        ]
+      },
+      "post": {
+        "operationId": "aplicar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AplicarEfeitoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EfeitoComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Aplicar Efeito",
+        "tags": [
+          "Ferramentas do Narrador"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos/{efeito_id}": {
+      "patch": {
+        "operationId": "ajustar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos__efeito_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "efeito_id",
+            "required": true,
+            "schema": {
+              "title": "Efeito Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjustarEfeitoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EfeitoComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ajustar Efeito",
+        "tags": [
+          "Ferramentas do Narrador"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos/{efeito_id}/{acao}": {
+      "post": {
+        "operationId": "transicionar_efeito_mesas__mesa_id__personagens__personagem_id__efeitos__efeito_id___acao__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "efeito_id",
+            "required": true,
+            "schema": {
+              "title": "Efeito Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "acao",
+            "required": true,
+            "schema": {
+              "enum": [
+                "suspender",
+                "retomar",
+                "encerrar"
+              ],
+              "title": "Acao",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransicaoEfeitoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EfeitoComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Transicionar Efeito",
+        "tags": [
+          "Ferramentas do Narrador"
         ]
       }
     },
@@ -2906,6 +4128,72 @@
         "summary": "Listar Valores Derivados",
         "tags": [
           "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/visibilidade": {
+      "put": {
+        "operationId": "alterar_visibilidade_mesas__mesa_id__personagens__personagem_id__visibilidade_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterarVisibilidadeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonagemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Alterar Visibilidade",
+        "tags": [
+          "Ferramentas do Narrador"
         ]
       }
     },

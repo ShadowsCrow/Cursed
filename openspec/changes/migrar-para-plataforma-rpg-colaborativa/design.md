@@ -103,6 +103,10 @@ Decidido durante a implementação da seção 6:
 - Um valor derivado exibe total e fontes: valor base, ajuste manual e modificadores sem condição de efeitos ativos, inclusive de itens equipados. Modificadores condicionados a um contexto aparecem à parte como situacionais e não entram no total. A regra de mesa não muda; a aplicação apenas torna a soma explícita.
 - PV, PP e outros recursos não existem na ficha legada e não recebem fórmula nesta mudança. A ficha pode trazer uma seção `recursos` com valores atuais e máximos; na ausência, a interface informa que o recurso não foi registrado.
 
+### 7.2 Descanso administrado pelo Narrador
+
+Decidido durante a implementação da seção 8: a ferramenta de descanso aplica o texto vigente de `rules/sistema/Descansos e Recuperação.md` em um módulo de domínio isolado (Descanso Curto; Descanso Longo por nota de Conforto; Foco de Repouso quando Conforto e Segurança são `4`). A recuperação usa a Escala de PV e de PP registradas em `recursos`; sem Escala, o recurso não é recuperado automaticamente e a prévia informa a ausência. Antes de confirmar, o Narrador vê o resultado por personagem e pode ajustá-lo; a confirmação registra valores calculados, ajustes e motivo. Como a revisão de Descanso continua aberta, uma mudança de regra altera somente esse módulo e seus testes. O limite de um descanso a cada `24 horas` depende do tempo da ficção e permanece responsabilidade do Narrador.
+
 ### 8. Cartas como apresentação comum e ciclos de domínio distintos
 
 Habilidades, magias e itens compartilharão anatomia visual, arte, tags e versionamento, mas não uma única máquina de estados.
