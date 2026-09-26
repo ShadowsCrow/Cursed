@@ -100,6 +100,8 @@ export interface SalvarCampoVariaveis {
   value: unknown;
   ficha: FichaContrato;
   versao: number;
+  /** Outros campos confirmados juntos: uma única gravação e um único evento de auditoria. */
+  extras?: { path: string; value: unknown }[];
 }
 
 /**
@@ -111,8 +113,8 @@ export interface SalvarCampoVariaveis {
 export function useSalvarCampoFicha(api: ApiClient, mesaId: string, personagemId: string, atorId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ path, value, ficha, versao }: SalvarCampoVariaveis): Promise<SalvarCampoResultado> => {
-      const novaFicha = withFieldValue(ficha, path, value);
+    mutationFn: async ({ path, value, ficha, versao, extras = [] }: SalvarCampoVariaveis): Promise<SalvarCampoResultado> => {
+      const novaFicha = [{ path, value }, ...extras].reduce((atual, campo) => withFieldValue(atual, campo.path, campo.value), ficha);
       const { data, error, response } = await api.PUT("/mesas/{mesa_id}/personagens/{personagem_id}/ficha", {
         params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
         body: {

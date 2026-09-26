@@ -5,6 +5,7 @@ import { Glyph } from "../../../ui/Display";
 import { CharacterCardsPanel } from "../../cards/CharacterCardsPanel";
 import { useConnectivityStatus } from "../../connectivity/useConnectivityStatus";
 import type { ApiClient } from "../types";
+import { AttributeTable, type Alteracao } from "./AttributeTable";
 import { DerivedValueGroup } from "./DerivedValueGroup";
 import { EditableField } from "./EditableField";
 import { EffectsPanel } from "./EffectsPanel";
@@ -21,6 +22,7 @@ import {
   useValoresDerivados,
 } from "./sheetApi";
 import { SheetHeader } from "./SheetHeader";
+import { GRUPOS_ATRIBUTOS, GRUPOS_PERICIAS } from "./sheetCatalog";
 
 const SECTIONS = [
   { id: "informacoes", label: "Informações básicas" },
@@ -88,6 +90,15 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
 
   async function saveField(path: string, value: string | number): Promise<{ status: "salvo" | "pendente" }> {
     const resultado = await salvarCampo.mutateAsync({ path, value, ficha, versao });
+    void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
+    return { status: resultado.status };
+  }
+
+  async function saveMany(alteracoes: Alteracao[]): Promise<{ status: "salvo" | "pendente" }> {
+    const [primeira, ...demais] = alteracoes;
+    if (!primeira) return { status: "salvo" };
+    const resultado = await salvarCampo.mutateAsync({ path: primeira.path, value: primeira.value, ficha, versao, extras: demais });
+    void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
     return { status: resultado.status };
   }
 
@@ -142,13 +153,19 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         {valoresQuery.isPending && <p>Carregando atributos…</p>}
         {valoresQuery.isError && <p role="alert">{valoresQuery.error.message}</p>}
         {valoresQuery.isSuccess && (
-          <DerivedValueGroup eyebrow="BASE MECÂNICA" title="Atributos" valores={valoresQuery.data} grupo="atributo" emptyMessage="Nenhum atributo registrado." />
+          <AttributeTable
+            categoria="atributo" eyebrow="BASE MECÂNICA" titulo="Atributos" grupos={GRUPOS_ATRIBUTOS}
+            ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
+          />
         )}
       </div>
 
       <div hidden={secao !== "pericias"}>
         {valoresQuery.isSuccess && (
-          <DerivedValueGroup eyebrow="ESPECIALIDADES" title="Perícias" valores={valoresQuery.data} grupo="pericia" emptyMessage="Nenhuma perícia registrada." />
+          <AttributeTable
+            categoria="pericia" eyebrow="ESPECIALIDADES" titulo="Perícias" grupos={GRUPOS_PERICIAS}
+            ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
+          />
         )}
       </div>
 

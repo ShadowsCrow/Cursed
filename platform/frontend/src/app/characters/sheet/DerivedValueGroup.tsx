@@ -15,6 +15,38 @@ function comSinal(valor: number): string {
   return valor >= 0 ? `+${valor}` : `${valor}`;
 }
 
+/** Total com as fontes sob demanda (popover acessível); situacionais aparecem à parte. */
+export function FontesDoValor({ valor }: { valor: ValorDerivadoResumo }) {
+  const situacionais = valor.situacionais ?? [];
+  return (
+    <Popover label={`Fontes de ${valor.rotulo}`} triggerContent={<b>{comSinal(valor.total)}</b>} triggerClassName="derived-value__trigger">
+      <dl>
+        <dt>Total</dt>
+        <dd>{valor.total}</dd>
+        {valor.fontes.map((fonte, index) => (
+          <div key={`${fonte.tipo}-${index}`}>
+            <dt>{tipoFonteLabel[fonte.tipo] ?? fonte.tipo}{fonte.descricao ? ` — ${fonte.descricao}` : ""}</dt>
+            <dd>{comSinal(fonte.valor)}</dd>
+          </div>
+        ))}
+      </dl>
+      {situacionais.length > 0 && (
+        <>
+          <p className="eyebrow">Situacionais — não entram no total</p>
+          <dl>
+            {situacionais.map((situacional, index) => (
+              <div key={`${situacional.efeito_id}-${index}`}>
+                <dt>{situacional.descricao} · {situacional.contexto}</dt>
+                <dd>{comSinal(situacional.valor)}</dd>
+              </div>
+            ))}
+          </dl>
+        </>
+      )}
+    </Popover>
+  );
+}
+
 /**
  * Um valor derivado com seu total e, sob demanda (popover acessível), a lista
  * completa de fontes com sinal e os modificadores situacionais separados —
@@ -28,31 +60,7 @@ export function DerivedValueRow({ valor }: { valor: ValorDerivadoResumo }) {
         <strong>{valor.rotulo}</strong>
         <small>{valor.fontes.length} {valor.fontes.length === 1 ? "fonte" : "fontes"}{situacionais.length > 0 ? ` · ${situacionais.length} situacional${situacionais.length > 1 ? "is" : ""}` : ""}</small>
       </span>
-      <Popover label={`Fontes de ${valor.rotulo}`} triggerContent={<b>{comSinal(valor.total)}</b>} triggerClassName="derived-value__trigger">
-        <dl>
-          <dt>Total</dt>
-          <dd>{valor.total}</dd>
-          {valor.fontes.map((fonte, index) => (
-            <div key={`${fonte.tipo}-${index}`}>
-              <dt>{tipoFonteLabel[fonte.tipo] ?? fonte.tipo}{fonte.descricao ? ` — ${fonte.descricao}` : ""}</dt>
-              <dd>{comSinal(fonte.valor)}</dd>
-            </div>
-          ))}
-        </dl>
-        {situacionais.length > 0 && (
-          <>
-            <p className="eyebrow">Situacionais — não entram no total</p>
-            <dl>
-              {situacionais.map((situacional, index) => (
-                <div key={`${situacional.efeito_id}-${index}`}>
-                  <dt>{situacional.descricao} · {situacional.contexto}</dt>
-                  <dd>{comSinal(situacional.valor)}</dd>
-                </div>
-              ))}
-            </dl>
-          </>
-        )}
-      </Popover>
+      <FontesDoValor valor={valor} />
     </div>
   );
 }

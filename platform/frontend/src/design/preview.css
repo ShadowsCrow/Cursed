@@ -474,3 +474,12 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 .table-forms form { display: grid; gap: var(--space-2); }
 .invite-tools { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
 .invite-tools code { word-break: break-all; background: var(--surface-soft); padding: var(--space-2); border-radius: var(--radius-sm); }
+
+/* ---- Atributos e perícias editáveis ------------------------------------- */
+.attribute-table__wrap { overflow-x: auto; margin-top: var(--space-4); }
+.attribute-table { width: 100%; border-collapse: collapse; }
+.attribute-table caption { text-align: left; font-weight: 700; color: var(--gold); padding-bottom: var(--space-2); }
+.attribute-table th, .attribute-table td { text-align: left; padding: var(--space-2); border-bottom: 1px solid var(--border-subtle); }
+.attribute-table thead th { color: var(--muted); font-size: .8rem; font-weight: 600; }
+.attribute-table__input { width: 5rem; }
+.attribute-table__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
