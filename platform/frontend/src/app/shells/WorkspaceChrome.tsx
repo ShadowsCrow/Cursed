@@ -16,12 +16,14 @@ export interface WorkspaceChromeProps {
   headerTitle: string;
   headerEyebrow: string;
   headerDescription?: string;
+  /** Pendências por visão (ofertas, aprovações), exibidas como contador na navegação. */
+  badges?: Partial<Record<TableView, number>>;
   /** Bloco de navegação exclusivo do papel, mostrado abaixo da navegação comum na barra lateral. */
   sidebarExtra?: ReactNode;
   children: ReactNode;
 }
 
-function Navigation({ role, view, onNavigate, mobile = false }: { role: TableRole; view: TableView; onNavigate: (view: TableView) => void; mobile?: boolean }) {
+function Navigation({ role, view, onNavigate, badges = {}, mobile = false }: { role: TableRole; view: TableView; onNavigate: (view: TableView) => void; badges?: Partial<Record<TableView, number>>; mobile?: boolean }) {
   return (
     <nav aria-label={mobile ? "Navegação móvel da mesa" : "Navegação da mesa"} className={mobile ? "mobile-nav" : "sidebar__nav"}>
       {tableNavigation[role].map((item) => (
@@ -34,6 +36,12 @@ function Navigation({ role, view, onNavigate, mobile = false }: { role: TableRol
         >
           <Glyph name={item.icon} size={mobile ? 20 : 19} />
           <span>{item.label}</span>
+          {(badges[item.id] ?? 0) > 0 && (
+            <>
+              <span className="nav-badge" aria-hidden="true">{badges[item.id]}</span>
+              <span className="sr-only">, {badges[item.id]} pendente(s)</span>
+            </>
+          )}
           {!mobile && view === item.id && <span className="nav-item__accent" />}
         </button>
       ))}
@@ -57,6 +65,7 @@ export function WorkspaceChrome({
   headerEyebrow,
   sidebarExtra,
   headerDescription,
+  badges,
   children,
 }: WorkspaceChromeProps) {
   return (
@@ -69,7 +78,7 @@ export function WorkspaceChrome({
           <small><Glyph name="shield" size={14} /> {roleLabel}</small>
         </div>
         <div className="sidebar__label">MESA</div>
-        <Navigation role={role} view={view} onNavigate={onNavigate} />
+        <Navigation role={role} view={view} onNavigate={onNavigate} badges={badges} />
         {sidebarExtra}
         <div className="sidebar__bottom">
           <Link className="nav-item" to={routes.home()}><Glyph name="grid" size={19} /><span>Trocar de mesa</span></Link>
@@ -106,7 +115,7 @@ export function WorkspaceChrome({
         </main>
         <footer className="preview-footer"><span>CURSED <span>✦</span> PLATAFORMA RPG</span><span>Área autenticada · {mesaNome}</span></footer>
       </div>
-      <Navigation role={role} view={view} onNavigate={onNavigate} mobile />
+      <Navigation role={role} view={view} onNavigate={onNavigate} badges={badges} mobile />
     </div>
   );
 }

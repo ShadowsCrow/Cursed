@@ -6,6 +6,7 @@ import {
   type AlvoDescanso,
   type EntidadePublica,
   type ParticipanteResumo,
+  type PedidoAlteracaoResumo,
   type PersonagemResumo,
   type PoliticaMesaContrato,
   type ResultadoDescansoResumo,
@@ -17,7 +18,19 @@ export const characterQueryKeys = {
   politica: (mesaId: string) => ["politica-mesa", mesaId] as const,
   participantes: (mesaId: string) => ["participantes", mesaId] as const,
   entidadesPublicas: (mesaId: string) => ["entidades-publicas", mesaId] as const,
+  solicitacoes: (mesaId: string) => ["solicitacoes", mesaId] as const,
 };
+
+export function useSolicitacoes(api: ApiClient, mesaId: string): UseQueryResult<PedidoAlteracaoResumo[], Error> {
+  return useQuery({
+    queryKey: characterQueryKeys.solicitacoes(mesaId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/mesas/{mesa_id}/solicitacoes", { params: { path: { mesa_id: mesaId } } });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível carregar as solicitações."));
+      return data ?? [];
+    },
+  });
+}
 
 export function usePersonagens(
   api: ApiClient,

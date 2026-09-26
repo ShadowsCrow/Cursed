@@ -32,16 +32,18 @@ const SECTIONS = [
   { id: "personalidade", label: "Personalidade" },
   { id: "atributos", label: "Atributos" },
   { id: "pericias", label: "Perícias" },
-  { id: "habilidades", label: "Habilidades" },
   { id: "equipamentos", label: "Equipamentos" },
   { id: "inventario", label: "Inventário" },
   { id: "status", label: "Status" },
   { id: "efeitos", label: "Efeitos" },
-  { id: "cartas", label: "Cartas" },
+  { id: "cartas", label: "Habilidades e cartas" },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 const DEFAULT_SECTION: SectionId = "informacoes";
+
+/** Seções renomeadas continuam acessíveis por links antigos. */
+const SECOES_ANTIGAS: Record<string, SectionId> = { habilidades: "cartas" };
 
 function isSectionId(value: string | null): value is SectionId {
   return SECTIONS.some((section) => section.id === value);
@@ -65,7 +67,8 @@ export interface CharacterSheetPageProps {
 export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }: CharacterSheetPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const secaoParam = searchParams.get("secao");
-  const secao = isSectionId(secaoParam) ? secaoParam : DEFAULT_SECTION;
+  const secaoPedida = secaoParam && secaoParam in SECOES_ANTIGAS ? SECOES_ANTIGAS[secaoParam] ?? null : secaoParam;
+  const secao = isSectionId(secaoPedida) ? secaoPedida : DEFAULT_SECTION;
   const online = useConnectivityStatus() !== "offline";
   const queryClient = useQueryClient();
 
@@ -204,28 +207,6 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         )}
       </div>
 
-      <div hidden={secao !== "habilidades"} role="tabpanel" id="painel-habilidades" aria-labelledby="aba-habilidades" tabIndex={0}>
-        <section className="panel">
-          <div className="section-heading"><div><span className="eyebrow">EM DESTAQUE</span><h2>Habilidades</h2></div></div>
-          {info.habilidades.length === 0 ? (
-            <p className="preview-note">Nenhuma habilidade registrada.</p>
-          ) : (
-            <div className="feature-list">
-              {info.habilidades.map((habilidade, index) => (
-                <div key={index}>
-                  <span className="feature-list__icon"><Glyph name="book" size={20} /></span>
-                  <div>
-                    <strong>{String(habilidade.nome ?? "Sem nome")}</strong>
-                    {habilidade.tipo !== undefined && <small>{String(habilidade.tipo)}</small>}
-                  </div>
-                  {habilidade.dano !== undefined && <b>{String(habilidade.dano)}</b>}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
       <div hidden={secao !== "equipamentos"} role="tabpanel" id="painel-equipamentos" aria-labelledby="aba-equipamentos" tabIndex={0}>
         {inventarioQuery.isPending && <p>Carregando equipamentos…</p>}
         {inventarioQuery.isError && <p role="alert">{inventarioQuery.error.message}</p>}
@@ -271,6 +252,24 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
             api={api} mesaId={mesaId} personagemId={personagemId} versao={versao}
             papel={permissoes.papel} podeEditar={permissoes.editar}
           />
+        )}
+        {info.habilidades.length > 0 && (
+          <section className="panel legacy-skills" aria-label="Habilidades registradas na ficha antiga">
+            <div className="section-heading"><div><span className="eyebrow">REGISTRO DA FICHA ANTIGA</span><h2>Habilidades anotadas</h2></div></div>
+            <p className="preview-note">Anotações trazidas da ficha anterior. Não fazem parte do sistema de cartas e serão revisadas na migração de dados.</p>
+            <div className="feature-list">
+              {info.habilidades.map((habilidade, index) => (
+                <div key={index}>
+                  <span className="feature-list__icon"><Glyph name="book" size={20} /></span>
+                  <div>
+                    <strong>{String(habilidade.nome ?? "Sem nome")}</strong>
+                    {habilidade.tipo !== undefined && <small>{String(habilidade.tipo)}</small>}
+                  </div>
+                  {habilidade.dano !== undefined && <b>{String(habilidade.dano)}</b>}
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </div>
 

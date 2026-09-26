@@ -4,6 +4,7 @@ import { AuditLog } from "../audit/AuditLog";
 import { NarratorLibrary } from "../cards/NarratorLibrary";
 import { InviteTools } from "../InviteTools";
 import { CharacterList } from "../characters/CharacterList";
+import { useSolicitacoes } from "../characters/api";
 import { PendingRequests } from "../characters/PendingRequests";
 import { PublicEntities } from "../characters/PublicEntities";
 import { RestDialog } from "../characters/RestDialog";
@@ -49,8 +50,10 @@ export interface NarratorShellProps {
  */
 export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter }: NarratorShellProps) {
   const copy = narratorCopy[view];
+  const solicitacoes = useSolicitacoes(api, mesa.id);
   return (
     <WorkspaceChrome
+      badges={{ overview: solicitacoes.data?.length ?? 0 }}
       role="narrador"
       mesaNome={mesa.nome}
       view={view}

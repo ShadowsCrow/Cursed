@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Confirmation } from "../../ui/primitives";
-import { usePersonagens } from "./api";
+import { characterQueryKeys, usePersonagens, useSolicitacoes } from "./api";
 import { sheetKeys, useFichaSnapshot } from "./sheet/sheetApi";
 import { extractErrorMessage, type ApiClient, type PedidoAlteracaoResumo } from "./types";
-
-const chaveSolicitacoes = (mesaId: string) => ["solicitacoes", mesaId] as const;
 
 function noCaminho(dados: unknown, caminho: string): unknown {
   return caminho.split(".").reduce<unknown>(
@@ -33,7 +31,7 @@ function Pedido({ api, mesaId, pedido, nome }: { api: ApiClient; mesaId: string;
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: chaveSolicitacoes(mesaId) });
+      void queryClient.invalidateQueries({ queryKey: characterQueryKeys.solicitacoes(mesaId) });
       for (const chave of [sheetKeys.ficha(mesaId, pedido.personagem_id), sheetKeys.valoresDerivados(mesaId, pedido.personagem_id)]) {
         void queryClient.invalidateQueries({ queryKey: chave });
       }
@@ -78,14 +76,7 @@ function Pedido({ api, mesaId, pedido, nome }: { api: ApiClient; mesaId: string;
 
 /** Fila do Narrador: alterações de jogadores que dependem de aprovação (4.5). */
 export function PendingRequests({ api, mesaId }: { api: ApiClient; mesaId: string }) {
-  const solicitacoes = useQuery({
-    queryKey: chaveSolicitacoes(mesaId),
-    queryFn: async () => {
-      const { data, error } = await api.GET("/mesas/{mesa_id}/solicitacoes", { params: { path: { mesa_id: mesaId } } });
-      if (error) throw new Error(extractErrorMessage(error, "Não foi possível carregar as solicitações."));
-      return data ?? [];
-    },
-  });
+  const solicitacoes = useSolicitacoes(api, mesaId);
   const personagens = usePersonagens(api, mesaId, false);
   const nomes = new Map((personagens.data ?? []).map((p) => [p.id, p.nome]));
   if (solicitacoes.isPending) return <p>Carregando solicitações…</p>;

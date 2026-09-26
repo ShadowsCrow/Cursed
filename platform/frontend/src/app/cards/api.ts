@@ -358,3 +358,12 @@ export function useRecolherCarta(api: ApiClient, mesaId: string) {
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: cardKeys.apresentacoes(mesaId) }),
   });
 }
+
+/** Respostas que ainda aguardam escolha em ofertas abertas e dentro da validade. */
+export function contarOfertasPendentes(ofertas: OfertaResumo[] | undefined): number {
+  return (ofertas ?? []).reduce(
+    (total, oferta) => total + (oferta.estado === "aberta" && !oferta.expirada
+      ? oferta.destinatarios.filter((d) => d.estado === "pendente").length : 0),
+    0,
+  );
+}

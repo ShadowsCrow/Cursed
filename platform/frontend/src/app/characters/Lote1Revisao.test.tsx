@@ -114,8 +114,8 @@ describe("Abas da ficha", () => {
     expect(document.activeElement).toBe(segunda);
     expect(primeira.getAttribute("tabindex")).toBe("-1");
     fireEvent.keyDown(segunda, { key: "End" });
-    await waitFor(() => expect(screen.getByRole("tab", { name: "Cartas" }).getAttribute("aria-selected")).toBe("true"));
-    fireEvent.keyDown(screen.getByRole("tab", { name: "Cartas" }), { key: "ArrowRight" });
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Habilidades e cartas" }).getAttribute("aria-selected")).toBe("true"));
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Habilidades e cartas" }), { key: "ArrowRight" });
     await waitFor(() => expect(primeira.getAttribute("aria-selected")).toBe("true"));
   });
 });

@@ -1,6 +1,7 @@
 import type { components } from "../../api/generated/schema";
 import { Portrait } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
+import { contarOfertasPendentes, useOfertas } from "../cards/api";
 import { PlayerLibrary, PresentationOverlay } from "../cards/PlayerLibrary";
 import { CharacterList } from "../characters/CharacterList";
 import { PublicEntities } from "../characters/PublicEntities";
@@ -48,8 +49,10 @@ export interface PlayerShellProps {
  */
 export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter }: PlayerShellProps) {
   const copy = playerCopy[view];
+  const ofertas = useOfertas(api, mesa.id);
   return (
     <WorkspaceChrome
+      badges={{ cards: contarOfertasPendentes(ofertas.data) }}
       role="jogador"
       mesaNome={mesa.nome}
       view={view}

@@ -503,3 +503,9 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 .request-item__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
 .sheet-tabs button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 [role="tabpanel"]:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-md); }
+
+/* ---- Contadores de pendências e registro legado ------------------------- */
+.nav-badge { display: inline-grid; place-items: center; min-width: 1.35rem; height: 1.35rem; padding: 0 .35rem; margin-left: auto; border-radius: 999px; background: var(--gold); color: var(--bg); font-size: .75rem; font-weight: 800; }
+.mobile-nav button { position: relative; }
+.mobile-nav .nav-badge { position: absolute; top: .2rem; right: calc(50% - 1.6rem); margin: 0; }
+.legacy-skills { margin-top: var(--space-6); border-style: dashed; }
