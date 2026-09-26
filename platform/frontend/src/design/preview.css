@@ -466,3 +466,11 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 @media (max-width: 720px) {
   .card-editor__layout { grid-template-columns: 1fr; }
 }
+
+/* ---- Modo de desenvolvimento e entrada em mesas ------------------------- */
+.dev-banner { display: flex; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--violet-soft); color: var(--text); font-size: .9rem; }
+.dev-login__choices { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-4); }
+.table-forms { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); margin-top: var(--space-6); }
+.table-forms form { display: grid; gap: var(--space-2); }
+.invite-tools { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+.invite-tools code { word-break: break-all; background: var(--surface-soft); padding: var(--space-2); border-radius: var(--radius-sm); }

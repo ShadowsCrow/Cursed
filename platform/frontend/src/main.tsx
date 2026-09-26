@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 
 import { createPlatformClients } from "./app/clients";
 import { App } from "./app/App";
+import { DevApp } from "./app/DevApp";
 import { ComponentCatalog } from "./app/ComponentCatalog";
 import { PreviewApp } from "./app/PreviewApp";
 import { ErrorBoundary } from "./app/ErrorBoundary";
@@ -18,6 +19,7 @@ if (!root) throw new Error("Elemento raiz da aplicação não encontrado.");
 const apiUrl = import.meta.env.VITE_API_URL;
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const devAuth = import.meta.env.DEV && import.meta.env.VITE_DEV_AUTH === "1";
 
 if (window.location.pathname.startsWith("/preview")) {
   createRoot(root).render(
@@ -29,6 +31,17 @@ if (window.location.pathname.startsWith("/preview")) {
             <Route path="*" element={<PreviewApp />} />
           </Routes>
         </BrowserRouter>
+      </ErrorBoundary>
+    </React.StrictMode>,
+  );
+} else if (devAuth && apiUrl) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } });
+  createRoot(root).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter><DevApp apiUrl={apiUrl} /></BrowserRouter>
+        </QueryClientProvider>
       </ErrorBoundary>
     </React.StrictMode>,
   );

@@ -20,6 +20,8 @@ class PlatformSettings:
     cors_origins: tuple[str, ...]
     supabase_url: str = ""
     supabase_publishable_key: str = ""
+    # Identidades locais sem Supabase (token `dev:<id>`); proibido em produção.
+    dev_auth: bool = False
 
 
 def _required(values: Mapping[str, str], key: str) -> str:
@@ -55,6 +57,10 @@ def load_settings(environ: Mapping[str, str] | None = None) -> PlatformSettings:
     if not origins:
         raise ConfigurationError("CURSED_CORS_ORIGINS deve conter ao menos uma origem.")
 
+    dev_auth = values.get("CURSED_DEV_AUTH", "").strip().lower() in {"1", "true", "sim"}
+    if dev_auth and environment == "production":
+        raise ConfigurationError("CURSED_DEV_AUTH não pode ser usado com CURSED_ENV=production.")
+
     return PlatformSettings(
         environment=environment,
         database_url=database_url,
@@ -63,4 +69,5 @@ def load_settings(environ: Mapping[str, str] | None = None) -> PlatformSettings:
         cors_origins=origins,
         supabase_url=values.get("CURSED_SUPABASE_URL", "").strip().rstrip("/"),
         supabase_publishable_key=values.get("CURSED_SUPABASE_PUBLISHABLE_KEY", "").strip(),
+        dev_auth=dev_auth,
     )

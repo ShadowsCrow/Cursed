@@ -50,3 +50,30 @@ class ApiHealthTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DevAuthTest(unittest.TestCase):
+    def _app(self, dev_auth: bool):
+        from sqlalchemy import create_engine
+        from sqlalchemy.pool import StaticPool
+
+        from cursed_platform.persistence import Base
+
+        settings = PlatformSettings(
+            environment="development", database_url="sqlite:///:memory:", api_host="127.0.0.1", api_port=8000,
+            cors_origins=("http://localhost:5173",), dev_auth=dev_auth,
+        )
+        engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+        Base.metadata.create_all(engine)
+        return TestClient(create_app(settings, engine=engine))
+
+    def test_token_dev_so_vale_com_o_modo_ligado(self):
+        ligado = self._app(True)
+        resposta = ligado.post("/mesas", json={"nome": "Mesa dev"}, headers={"Authorization": "Bearer dev:narrador"})
+        self.assertEqual(resposta.status_code, 201, resposta.text)
+        self.assertEqual(ligado.get("/mesas", headers={"Authorization": "Bearer dev:narrador"}).json()[0]["papel"], "narrador")
+        for invalido in ("dev:", "dev:Maiusculo", "dev:a/b", "narrador", "dev:" + "x" * 60):
+            with self.subTest(token=invalido):
+                self.assertEqual(ligado.get("/mesas", headers={"Authorization": f"Bearer {invalido}"}).status_code, 401)
+        desligado = self._app(False)
+        self.assertEqual(desligado.get("/mesas", headers={"Authorization": "Bearer dev:narrador"}).status_code, 503)

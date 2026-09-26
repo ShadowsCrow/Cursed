@@ -2,6 +2,7 @@ import type { components } from "../../api/generated/schema";
 import { Glyph } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
 import { NarratorLibrary } from "../cards/NarratorLibrary";
+import { InviteTools } from "../InviteTools";
 import { CharacterList } from "../characters/CharacterList";
 import { PublicEntities } from "../characters/PublicEntities";
 import { RestDialog } from "../characters/RestDialog";
@@ -78,6 +79,9 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
               <span className="workspace-status__pill">Narrador</span>
             </section>
             <aside className="panel narrator-aside" aria-label="Fila do Narrador">
+              <span className="eyebrow">CONVIDAR JOGADORES</span>
+              <h2>Convites</h2>
+              <InviteTools api={api} mesaId={mesa.id} />
               <span className="eyebrow">FILA DO NARRADOR</span>
               <h2>Pendências</h2>
               <p className="body-copy">Solicitações de aprovação e ofertas de cartas aparecerão aqui quando as ferramentas do Narrador forem conectadas.</p>

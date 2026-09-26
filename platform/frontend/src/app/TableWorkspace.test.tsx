@@ -14,7 +14,7 @@ function renderTable(initialEntry: string, rows: { id: string; nome: string; pap
   const get = failure ? vi.fn().mockRejectedValue(new Error("Sem acesso")) : vi.fn().mockResolvedValue({ data: rows, error: undefined });
   const clients = { api: { GET: get } } as unknown as Clients;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={queryClient}><MemoryRouter initialEntries={[initialEntry]}><Link to={routes.table("mesa-b")}>Abrir mesa B</Link><Routes><Route path="/mesas/:mesaId" element={<TablePage clients={clients} userId="usuario-1" onSignOut={vi.fn()} />} /></Routes></MemoryRouter></QueryClientProvider>);
+  render(<QueryClientProvider client={queryClient}><MemoryRouter initialEntries={[initialEntry]}><Link to={routes.table("mesa-b")}>Abrir mesa B</Link><Routes><Route path="/mesas/:mesaId" element={<TablePage api={clients.api} userId="usuario-1" onSignOut={vi.fn()} />} /></Routes></MemoryRouter></QueryClientProvider>);
   return get;
 }
 

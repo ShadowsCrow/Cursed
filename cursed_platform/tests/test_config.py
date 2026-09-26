@@ -35,3 +35,15 @@ class PlatformConfigurationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DevAuthConfigTest(unittest.TestCase):
+    BASE = {"CURSED_PLATFORM_DATABASE_URL": "sqlite:///dev.sqlite"}
+
+    def test_dev_auth_desligado_por_padrao_e_proibido_em_producao(self):
+        from cursed_platform.config import ConfigurationError, load_settings
+
+        self.assertFalse(load_settings(self.BASE).dev_auth)
+        self.assertTrue(load_settings({**self.BASE, "CURSED_DEV_AUTH": "1"}).dev_auth)
+        with self.assertRaisesRegex(ConfigurationError, "CURSED_DEV_AUTH"):
+            load_settings({**self.BASE, "CURSED_DEV_AUTH": "1", "CURSED_ENV": "production"})

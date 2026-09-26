@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -10,6 +11,7 @@ import httpx
 
 
 bearer = HTTPBearer(auto_error=False)
+IDENTIDADE_DEV = re.compile(r"dev:([a-z0-9][a-z0-9_-]{0,49})")
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,12 @@ def get_actor(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Autenticação necessária.")
 
     configuracao = request.app.state.settings
+    if configuracao.dev_auth and configuracao.environment != "production":
+        # Modo de desenvolvimento local: a identidade é declarada pelo token, sem senha.
+        identidade = IDENTIDADE_DEV.fullmatch(credentials.credentials)
+        if identidade is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de desenvolvimento inválido.")
+        return Ator(usuario_id=identidade.group(1))
     if not configuracao.supabase_url or not configuracao.supabase_publishable_key:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identidade não configurada.")
 
