@@ -75,6 +75,10 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
           <div className="workspace-status-row">
             <PublicEntities api={api} mesaId={mesa.id} />
             <aside className="panel narrator-aside" aria-label="Fila do Narrador">
+              <div className="so-celular">
+                <span className="eyebrow">DESCANSO DO GRUPO</span>
+                <RestDialog api={api} mesaId={mesa.id} />
+              </div>
               <span className="eyebrow">CONVIDAR JOGADORES</span>
               <h2>Convites</h2>
               <InviteTools api={api} mesaId={mesa.id} />

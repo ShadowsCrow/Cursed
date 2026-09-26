@@ -1357,6 +1357,8 @@ export interface components {
             alvo_tipo?: string | null;
             /** Ator Id */
             ator_id?: string | null;
+            /** Ator Nome */
+            ator_nome?: string | null;
             /**
              * Categoria
              * @enum {string}
@@ -1647,6 +1649,8 @@ export interface components {
         };
         /** ParticipanteResumo */
         ParticipanteResumo: {
+            /** Nome */
+            nome?: string | null;
             /**
              * Papel
              * @enum {string}

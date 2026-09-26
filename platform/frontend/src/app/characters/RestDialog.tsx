@@ -219,6 +219,7 @@ export function RestDialog({ api, mesaId }: RestDialogProps) {
         onClose={close}
         title="Preparar descanso"
         description="Escolha os alvos e os parâmetros. Nada é gravado até você confirmar a prévia."
+        className="rest-dialog"
       >
         <fieldset>
           <legend>Tipo de descanso</legend>
@@ -263,7 +264,8 @@ export function RestDialog({ api, mesaId }: RestDialogProps) {
                   /> {personagem.nome}
                 </label>
                 {selecionado && (
-                  <div className="rest-alvo__detalhes">
+                  <details className="rest-alvo__detalhes">
+                    <summary>Foco e ajustes manuais</summary>
                     <label htmlFor={`foco-${personagem.id}`}>Foco de Repouso</label>
                     <select
                       id={`foco-${personagem.id}`}
@@ -291,7 +293,7 @@ export function RestDialog({ api, mesaId }: RestDialogProps) {
                         </label>
                       ))}
                     </div>
-                  </div>
+                  </details>
                 )}
               </div>
             );

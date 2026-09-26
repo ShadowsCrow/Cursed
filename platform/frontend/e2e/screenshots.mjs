@@ -96,6 +96,19 @@ const TELAS = ({ m, lia }) => [
   ["jogador-1", "10-jogador-grupo", `/mesas/${m}?painel=overview`],
   ["jogador-1", "11-jogador-ficha", `/mesas/${m}/personagens/${lia}?secao=inventario`],
   ["jogador-1", "12-jogador-biblioteca", `/mesas/${m}?painel=cards`],
+  ["narrador", "14-editor-carta", `/mesas/${m}?painel=cards`, async (p) => {
+    await p.getByRole("button", { name: "Editar Bola de Fogo" }).click();
+  }],
+  ["narrador", "15-descanso-previa", `/mesas/${m}`, async (p) => {
+    await p.getByRole("button", { name: "Preparar descanso" }).locator("visible=true").first().click();
+    await p.getByRole("radio", { name: /longo/i }).check();
+    for (const caixa of await p.getByRole("checkbox").all()) await caixa.check();
+    await p.getByRole("button", { name: "Pré-visualizar" }).click();
+  }],
+  ["narrador", "16-registro-detalhes", `/mesas/${m}?painel=activity`, async (p) => {
+    await p.getByText("Ver detalhes").first().click();
+  }],
+  ["jogador-1", "17-jogador-efeitos", `/mesas/${m}/personagens/${lia}?secao=efeitos`],
 ];
 
 const VIEWPORTS = { desktop: { width: 1440, height: 900 }, celular: { width: 390, height: 844 } };
@@ -105,7 +118,7 @@ async function main() {
   const dados = await semear();
   const navegador = await chromium.launch();
   for (const [nomeViewport, viewport] of Object.entries(VIEWPORTS)) {
-    for (const [usuario, nome, rota] of TELAS(dados)) {
+    for (const [usuario, nome, rota, acao] of TELAS(dados)) {
       if (SOMENTE && !SOMENTE.has(nome)) continue;
       const contexto = await navegador.newContext({ viewport, reducedMotion: "reduce", locale: "pt-BR" });
       await contexto.addInitScript((id) => window.localStorage.setItem("cursed-dev-identidade", id), usuario);
@@ -114,7 +127,11 @@ async function main() {
       pagina.on("pageerror", (erro) => erros.push(erro.message));
       await pagina.goto(`${APP}${rota}`, { waitUntil: "networkidle" });
       await pagina.waitForTimeout(400);
-      await pagina.screenshot({ path: `${SAIDA}/${nomeViewport}-${nome}.png`, fullPage: true });
+      if (acao) {
+        await acao(pagina);
+        await pagina.waitForTimeout(500);
+      }
+      await pagina.screenshot({ path: `${SAIDA}/${nomeViewport}-${nome}.png`, fullPage: !acao || nome.includes("registro") });
       if (nome === "12-jogador-biblioteca") {
         await pagina.getByRole("button", { name: "Escolher cartas" }).first().click();
         await pagina.waitForTimeout(300);

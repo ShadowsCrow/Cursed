@@ -74,11 +74,20 @@ def _curto(valor: Any) -> str:
     return texto if len(texto) <= 40 else f"{texto[:37]}…"
 
 
+ROTULOS_CAMPOS = {
+    "permitir_criacao_propria": "criação de personagens",
+    "permitir_edicao_propria": "edição das próprias fichas",
+    "permitir_exclusao_propria": "exclusão das próprias fichas",
+    "campos_bloqueados": "campos bloqueados",
+    "campos_exigem_aprovacao": "campos com aprovação",
+}
+
+
 def resumo_mudancas(nome: str, lista: list[dict[str, Any]]) -> str:
     if len(lista) == 1:
         item = lista[0]
         return f"{nome}: {item['campo']} de {_curto(item['antes'])} para {_curto(item['depois'])}"[:500]
-    campos = ", ".join(item["campo"] for item in lista[:5])
+    campos = ", ".join(ROTULOS_CAMPOS.get(item["campo"], item["campo"]) for item in lista[:5])
     extra = f" e mais {len(lista) - 5}" if len(lista) > 5 else ""
     return f"{nome}: {len(lista)} campos alterados ({campos}{extra})"[:500]
 

@@ -24,7 +24,7 @@ function narrador() {
       "/mesas/{mesa_id}/ofertas": { data: [OFERTA] },
       "/mesas/{mesa_id}/apresentacoes": { data: [{ id: "a1", estado: "apresentada", apresentada_em: "2026-09-25T12:00:00Z", carta: visivel("va", "item", "Anel"), destinatarios: [] }] },
       "/mesas/{mesa_id}/personagens": { data: PERSONAGENS },
-      "/mesas/{mesa_id}/participantes": { data: [{ usuario_id: "ana", papel: "jogador" }] },
+      "/mesas/{mesa_id}/participantes": { data: [{ usuario_id: "ana", papel: "jogador", nome: "Ana" }] },
     },
     POST: {
       "/mesas/{mesa_id}/cartas/importacoes/previa": { data: { tipo: "efeito", rascunho: { titulo: "Luz", texto: "Ilumina." }, validacao: { valida: true, problemas: [], revisao_pendente: [] }, avisos: ["A imagem não foi importada."] } },
@@ -81,7 +81,7 @@ describe("NarratorLibrary — catálogo, ofertas e apresentações", () => {
   it("apresenta uma carta publicada aos destinatários escolhidos", async () => {
     const { POST } = narrador();
     fireEvent.click(await screen.findByRole("button", { name: "Apresentar" }));
-    fireEvent.click(await screen.findByLabelText("Jogador · ana"));
+    fireEvent.click(await screen.findByLabelText("Ana"));
     fireEvent.click(screen.getAllByRole("button", { name: "Apresentar" }).at(-1) as HTMLElement);
     await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/apresentacoes", expect.objectContaining({
       body: { versao_id: "va", destinatarios: ["ana"] },

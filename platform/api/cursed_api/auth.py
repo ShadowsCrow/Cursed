@@ -6,6 +6,11 @@ from dataclasses import dataclass
 import re
 
 from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session
+
+from cursed_platform import perfis
+
+from .dependencies import get_session
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import httpx
 
@@ -22,6 +27,7 @@ class Ator:
 def get_actor(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+    session: Session = Depends(get_session),
 ) -> Ator:
     """Confere o token com o serviço de Auth antes de aceitar uma identidade."""
     if credentials is None or credentials.scheme.casefold() != "bearer":
@@ -33,6 +39,7 @@ def get_actor(
         identidade = IDENTIDADE_DEV.fullmatch(credentials.credentials)
         if identidade is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de desenvolvimento inválido.")
+        perfis.lembrar(session, identidade.group(1), perfis.nome_de_identidade_dev(identidade.group(1)))
         return Ator(usuario_id=identidade.group(1))
     if not configuracao.supabase_url or not configuracao.supabase_publishable_key:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identidade não configurada.")
@@ -59,4 +66,5 @@ def get_actor(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Resposta de identidade inválida.") from error
     if not isinstance(usuario_id, str) or not usuario_id:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Resposta de identidade inválida.")
+    perfis.lembrar(session, usuario_id, perfis.nome_de_usuario_supabase(usuario))
     return Ator(usuario_id=usuario_id)

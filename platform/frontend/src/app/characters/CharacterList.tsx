@@ -102,7 +102,7 @@ function TransferMenu({
   const items: MenuItem[] = [
     ...participantes.map((participante) => ({
       id: participante.usuario_id,
-      label: `${participante.papel === "narrador" ? "Narrador" : "Jogador"} · ${participante.usuario_id}${participante.usuario_id === personagem.proprietario_id ? " (atual)" : ""}`,
+      label: `${participante.nome ?? participante.usuario_id} (${participante.papel === "narrador" ? "Narrador" : "jogador"})${participante.usuario_id === personagem.proprietario_id ? " · atual" : ""}`,
       onSelect: () => onTransfer(participante.usuario_id),
       disabled: participante.usuario_id === personagem.proprietario_id,
     })),
@@ -216,7 +216,7 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
       <div className="section-heading">
         <div>
           <span className="eyebrow">{role === "narrador" ? "PERSONAGENS" : "MINHA FICHA"}</span>
-          <h2>{role === "narrador" ? "O elenco da mesa" : "Suas fichas"}</h2>
+          <h2>{role === "narrador" ? "Personagens e entidades" : "Suas fichas"}</h2>
         </div>
         {podeCriar ? (
           <button type="button" className="button button--primary" onClick={() => setCreateOpen(true)}>
@@ -252,7 +252,6 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
                   <strong>{personagem.nome}</strong>
                   <small>
                     {tipoLabel[personagem.tipo]}
-                    {personagem.visibilidade === "narrador" ? " · Oculto do grupo" : ""}
                     {tab === "lixeira" && prazo ? ` · Recuperável até ${prazo}` : ""}
                   </small>
                 </span>

@@ -7,7 +7,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, correcoes, ficha_viva
+from cursed_platform import auditoria, correcoes, ficha_viva, perfis
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CorrigirEventoRequest, EventoAuditoriaResumo, MudancaAuditoria, PaginaAuditoria,
@@ -22,11 +22,12 @@ router = APIRouter(prefix="/mesas/{mesa_id}/auditoria", tags=["Auditoria"])
 
 
 def _resumo(
-    evento: EventoAuditoriaRegistro, corrigido_por: list[int], narrador: bool,
+    evento: EventoAuditoriaRegistro, corrigido_por: list[int], narrador: bool, ator_nome: str | None = None,
 ) -> EventoAuditoriaResumo:
     detalhes = evento.detalhes or {}
     return EventoAuditoriaResumo(
         id=evento.id, ocorrido_em=evento.ocorrido_em, sessao_id=evento.sessao_id, ator_id=evento.ator_id,
+        ator_nome=ator_nome,
         origem=evento.origem, categoria=evento.categoria, acao=evento.acao, relevancia=evento.relevancia,
         personagem_id=evento.personagem_id, alvo_tipo=evento.alvo_tipo, alvo_id=evento.alvo_id,
         resumo=evento.resumo,
@@ -69,10 +70,12 @@ def listar_eventos(
     ).permitido
     visiveis = {e.id for e in eventos}
     ligacoes = correcoes.correcoes_de(session, [e.id for e in eventos])
+    conhecidos = perfis.nomes(session, (e.ator_id for e in eventos))
     return PaginaAuditoria(
         eventos=[
             # Correções que o leitor não pode ver também não são mencionadas.
-            _resumo(e, [c for c in ligacoes.get(e.id, []) if narrador or c in visiveis], narrador)
+            _resumo(e, [c for c in ligacoes.get(e.id, []) if narrador or c in visiveis], narrador,
+                    conhecidos.get(e.ator_id or ""))
             for e in eventos
         ],
         proximo_cursor=proximo,

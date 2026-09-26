@@ -1344,6 +1344,17 @@
             ],
             "title": "Ator Id"
           },
+          "ator_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ator Nome"
+          },
           "categoria": {
             "enum": [
               "mesa",
@@ -2096,6 +2107,17 @@
       },
       "ParticipanteResumo": {
         "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
           "papel": {
             "enum": [
               "narrador",

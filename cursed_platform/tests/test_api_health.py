@@ -77,3 +77,25 @@ class DevAuthTest(unittest.TestCase):
                 self.assertEqual(ligado.get("/mesas", headers={"Authorization": f"Bearer {invalido}"}).status_code, 401)
         desligado = self._app(False)
         self.assertEqual(desligado.get("/mesas", headers={"Authorization": "Bearer dev:narrador"}).status_code, 503)
+
+
+class NomesDeExibicaoTest(unittest.TestCase):
+    def test_nomes_derivados_da_identidade(self):
+        from cursed_platform.perfis import nome_de_identidade_dev, nome_de_usuario_supabase
+
+        self.assertEqual(nome_de_identidade_dev("jogador-1"), "Jogador 1")
+        self.assertEqual(nome_de_identidade_dev("narrador"), "Narrador")
+        self.assertEqual(nome_de_usuario_supabase({"user_metadata": {"full_name": "Ana Souza"}, "email": "a@x.com"}), "Ana Souza")
+        self.assertEqual(nome_de_usuario_supabase({"user_metadata": {}, "email": "bruno.m@x.com"}), "bruno.m")
+        self.assertIsNone(nome_de_usuario_supabase({}))
+
+    def test_participantes_e_registro_trazem_nomes(self):
+        cliente = DevAuthTest()._app(True)
+        mestre = {"Authorization": "Bearer dev:narrador"}
+        mesa = cliente.post("/mesas", json={"nome": "Mesa"}, headers=mestre).json()["id"]
+        codigo = cliente.post(f"/mesas/{mesa}/convites", json={"validade_dias": 1}, headers=mestre).json()["codigo"]
+        cliente.post("/convites/aceitar", json={"codigo": codigo}, headers={"Authorization": "Bearer dev:jogador-1"})
+        participantes = {p["usuario_id"]: p["nome"] for p in cliente.get(f"/mesas/{mesa}/participantes", headers=mestre).json()}
+        self.assertEqual(participantes, {"narrador": "Narrador", "jogador-1": "Jogador 1"})
+        eventos = cliente.get(f"/mesas/{mesa}/auditoria", headers=mestre).json()["eventos"]
+        self.assertEqual({e["ator_id"]: e["ator_nome"] for e in eventos}, {"narrador": "Narrador", "jogador-1": "Jogador 1"})

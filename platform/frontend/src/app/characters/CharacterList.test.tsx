@@ -81,7 +81,7 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
 
     expect(await screen.findByText("Nara Exemplo")).toBeTruthy();
     expect(screen.getByText("Vilão Oculto")).toBeTruthy();
-    expect(screen.getByText(/Oculto do grupo/)).toBeTruthy();
+    expect(screen.getByText("Oculto")).toBeTruthy();
 
     const rows = screen.getAllByRole("listitem");
     expect(within(rows[0] as HTMLElement).getByRole("button", { name: "Abrir" })).toBeTruthy();
@@ -187,7 +187,7 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
     renderList({ api, role: "narrador", onOpen: vi.fn() });
 
     fireEvent.click(await screen.findByRole("button", { name: /Transferir/ }));
-    fireEvent.click(screen.getByRole("menuitem", { name: /Jogador · usuario-2/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "usuario-2 (jogador)" }));
 
     await waitFor(() =>
       expect(POST).toHaveBeenCalledWith(

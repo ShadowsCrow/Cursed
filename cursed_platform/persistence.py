@@ -550,3 +550,16 @@ for _comando in VERSOES_IMUTAVEIS_SQLITE:
     event.listen(CartaVersaoRegistro.__table__, "after_create", DDL(_comando).execute_if(dialect="sqlite"))
 for _comando in VERSOES_IMUTAVEIS_POSTGRES:
     event.listen(CartaVersaoRegistro.__table__, "after_create", DDL(_comando).execute_if(dialect="postgresql"))
+
+
+
+class PerfilUsuarioRegistro(Base):
+    """Nome de exibição da identidade autenticada, atualizado a cada acesso."""
+
+    __tablename__ = "user_profiles"
+
+    usuario_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    nome: Mapped[str] = mapped_column(String(120), nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )

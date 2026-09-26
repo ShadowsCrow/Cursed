@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria
+from cursed_platform import auditoria, perfis
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     AceitarConviteRequest, ConviteCriado, CriarConviteRequest,
@@ -164,10 +164,11 @@ def listar_participantes(
     )
     if not decisao.permitido:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mesa não encontrada.")
-    mesas = MesaRepository(session)
+    membros = MesaRepository(session).listar_membros(mesa_id)
+    conhecidos = perfis.nomes(session, (m.usuario_id for m in membros))
     return [
-        ParticipanteResumo(usuario_id=participante.usuario_id, papel=participante.papel)
-        for participante in mesas.listar_membros(mesa_id)
+        ParticipanteResumo(usuario_id=m.usuario_id, papel=m.papel, nome=conhecidos.get(m.usuario_id))
+        for m in membros
     ]
 
 

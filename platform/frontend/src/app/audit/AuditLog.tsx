@@ -76,7 +76,26 @@ function formatarQuando(iso: string): string {
 function formatarValor(valor: unknown): string {
   if (valor === null || valor === undefined) return "(vazio)";
   if (typeof valor === "string") return valor.trim() === "" ? "(vazio)" : valor;
-  if (typeof valor === "number" || typeof valor === "boolean") return String(valor);
+  if (typeof valor === "number") return String(valor);
+  if (typeof valor === "boolean") return valor ? "sim" : "não";
+  if (Array.isArray(valor)) {
+    if (valor.length === 0) return "(nenhum)";
+    return valor.map((item) => {
+      if (item && typeof item === "object" && "alvo" in item && "valor" in item) {
+        const { alvo, valor: v, contexto } = item as { alvo: string; valor: number; contexto?: string | null };
+        return `${alvo} ${v >= 0 ? "+" : ""}${v}${contexto ? ` (${contexto})` : ""}`;
+      }
+      return formatarValor(item);
+    }).join(", ");
+  }
+  if (typeof valor === "object") {
+    const registro = valor as Record<string, unknown>;
+    const nome = registro.nome ?? registro.titulo;
+    if (typeof nome === "string") {
+      const descricao = typeof registro.descricao === "string" ? ` — ${registro.descricao}` : "";
+      return `${nome}${descricao}`;
+    }
+  }
   try {
     return JSON.stringify(valor);
   } catch {
@@ -315,7 +334,7 @@ export function AuditLog({ api, mesaId, role }: AuditLogProps) {
               <option value="">Todos</option>
               {(participantes.data ?? []).map((participante: ParticipanteResumo) => (
                 <option key={participante.usuario_id} value={participante.usuario_id}>
-                  {participante.papel === "narrador" ? "Narrador" : "Jogador"} · {participante.usuario_id}
+                  {participante.nome ?? participante.usuario_id} ({participante.papel === "narrador" ? "Narrador" : "jogador"})
                 </option>
               ))}
             </select>
@@ -374,7 +393,7 @@ export function AuditLog({ api, mesaId, role }: AuditLogProps) {
                     <time dateTime={evento.ocorrido_em}>{formatarQuando(evento.ocorrido_em)}</time>
                     <span className="tag">{categoriaLabel[evento.categoria]}</span>
                     <span className="tag tag--accent">{relevanciaLabel[evento.relevancia]}</span>
-                    {evento.ator_id && <span>{evento.ator_id}</span>}
+                    {evento.ator_id && <span>{evento.ator_nome ?? evento.ator_id}</span>}
                     {evento.personagem_id && <span>{nomePersonagem ?? "Personagem"}</span>}
                   </div>
                   <p className="audit-event__resumo">{evento.resumo}</p>

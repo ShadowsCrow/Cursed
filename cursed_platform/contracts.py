@@ -99,6 +99,7 @@ class AceitarConviteRequest(BaseModel):
 class ParticipanteResumo(BaseModel):
     usuario_id: str
     papel: Literal["narrador", "jogador"]
+    nome: str | None = None
 
 
 class CanalPrivado(BaseModel):
@@ -323,6 +324,7 @@ class EventoAuditoriaResumo(BaseModel):
     ocorrido_em: datetime
     sessao_id: str | None = None
     ator_id: str | None = None
+    ator_nome: str | None = None
     origem: Literal["usuario", "automacao", "migracao"]
     categoria: Literal["mesa", "permissao", "personagem", "ficha", "inventario", "efeito", "carta"]
     acao: str

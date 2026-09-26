@@ -436,10 +436,17 @@ export function EffectsPanel({ efeitos, admin }: { efeitos: EfeitoResumo[]; admi
       {efeitos.length === 0 ? (
         <p className="preview-note">Nenhum efeito ativo ou suspenso no momento.</p>
       ) : (
-        <div className="effect-strip">
-          {efeitos.map((efeito, index) => <EffectDetailIcon key={efeito.id} efeito={efeito} index={index} />)}
-          <span className="effect-strip__hint">Foque, toque ou clique para ver detalhes</span>
-        </div>
+        <>
+          <ul className="effect-strip">
+            {efeitos.map((efeito, index) => (
+              <li key={efeito.id} className={`effect-chip ${efeito.estado === "suspenso" ? "effect-chip--suspenso" : ""}`.trim()}>
+                <EffectDetailIcon efeito={efeito} index={index} />
+                <span aria-hidden="true">{efeito.nome}{efeito.estado === "suspenso" ? " · suspenso" : ""}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="effect-strip__hint">Toque ou passe o cursor em um efeito para ver origem, duração e modificadores.</p>
+        </>
       )}
 
       {admin && <EffectAdminList efeitos={efeitos} onAjustar={(efeito) => setDialog({ kind: "ajustar", efeito })} onTransicionar={(efeito, acao) => setDialog({ kind: "transicao", efeito, acao })} />}

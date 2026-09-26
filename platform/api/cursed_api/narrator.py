@@ -183,8 +183,13 @@ def aplicar_efeito(
     resumo = _efeito_resumo(session, efeito)
     _registrar_efeito(
         session, personagem, efeito, ator, "efeito.aplicado", "aplicado",
-        [{"campo": "efeito", "antes": None, "depois": resumo.model_dump(mode="json"), "completo": True,
-          "rotulo": efeito.nome}],
+        [{"campo": "efeito", "antes": None, "completo": True, "rotulo": efeito.nome,
+          "depois": " · ".join(filter(None, [
+              efeito.descricao,
+              f"{efeito.duracao_rodadas} rodada(s)" if efeito.duracao_rodadas else None,
+              f"origem: {resumo.fontes[0].descricao}" if resumo.fontes and resumo.fontes[0].descricao else None,
+              ", ".join(f"{m.alvo} {m.valor:+g}" + (f" ({m.contexto})" if m.contexto else "") for m in resumo.modificadores) or None,
+          ]))}],
         pedido.motivo, correlacao,
     )
     session.commit()

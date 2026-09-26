@@ -152,7 +152,7 @@ function ApresentarDialog({ api, mesaId, versao, onClose }: { api: ApiClient; me
           <label key={p.usuario_id} className="checkbox-row">
             <input type="checkbox" checked={destinatarios.includes(p.usuario_id)}
               onChange={() => setDestinatarios((atual) => (atual.includes(p.usuario_id) ? atual.filter((x) => x !== p.usuario_id) : [...atual, p.usuario_id]))} />
-            Jogador · {p.usuario_id}
+            {p.nome ?? p.usuario_id}
           </label>
         ))}
       </fieldset>
