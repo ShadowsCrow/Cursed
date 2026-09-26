@@ -31,3 +31,12 @@ obtém ou renova o token da sessão e o envia como Bearer; a API valida a
 identidade novamente antes de consultar fichas. O exemplo de variáveis para a
 aplicação Vite está em `.env.example`. Nenhuma chave privada deve ser
 colocada nessas variáveis do navegador.
+
+## Capturas de tela
+
+`npm run capturas` cria dados de exemplo pela API e salva capturas das
+principais telas, em desktop e celular, em `.screenshots/` (fora do Git).
+Requer uma API em modo de desenvolvimento em `API_URL` (padrão
+`http://127.0.0.1:8001`, com `CURSED_DEV_AUTH=1` e um banco descartável) e um
+Vite em `APP_URL` (padrão `http://localhost:5174`) apontando para ela. Use
+`SOMENTE=02-visao-geral,06-ficha-informacoes` para capturar só algumas telas.

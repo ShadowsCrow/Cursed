@@ -82,7 +82,6 @@ export function WorkspaceChrome({
         {sidebarExtra}
         <div className="sidebar__bottom">
           <Link className="nav-item" to={routes.home()}><Glyph name="grid" size={19} /><span>Trocar de mesa</span></Link>
-          <div className="sidebar__edition">ÁREA DA MESA <span>·</span> EM CONSTRUÇÃO</div>
         </div>
       </aside>
       <div className="preview-main">

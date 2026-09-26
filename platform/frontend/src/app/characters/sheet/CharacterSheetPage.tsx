@@ -133,9 +133,8 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
   return (
     <div className="screen-content">
       <div className="page-intro">
-        <button type="button" className="text-action" onClick={onBack}><Glyph name="arrow" size={14} /> Voltar à mesa</button>
+        <button type="button" className="text-action" onClick={onBack}><span className="glyph-back"><Glyph name="arrow" size={14} /></span> Voltar à mesa</button>
         <span className="eyebrow">FICHA VIVA</span>
-        <h1>{info.nome}</h1>
       </div>
 
       {permissoes && !permissoes.editar && (

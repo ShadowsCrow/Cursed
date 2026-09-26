@@ -10,8 +10,8 @@ import { ComponentCatalog } from "./app/ComponentCatalog";
 import { PreviewApp } from "./app/PreviewApp";
 import { ErrorBoundary } from "./app/ErrorBoundary";
 import "./style.css";
-import "./design/preview.css";
 import "./ui/primitives/primitives.css";
+import "./design/preview.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Elemento raiz da aplicação não encontrado.");

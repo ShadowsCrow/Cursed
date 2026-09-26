@@ -218,3 +218,6 @@ app_streamlit/.streamlit/secrets.toml
 
 # Banco local do modo de desenvolvimento da plataforma
 platform/api/.dev/
+
+# Capturas de tela geradas localmente
+platform/frontend/.screenshots/

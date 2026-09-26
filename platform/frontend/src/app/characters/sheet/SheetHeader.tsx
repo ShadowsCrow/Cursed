@@ -25,7 +25,7 @@ export function SheetHeader({ ficha }: { ficha: FichaContrato }) {
       </div>
       <div className="character-hero__identity">
         <span className="eyebrow">{eyebrow || "Identidade não preenchida"}</span>
-        <h2>{info.nome}</h2>
+        <h1>{info.nome}</h1>
         <div className="tag-row">
           {info.arquetipo && <span className="tag">{info.arquetipo}</span>}
           {info.idade !== undefined && <span className="tag">{info.idade} anos</span>}

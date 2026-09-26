@@ -27,7 +27,7 @@ describe("shell autenticado da mesa", () => {
       { id: "mesa-a", nome: "Campanha do Norte", papel: "narrador" },
       { id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" },
     ]);
-    expect(await screen.findByRole("heading", { name: "A campanha começa aqui." })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "A mesa em um relance" })).toBeTruthy();
     const desktop = screen.getByRole("navigation", { name: "Navegação da mesa" });
     const mobile = screen.getByRole("navigation", { name: "Navegação móvel da mesa" });
     expect(within(desktop).getByRole("button", { name: "Registro" })).toBeTruthy();

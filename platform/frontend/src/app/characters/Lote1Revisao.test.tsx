@@ -69,7 +69,7 @@ describe("Fila de aprovação do Narrador", () => {
   it("mostra atual e proposto, aprova e rejeita somente após confirmar", async () => {
     const { api, POST } = apiDaFila();
     comQuery(<PendingRequests api={api} mesaId="mesa" />);
-    const linha = await screen.findByRole("row", { name: /personagem\.nivel/ });
+    const linha = await screen.findByRole("row", { name: /Nível/ });
     await waitFor(() => expect(within(linha).getByText("4")).toBeTruthy());
     expect(within(linha).getByText("5")).toBeTruthy();
     expect(screen.getByText(/A ficha mudou desde o pedido/)).toBeTruthy();

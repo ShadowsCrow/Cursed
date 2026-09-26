@@ -106,13 +106,15 @@ export function OfferChooser({ api, mesaId, oferta, personagemId, personagemNome
           );
         })}
       </div>
-      <p className="offer-chooser__counter" aria-live="polite">
-        Escolhidas {escolhidas.length} de {oferta.max_escolhas} (mínimo {oferta.min_escolhas})
-      </p>
-      {responder.isError && <p role="alert">{responder.error.message}</p>}
-      <button type="button" className="button" disabled={!dentroDosLimites || responder.isPending} onClick={() => setConfirmando(true)}>
-        Confirmar escolha
-      </button>
+      <div className="offer-chooser__footer">
+        <p className="offer-chooser__counter" aria-live="polite">
+          Escolhidas {escolhidas.length} de {oferta.max_escolhas} (mínimo {oferta.min_escolhas})
+        </p>
+        {responder.isError && <p role="alert">{responder.error.message}</p>}
+        <button type="button" className="button" disabled={!dentroDosLimites || responder.isPending} onClick={() => setConfirmando(true)}>
+          Confirmar escolha
+        </button>
+      </div>
       <Confirmation
         open={confirmando}
         title="Confirmar escolha?"

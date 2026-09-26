@@ -15,7 +15,7 @@ import { WorkspaceChrome } from "./WorkspaceChrome";
 type Mesa = components["schemas"]["MesaResumo"];
 
 const narratorCopy: Record<TableView, { eyebrow: string; title: string; description: string }> = {
-  overview: { eyebrow: "PAINEL DO NARRADOR", title: "A campanha começa aqui.", description: "Este é o espaço da mesa para acompanhar personagens, decisões e cenas conforme os próximos módulos forem conectados." },
+  overview: { eyebrow: "PAINEL DO NARRADOR", title: "A mesa em um relance", description: "Convide jogadores, decida pendências e veja quem está em cena." },
   character: { eyebrow: "PERSONAGENS", title: "O elenco da mesa", description: "Crie, abra, transfira e administre os personagens desta mesa, incluindo NPCs e fichas ocultas." },
   activity: { eyebrow: "REGISTRO", title: "História das mudanças", description: "Acompanhe, filtre e corrija as ações confirmadas desta mesa." },
   cards: { eyebrow: "BIBLIOTECA", title: "Cartas da campanha", description: "Crie, publique, ofereça e apresente habilidades, magias, itens e efeitos." },
@@ -27,7 +27,6 @@ function NarratorToolsPanel({ api, mesaId }: { api: ApiClient; mesaId: string })
   return (
     <section className="narrator-aside-nav" aria-label="Ferramentas do Narrador">
       <span className="eyebrow">ATALHOS DO NARRADOR</span>
-      <p>Auditoria e ofertas de cartas chegam nas próximas etapas.</p>
       <RestDialog api={api} mesaId={mesaId} />
     </section>
   );
@@ -74,14 +73,7 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
       ) : view === "overview" ? (
         <div className="screen-content">
           <div className="workspace-status-row">
-            <section className="panel panel--wide workspace-status">
-              <div>
-                <span className="eyebrow">MESA ATIVA</span>
-                <h2>{mesa.nome}</h2>
-                <p>O acesso e a navegação refletem seu papel de Narrador nesta mesa. Cartas e sala ainda não são apresentadas nesta área.</p>
-              </div>
-              <span className="workspace-status__pill">Narrador</span>
-            </section>
+            <PublicEntities api={api} mesaId={mesa.id} />
             <aside className="panel narrator-aside" aria-label="Fila do Narrador">
               <span className="eyebrow">CONVIDAR JOGADORES</span>
               <h2>Convites</h2>
@@ -92,7 +84,6 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
               <div className="narrator-aside__foot"><Glyph name="scroll" size={16} /><span>Somente o Narrador vê este painel.</span></div>
             </aside>
           </div>
-          <PublicEntities api={api} mesaId={mesa.id} />
         </div>
       ) : (
         <section className="panel panel--wide workspace-status">

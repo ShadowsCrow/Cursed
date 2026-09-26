@@ -51,7 +51,12 @@ export function ActiveStateStrip({ desgaste, efeitos }: { desgaste: TrilhaDesgas
           <span className="active-state__empty">Nenhum</span>
         ) : (
           <ul className="effect-strip">
-            {ativos.map((efeito, indice) => <li key={efeito.id}><EffectDetailIcon efeito={efeito} index={indice} /></li>)}
+            {ativos.map((efeito, indice) => (
+              <li key={efeito.id} className="effect-chip">
+                <EffectDetailIcon efeito={efeito} index={indice} />
+                <span aria-hidden="true">{efeito.nome}</span>
+              </li>
+            ))}
           </ul>
         )}
         {suspensos > 0 && <span className="active-state__empty">{suspensos} suspenso(s)</span>}

@@ -14,9 +14,8 @@ import {
 } from "./types";
 
 function estadoCarta(definicao: CartaDefinicaoResumo): string {
-  if (!definicao.publicada) return "Rascunho";
-  const revisao = definicao.publicada.revisao_pendente?.length ? " · revisão pendente" : "";
-  return `Publicada · versão ${definicao.versao_publicada}${revisao}`;
+  if (!definicao.publicada) return "Rascunho, ainda não publicada";
+  return definicao.publicada.revisao_pendente?.length ? "Publicada · revisão pendente" : "Publicada";
 }
 
 function NovaCartaDialog({ api, mesaId, onCriada, onClose }: {
@@ -190,7 +189,7 @@ export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: strin
     <div className="screen-content card-library">
       <section className="panel">
         <div className="section-heading">
-          <div><span className="eyebrow">CATÁLOGO</span><h2>Cartas da campanha</h2></div>
+          <div><span className="eyebrow">CATÁLOGO</span><h2>Suas cartas</h2></div>
           <div className="section-heading__actions">
             <button type="button" className="button" onClick={() => setDialogo("nova")}>Nova carta</button>
             <button type="button" className="button button--secondary" onClick={() => setDialogo("importar")}>Importar código</button>
@@ -207,8 +206,9 @@ export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: strin
                 <CardFace tipo={definicao.tipo} conteudo={conteudo} numero={definicao.publicada?.numero} />
                 <p className="card-catalog__state">{estadoCarta(definicao)}</p>
                 <div className="card-catalog__actions">
-                  <button type="button" className="button button--ghost" onClick={() => setEditando(definicao)}>
-                    Editar {String(conteudo.titulo ?? "")}
+                  <button type="button" className="button button--ghost" onClick={() => setEditando(definicao)}
+                    aria-label={`Editar ${String(conteudo.titulo ?? "")}`}>
+                    Editar
                   </button>
                   {definicao.publicada && (
                     <button type="button" className="button button--ghost" onClick={() => setApresentando(definicao.publicada ?? null)}>

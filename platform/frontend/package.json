@@ -11,7 +11,8 @@
     "check:client": "node scripts/generate-client.mjs --check",
     "probe:incompatible": "node scripts/generate-client.mjs --probe-incompatible",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "capturas": "node e2e/screenshots.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",

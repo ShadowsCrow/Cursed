@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Confirmation } from "../../ui/primitives";
 import { characterQueryKeys, usePersonagens, useSolicitacoes } from "./api";
+import { rotuloCampo } from "./fieldLabels";
 import { sheetKeys, useFichaSnapshot } from "./sheet/sheetApi";
 import { extractErrorMessage, type ApiClient, type PedidoAlteracaoResumo } from "./types";
 
@@ -46,7 +47,7 @@ function Pedido({ api, mesaId, pedido, nome }: { api: ApiClient; mesaId: string;
         <tbody>
           {pedido.campos_alterados.map((campo) => (
             <tr key={campo}>
-              <th scope="row">{campo}</th>
+              <th scope="row" title={campo}>{rotuloCampo(campo)}</th>
               <td>{ficha.data ? exibir(noCaminho(ficha.data.ficha, campo)) : "…"}</td>
               <td>{exibir(noCaminho(pedido.ficha_proposta, campo))}</td>
             </tr>
