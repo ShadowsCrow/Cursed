@@ -726,3 +726,83 @@ class TrilhaDesgaste(BaseModel):
     faixa: FaixaDesgaste
     proxima_faixa: FaixaDesgaste | None = None
     pontos_ate_proxima: int | None = None
+
+
+# ------------------------------------------------------------------- sala
+
+class ModulosMesa(BaseModel):
+    sala: bool = False
+
+
+class CriarCenaRequest(BaseModel):
+    nome: str = Field(min_length=1, max_length=200)
+    colunas: int = Field(default=20, ge=1, le=200)
+    linhas: int = Field(default=15, ge=1, le=200)
+
+
+class CriarTokenRequest(BaseModel):
+    camada_id: str = Field(min_length=1, max_length=100)
+    rotulo: str = Field(min_length=1, max_length=100)
+    x: int = Field(ge=0)
+    y: int = Field(ge=0)
+    tamanho: int = Field(default=1, ge=1, le=10)
+    personagem_id: str | None = Field(default=None, max_length=100)
+    controladores: list[str] = Field(default_factory=list, max_length=20)
+    oculto: bool = False
+
+
+class MoverTokenRequest(BaseModel):
+    x: int = Field(ge=0)
+    y: int = Field(ge=0)
+    versao_esperada: int = Field(ge=0)
+
+
+class VisibilidadeTokenRequest(BaseModel):
+    camada_id: str | None = Field(default=None, max_length=100)
+    oculto: bool | None = None
+    versao_esperada: int = Field(ge=0)
+
+
+class TokenSala(BaseModel):
+    id: str
+    camada_id: str
+    personagem_id: str | None = None
+    rotulo: str
+    x: int
+    y: int
+    tamanho: int
+    versao: int
+    controlavel: bool
+    oculto: bool | None = Field(default=None, description="Somente para o Narrador.")
+    visivel_para_jogadores: bool | None = Field(default=None, description="Somente para o Narrador.")
+    controladores: list[str] | None = Field(default=None, description="Somente para o Narrador.")
+
+
+class CamadaSala(BaseModel):
+    id: str
+    nome: str
+    visibilidade: Literal["mesa", "narrador"]
+    ordem: int
+
+
+class CenaSala(BaseModel):
+    id: str
+    nome: str
+    colunas: int
+    linhas: int
+    ativa: bool
+    versao: int
+    camadas: list[CamadaSala]
+    tokens: list[TokenSala]
+
+
+class CenaResumoSala(BaseModel):
+    id: str
+    nome: str
+    ativa: bool
+
+
+class SalaSnapshot(BaseModel):
+    modulo_ativo: bool
+    cenas: list[CenaResumoSala] = Field(default_factory=list, description="Somente para o Narrador.")
+    cena: CenaSala | None = None

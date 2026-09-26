@@ -563,3 +563,73 @@ class PerfilUsuarioRegistro(Base):
     atualizado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+
+
+# ------------------------------------------------------------------- sala
+
+class CenaRegistro(Base):
+    """Cena da sala com grade; a cena ativa é a que os jogadores veem."""
+
+    __tablename__ = "scenes"
+    __table_args__ = (
+        CheckConstraint("colunas BETWEEN 1 AND 200 AND linhas BETWEEN 1 AND 200", name="ck_scenes_grade"),
+        CheckConstraint("versao >= 0", name="ck_scenes_versao"),
+        UniqueConstraint("mesa_id", "id", name="uq_scenes_mesa_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(
+        String(100), ForeignKey("rpg_tables.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    nome: Mapped[str] = mapped_column(String(200), nullable=False)
+    colunas: Mapped[int] = mapped_column(Integer, nullable=False)
+    linhas: Mapped[int] = mapped_column(Integer, nullable=False)
+    ativa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class CamadaCenaRegistro(Base):
+    __tablename__ = "scene_layers"
+    __table_args__ = (
+        CheckConstraint("visibilidade IN ('mesa', 'narrador')", name="ck_scene_layers_visibilidade"),
+        UniqueConstraint("mesa_id", "id", name="uq_scene_layers_mesa_id"),
+        ForeignKeyConstraint(["mesa_id", "cena_id"], ["scenes.mesa_id", "scenes.id"], name="fk_scene_layers_scene"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    cena_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    nome: Mapped[str] = mapped_column(String(100), nullable=False)
+    visibilidade: Mapped[str] = mapped_column(String(20), nullable=False)
+    ordem: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class TokenRegistro(Base):
+    """Peça no grid; posição em células. Controle: Narrador, dono do personagem ou controladores listados."""
+
+    __tablename__ = "scene_tokens"
+    __table_args__ = (
+        CheckConstraint("x >= 0 AND y >= 0", name="ck_scene_tokens_posicao"),
+        CheckConstraint("tamanho BETWEEN 1 AND 10", name="ck_scene_tokens_tamanho"),
+        CheckConstraint("versao >= 0", name="ck_scene_tokens_versao"),
+        ForeignKeyConstraint(["mesa_id", "cena_id"], ["scenes.mesa_id", "scenes.id"], name="fk_scene_tokens_scene"),
+        ForeignKeyConstraint(["mesa_id", "camada_id"], ["scene_layers.mesa_id", "scene_layers.id"],
+                             name="fk_scene_tokens_layer"),
+        ForeignKeyConstraint(["mesa_id", "personagem_id"], ["characters.mesa_id", "characters.id"],
+                             name="fk_scene_tokens_character"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    cena_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    camada_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    personagem_id: Mapped[str | None] = mapped_column(String(100))
+    rotulo: Mapped[str] = mapped_column(String(100), nullable=False)
+    x: Mapped[int] = mapped_column(Integer, nullable=False)
+    y: Mapped[int] = mapped_column(Integer, nullable=False)
+    tamanho: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    oculto: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    controladores: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")

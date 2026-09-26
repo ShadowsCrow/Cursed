@@ -20,6 +20,7 @@ from .narrator import router as narrator_router
 from .rest import router as rest_router
 from .cards import router as cards_router
 from .card_lifecycle import router as card_lifecycle_router
+from .room import router as room_router
 
 
 class HealthResponse(BaseModel):
@@ -53,6 +54,7 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(rest_router)
     api.include_router(cards_router)
     api.include_router(card_lifecycle_router)
+    api.include_router(room_router)
 
     @api.get("/health", response_model=HealthResponse, tags=["Operação"])
     def health() -> HealthResponse:

@@ -30,6 +30,7 @@ class Acao(StrEnum):
     ADMINISTRAR_ENTIDADES = "administrar_entidades"
     ADMINISTRAR_DESCANSO = "administrar_descanso"
     GERENCIAR_CARTAS = "gerenciar_cartas"
+    ADMINISTRAR_SALA = "administrar_sala"
 
 
 @dataclass(frozen=True)
@@ -83,6 +84,7 @@ class Autorizador:
             Acao.ADMINISTRAR_ENTIDADES,
             Acao.ADMINISTRAR_DESCANSO,
             Acao.GERENCIAR_CARTAS,
+            Acao.ADMINISTRAR_SALA,
         }:
             return DecisaoAcesso(narrador, motivo="Ação reservada ao Narrador.")
         if acao == Acao.CRIAR_PERSONAGEM:

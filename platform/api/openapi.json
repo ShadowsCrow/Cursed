@@ -396,6 +396,38 @@
         "title": "AtualizarFichaComando",
         "type": "object"
       },
+      "CamadaSala": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "ordem": {
+            "title": "Ordem",
+            "type": "integer"
+          },
+          "visibilidade": {
+            "enum": [
+              "mesa",
+              "narrador"
+            ],
+            "title": "Visibilidade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "visibilidade",
+          "ordem"
+        ],
+        "title": "CamadaSala",
+        "type": "object"
+      },
       "CanalPrivado": {
         "properties": {
           "escopo": {
@@ -708,6 +740,83 @@
         "title": "CartaVisivel",
         "type": "object"
       },
+      "CenaResumoSala": {
+        "properties": {
+          "ativa": {
+            "title": "Ativa",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "ativa"
+        ],
+        "title": "CenaResumoSala",
+        "type": "object"
+      },
+      "CenaSala": {
+        "properties": {
+          "ativa": {
+            "title": "Ativa",
+            "type": "boolean"
+          },
+          "camadas": {
+            "items": {
+              "$ref": "#/components/schemas/CamadaSala"
+            },
+            "title": "Camadas",
+            "type": "array"
+          },
+          "colunas": {
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "linhas": {
+            "title": "Linhas",
+            "type": "integer"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/TokenSala"
+            },
+            "title": "Tokens",
+            "type": "array"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "colunas",
+          "linhas",
+          "ativa",
+          "versao",
+          "camadas",
+          "tokens"
+        ],
+        "title": "CenaSala",
+        "type": "object"
+      },
       "ConcederCartaRequest": {
         "properties": {
           "excecao_aprendizado": {
@@ -890,6 +999,35 @@
         "title": "CriarCartaRequest",
         "type": "object"
       },
+      "CriarCenaRequest": {
+        "properties": {
+          "colunas": {
+            "default": 20,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "linhas": {
+            "default": 15,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Linhas",
+            "type": "integer"
+          },
+          "nome": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome"
+        ],
+        "title": "CriarCenaRequest",
+        "type": "object"
+      },
       "CriarConviteRequest": {
         "properties": {
           "validade_dias": {
@@ -1034,6 +1172,72 @@
           "ficha"
         ],
         "title": "CriarPersonagemRequest",
+        "type": "object"
+      },
+      "CriarTokenRequest": {
+        "properties": {
+          "camada_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Camada Id",
+            "type": "string"
+          },
+          "controladores": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Controladores",
+            "type": "array"
+          },
+          "oculto": {
+            "default": false,
+            "title": "Oculto",
+            "type": "boolean"
+          },
+          "personagem_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personagem Id"
+          },
+          "rotulo": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "tamanho": {
+            "default": 1,
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Tamanho",
+            "type": "integer"
+          },
+          "x": {
+            "minimum": 0.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "camada_id",
+          "rotulo",
+          "x",
+          "y"
+        ],
+        "title": "CriarTokenRequest",
         "type": "object"
       },
       "DecidirPedidoRequest": {
@@ -1965,6 +2169,43 @@
         "title": "ModificadorResumo",
         "type": "object"
       },
+      "ModulosMesa": {
+        "properties": {
+          "sala": {
+            "default": false,
+            "title": "Sala",
+            "type": "boolean"
+          }
+        },
+        "title": "ModulosMesa",
+        "type": "object"
+      },
+      "MoverTokenRequest": {
+        "properties": {
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          },
+          "x": {
+            "minimum": 0.0,
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "versao_esperada"
+        ],
+        "title": "MoverTokenRequest",
+        "type": "object"
+      },
       "MudancaAuditoria": {
         "properties": {
           "antes": {
@@ -2874,6 +3115,37 @@
         "title": "RevelacaoContrato",
         "type": "object"
       },
+      "SalaSnapshot": {
+        "properties": {
+          "cena": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CenaSala"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cenas": {
+            "description": "Somente para o Narrador.",
+            "items": {
+              "$ref": "#/components/schemas/CenaResumoSala"
+            },
+            "title": "Cenas",
+            "type": "array"
+          },
+          "modulo_ativo": {
+            "title": "Modulo Ativo",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "modulo_ativo"
+        ],
+        "title": "SalaSnapshot",
+        "type": "object"
+      },
       "SalvarRascunhoRequest": {
         "properties": {
           "rascunho": {
@@ -2920,6 +3192,104 @@
           "efeito_id"
         ],
         "title": "SituacionalResumo",
+        "type": "object"
+      },
+      "TokenSala": {
+        "properties": {
+          "camada_id": {
+            "title": "Camada Id",
+            "type": "string"
+          },
+          "controladores": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Somente para o Narrador.",
+            "title": "Controladores"
+          },
+          "controlavel": {
+            "title": "Controlavel",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "oculto": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Somente para o Narrador.",
+            "title": "Oculto"
+          },
+          "personagem_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personagem Id"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "tamanho": {
+            "title": "Tamanho",
+            "type": "integer"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          },
+          "visivel_para_jogadores": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Somente para o Narrador.",
+            "title": "Visivel Para Jogadores"
+          },
+          "x": {
+            "title": "X",
+            "type": "integer"
+          },
+          "y": {
+            "title": "Y",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "camada_id",
+          "rotulo",
+          "x",
+          "y",
+          "tamanho",
+          "versao",
+          "controlavel"
+        ],
+        "title": "TokenSala",
         "type": "object"
       },
       "TransferirPersonagemRequest": {
@@ -3173,6 +3543,43 @@
           "fontes"
         ],
         "title": "ValorDerivadoResumo",
+        "type": "object"
+      },
+      "VisibilidadeTokenRequest": {
+        "properties": {
+          "camada_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camada Id"
+          },
+          "oculto": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oculto"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "VisibilidadeTokenRequest",
         "type": "object"
       }
     },
@@ -4533,6 +4940,108 @@
         "summary": "Listar Entidades Publicas",
         "tags": [
           "Ferramentas do Narrador"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/modulos": {
+      "get": {
+        "operationId": "ler_modulos_mesas__mesa_id__modulos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModulosMesa"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Modulos",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "put": {
+        "operationId": "configurar_modulos_mesas__mesa_id__modulos_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModulosMesa"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModulosMesa"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Configurar Modulos",
+        "tags": [
+          "Sala"
         ]
       }
     },
@@ -6573,6 +7082,442 @@
         "summary": "Configurar Politicas",
         "tags": [
           "Personagens e políticas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala": {
+      "get": {
+        "description": "Estado confirmado visível ao leitor; clientes o recarregam ao entrar e ao reconectar.",
+        "operationId": "ler_sala_mesas__mesa_id__sala_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cena_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cena Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Sala",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/cenas": {
+      "post": {
+        "operationId": "criar_cena_mesas__mesa_id__sala_cenas_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarCenaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Cena",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/ativacao": {
+      "post": {
+        "operationId": "ativar_cena_mesas__mesa_id__sala_cenas__cena_id__ativacao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cena_id",
+            "required": true,
+            "schema": {
+              "title": "Cena Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ativar Cena",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens": {
+      "post": {
+        "operationId": "criar_token_mesas__mesa_id__sala_cenas__cena_id__tokens_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cena_id",
+            "required": true,
+            "schema": {
+              "title": "Cena Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSala"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Token",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/tokens/{token_id}": {
+      "delete": {
+        "operationId": "remover_token_mesas__mesa_id__sala_tokens__token_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versao_esperada",
+            "required": true,
+            "schema": {
+              "minimum": 0,
+              "title": "Versao Esperada",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remover Token",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/movimento": {
+      "post": {
+        "description": "Movimentos não geram evento de auditoria: são estado tático frequente, não decisões a revisar.",
+        "operationId": "mover_token_mesas__mesa_id__sala_tokens__token_id__movimento_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoverTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSala"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mover Token",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/visibilidade": {
+      "post": {
+        "operationId": "alterar_visibilidade_mesas__mesa_id__sala_tokens__token_id__visibilidade_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisibilidadeTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSala"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Alterar Visibilidade",
+        "tags": [
+          "Sala"
         ]
       }
     },

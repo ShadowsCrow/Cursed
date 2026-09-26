@@ -369,6 +369,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/modulos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Modulos */
+        get: operations["ler_modulos_mesas__mesa_id__modulos_get"];
+        /** Configurar Modulos */
+        put: operations["configurar_modulos_mesas__mesa_id__modulos_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/ofertas": {
         parameters: {
             query?: never;
@@ -829,6 +847,131 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/sala": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ler Sala
+         * @description Estado confirmado visível ao leitor; clientes o recarregam ao entrar e ao reconectar.
+         */
+        get: operations["ler_sala_mesas__mesa_id__sala_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/cenas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Criar Cena */
+        post: operations["criar_cena_mesas__mesa_id__sala_cenas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/ativacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ativar Cena */
+        post: operations["ativar_cena_mesas__mesa_id__sala_cenas__cena_id__ativacao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Criar Token */
+        post: operations["criar_token_mesas__mesa_id__sala_cenas__cena_id__tokens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/tokens/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remover Token */
+        delete: operations["remover_token_mesas__mesa_id__sala_tokens__token_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/movimento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mover Token
+         * @description Movimentos não geram evento de auditoria: são estado tático frequente, não decisões a revisar.
+         */
+        post: operations["mover_token_mesas__mesa_id__sala_tokens__token_id__movimento_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/visibilidade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Alterar Visibilidade */
+        post: operations["alterar_visibilidade_mesas__mesa_id__sala_tokens__token_id__visibilidade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/solicitacoes": {
         parameters: {
             query?: never;
@@ -996,6 +1139,20 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** CamadaSala */
+        CamadaSala: {
+            /** Id */
+            id: string;
+            /** Nome */
+            nome: string;
+            /** Ordem */
+            ordem: number;
+            /**
+             * Visibilidade
+             * @enum {string}
+             */
+            visibilidade: "mesa" | "narrador";
+        };
         /** CanalPrivado */
         CanalPrivado: {
             /**
@@ -1130,6 +1287,34 @@ export interface components {
             /** Versao Id */
             versao_id: string;
         };
+        /** CenaResumoSala */
+        CenaResumoSala: {
+            /** Ativa */
+            ativa: boolean;
+            /** Id */
+            id: string;
+            /** Nome */
+            nome: string;
+        };
+        /** CenaSala */
+        CenaSala: {
+            /** Ativa */
+            ativa: boolean;
+            /** Camadas */
+            camadas: components["schemas"]["CamadaSala"][];
+            /** Colunas */
+            colunas: number;
+            /** Id */
+            id: string;
+            /** Linhas */
+            linhas: number;
+            /** Nome */
+            nome: string;
+            /** Tokens */
+            tokens: components["schemas"]["TokenSala"][];
+            /** Versao */
+            versao: number;
+        };
         /** ConcederCartaRequest */
         ConcederCartaRequest: {
             /**
@@ -1199,6 +1384,21 @@ export interface components {
              */
             tipo: "habilidade" | "magia" | "item" | "efeito";
         };
+        /** CriarCenaRequest */
+        CriarCenaRequest: {
+            /**
+             * Colunas
+             * @default 20
+             */
+            colunas: number;
+            /**
+             * Linhas
+             * @default 15
+             */
+            linhas: number;
+            /** Nome */
+            nome: string;
+        };
         /** CriarConviteRequest */
         CriarConviteRequest: {
             /**
@@ -1254,6 +1454,31 @@ export interface components {
         /** CriarPersonagemRequest */
         CriarPersonagemRequest: {
             ficha: components["schemas"]["FichaContrato"];
+        };
+        /** CriarTokenRequest */
+        CriarTokenRequest: {
+            /** Camada Id */
+            camada_id: string;
+            /** Controladores */
+            controladores?: string[];
+            /**
+             * Oculto
+             * @default false
+             */
+            oculto: boolean;
+            /** Personagem Id */
+            personagem_id?: string | null;
+            /** Rotulo */
+            rotulo: string;
+            /**
+             * Tamanho
+             * @default 1
+             */
+            tamanho: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
         };
         /** DecidirPedidoRequest */
         DecidirPedidoRequest: {
@@ -1592,6 +1817,23 @@ export interface components {
             /** Valor */
             valor: number;
         };
+        /** ModulosMesa */
+        ModulosMesa: {
+            /**
+             * Sala
+             * @default false
+             */
+            sala: boolean;
+        };
+        /** MoverTokenRequest */
+        MoverTokenRequest: {
+            /** Versao Esperada */
+            versao_esperada: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
         /** MudancaAuditoria */
         MudancaAuditoria: {
             /** Antes */
@@ -1904,6 +2146,17 @@ export interface components {
             /** Nome Publico */
             nome_publico?: string | null;
         };
+        /** SalaSnapshot */
+        SalaSnapshot: {
+            cena?: components["schemas"]["CenaSala"] | null;
+            /**
+             * Cenas
+             * @description Somente para o Narrador.
+             */
+            cenas?: components["schemas"]["CenaResumoSala"][];
+            /** Modulo Ativo */
+            modulo_ativo: boolean;
+        };
         /** SalvarRascunhoRequest */
         SalvarRascunhoRequest: {
             /** Rascunho */
@@ -1923,6 +2176,42 @@ export interface components {
             efeito_id: string;
             /** Valor */
             valor: number;
+        };
+        /** TokenSala */
+        TokenSala: {
+            /** Camada Id */
+            camada_id: string;
+            /**
+             * Controladores
+             * @description Somente para o Narrador.
+             */
+            controladores?: string[] | null;
+            /** Controlavel */
+            controlavel: boolean;
+            /** Id */
+            id: string;
+            /**
+             * Oculto
+             * @description Somente para o Narrador.
+             */
+            oculto?: boolean | null;
+            /** Personagem Id */
+            personagem_id?: string | null;
+            /** Rotulo */
+            rotulo: string;
+            /** Tamanho */
+            tamanho: number;
+            /** Versao */
+            versao: number;
+            /**
+             * Visivel Para Jogadores
+             * @description Somente para o Narrador.
+             */
+            visivel_para_jogadores?: boolean | null;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
         };
         /** TransferirPersonagemRequest */
         TransferirPersonagemRequest: {
@@ -2008,6 +2297,15 @@ export interface components {
             situacionais?: components["schemas"]["SituacionalResumo"][];
             /** Total */
             total: number;
+        };
+        /** VisibilidadeTokenRequest */
+        VisibilidadeTokenRequest: {
+            /** Camada Id */
+            camada_id?: string | null;
+            /** Oculto */
+            oculto?: boolean | null;
+            /** Versao Esperada */
+            versao_esperada: number;
         };
     };
     responses: never;
@@ -2758,6 +3056,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EntidadePublica"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_modulos_mesas__mesa_id__modulos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModulosMesa"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configurar_modulos_mesas__mesa_id__modulos_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModulosMesa"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModulosMesa"];
                 };
             };
             /** @description Validation Error */
@@ -3861,6 +4225,246 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PoliticaMesaContrato"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_sala_mesas__mesa_id__sala_get: {
+        parameters: {
+            query?: {
+                cena_id?: string | null;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalaSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    criar_cena_mesas__mesa_id__sala_cenas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarCenaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalaSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ativar_cena_mesas__mesa_id__sala_cenas__cena_id__ativacao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                cena_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalaSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    criar_token_mesas__mesa_id__sala_cenas__cena_id__tokens_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                cena_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenSala"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remover_token_mesas__mesa_id__sala_tokens__token_id__delete: {
+        parameters: {
+            query: {
+                versao_esperada: number;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mover_token_mesas__mesa_id__sala_tokens__token_id__movimento_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoverTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenSala"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alterar_visibilidade_mesas__mesa_id__sala_tokens__token_id__visibilidade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisibilidadeTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenSala"];
                 };
             };
             /** @description Validation Error */
