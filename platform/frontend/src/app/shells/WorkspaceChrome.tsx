@@ -16,6 +16,7 @@ export interface WorkspaceChromeProps {
   headerTitle: string;
   headerEyebrow: string;
   headerDescription?: string;
+  roomPresence?: ReactNode;
   /** Pendências por visão (ofertas, aprovações), exibidas como contador na navegação. */
   badges?: Partial<Record<TableView, number>>;
   /** Bloco de navegação exclusivo do papel, mostrado abaixo da navegação comum na barra lateral. */
@@ -65,6 +66,7 @@ export function WorkspaceChrome({
   headerEyebrow,
   sidebarExtra,
   headerDescription,
+  roomPresence,
   badges,
   children,
 }: WorkspaceChromeProps) {
@@ -92,6 +94,7 @@ export function WorkspaceChrome({
           </div>
           <div className="preview-header__actions">
             <ConnectivityBadge />
+            {roomPresence}
             <span className="workspace-role">Papel nesta mesa: {role === "narrador" ? "Narrador" : "jogador"}</span>
             <Link className="workspace-switch-link" to={routes.home()} aria-label="Trocar de mesa"><Glyph name="grid" size={18} /></Link>
             <button className="button button--ghost workspace-signout" type="button" onClick={onSignOut}>Sair</button>

@@ -29,7 +29,7 @@ from cursed_platform.authorization import Acao, Autorizador, DecisaoAcesso
 BUCKET_PRIVADO = "cursed-privado"
 
 _ID = r"[A-Za-z0-9_-]{1,100}"
-_ARQUIVO = r"(?!\.{1,2}(?:/|$))[^/]+(?:/(?!\.{1,2}(?:/|$))[^/]+)*"
+_ARQUIVO = r"(?!\.{1,2}(?:/|$))[^/\\]+(?:/(?!\.{1,2}(?:/|$))[^/\\]+)*"
 _TOPICO = re.compile(rf"mesa:(?P<mesa>{_ID})(?::(?P<escopo>narrador|personagem:(?P<personagem>{_ID})))?")
 _OBJETO = re.compile(
     rf"mesas/(?P<mesa>{_ID})/(?:(?P<escopo>mesa|narrador)|personagens/(?P<personagem>{_ID}))/{_ARQUIVO}"
@@ -48,6 +48,12 @@ def topico_narrador(mesa_id: str) -> str:
 
 def topico_personagem(mesa_id: str, personagem_id: str) -> str:
     return f"mesa:{mesa_id}:personagem:{personagem_id}"
+
+
+def objeto_compartilhado_da_mesa(mesa_id: str, caminho: str) -> bool:
+    """Confirma que o caminho é um objeto legível por participantes desta mesa."""
+    encontrado = _OBJETO.fullmatch(caminho or "")
+    return bool(encontrado and encontrado["mesa"] == mesa_id and encontrado["escopo"] == "mesa")
 
 
 class AutorizadorRecursos:

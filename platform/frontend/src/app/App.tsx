@@ -9,6 +9,7 @@ import { extractErrorMessage, type ApiClient } from "./characters/types";
 import type { createPlatformClients } from "./clients";
 import { TableWorkspace } from "./TableWorkspace";
 import { routePatterns, routes } from "./routes";
+import type { RealtimeSession } from "./room/RoomPresence";
 
 type Clients = ReturnType<typeof createPlatformClients>;
 
@@ -125,14 +126,14 @@ function Tables({ api, userId, onSignOut }: { api: ApiClient; userId: string; on
   );
 }
 
-export function TablePage({ api, userId, onSignOut }: { api: ApiClient; userId: string; onSignOut: () => void }) {
+export function TablePage({ api, userId, onSignOut, realtime }: { api: ApiClient; userId: string; onSignOut: () => void; realtime?: RealtimeSession }) {
   const { mesaId } = useParams<"mesaId">();
   const mesas = useMesas(api, userId);
   if (mesas.isPending || mesas.isFetching) return <main className="page"><p>Verificando acesso à mesa…</p></main>;
   if (mesas.isError) return <main className="page"><ErrorNotice error={mesas.error} /><Link to={routes.home()}>Voltar às mesas</Link></main>;
   const mesa = mesas.data.find((item) => item.id === mesaId);
   if (!mesa) return <main className="page"><h1>Mesa indisponível</h1><p>Esta mesa não está entre as suas mesas ativas.</p><Link to={routes.home()}>Voltar às mesas</Link></main>;
-  return <TableWorkspace mesa={mesa} api={api} userId={userId} onSignOut={onSignOut} />;
+  return <TableWorkspace mesa={mesa} api={api} userId={userId} onSignOut={onSignOut} realtime={realtime} />;
 }
 
 function CharacterPage({ api, userId }: { api: ApiClient; userId: string }) {
@@ -184,15 +185,16 @@ export function App({ clients }: { clients: Clients }) {
 
   const onSignOut = () => { void signOut(clients.auth).catch(setAuthError); };
 
-  return <AppRoutes api={clients.api} userId={session.user.id} onSignOut={onSignOut} />;
+  return <AppRoutes api={clients.api} userId={session.user.id} onSignOut={onSignOut}
+    realtime={{ client: clients.auth, accessToken: session.access_token }} />;
 }
 
 /** Rotas autenticadas, compartilhadas pelo login Supabase e pelo modo de desenvolvimento local. */
-export function AppRoutes({ api, userId, onSignOut }: { api: ApiClient; userId: string; onSignOut: () => void }) {
+export function AppRoutes({ api, userId, onSignOut, realtime }: { api: ApiClient; userId: string; onSignOut: () => void; realtime?: RealtimeSession }) {
   return (
     <Routes>
       <Route path={routePatterns.home} element={<Tables api={api} userId={userId} onSignOut={onSignOut} />} />
-      <Route path={routePatterns.table} element={<TablePage api={api} userId={userId} onSignOut={onSignOut} />} />
+      <Route path={routePatterns.table} element={<TablePage api={api} userId={userId} onSignOut={onSignOut} realtime={realtime} />} />
       <Route path={routePatterns.character} element={<CharacterPage api={api} userId={userId} />} />
       <Route path="*" element={<main className="page"><h1>Página não encontrada</h1><Link to={routes.home()}>Ir às mesas</Link></main>} />
     </Routes>

@@ -343,6 +343,24 @@
         "title": "AquisicaoCartasResposta",
         "type": "object"
       },
+      "AtivoResposta": {
+        "properties": {
+          "base64": {
+            "title": "Base64",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "base64"
+        ],
+        "title": "AtivoResposta",
+        "type": "object"
+      },
       "AtualizarFichaComando": {
         "additionalProperties": false,
         "properties": {
@@ -788,6 +806,17 @@
             "title": "Linhas",
             "type": "integer"
           },
+          "mapa_objeto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapa Objeto"
+          },
           "nome": {
             "title": "Nome",
             "type": "string"
@@ -1014,6 +1043,18 @@
             "minimum": 1.0,
             "title": "Linhas",
             "type": "integer"
+          },
+          "mapa_objeto": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapa Objeto"
           },
           "nome": {
             "maxLength": 200,
@@ -2813,6 +2854,11 @@
       },
       "PublicarCartaRequest": {
         "properties": {
+          "promover_ativos": {
+            "default": false,
+            "title": "Promover Ativos",
+            "type": "boolean"
+          },
           "versao_esperada": {
             "minimum": 0.0,
             "title": "Versao Esperada",
@@ -3898,6 +3944,62 @@
         "summary": "Recolher Carta",
         "tags": [
           "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/ativos": {
+      "get": {
+        "operationId": "ler_ativo_mesas__mesa_id__ativos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "caminho",
+            "required": true,
+            "schema": {
+              "title": "Caminho",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtivoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Ativo",
+        "tags": [
+          "Ativos"
         ]
       }
     },

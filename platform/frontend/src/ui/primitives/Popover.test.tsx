@@ -46,6 +46,7 @@ describe("Popover", () => {
     renderPopover();
     const trigger = screen.getByRole("button", { name: "Véu Protetor" });
     fireEvent.touchStart(trigger);
+    fireEvent.click(trigger);
     expect(screen.getByRole("group", { name: "Véu Protetor" })).toBeTruthy();
   });
 

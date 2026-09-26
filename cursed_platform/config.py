@@ -20,6 +20,8 @@ class PlatformSettings:
     cors_origins: tuple[str, ...]
     supabase_url: str = ""
     supabase_publishable_key: str = ""
+    supabase_service_role_key: str = ""
+    local_objects_dir: str = ""
     # Identidades locais sem Supabase (token `dev:<id>`); proibido em produção.
     dev_auth: bool = False
 
@@ -69,5 +71,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> PlatformSettings:
         cors_origins=origins,
         supabase_url=values.get("CURSED_SUPABASE_URL", "").strip().rstrip("/"),
         supabase_publishable_key=values.get("CURSED_SUPABASE_PUBLISHABLE_KEY", "").strip(),
+        supabase_service_role_key=values.get("CURSED_SUPABASE_SERVICE_ROLE_KEY", "").strip(),
+        local_objects_dir=values.get("CURSED_LOCAL_OBJECTS_DIR", "").strip(),
         dev_auth=dev_auth,
     )

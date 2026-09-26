@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+import base64
+import hashlib
+from io import BytesIO
 from pathlib import Path
 import sys
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
@@ -11,11 +15,15 @@ from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
+from PIL import Image
 
 from cursed_platform.config import PlatformSettings
+from cursed_platform.acesso_privado import BUCKET_PRIVADO
+from cursed_platform.migracao_ativos import ArmazenamentoLocal
 from cursed_platform.domain.equip_codec import encode_equipment_eq1
+from cursed_platform.domain.efeitos_codec import encode_effect_e1
 from cursed_platform.persistence import (
-    Base, CartaDefinicaoRegistro, CartaPersonagemRegistro, MembroRegistro, MesaRegistro, OfertaCartasRegistro,
+    AtivoCatalogoRegistro, Base, CartaDefinicaoRegistro, CartaPersonagemRegistro, MembroRegistro, MesaRegistro, OfertaCartasRegistro,
     PersonagemRegistro,
 )
 
@@ -128,6 +136,38 @@ class CartasTest(unittest.TestCase):
         eventos = self.as_("ana").get("/mesas/mesa/auditoria").json()["eventos"]
         self.assertNotIn("carta.publicada", [e["acao"] for e in eventos])
 
+    def test_arte_privada_exige_confirmacao_e_recurso_respeita_visibilidade(self):
+        buffer = BytesIO()
+        Image.new("RGB", (2, 2), "purple").save(buffer, format="PNG")
+        imagem = buffer.getvalue()
+        sha = hashlib.sha256(imagem).hexdigest()
+        privado = f"mesas/mesa/narrador/legado/{sha}.png"
+        with TemporaryDirectory() as diretorio:
+            armazenamento = ArmazenamentoLocal(Path(diretorio))
+            armazenamento.gravar(BUCKET_PRIVADO, privado, imagem, "image/png")
+            self.app.state.armazenamento_objetos = armazenamento
+            with Session(self.engine) as session:
+                session.add(AtivoCatalogoRegistro(id="arte-1", mesa_id="mesa", bucket=BUCKET_PRIVADO,
+                    caminho=privado, tipo="image/png", tamanho=len(imagem), sha256=sha, procedencias=[]))
+                session.commit()
+            definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={"tipo": "efeito", "rascunho": {
+                "titulo": "Brilho", "texto": "Ilumina.", "ativos_privados": [privado],
+            }}).json()
+            self.assertEqual(self.as_("ana").get("/mesas/mesa/ativos", params={"caminho": privado}).status_code, 404)
+            leitura = self.as_("mestre").get("/mesas/mesa/ativos", params={"caminho": privado})
+            self.assertEqual(base64.b64decode(leitura.json()["base64"]), imagem)
+            endereco = f"/mesas/mesa/cartas/{definicao['id']}/publicacao"
+            self.assertEqual(self.client.post(endereco, json={"versao_esperada": 0}).status_code, 422)
+            publicada = self.client.post(endereco, json={"versao_esperada": 0, "promover_ativos": True})
+            self.assertEqual(publicada.status_code, 201, publicada.text)
+            [compartilhado] = publicada.json()["conteudo"]["ativos"]
+            self.assertEqual(base64.b64decode(self.as_("ana").get(
+                "/mesas/mesa/ativos", params={"caminho": compartilhado}).json()["base64"]), imagem)
+            self.assertEqual(self.as_("ana").get(
+                "/mesas/outra/ativos", params={"caminho": compartilhado}).status_code, 404)
+            self.assertEqual(self.as_("ana").get(
+                "/mesas/mesa/ativos", params={"caminho": "mesas/mesa/mesa/..\\narrador/legado/arte.png"}).status_code, 404)
+
     # ------------------------------------------------------------- 9.2
 
     def test_custos_separados_sem_inferencia_do_legado(self):
@@ -171,6 +211,32 @@ class CartasTest(unittest.TestCase):
         self.assertEqual((importada["procedencia_rascunho"]["origem"], importada["publicada"]), ("importacao", None))
         self.assertEqual(self.client.post("/mesas/mesa/cartas/importacoes", json={"codigo": "EQ1:quebrado"}).status_code, 422)
         self.assertEqual(len(self.client.get("/mesas/mesa/cartas").json()), 1)
+
+    def test_e1_eq1_viram_versoes_publicadas_com_procedencia(self):
+        codigos = [
+            ("E1", encode_effect_e1({"nome": "Foco", "descricao": "+1 em Arcanismo.",
+                "modificadores": [{"alvo": "pericia:arcanismo", "valor": 1}]}), "efeito"),
+            ("EQ1", encode_equipment_eq1("arma", {"nome": "Lança", "dano": "1d6"}, []), "item"),
+        ]
+        for formato, codigo, tipo in codigos:
+            with self.subTest(formato=formato):
+                importada = self.as_("mestre").post("/mesas/mesa/cartas/importacoes", json={"codigo": codigo})
+                self.assertEqual(importada.status_code, 201, importada.text)
+                definicao = importada.json()
+                self.assertEqual(definicao["tipo"], tipo)
+                self.assertEqual(definicao["procedencia_rascunho"]["formato"], formato)
+                publicada = self.as_("mestre").post(
+                    f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
+                self.assertEqual(publicada.status_code, 201, publicada.text)
+                self.assertEqual(publicada.json()["numero"], 1)
+                self.assertEqual(publicada.json()["procedencia"]["formato"], formato)
+        with Session(self.engine) as session:
+            antes = session.scalar(select(func.count()).select_from(CartaDefinicaoRegistro))
+        for codigo in ("E1:quebrado", "EQ1:quebrado"):
+            self.assertEqual(self.as_("mestre").post(
+                "/mesas/mesa/cartas/importacoes", json={"codigo": codigo}).status_code, 422)
+        with Session(self.engine) as session:
+            self.assertEqual(session.scalar(select(func.count()).select_from(CartaDefinicaoRegistro)), antes)
 
     # ------------------------------------------------------------- 9.4
 

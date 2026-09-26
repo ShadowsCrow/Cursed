@@ -14,10 +14,11 @@ import json
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import select, text, update
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.orm import Session
 
-from cursed_platform.acesso_privado import topico_mesa, topico_narrador
+from cursed_platform.acesso_privado import objeto_compartilhado_da_mesa, topico_mesa, topico_narrador
+from cursed_platform.observabilidade import registrar
 from cursed_platform.persistence import CamadaCenaRegistro, CenaRegistro, PersonagemRegistro, TokenRegistro
 from cursed_platform.repositories import MesaRepository
 
@@ -57,13 +58,18 @@ def _realtime_disponivel(session: Session) -> bool:
 
 def emitir(session: Session, mesa_id: str, evento: str, payload: dict[str, Any], *, publico: bool) -> None:
     """Enfileira o evento na transação corrente; só é entregue se ela for confirmada."""
-    if not _realtime_disponivel(session):
-        return
-    session.execute(
-        text("SELECT realtime.send(CAST(:payload AS jsonb), :evento, :topico, true)"),
-        {"payload": json.dumps(payload), "evento": evento,
-         "topico": topico_mesa(mesa_id) if publico else topico_narrador(mesa_id)},
-    )
+    try:
+        if not _realtime_disponivel(session):
+            return
+        session.execute(
+            text("SELECT realtime.send(CAST(:payload AS jsonb), :evento, :topico, true)"),
+            {"payload": json.dumps(payload), "evento": evento,
+             "topico": topico_mesa(mesa_id) if publico else topico_narrador(mesa_id)},
+        )
+    except Exception as erro:
+        registrar("realtime_falha", operacao="enviar", escopo="mesa" if publico else "narrador",
+                  classe_erro=type(erro).__name__)
+        raise
 
 
 # ---------------------------------------------------------- visibilidade
@@ -128,7 +134,7 @@ def snapshot(session: Session, mesa_id: str, leitor: Leitor, cena_id: str | None
             tokens.append(dados)
     resultado["cena"] = {
         "id": alvo.id, "nome": alvo.nome, "colunas": alvo.colunas, "linhas": alvo.linhas, "ativa": alvo.ativa,
-        "versao": alvo.versao,
+        "versao": alvo.versao, "mapa_objeto": alvo.mapa_objeto,
         "camadas": [
             {"id": c.id, "nome": c.nome, "visibilidade": c.visibilidade, "ordem": c.ordem}
             for c in sorted(camadas.values(), key=lambda c: c.ordem) if leitor.narrador or c.visibilidade == "mesa"
@@ -146,10 +152,17 @@ def _avancar_cena(session: Session, cena: CenaRegistro) -> int:
     return cena.versao
 
 
-def criar_cena(session: Session, mesa_id: str, nome: str, colunas: int, linhas: int) -> CenaRegistro:
+def criar_cena(
+    session: Session, mesa_id: str, nome: str, colunas: int, linhas: int, mapa_objeto: str | None = None,
+) -> CenaRegistro:
     if not nome.strip():
         raise RegraSala("Dê um nome à cena.")
-    cena = CenaRegistro(id=uuid4().hex, mesa_id=mesa_id, nome=nome.strip()[:200], colunas=colunas, linhas=linhas)
+    if mapa_objeto is not None and not objeto_compartilhado_da_mesa(mesa_id, mapa_objeto):
+        raise RegraSala("O mapa deve ser um arquivo compartilhado desta mesa.")
+    cena = CenaRegistro(
+        id=uuid4().hex, mesa_id=mesa_id, nome=nome.strip()[:200],
+        colunas=colunas, linhas=linhas, mapa_objeto=mapa_objeto,
+    )
     session.add(cena)
     session.flush()
     session.add_all([
@@ -254,11 +267,13 @@ def alterar_visibilidade(
 
 
 def remover_token(session: Session, token: TokenRegistro, versao_esperada: int) -> None:
-    if token.versao != versao_esperada:
-        raise ConflitoSala("O token foi alterado por outra pessoa.")
     cena = session.get(CenaRegistro, token.cena_id)
     _, _, visivel = _contexto_token(session, token)
-    session.delete(token)
-    session.flush()
+    resultado = session.execute(
+        delete(TokenRegistro).where(TokenRegistro.id == token.id, TokenRegistro.versao == versao_esperada)
+        .execution_options(synchronize_session=False)
+    )
+    if resultado.rowcount != 1:
+        raise ConflitoSala("O token foi alterado por outra pessoa.")
     versao = _avancar_cena(session, cena)
     emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=visivel)

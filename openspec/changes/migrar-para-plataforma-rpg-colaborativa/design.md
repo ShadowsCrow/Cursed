@@ -126,6 +126,10 @@ Ao reconectar, o cliente obterá snapshot autorizado e sua versão antes de cons
 
 Elementos secretos usarão tópicos e payloads autorizados; não será aceitável enviar dados ocultos e apenas escondê-los visualmente.
 
+Cenas guardam a grade e, opcionalmente, a referência a um mapa no caminho compartilhado da mesa no bucket privado. Cada token pertence a uma camada da própria cena, e somente uma cena pode estar ativa por mesa. O Narrador cria e remove tokens; jogadores autorizados movem os tokens que controlam. Movimento confirmado atualiza a versão e a sala em tempo real, mas não gera evento de auditoria, pois posições táticas frequentes poluiriam a linha do tempo sem representar uma decisão narrativa revisável.
+
+O frontend se inscreve no tópico privado da mesa com o token atual e usa Presence apenas para participantes conectados. Ao receber `SUBSCRIBED`, invalida a consulta da sala para obter um snapshot autorizado; eventos que cheguem durante essa consulta provocam nova leitura, sem aplicar payloads diretamente como estado confirmado. Cursor, ping e prévia de arraste usam Broadcast privado com expiração local; soltar ou cancelar um arraste desfaz a prévia e deixa o destino para confirmação explícita. Falha do comando restaura visualmente a posição confirmada e anuncia o erro.
+
 ### 10. Ativos fora dos documentos e payloads
 
 Retratos, ícones, mapas e artes serão armazenados como objetos, com referência, tipo, tamanho, hash e procedência no banco. Strings Base64 legadas serão extraídas durante a migração. Isso reduz tamanho de JSON, tráfego e duplicação, além de permitir políticas de acesso e cache adequadas.

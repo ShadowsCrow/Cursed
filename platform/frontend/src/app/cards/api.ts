@@ -100,9 +100,10 @@ export function useValidarCarta(api: ApiClient, mesaId: string) {
 export function usePublicarCarta(api: ApiClient, mesaId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ cartaId, versao }: { cartaId: string; versao: number }) => {
+    mutationFn: async ({ cartaId, versao, promoverAtivos }: { cartaId: string; versao: number; promoverAtivos?: boolean }) => {
       const { data, error } = await api.POST("/mesas/{mesa_id}/cartas/{carta_id}/publicacao", {
-        params: { path: { mesa_id: mesaId, carta_id: cartaId } }, body: { versao_esperada: versao },
+        params: { path: { mesa_id: mesaId, carta_id: cartaId } },
+        body: { versao_esperada: versao, promover_ativos: Boolean(promoverAtivos) },
       });
       if (error) throw erroDaApi(error, "Não foi possível publicar a carta.");
       return data as CartaVersaoResumo;

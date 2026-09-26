@@ -139,7 +139,7 @@ def criar_cena(
     _exigir_narrador(session, mesa_id, ator)
     _exigir_modulo(session, mesa_id)
     try:
-        cena = sala.criar_cena(session, mesa_id, pedido.nome, pedido.colunas, pedido.linhas)
+        cena = sala.criar_cena(session, mesa_id, **pedido.model_dump())
     except ERROS as erro:
         raise _erro(erro, session) from None
     auditoria.registrar(

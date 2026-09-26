@@ -2,14 +2,16 @@
 // Capturas de tela das principais telas, em desktop e celular, com dados de exemplo.
 // Uso: node e2e/screenshots.mjs  (requer API em API_URL e Vite em APP_URL, ambos em modo dev)
 import { mkdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 
-const API = process.env.API_URL ?? "http://127.0.0.1:8001";
-const APP = process.env.APP_URL ?? "http://localhost:5174";
+const API = process.env.E2E_API_URL ?? process.env.API_URL ?? "http://127.0.0.1:8001";
+const APP = process.env.E2E_APP_URL ?? process.env.APP_URL ?? "http://localhost:5174";
 const SAIDA = process.env.SAIDA ?? ".screenshots";
 const SOMENTE = process.env.SOMENTE ? new Set(process.env.SOMENTE.split(",")) : null;
 
-async function chamar(usuario, metodo, caminho, corpo) {
+export async function chamar(usuario, metodo, caminho, corpo) {
   const resposta = await fetch(`${API}${caminho}`, {
     method: metodo,
     headers: { Authorization: `Bearer dev:${usuario}`, "Content-Type": "application/json" },
@@ -26,7 +28,7 @@ async function publicar(m, tipo, rascunho) {
   return chamar("narrador", "POST", `/mesas/${m}/cartas/${definicao.id}/publicacao`, { versao_esperada: 0 });
 }
 
-async function semear() {
+export async function semear() {
   const mesa = await chamar("narrador", "POST", "/mesas", { nome: "O Véu de Aram" });
   const m = mesa.id;
   for (const jogador of ["jogador-1", "jogador-2"]) {
@@ -145,4 +147,6 @@ async function main() {
   console.log(`Capturas salvas em ${SAIDA}/`);
 }
 
-main().catch((erro) => { console.error(erro); process.exit(1); });
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((erro) => { console.error(erro); process.exit(1); });
+}

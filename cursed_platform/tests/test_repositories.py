@@ -6,7 +6,8 @@ import os
 import unittest
 from uuid import uuid4
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from cursed_platform.persistence import (
@@ -27,13 +28,27 @@ class RepositoryContractTest(unittest.TestCase):
 
         for name, url in databases:
             with self.subTest(database=name):
-                engine = create_engine(url)
+                if name == "postgres":
+                    base_url = make_url(url)
+                    banco = f"cursed_repos_{uuid4().hex}"
+                    admin = create_engine(base_url, isolation_level="AUTOCOMMIT")
+                    with admin.connect() as connection:
+                        connection.execute(text(f'CREATE DATABASE "{banco}"'))
+                    engine = create_engine(base_url.set(database=banco))
+                    def remover_banco():
+                        engine.dispose()
+                        with admin.connect() as connection:
+                            connection.execute(text(f'DROP DATABASE IF EXISTS "{banco}" WITH (FORCE)'))
+                        admin.dispose()
+                    self.addCleanup(remover_banco)
+                else:
+                    engine = create_engine(url)
                 if name == "local":
                     @event.listens_for(engine, "connect")
                     def enable_foreign_keys(connection, _record):
                         connection.execute("PRAGMA foreign_keys=ON")
 
-                    Base.metadata.create_all(engine)
+                Base.metadata.create_all(engine)
                 mesa_id = f"mesa-{uuid4()}"
                 personagem_id = f"personagem-{uuid4()}"
                 effect_id = f"efeito-{uuid4()}"

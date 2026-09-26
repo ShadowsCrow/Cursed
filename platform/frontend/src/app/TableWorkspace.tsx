@@ -5,6 +5,7 @@ import { NarratorShell } from "./shells/NarratorShell";
 import { PlayerShell } from "./shells/PlayerShell";
 import { permittedTableView, type TableView } from "./tableNavigation";
 import type { ApiClient } from "./characters/types";
+import { RoomPresence, type RealtimeSession } from "./room/RoomPresence";
 
 type Mesa = components["schemas"]["MesaResumo"];
 
@@ -18,16 +19,19 @@ export function TableWorkspace({
   api,
   userId,
   onSignOut,
+  realtime,
 }: {
   mesa: Mesa;
   api: ApiClient;
   userId: string;
   onSignOut: () => void;
+  realtime?: RealtimeSession;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigateTo = useNavigate();
   const role = mesa.papel;
   const view = permittedTableView(role, searchParams.get("painel"));
+  const roomPresence = realtime ? <RoomPresence api={api} mesaId={mesa.id} userId={userId} realtime={realtime} /> : undefined;
 
   function navigate(next: TableView) {
     setSearchParams({ painel: next });
@@ -48,6 +52,8 @@ export function TableWorkspace({
         api={api}
         userId={userId}
         onOpenCharacter={openCharacter}
+        roomPresence={roomPresence}
+        realtime={realtime}
       />
     );
   }
@@ -60,6 +66,8 @@ export function TableWorkspace({
       api={api}
       userId={userId}
       onOpenCharacter={openCharacter}
+      roomPresence={roomPresence}
+      realtime={realtime}
     />
   );
 }

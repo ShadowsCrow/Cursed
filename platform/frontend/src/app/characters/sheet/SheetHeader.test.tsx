@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SheetHeader } from "./SheetHeader";
-import type { FichaContrato } from "../types";
+import type { ApiClient, FichaContrato } from "../types";
 
 describe("SheetHeader — 6.2 cabeçalho visual da ficha", () => {
   afterEach(() => cleanup());
@@ -45,5 +46,19 @@ describe("SheetHeader — 6.2 cabeçalho visual da ficha", () => {
     const img = screen.getByRole("img", { name: "Retrato de Nara Exemplo" }) as HTMLImageElement;
     expect(img.src).toBe("data:image/png;base64,ZmFrZS1wbmc=");
     expect(screen.queryByRole("img", { name: "Retrato ilustrativo de Nara Exemplo" })).toBeNull();
+  });
+
+  it("resolve imagem_ativo pelo recurso autorizado da mesa", async () => {
+    const ficha = { personagem: { nome: "Nara Exemplo", imagem_ativo: "mesas/mesa/personagens/p1/legado/arte.png" } } as unknown as FichaContrato;
+    const GET = vi.fn().mockResolvedValue({ data: { tipo: "image/png", base64: "YWJj" } });
+    const api = { GET } as unknown as ApiClient;
+    render(<QueryClientProvider client={new QueryClient()}>
+      <SheetHeader ficha={ficha} api={api} mesaId="mesa" />
+    </QueryClientProvider>);
+    const imagem = await screen.findByRole("img", { name: "Retrato de Nara Exemplo" });
+    expect(imagem.getAttribute("src")).toBe("data:image/png;base64,YWJj");
+    expect(GET).toHaveBeenCalledWith("/mesas/{mesa_id}/ativos", {
+      params: { path: { mesa_id: "mesa" }, query: { caminho: "mesas/mesa/personagens/p1/legado/arte.png" } },
+    });
   });
 });

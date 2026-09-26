@@ -65,7 +65,7 @@ function ImportarCartaDialog({ api, mesaId, onClose }: { api: ApiClient; mesaId:
       {erro?.problemas?.length ? <ul>{erro.problemas.map((p) => <li key={p.campo}>{p.campo}: {p.mensagem}</li>)}</ul> : null}
       {previa.data && (
         <div className="import-preview">
-          <CardFace tipo={previa.data.tipo} conteudo={previa.data.rascunho} />
+          <CardFace tipo={previa.data.tipo} conteudo={previa.data.rascunho} api={api} mesaId={mesaId} />
           {!previa.data.validacao.valida && (
             <ul role="status">{previa.data.validacao.problemas?.map((p) => <li key={p.campo}>{p.campo}: {p.mensagem}</li>)}</ul>
           )}
@@ -203,7 +203,7 @@ export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: strin
             const conteudo = (definicao.publicada?.conteudo ?? definicao.rascunho ?? {}) as Record<string, unknown>;
             return (
               <li key={definicao.id} className="card-catalog__item">
-                <CardFace tipo={definicao.tipo} conteudo={conteudo} numero={definicao.publicada?.numero} />
+                <CardFace tipo={definicao.tipo} conteudo={conteudo} numero={definicao.publicada?.numero} api={api} mesaId={mesaId} />
                 <p className="card-catalog__state">{estadoCarta(definicao)}</p>
                 <div className="card-catalog__actions">
                   <button type="button" className="button button--ghost" onClick={() => setEditando(definicao)}

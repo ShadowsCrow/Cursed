@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from cursed_platform.acesso_privado import BUCKET_PRIVADO, AutorizadorRecursos
+from cursed_platform import sala
 from cursed_platform.config import PlatformSettings
 from cursed_platform.persistence import Base, MembroRegistro, MesaRegistro, PersonagemRegistro
 
@@ -214,6 +215,29 @@ class CanaisApiTest(unittest.TestCase):
                 self.assertEqual(resposta.status_code, 404)
                 self.assertEqual(resposta.json(), {"detail": "Mesa não encontrada."})
 
+    def test_matriz_negativa_outra_mesa_ficha_arquivo_e_canal(self):
+        """Recusas não revelam se mesa, personagem ou recurso privado existe."""
+        self.app.dependency_overrides[get_actor] = lambda: Ator(JOGADOR_B)
+        mesa_proibida = self.client.get("/mesas/b/canais")
+        mesa_inexistente = self.client.get("/mesas/inexistente/canais")
+        self.assertEqual((mesa_proibida.status_code, mesa_proibida.json()),
+                         (mesa_inexistente.status_code, mesa_inexistente.json()))
+        for personagem_id in ("heroi", "npc", "inexistente"):
+            resposta = self.client.get(f"/mesas/a/personagens/{personagem_id}/ficha")
+            self.assertEqual(resposta.status_code, 404)
+            self.assertEqual(resposta.json(), {"detail": "Ficha não encontrada."})
+        with Session(self.engine) as session:
+            recursos = AutorizadorRecursos(session)
+            for caminho in ("mesas/b/mesa/mapa.png", "mesas/a/personagens/heroi/retrato.png",
+                            "mesas/a/narrador/segredo.png"):
+                decisao = recursos.decidir_objeto(JOGADOR_B, BUCKET_PRIVADO, caminho)
+                self.assertFalse(decisao.permitido, caminho)
+                self.assertTrue(decisao.ocultar_existencia, caminho)
+            for topico in ("mesa:b", "mesa:a:personagem:heroi", "mesa:a:narrador"):
+                decisao = recursos.decidir_topico(JOGADOR_B, topico)
+                self.assertFalse(decisao.permitido, topico)
+                self.assertTrue(decisao.ocultar_existencia, topico)
+
 
 # Subconjunto dos esquemas do Supabase usado pelas políticas; o comportamento
 # de `auth.uid()` e `realtime.topic()` segue o dos serviços reais.
@@ -245,6 +269,11 @@ SUPABASE_STUB = (
     "GRANT USAGE ON SCHEMA realtime TO anon, authenticated",
     "GRANT ALL ON realtime.messages TO anon, authenticated",
     "GRANT USAGE ON ALL SEQUENCES IN SCHEMA realtime TO anon, authenticated",
+    """CREATE FUNCTION realtime.send(payload jsonb, evento text, topico text, privado boolean)
+        RETURNS void LANGUAGE plpgsql AS $$ BEGIN
+        INSERT INTO realtime.messages (topic, extension, payload, private)
+        VALUES (topico, 'broadcast', jsonb_build_object('evento', evento, 'dados', payload), privado);
+        END $$""",
     # Supabase concede privilégios amplos em public por padrão.
     "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated",
     # Política permissiva alheia que não pode abrir o bucket privado.
@@ -412,6 +441,81 @@ class AcessoPrivadoPostgresTest(unittest.TestCase):
                 connection.exec_driver_sql(
                     f"UPDATE table_memberships SET ativo = true WHERE mesa_id = 'a' AND usuario_id = '{JOGADOR_B}'"
                 )
+
+    def test_eventos_da_sala_so_aparecem_apos_commit_e_respeitam_topico(self):
+        self.addCleanup(self._limpar_eventos_da_sala)
+        with Session(self.engine) as session:
+            cena = sala.criar_cena(session, "a", "Pátio", 8, 6)
+            sala.ativar_cena(session, cena)
+            camadas = sala._camadas(session, cena.id)
+            compartilhada = next(c for c in camadas.values() if c.visibilidade == "mesa")
+            privada = next(c for c in camadas.values() if c.visibilidade == "narrador")
+            publico = sala.criar_token(
+                session, cena, camada_id=compartilhada.id, rotulo="Herói", x=1, y=1,
+                personagem_id="heroi",
+            )
+            segredo = sala.criar_token(
+                session, cena, camada_id=privada.id, rotulo="Monstro secreto", x=2, y=2,
+                personagem_id="npc",
+            )
+            cena_id, publico_id, segredo_id = cena.id, publico.id, segredo.id
+            session.commit()
+        with self.engine.begin() as connection:
+            connection.exec_driver_sql("DELETE FROM realtime.messages")
+
+        with Session(self.engine) as session:
+            sala.mover_token(session, session.get(sala.TokenRegistro, publico_id),
+                             sala.Leitor(JOGADOR_A, False), 3, 4, 0)
+            # A mensagem faz parte da transação e ainda não alcança outro cliente.
+            with self.engine.connect() as outra:
+                self.assertEqual(outra.execute(text("SELECT count(*) FROM realtime.messages")).scalar(), 0)
+            session.commit()
+
+        with Session(self.engine) as primeiro, Session(self.engine) as segundo:
+            a = sala.snapshot(primeiro, "a", sala.Leitor(JOGADOR_A, False))["cena"]
+            b = sala.snapshot(segundo, "a", sala.Leitor(JOGADOR_B, False))["cena"]
+            token_a = next(t for t in a["tokens"] if t["id"] == publico_id)
+            token_b = next(t for t in b["tokens"] if t["id"] == publico_id)
+            self.assertEqual((token_a["x"], token_a["y"], token_a["versao"]), (3, 4, 1))
+            self.assertEqual(token_a["versao"], token_b["versao"])
+            self.assertEqual(a["id"], cena_id)
+
+        with Session(self.engine) as session:
+            sala.mover_token(session, session.get(sala.TokenRegistro, segredo_id),
+                             sala.Leitor(MESTRE, True), 4, 4, 0)
+            session.commit()
+        with Session(self.engine) as session:
+            sala.mover_token(session, session.get(sala.TokenRegistro, segredo_id),
+                             sala.Leitor(MESTRE, True), 5, 5, 1)
+            session.rollback()
+        with self.engine.connect() as connection:
+            eventos = list(connection.execute(text(
+                "SELECT topic, payload FROM realtime.messages ORDER BY id"
+            )))
+        self.assertEqual([topico for topico, _ in eventos], ["mesa:a", "mesa:a:narrador"])
+        self.assertEqual(eventos[0][1]["dados"]["token"]["versao"], 1)
+        self.assertEqual(eventos[1][1]["dados"]["token"]["id"], segredo_id)
+        self.assertNotIn(segredo_id, str(eventos[0][1]))
+        self.assertNotIn("Monstro secreto", str(eventos[0][1]))
+        with self.engine.connect() as connection, connection.begin():
+            self._como(connection, JOGADOR_A, "mesa:a")
+            recebidos = list(connection.execute(text(
+                "SELECT payload FROM realtime.messages WHERE topic = 'mesa:a'"
+            )).scalars())
+            self.assertEqual(len(recebidos), 1)
+            self.assertNotIn(segredo_id, str(recebidos))
+        with self.engine.connect() as connection, connection.begin():
+            self._como(connection, JOGADOR_A, "mesa:a:narrador")
+            self.assertEqual(connection.execute(text(
+                "SELECT count(*) FROM realtime.messages WHERE topic = 'mesa:a:narrador'"
+            )).scalar(), 0)
+        with Session(self.engine) as session:
+            self.assertEqual((session.get(sala.TokenRegistro, segredo_id).x,
+                              session.get(sala.TokenRegistro, segredo_id).y), (4, 4))
+
+    def _limpar_eventos_da_sala(self):
+        with self.engine.begin() as connection:
+            connection.exec_driver_sql("DELETE FROM realtime.messages")
 
 
 if __name__ == "__main__":

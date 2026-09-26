@@ -11,13 +11,16 @@
     "check:client": "node scripts/generate-client.mjs --check",
     "probe:incompatible": "node scripts/generate-client.mjs --probe-incompatible",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "capturas": "node e2e/screenshots.mjs"
+    "test": "vitest run src",
+    "test:e2e": "node e2e/run.mjs",
+    "capturas": "node e2e/screenshots.mjs",
+    "bench:room": "node scripts/bench-room.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
     "@tanstack/react-query": "^5.103.2",
     "openapi-fetch": "^0.17.0",
+    "pixi.js": "^8.21.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0"

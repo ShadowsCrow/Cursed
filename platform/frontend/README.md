@@ -32,6 +32,16 @@ identidade novamente antes de consultar fichas. O exemplo de variáveis para a
 aplicação Vite está em `.env.example`. Nenhuma chave privada deve ser
 colocada nessas variáveis do navegador.
 
+## Testes ponta a ponta
+
+`npm run test:e2e` cria um SQLite descartável, aplica Alembic, inicia API e
+Vite com identidades locais, executa Playwright em Chromium e encerra os
+serviços ao terminar. A suíte usa contextos separados de Narrador e jogador
+para mesa, ficha, auditoria, oferta de cartas, segredos e recuperação do
+snapshot da sala após desconexão. Cada execução semeia dados em um banco novo;
+`CURSED_E2E_PYTHON` pode apontar para outro executável Python. O CI instala
+Chromium e executa a mesma suíte após os testes de componentes.
+
 ## Capturas de tela
 
 `npm run capturas` cria dados de exemplo pela API e salva capturas das

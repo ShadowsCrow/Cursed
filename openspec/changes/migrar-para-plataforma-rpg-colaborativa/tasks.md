@@ -91,33 +91,33 @@
 
 ## 10. Sala e grid em tempo real
 
-- [ ] 10.1 Configurar canais privados e presença por mesa e verificar entrada autorizada, revogação de participação e expiração de presença
-- [ ] 10.2 Modelar cenas, mapas, tokens, camadas, controle e versões e verificar integridade e filtros de visibilidade
-- [ ] 10.3 Implementar comandos autoritativos para criar, posicionar, mover e remover tokens e verificar rejeição de ações sem controle
-- [ ] 10.4 Implementar canvas PixiJS com pan, zoom, grid e tokens e verificar interação e desempenho com uma cena representativa
-- [ ] 10.5 Transmitir cursor, ping e prévia de arraste como eventos efêmeros e verificar que cancelamento ou perda desses eventos não altera o banco
-- [ ] 10.6 Emitir atualizações persistentes após commit e verificar que dois clientes convergem para a mesma versão confirmada
-- [ ] 10.7 Implementar snapshot autorizado na entrada e reconexão e verificar recuperação após alterações ocorridas durante desconexão
-- [ ] 10.8 Implementar camadas e tokens ocultos do Narrador e verificar ausência de payload secreto nos clientes dos jogadores
-- [ ] 10.9 Testar falha de rede durante movimento e verificar aviso, restauração visual e inexistência de estado falso confirmado
+- [x] 10.1 Configurar canais privados e presença por mesa e verificar entrada autorizada, revogação de participação e expiração de presença
+- [x] 10.2 Modelar cenas, mapas, tokens, camadas, controle e versões e verificar integridade e filtros de visibilidade
+- [x] 10.3 Implementar comandos autoritativos para criar, posicionar, mover e remover tokens e verificar rejeição de ações sem controle
+- [x] 10.4 Implementar canvas PixiJS com pan, zoom, grid e tokens e verificar interação e desempenho com uma cena representativa
+- [x] 10.5 Transmitir cursor, ping e prévia de arraste como eventos efêmeros e verificar que cancelamento ou perda desses eventos não altera o banco
+- [x] 10.6 Emitir atualizações persistentes após commit e verificar que dois clientes convergem para a mesma versão confirmada
+- [x] 10.7 Implementar snapshot autorizado na entrada e reconexão e verificar recuperação após alterações ocorridas durante desconexão
+- [x] 10.8 Implementar camadas e tokens ocultos do Narrador e verificar ausência de payload secreto nos clientes dos jogadores
+- [x] 10.9 Testar falha de rede durante movimento e verificar aviso, restauração visual e inexistência de estado falso confirmado
 
 ## 11. Migração de dados e ativos
 
-- [ ] 11.1 Implementar migrador idempotente das tabelas atuais de fichas, equipamentos e efeitos e verificar repetição sem duplicação
-- [ ] 11.2 Implementar migrador dos JSONs históricos e catálogos e verificar relatório de registros convertidos, rejeitados e pendentes
-- [ ] 11.3 Extrair imagens Base64 para armazenamento de objetos com hash e metadados e verificar integridade e deduplicação
-- [ ] 11.4 Converter códigos E1/EQ1 para entidades versionadas preservando importação de compatibilidade e verificar fixtures válidas e inválidas
-- [ ] 11.5 Sinalizar campos ambíguos, especialmente custos de habilidades e magias, e verificar que nenhum valor mecânico é inventado
-- [ ] 11.6 Criar relatório de equivalência com contagens, campos críticos e amostras serializadas e verificar que divergências bloqueiam aprovação da migração
-- [ ] 11.7 Executar ensaio de migração sobre uma cópia dos dados e documentar duração, divergências, correções e procedimento de rollback
+- [x] 11.1 Implementar migrador idempotente das tabelas atuais de fichas, equipamentos e efeitos e verificar repetição sem duplicação
+- [x] 11.2 Implementar migrador dos JSONs históricos e catálogos e verificar relatório de registros convertidos, rejeitados e pendentes
+- [x] 11.3 Extrair imagens Base64 para armazenamento de objetos com hash e metadados e verificar integridade e deduplicação
+- [x] 11.4 Converter códigos E1/EQ1 para entidades versionadas preservando importação de compatibilidade e verificar fixtures válidas e inválidas
+- [x] 11.5 Sinalizar campos ambíguos, especialmente custos de habilidades e magias, e verificar que nenhum valor mecânico é inventado
+- [x] 11.6 Criar relatório de equivalência com contagens, campos críticos e amostras serializadas e verificar que divergências bloqueiam aprovação da migração
+- [x] 11.7 Executar ensaio de migração sobre uma cópia dos dados e documentar duração, divergências, correções e procedimento de rollback
 
 ## 12. Verificação, implantação e corte
 
 - [ ] 12.1 Integrar lint, typecheck, testes Python, frontend, contratos, migrações e segurança no CI e verificar falha intencional de cada gate
-- [ ] 12.2 Criar testes Playwright com contextos separados de Narrador e jogador para mesa, ficha, auditoria, cartas, segredos e reconexão e verificar execução repetível
+- [x] 12.2 Criar testes Playwright com contextos separados de Narrador e jogador para mesa, ficha, auditoria, cartas, segredos e reconexão e verificar execução repetível
 - [ ] 12.3 Executar revisão de acessibilidade da ficha, cartas, modais e grid e verificar ausência de bloqueadores para teclado, toque e leitores de tela
-- [ ] 12.4 Executar teste de autorização negativo cobrindo recursos de outra mesa, personagens alheios, arquivos e canais privados e verificar negação sem vazamento de metadados
-- [ ] 12.5 Instrumentar erros, latência de comandos, conflitos, falhas realtime e resultados de migração e verificar dashboards ou consultas operacionais mínimas
+- [x] 12.4 Executar teste de autorização negativo cobrindo recursos de outra mesa, personagens alheios, arquivos e canais privados e verificar negação sem vazamento de metadados
+- [x] 12.5 Instrumentar erros, latência de comandos, conflitos, falhas realtime e resultados de migração e verificar dashboards ou consultas operacionais mínimas
 - [ ] 12.6 Implantar a nova plataforma para uma mesa piloto por feature flag e verificar jornadas críticas sem desativar o Streamlit
 - [ ] 12.7 Realizar sessão piloto e registrar feedback sobre ficha, efeitos, equipamentos, log, cartas, ritmo narrativo e carga do Narrador
 - [ ] 12.8 Corrigir bloqueadores encontrados e repetir critérios de paridade, migração e segurança até aprovação registrada

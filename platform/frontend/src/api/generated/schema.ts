@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/ativos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Ativo */
+        get: operations["ler_ativo_mesas__mesa_id__ativos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/auditoria": {
         parameters: {
             query?: never;
@@ -1119,6 +1136,13 @@ export interface components {
             /** Versao */
             versao: number;
         };
+        /** AtivoResposta */
+        AtivoResposta: {
+            /** Base64 */
+            base64: string;
+            /** Tipo */
+            tipo: string;
+        };
         /** AtualizarFichaComando */
         AtualizarFichaComando: {
             /** Ator Id */
@@ -1308,6 +1332,8 @@ export interface components {
             id: string;
             /** Linhas */
             linhas: number;
+            /** Mapa Objeto */
+            mapa_objeto?: string | null;
             /** Nome */
             nome: string;
             /** Tokens */
@@ -1396,6 +1422,8 @@ export interface components {
              * @default 15
              */
             linhas: number;
+            /** Mapa Objeto */
+            mapa_objeto?: string | null;
             /** Nome */
             nome: string;
         };
@@ -2048,6 +2076,11 @@ export interface components {
         };
         /** PublicarCartaRequest */
         PublicarCartaRequest: {
+            /**
+             * Promover Ativos
+             * @default false
+             */
+            promover_ativos: boolean;
             /** Versao Esperada */
             versao_esperada: number;
         };
@@ -2507,6 +2540,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApresentacaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_ativo_mesas__mesa_id__ativos_get: {
+        parameters: {
+            query: {
+                caminho: string;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtivoResposta"];
                 };
             };
             /** @description Validation Error */

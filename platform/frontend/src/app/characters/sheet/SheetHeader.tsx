@@ -1,6 +1,12 @@
 import { Portrait, ResourceBar } from "../../../ui/Display";
+import { useAssetImage } from "../../assets/useAssetImage";
 import { personagemInfo, recurso } from "./fichaAccess";
-import type { FichaContrato } from "../types";
+import type { ApiClient, FichaContrato } from "../types";
+
+function RetratoMigrado({ api, mesaId, caminho, nome }: { api: ApiClient; mesaId: string; caminho: string; nome: string }) {
+  const imagem = useAssetImage(api, mesaId, caminho);
+  return <Portrait name={nome} imageUrl={imagem.data} hue="violet" size="large" />;
+}
 
 function ResourceStatus({ label, kind, ficha, chave }: { label: string; kind: "life" | "power"; ficha: FichaContrato; chave: string }) {
   const valor = recurso(ficha, chave);
@@ -15,13 +21,15 @@ function ResourceStatus({ label, kind, ficha, chave }: { label: string; kind: "l
   return <ResourceBar label={label} current={valor.atual} max={valor.maximo} kind={kind} />;
 }
 
-export function SheetHeader({ ficha }: { ficha: FichaContrato }) {
+export function SheetHeader({ ficha, api, mesaId }: { ficha: FichaContrato; api?: ApiClient; mesaId?: string }) {
   const info = personagemInfo(ficha);
   const eyebrow = [info.classe, info.raca].filter(Boolean).join(" · ");
   return (
     <section className="character-hero">
       <div className="character-hero__portrait">
-        <Portrait name={info.nome} imageUrl={info.imagemUrl} hue="violet" size="large" />
+        {info.imagemAtivo && api && mesaId
+          ? <RetratoMigrado api={api} mesaId={mesaId} caminho={info.imagemAtivo} nome={info.nome} />
+          : <Portrait name={info.nome} imageUrl={info.imagemUrl} hue="violet" size="large" />}
       </div>
       <div className="character-hero__identity">
         <span className="eyebrow">{eyebrow || "Identidade não preenchida"}</span>

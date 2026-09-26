@@ -1,0 +1,14 @@
+.room-view { display: grid; gap: 1rem; min-width: 0; }
+.room-view__management, .room-view__details, .room-view__token-form { display: grid; gap: .75rem; }
+.room-view__management form, .room-view__token-form { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+.room-view__move-form { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+.room-view__management label, .room-view__token-form label { display: grid; gap: .25rem; }
+.room-view__scenes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.room-view__scenes > div { display: flex; align-items: center; gap: .35rem; }
+.room-view__details ul { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 0; }
+.room-canvas { position: relative; width: 100%; min-width: 0; }
+.room-canvas__surface { height: min(65vh, 650px); min-height: 300px; width: 100%; overflow: hidden; border: 1px solid var(--border, #716a80); border-radius: .75rem; touch-action: none; }
+.room-canvas__surface canvas { display: block; }
+.room-canvas__controls { position: absolute; z-index: 1; right: .75rem; top: .75rem; display: flex; align-items: center; gap: .35rem; padding: .35rem; color: white; background: #191822ed; border-radius: .5rem; }
+.room-canvas__controls button { min-width: 2.5rem; min-height: 2.5rem; cursor: pointer; }
+@media (max-width: 640px) { .room-canvas__surface { height: 55vh; min-height: 280px; } }

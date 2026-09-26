@@ -423,6 +423,7 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 .card-catalog__state { color: var(--muted); font-size: .85rem; margin: 0; }
 .card-catalog__actions, .card-group__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .card-face { display: grid; gap: var(--space-2); }
+.card-face__art { display: block; width: 100%; max-height: 12rem; object-fit: contain; border-radius: var(--radius-md); }
 .card-face__legacy { font-size: .8rem; color: var(--quiet); margin: 0; }
 .card-group { margin-top: var(--space-6); }
 .card-group__note { color: var(--muted); margin-top: 0; }

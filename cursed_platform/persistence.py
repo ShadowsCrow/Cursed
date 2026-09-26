@@ -8,7 +8,7 @@ from typing import Any
 
 from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, DDL, DateTime, ForeignKey, ForeignKeyConstraint,
-    Index, Integer, JSON, Numeric, String, UniqueConstraint, event, false as sa_false, func, true,
+    Index, Integer, JSON, Numeric, String, UniqueConstraint, event, false as sa_false, func, text, true,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -576,6 +576,8 @@ class CenaRegistro(Base):
         CheckConstraint("colunas BETWEEN 1 AND 200 AND linhas BETWEEN 1 AND 200", name="ck_scenes_grade"),
         CheckConstraint("versao >= 0", name="ck_scenes_versao"),
         UniqueConstraint("mesa_id", "id", name="uq_scenes_mesa_id"),
+        Index("uq_scenes_ativa_mesa", "mesa_id", unique=True,
+              postgresql_where=text("ativa"), sqlite_where=text("ativa")),
     )
 
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
@@ -585,6 +587,7 @@ class CenaRegistro(Base):
     nome: Mapped[str] = mapped_column(String(200), nullable=False)
     colunas: Mapped[int] = mapped_column(Integer, nullable=False)
     linhas: Mapped[int] = mapped_column(Integer, nullable=False)
+    mapa_objeto: Mapped[str | None] = mapped_column(String(500))
     ativa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -595,6 +598,7 @@ class CamadaCenaRegistro(Base):
     __table_args__ = (
         CheckConstraint("visibilidade IN ('mesa', 'narrador')", name="ck_scene_layers_visibilidade"),
         UniqueConstraint("mesa_id", "id", name="uq_scene_layers_mesa_id"),
+        UniqueConstraint("mesa_id", "cena_id", "id", name="uq_scene_layers_mesa_cena_id"),
         ForeignKeyConstraint(["mesa_id", "cena_id"], ["scenes.mesa_id", "scenes.id"], name="fk_scene_layers_scene"),
     )
 
@@ -617,6 +621,9 @@ class TokenRegistro(Base):
         ForeignKeyConstraint(["mesa_id", "cena_id"], ["scenes.mesa_id", "scenes.id"], name="fk_scene_tokens_scene"),
         ForeignKeyConstraint(["mesa_id", "camada_id"], ["scene_layers.mesa_id", "scene_layers.id"],
                              name="fk_scene_tokens_layer"),
+        ForeignKeyConstraint(["mesa_id", "cena_id", "camada_id"],
+                             ["scene_layers.mesa_id", "scene_layers.cena_id", "scene_layers.id"],
+                             name="fk_scene_tokens_layer_scene"),
         ForeignKeyConstraint(["mesa_id", "personagem_id"], ["characters.mesa_id", "characters.id"],
                              name="fk_scene_tokens_character"),
     )
@@ -633,3 +640,65 @@ class TokenRegistro(Base):
     oculto: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
     controladores: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
+class MigracaoLegadaRegistro(Base):
+    """Vínculo imutável entre um registro de origem e sua entidade convertida."""
+
+    __tablename__ = "legacy_migrations"
+    __table_args__ = (
+        UniqueConstraint("origem", "tipo_origem", "id_origem", name="uq_legacy_migrations_origem"),
+        Index("ix_legacy_migrations_destino", "tipo_destino", "id_destino"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    origem: Mapped[str] = mapped_column(String(200), nullable=False)
+    versao_origem: Mapped[str | None] = mapped_column(String(50))
+    tipo_origem: Mapped[str] = mapped_column(String(100), nullable=False)
+    id_origem: Mapped[str] = mapped_column(String(100), nullable=False)
+    hash_conteudo: Mapped[str] = mapped_column(String(64), nullable=False)
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id"), nullable=False)
+    tipo_destino: Mapped[str] = mapped_column(String(100), nullable=False)
+    id_destino: Mapped[str] = mapped_column(String(100), nullable=False)
+    migrado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class AtivoMigradoRegistro(Base):
+    """Objeto privado extraído de payload legado, deduplicado por personagem e hash."""
+
+    __tablename__ = "legacy_assets"
+    __table_args__ = (
+        UniqueConstraint("personagem_id", "sha256", name="uq_legacy_assets_personagem_hash"),
+        UniqueConstraint("bucket", "caminho", name="uq_legacy_assets_objeto"),
+        ForeignKeyConstraint(["mesa_id", "personagem_id"], ["characters.mesa_id", "characters.id"],
+                             name="fk_legacy_assets_character"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id"), nullable=False, index=True)
+    personagem_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    bucket: Mapped[str] = mapped_column(String(100), nullable=False)
+    caminho: Mapped[str] = mapped_column(String(500), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(100), nullable=False)
+    tamanho: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    procedencias: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=False)
+
+
+class AtivoCatalogoRegistro(Base):
+    """Arte legada em escopo privado do Narrador enquanto a carta é revisada."""
+
+    __tablename__ = "legacy_catalog_assets"
+    __table_args__ = (
+        UniqueConstraint("mesa_id", "sha256", name="uq_legacy_catalog_assets_mesa_hash"),
+        UniqueConstraint("bucket", "caminho", name="uq_legacy_catalog_assets_objeto"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id"), nullable=False, index=True)
+    bucket: Mapped[str] = mapped_column(String(100), nullable=False)
+    caminho: Mapped[str] = mapped_column(String(500), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(100), nullable=False)
+    tamanho: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    procedencias: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=False)

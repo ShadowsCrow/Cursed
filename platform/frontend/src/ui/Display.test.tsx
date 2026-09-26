@@ -92,7 +92,9 @@ describe("EffectIcon", () => {
 
   it("mostra o conteúdo completo por toque", () => {
     render(<EffectIcon name="Vigília" symbol="◈" tone="gold" description="Atenção constante a perigos." />);
-    fireEvent.touchStart(screen.getByRole("button", { name: "Vigília" }));
+    const trigger = screen.getByRole("button", { name: "Vigília" });
+    fireEvent.touchStart(trigger);
+    fireEvent.click(trigger);
     expect(screen.getByRole("group", { name: "Vigília" })).toBeTruthy();
   });
 

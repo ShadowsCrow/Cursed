@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from cursed_platform import auditoria, cartas
+from cursed_platform.migracao_ativos import AtivoInvalido
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CartaDefinicaoResumo, CartaVersaoResumo, CriarCartaRequest, ImportarCartaRequest, PreviaImportacaoCarta,
@@ -110,6 +111,7 @@ def validar_rascunho(
 @router.post("/{carta_id}/publicacao", response_model=CartaVersaoResumo, status_code=status.HTTP_201_CREATED)
 def publicar_carta(
     mesa_id: str, carta_id: str, pedido: PublicarCartaRequest,
+    request: Request,
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
     correlacao: str = Depends(get_correlacao),
 ) -> CartaVersaoResumo:
@@ -118,10 +120,15 @@ def publicar_carta(
     try:
         versao, validacao = cartas.publicar(
             session, definicao, ator_id=ator.usuario_id, versao_esperada=pedido.versao_esperada,
+            promover_ativos=pedido.promover_ativos,
+            armazenamento=request.app.state.armazenamento_objetos,
         )
     except cartas.ConflitoRascunho:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Rascunho alterado por outra edição.") from None
+    except AtivoInvalido as erro:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(erro)) from None
     if versao is None:
         session.rollback()
         raise HTTPException(

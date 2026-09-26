@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { components } from "../../api/generated/schema";
 import { Glyph } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
@@ -10,6 +11,8 @@ import { PublicEntities } from "../characters/PublicEntities";
 import { RestDialog } from "../characters/RestDialog";
 import type { ApiClient } from "../characters/types";
 import type { TableView } from "../tableNavigation";
+import { RoomView } from "../room/RoomView";
+import type { RealtimeSession } from "../room/RoomPresence";
 import { WorkspaceChrome } from "./WorkspaceChrome";
 
 type Mesa = components["schemas"]["MesaResumo"];
@@ -40,6 +43,8 @@ export interface NarratorShellProps {
   api: ApiClient;
   userId: string;
   onOpenCharacter: (personagemId: string) => void;
+  roomPresence?: ReactNode;
+  realtime?: RealtimeSession;
 }
 
 /**
@@ -47,7 +52,7 @@ export interface NarratorShellProps {
  * ferramentas exclusivas na barra lateral e, na visão geral, um painel de
  * pendências ao lado do estado da mesa — estrutura que o shell do jogador não tem.
  */
-export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter }: NarratorShellProps) {
+export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter, roomPresence, realtime }: NarratorShellProps) {
   const copy = narratorCopy[view];
   const solicitacoes = useSolicitacoes(api, mesa.id);
   return (
@@ -62,6 +67,7 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
       headerTitle={copy.title}
       headerEyebrow={copy.eyebrow}
       headerDescription={copy.description}
+      roomPresence={roomPresence}
       sidebarExtra={<NarratorToolsPanel api={api} mesaId={mesa.id} />}
     >
       {view === "character" ? (
@@ -70,6 +76,8 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
         <AuditLog api={api} mesaId={mesa.id} role="narrador" />
       ) : view === "cards" ? (
         <NarratorLibrary api={api} mesaId={mesa.id} />
+      ) : view === "room" ? (
+        <RoomView api={api} mesaId={mesa.id} userId={userId} realtime={realtime} narrator />
       ) : view === "overview" ? (
         <div className="screen-content">
           <div className="workspace-status-row">

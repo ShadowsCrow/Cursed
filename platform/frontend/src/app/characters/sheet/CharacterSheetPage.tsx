@@ -141,7 +141,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         <p className="preview-note" role="note"><Glyph name="eye" size={16} /> Você está vendo esta ficha em modo de leitura.</p>
       )}
 
-      <SheetHeader ficha={ficha} />
+      <SheetHeader ficha={ficha} api={api} mesaId={mesaId} />
       <ActiveStateStrip desgaste={desgasteQuery.data} efeitos={efeitosQuery.data} />
 
       <div className="sheet-tabs" role="tablist" aria-label="Seções da ficha">

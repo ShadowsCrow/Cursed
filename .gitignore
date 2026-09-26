@@ -221,3 +221,4 @@ platform/api/.dev/
 
 # Capturas de tela geradas localmente
 platform/frontend/.screenshots/
+platform/frontend/test-results/

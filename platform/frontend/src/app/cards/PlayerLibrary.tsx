@@ -60,7 +60,7 @@ export function PresentationOverlay({ api, mesaId }: { api: ApiClient; mesaId: s
   return (
     <Dialog open title="Carta apresentada" onClose={() => setFechadas((atual) => [...atual, visivel.id])} className="presentation-dialog">
       <div className="presentation" data-movimento={reduzido ? "reduzido" : "normal"}>
-        <CardFace tipo={visivel.carta.tipo} conteudo={visivel.carta.conteudo} />
+        <CardFace tipo={visivel.carta.tipo} conteudo={visivel.carta.conteudo} api={api} mesaId={mesaId} />
         <p>O Narrador está mostrando esta carta. Ela não foi adicionada à sua ficha.</p>
       </div>
     </Dialog>

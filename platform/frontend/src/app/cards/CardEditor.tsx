@@ -172,6 +172,7 @@ export function CardEditor({ api, mesaId, definicao, onClose }: CardEditorProps)
   const validar = useValidarCarta(api, mesaId);
   const publicar = usePublicarCarta(api, mesaId);
   const versoes = useVersoesCarta(api, mesaId, definicao.id);
+  const artesPrivadas = lista(rascunho.ativos_privados);
 
   function alterar(patch: Rascunho) {
     setRascunho((atual) => ({ ...atual, ...patch }));
@@ -193,7 +194,8 @@ export function CardEditor({ api, mesaId, definicao, onClose }: CardEditorProps)
   async function publicarAgora() {
     setConfirmarPublicacao(false);
     const atual = alterado ? await salvarRascunho() : versao;
-    const publicada = await publicar.mutateAsync({ cartaId: definicao.id, versao: atual });
+    const publicada = await publicar.mutateAsync({ cartaId: definicao.id, versao: atual,
+      promoverAtivos: artesPrivadas.length > 0 });
     setVersao(atual + 1);
     return publicada;
   }
@@ -223,7 +225,7 @@ export function CardEditor({ api, mesaId, definicao, onClose }: CardEditorProps)
         </form>
         <aside className="card-editor__preview" aria-label="Prévia da carta">
           <span className="eyebrow">COMO OS JOGADORES VERÃO</span>
-          <CardFace tipo={tipo} conteudo={rascunho} />
+          <CardFace tipo={tipo} conteudo={rascunho} api={api} mesaId={mesaId} />
           <h3>Versões publicadas</h3>
           {versoes.data && versoes.data.length > 0 ? (
             <ol className="card-editor__versions">
@@ -235,7 +237,9 @@ export function CardEditor({ api, mesaId, definicao, onClose }: CardEditorProps)
       <Confirmation
         open={confirmarPublicacao}
         title="Publicar nova versão?"
-        description="A versão publicada não pode ser alterada. Personagens que já possuem a carta continuam na versão atual até uma migração explícita."
+        description={artesPrivadas.length > 0
+          ? `A arte privada (${artesPrivadas.length} imagem(ns)) será copiada para o espaço compartilhado da mesa. A versão publicada não pode ser alterada.`
+          : "A versão publicada não pode ser alterada. Personagens que já possuem a carta continuam na versão atual até uma migração explícita."}
         confirmLabel="Publicar"
         onConfirm={() => void publicarAgora().catch(() => undefined)}
         onCancel={() => setConfirmarPublicacao(false)}

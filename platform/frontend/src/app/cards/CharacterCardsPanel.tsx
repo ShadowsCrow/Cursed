@@ -50,7 +50,7 @@ function ConcederDialog({ api, mesaId, personagemId, versao, onClose }: {
             {publicadas.map((v) => <option key={v.id} value={v.id}>{String(v.conteudo.titulo)} ({ROTULO_TIPO[v.tipo]}, v{v.numero})</option>)}
           </select>
         </label>
-        {escolhida && <CardFace tipo={escolhida.tipo} conteudo={escolhida.conteudo} numero={escolhida.numero} />}
+        {escolhida && <CardFace tipo={escolhida.tipo} conteudo={escolhida.conteudo} numero={escolhida.numero} api={api} mesaId={mesaId} />}
         {aprendizavel && (
           <label className="checkbox-row">
             <input type="checkbox" checked={excecao} onChange={(e) => setExcecao(e.target.checked)} />
@@ -147,7 +147,7 @@ export function CharacterCardsPanel({ api, mesaId, personagemId, versao, papel, 
             <ul className="card-group__list">
               {doGrupo.map((carta) => (
                 <li key={carta.id} className="card-group__item">
-                  <CardFace tipo={carta.carta.tipo} conteudo={carta.carta.conteudo} numero={carta.carta.numero} />
+                  <CardFace tipo={carta.carta.tipo} conteudo={carta.carta.conteudo} numero={carta.carta.numero} api={api} mesaId={mesaId} />
                   {carta.excecao_aprendizado && <p className="tag tag--accent">Concedida como aprendida (exceção)</p>}
                   <div className="card-group__actions">
                     {acoes(carta).map(({ acao, rotulo }) => (

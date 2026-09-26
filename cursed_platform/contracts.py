@@ -555,6 +555,7 @@ class SalvarRascunhoRequest(BaseModel):
 
 class PublicarCartaRequest(BaseModel):
     versao_esperada: int = Field(ge=0)
+    promover_ativos: bool = False
 
 
 class ProblemaValidacao(BaseModel):
@@ -738,6 +739,7 @@ class CriarCenaRequest(BaseModel):
     nome: str = Field(min_length=1, max_length=200)
     colunas: int = Field(default=20, ge=1, le=200)
     linhas: int = Field(default=15, ge=1, le=200)
+    mapa_objeto: str | None = Field(default=None, max_length=500)
 
 
 class CriarTokenRequest(BaseModel):
@@ -790,6 +792,7 @@ class CenaSala(BaseModel):
     nome: str
     colunas: int
     linhas: int
+    mapa_objeto: str | None = None
     ativa: bool
     versao: int
     camadas: list[CamadaSala]

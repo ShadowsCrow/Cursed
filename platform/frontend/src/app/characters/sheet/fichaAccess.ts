@@ -9,6 +9,7 @@ export interface PersonagemInfo {
   habilidades: Record<string, unknown>[];
   /** URL de dados do retrato (`personagem.imagem_base64`), quando a ficha traz um. */
   imagemUrl?: string;
+  imagemAtivo?: string;
 }
 
 export function personagemInfo(ficha: FichaContrato): PersonagemInfo {
@@ -21,6 +22,7 @@ export function personagemInfo(ficha: FichaContrato): PersonagemInfo {
     idade: asNumber(p.idade),
     habilidades: asArray(p.habilidades).map(asRecord),
     imagemUrl: imagemDataUrl(asString(p.imagem_base64)),
+    imagemAtivo: asString(p.imagem_ativo),
   };
 }
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { components } from "../../api/generated/schema";
 import { Portrait } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
@@ -7,6 +8,8 @@ import { CharacterList } from "../characters/CharacterList";
 import { PublicEntities } from "../characters/PublicEntities";
 import type { ApiClient } from "../characters/types";
 import type { TableView } from "../tableNavigation";
+import { RoomView } from "../room/RoomView";
+import type { RealtimeSession } from "../room/RoomPresence";
 import { WorkspaceChrome } from "./WorkspaceChrome";
 
 type Mesa = components["schemas"]["MesaResumo"];
@@ -40,6 +43,8 @@ export interface PlayerShellProps {
   api: ApiClient;
   userId: string;
   onOpenCharacter: (personagemId: string) => void;
+  roomPresence?: ReactNode;
+  realtime?: RealtimeSession;
 }
 
 /**
@@ -47,7 +52,7 @@ export interface PlayerShellProps {
  * um cartão exclusivo de "seu personagem" na barra lateral — sem a fila de
  * pendências nem os atalhos que só fazem sentido para o Narrador.
  */
-export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter }: PlayerShellProps) {
+export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter, roomPresence, realtime }: PlayerShellProps) {
   const copy = playerCopy[view];
   const ofertas = useOfertas(api, mesa.id);
   return (
@@ -62,6 +67,7 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
       headerTitle={copy.title}
       headerEyebrow={copy.eyebrow}
       headerDescription={copy.description}
+      roomPresence={roomPresence}
       sidebarExtra={<PlayerSnapshotPanel />}
     >
       {view === "character" ? (
@@ -70,6 +76,8 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
         <AuditLog api={api} mesaId={mesa.id} role="jogador" />
       ) : view === "cards" ? (
         <PlayerLibrary api={api} mesaId={mesa.id} />
+      ) : view === "room" ? (
+        <RoomView api={api} mesaId={mesa.id} userId={userId} realtime={realtime} narrator={false} />
       ) : view === "overview" ? (
         <div className="screen-content">
           <section className="panel panel--wide workspace-status">

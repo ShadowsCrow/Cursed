@@ -78,7 +78,30 @@ describe("CardEditor — 9.3 rascunho, validação e publicação", () => {
     expect(await screen.findByText("A carta tem problemas de validação.")).toBeTruthy();
     expect(screen.getByText(/Ativo fora da mesa/)).toBeTruthy();
     const chamada = POST.mock.calls.find(([caminho]) => caminho === "/mesas/{mesa_id}/cartas/{carta_id}/publicacao");
-    expect(chamada?.[1]?.body).toEqual({ versao_esperada: 0 });
+    expect(chamada?.[1]?.body).toEqual({ versao_esperada: 0, promover_ativos: false });
+  });
+
+  it("confirma a cópia de arte privada e mostra a imagem no rascunho", async () => {
+    const caminho = "mesas/mesa/narrador/legado/arte.png";
+    const simulada = apiSimulada({
+      GET: {
+        "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] },
+        "/mesas/{mesa_id}/ativos": { data: { tipo: "image/png", base64: "YWJj" } },
+      },
+      POST: { "/mesas/{mesa_id}/cartas/{carta_id}/publicacao": { data: versao("v1", "magia", { titulo: "Bola de Fogo" }) } },
+    });
+    renderComQuery(<CardEditor api={simulada.api} mesaId="mesa" definicao={{
+      ...DEFINICAO, rascunho: { ...DEFINICAO.rascunho, ativos_privados: [caminho] },
+    }} onClose={vi.fn()} />);
+    expect((await screen.findByRole("img", { name: "Arte de Bola de Fogo" })).getAttribute("src"))
+      .toBe("data:image/png;base64,YWJj");
+    fireEvent.click(screen.getByRole("button", { name: "Publicar nova versão" }));
+    expect(screen.getByText(/arte privada.*será copiada/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
+    await waitFor(() => expect(simulada.POST).toHaveBeenCalledWith(
+      "/mesas/{mesa_id}/cartas/{carta_id}/publicacao",
+      expect.objectContaining({ body: { versao_esperada: 0, promover_ativos: true } }),
+    ));
   });
 
   it("exibe conflito ao salvar rascunho desatualizado", async () => {

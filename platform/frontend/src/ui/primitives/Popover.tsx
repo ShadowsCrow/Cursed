@@ -32,6 +32,7 @@ export function Popover({
   const id = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const ultimoToque = useRef(0);
 
   useDismissable({ active: open, onDismiss: () => setOpen(false), refs: [triggerRef, surfaceRef] });
 
@@ -44,12 +45,17 @@ export function Popover({
         aria-describedby={open ? id : undefined}
         aria-expanded={open}
         aria-label={label}
-        onClick={toggle}
+        onClick={() => {
+          // O clique sintetizado após touchstart não deve fechar o conteúdo que
+          // foco/hover já abriu no mesmo gesto.
+          if (Date.now() - ultimoToque.current < 700) show();
+          else toggle();
+        }}
         onFocus={show}
         onBlur={scheduleHide}
         onMouseEnter={show}
         onMouseLeave={scheduleHide}
-        onTouchStart={show}
+        onTouchStart={() => { ultimoToque.current = Date.now(); }}
       >
         {triggerContent}
       </button>

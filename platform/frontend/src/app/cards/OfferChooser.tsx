@@ -101,7 +101,7 @@ export function OfferChooser({ api, mesaId, oferta, personagemId, personagemNome
               onClick={() => alternar(carta.versao_id)}
               onKeyDown={(event) => teclado(event, indice)}
             >
-              <CardFace tipo={carta.tipo} conteudo={carta.conteudo} />
+              <CardFace tipo={carta.tipo} conteudo={carta.conteudo} api={api} mesaId={mesaId} />
             </button>
           );
         })}
