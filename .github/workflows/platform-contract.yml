@@ -43,7 +43,8 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: platform/frontend/package-lock.json
-      - run: python -m pip install -r cursed_platform/requirements.txt
+      - name: Dependências Python (plataforma e app legado para paridade)
+        run: python -m pip install -r cursed_platform/requirements.txt -r .workspace/requirements.txt
       - run: python -m compileall -q cursed_platform platform/api
       - name: Migrações Alembic
         run: python -m unittest cursed_platform.tests.test_migration_base cursed_platform.tests.test_ensaio_migracao
