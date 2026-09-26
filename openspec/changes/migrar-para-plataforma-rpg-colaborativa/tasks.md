@@ -113,7 +113,7 @@
 
 ## 12. Verificação, implantação e corte
 
-- [ ] 12.1 Integrar lint, typecheck, testes Python, frontend, contratos, migrações e segurança no CI e verificar falha intencional de cada gate
+- [x] 12.1 Integrar lint, typecheck, testes Python, frontend, contratos, migrações e segurança no CI e verificar falha intencional de cada gate
 - [x] 12.2 Criar testes Playwright com contextos separados de Narrador e jogador para mesa, ficha, auditoria, cartas, segredos e reconexão e verificar execução repetível
 - [ ] 12.3 Executar revisão de acessibilidade da ficha, cartas, modais e grid e verificar ausência de bloqueadores para teclado, toque e leitores de tela
 - [x] 12.4 Executar teste de autorização negativo cobrindo recursos de outra mesa, personagens alheios, arquivos e canais privados e verificar negação sem vazamento de metadados

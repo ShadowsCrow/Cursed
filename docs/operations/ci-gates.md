@@ -28,4 +28,12 @@ Na retomada de 2026-09-26, a mesma sequência de comandos passou com PostgreSQL 
 
 O `npm ci` diretamente no diretório de trabalho encontrou uma biblioteca nativa travada por servidores Vite já abertos e interrompeu a substituição de `node_modules`. As dependências locais foram restauradas com `npm install --no-save --ignore-scripts --package-lock=false`; os gates de frontend e Playwright passaram novamente depois da restauração. O ambiente do GitHub Actions começa sem esses servidores.
 
-Os ensaios confirmam que os comandos locais detectam falhas e passam no estado atual. Ainda falta observar o workflow completo em GitHub Actions com o commit publicado. Por isso, a tarefa 12.1 permanece aberta.
+Os ensaios confirmam que os comandos locais detectam falhas e passam no estado atual.
+
+## Execução no GitHub Actions
+
+- Execução 36223237553 (commit `9b9a145`): falhou na suíte Python completa. `test_legacy_fixtures` importa o código do Streamlit, que não estava instalado no CI (localmente a `.venv` já o tinha). O gate detectou uma falha real.
+- Correção: o workflow instala `cursed_platform/requirements.txt` e `.workspace/requirements.txt` juntos.
+- Execução 36223323292: todas as etapas concluídas com sucesso em 2 min 54 s. Rodaram compilação, migrações, segurança, suíte Python com PostgreSQL, OpenAPI, cliente, sonda de incompatibilidade, typecheck, lint, build, Vitest e Playwright.
+
+A tarefa 12.1 foi concluída com essa observação.
