@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import axe from "axe-core";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -49,6 +49,7 @@ function createFakeApi() {
     if (path.endsWith("/inventario")) return { data: [{ ...item, equipado: equipped }], error: undefined };
     if (path.endsWith("/efeitos")) return { data: [efeito()], error: undefined };
     if (path.endsWith("/valores-derivados")) return { data: [valorDefesa()], error: undefined };
+    if (path.endsWith("/desgaste")) return { data: [], error: undefined };
     throw new Error(`GET não simulado: ${path}`);
   });
 
@@ -137,8 +138,11 @@ describe("CharacterSheetPage — 6.6/6.7 equipar atualiza efeitos e valores deri
     await waitFor(() => expect(api.POST).toHaveBeenCalled());
 
     fireEvent.click(screen.getByRole("tab", { name: "Efeitos" }));
-    expect(await screen.findByRole("button", { name: "Bênção da armadura" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Bênção da armadura (suspenso)" })).toBeNull();
+    const painelEfeitos = within(screen.getByRole("tabpanel", { name: "Efeitos", hidden: true }));
+    expect(await painelEfeitos.findByRole("button", { name: "Bênção da armadura", hidden: true })).toBeTruthy();
+    expect(painelEfeitos.queryByRole("button", { name: "Bênção da armadura (suspenso)", hidden: true })).toBeNull();
+    // A faixa de estado ativo mostra o efeito fora da aba, em qualquer seção.
+    expect(within(screen.getByRole("region", { name: "Estado ativo" })).getByRole("button", { name: "Bênção da armadura" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "Status" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Fontes de Defesa (Armadura)" })).toHaveProperty("textContent", "+5"));

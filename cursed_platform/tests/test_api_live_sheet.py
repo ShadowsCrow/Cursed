@@ -225,5 +225,24 @@ class ApiLiveSheetTest(unittest.TestCase):
                 self.assertNotIn("Cota", response.text)
 
 
+    def test_desgaste_expoe_faixas_do_dominio(self):
+        [exaustao, estresse] = self.client.get(f"{BASE}/desgaste").json()
+        self.assertEqual((exaustao["recurso"], exaustao["atual"], exaustao["registrado"]), ("exaustao", 0, False))
+        self.assertEqual(exaustao["faixa"]["nome"], "Estável")
+        self.assertEqual(estresse["pontos_ate_proxima"], 5)
+        with Session(self.engine) as session:
+            personagem = session.get(PersonagemRegistro, "lia")
+            personagem.ficha = {**personagem.ficha, "desgaste": {"exaustao": 9, "estresse": 5}}
+            session.commit()
+        [exaustao, estresse] = self.client.get(f"{BASE}/desgaste").json()
+        self.assertEqual((exaustao["faixa"]["nome"], exaustao["registrado"], exaustao["proxima_faixa"]["nome"]),
+                         ("Exausto", True, "No Limite"))
+        self.assertIn("−2 em testes físicos", exaustao["faixa"]["efeito"])
+        self.assertEqual(estresse["faixa"]["nome"], "Pressionado")
+        self.actor = "outro"
+        self.assertEqual(self.client.get(f"{BASE}/desgaste").status_code, 404)
+
+
 if __name__ == "__main__":
     unittest.main()
+

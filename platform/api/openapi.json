@@ -1475,6 +1475,39 @@
         "title": "EventoAuditoriaResumo",
         "type": "object"
       },
+      "FaixaDesgaste": {
+        "properties": {
+          "efeito": {
+            "title": "Efeito",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "max": {
+            "title": "Max",
+            "type": "integer"
+          },
+          "min": {
+            "title": "Min",
+            "type": "integer"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "efeito",
+          "min",
+          "max"
+        ],
+        "title": "FaixaDesgaste",
+        "type": "object"
+      },
       "FichaContrato": {
         "additionalProperties": true,
         "description": "Representação compatível de uma ficha transportada pela API.",
@@ -2944,6 +2977,65 @@
           "versao_esperada"
         ],
         "title": "TransicaoEfeitoRequest",
+        "type": "object"
+      },
+      "TrilhaDesgaste": {
+        "description": "Exaustão ou Estresse com a faixa atual e o próximo limiar, conforme as regras do domínio.",
+        "properties": {
+          "atual": {
+            "title": "Atual",
+            "type": "integer"
+          },
+          "faixa": {
+            "$ref": "#/components/schemas/FaixaDesgaste"
+          },
+          "maximo": {
+            "title": "Maximo",
+            "type": "integer"
+          },
+          "pontos_ate_proxima": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pontos Ate Proxima"
+          },
+          "proxima_faixa": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FaixaDesgaste"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recurso": {
+            "enum": [
+              "exaustao",
+              "estresse"
+            ],
+            "title": "Recurso",
+            "type": "string"
+          },
+          "registrado": {
+            "description": "Falso quando a ficha ainda não registra a trilha (valor 0 presumido).",
+            "title": "Registrado",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "recurso",
+          "atual",
+          "maximo",
+          "registrado",
+          "faixa"
+        ],
+        "title": "TrilhaDesgaste",
         "type": "object"
       },
       "ValidacaoCarta": {
@@ -5295,6 +5387,67 @@
         "summary": "Transicionar Carta",
         "tags": [
           "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste": {
+      "get": {
+        "description": "Exaustão e Estresse com faixa e penalidade vindas do domínio; a interface não recalcula regras.",
+        "operationId": "ler_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TrilhaDesgaste"
+                  },
+                  "title": "Response Ler Desgaste Mesas  Mesa Id  Personagens  Personagem Id  Desgaste Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Desgaste",
+        "tags": [
+          "Ficha viva"
         ]
       }
     },

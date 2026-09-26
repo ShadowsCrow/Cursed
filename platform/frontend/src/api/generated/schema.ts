@@ -562,6 +562,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ler Desgaste
+         * @description Exaustão e Estresse com faixa e penalidade vindas do domínio; a interface não recalcula regras.
+         */
+        get: operations["ler_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos": {
         parameters: {
             query?: never;
@@ -1381,6 +1401,19 @@ export interface components {
             /** Sessao Id */
             sessao_id?: string | null;
         };
+        /** FaixaDesgaste */
+        FaixaDesgaste: {
+            /** Efeito */
+            efeito: string;
+            /** Id */
+            id: string;
+            /** Max */
+            max: number;
+            /** Min */
+            min: number;
+            /** Nome */
+            nome: string;
+        };
         /**
          * FichaContrato
          * @description Representação compatível de uma ficha transportada pela API.
@@ -1907,6 +1940,30 @@ export interface components {
             motivo?: string | null;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /**
+         * TrilhaDesgaste
+         * @description Exaustão ou Estresse com a faixa atual e o próximo limiar, conforme as regras do domínio.
+         */
+        TrilhaDesgaste: {
+            /** Atual */
+            atual: number;
+            faixa: components["schemas"]["FaixaDesgaste"];
+            /** Maximo */
+            maximo: number;
+            /** Pontos Ate Proxima */
+            pontos_ate_proxima?: number | null;
+            proxima_faixa?: components["schemas"]["FaixaDesgaste"] | null;
+            /**
+             * Recurso
+             * @enum {string}
+             */
+            recurso: "exaustao" | "estresse";
+            /**
+             * Registrado
+             * @description Falso quando a ficha ainda não registra a trilha (valor 0 presumido).
+             */
+            registrado: boolean;
         };
         /** ValidacaoCarta */
         ValidacaoCarta: {
@@ -3171,6 +3228,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AquisicaoCartasResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrilhaDesgaste"][];
                 };
             };
             /** @description Validation Error */

@@ -247,6 +247,7 @@ export function useConfirmarDescanso(api: ApiClient, mesaId: string) {
         void queryClient.invalidateQueries({ queryKey: ["ficha", mesaId, resultado.personagem_id] });
         void queryClient.invalidateQueries({ queryKey: ["efeitos", mesaId, resultado.personagem_id] });
         void queryClient.invalidateQueries({ queryKey: ["valores-derivados", mesaId, resultado.personagem_id] });
+        void queryClient.invalidateQueries({ queryKey: ["desgaste", mesaId, resultado.personagem_id] });
       }
       void queryClient.invalidateQueries({ queryKey: ["personagens", mesaId] });
     },

@@ -11,8 +11,9 @@ from cursed_platform.contracts import (
     EfeitoPrevia, EfeitoResumo, EquiparItemRequest, EquiparItemResposta, FonteEfeitoResumo,
     FonteValorResumo, ImportacaoResultado, ImportarCodigoRequest, ItemInventarioResumo, ItemPrevia,
     ModificadorResumo, PermissoesFicha, PreviaImportacaoRequest, PreviaImportacaoResumo,
-    SituacionalResumo, ValorDerivadoResumo,
+    SituacionalResumo, TrilhaDesgaste, ValorDerivadoResumo,
 )
+from cursed_platform.domain.desgaste import RECURSOS as TRILHAS_DESGASTE, resumo_trilha
 from cursed_platform.persistence import ItemInventarioRegistro, MembroRegistro, MesaRegistro, PersonagemRegistro
 from cursed_platform.policies import avaliar_campos
 from cursed_platform.repositories import FichaRepository
@@ -139,6 +140,20 @@ def listar_valores_derivados(
             situacionais=[SituacionalResumo(**vars(s)) for s in v.situacionais],
         )
         for v in valores
+    ]
+
+
+@router.get("/desgaste", response_model=list[TrilhaDesgaste])
+def ler_desgaste(
+    mesa_id: str, personagem_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+) -> list[TrilhaDesgaste]:
+    """Exaustão e Estresse com faixa e penalidade vindas do domínio; a interface não recalcula regras."""
+    personagem = _personagem(session, mesa_id, personagem_id, ator)
+    desgaste = (personagem.ficha or {}).get("desgaste")
+    registrado = isinstance(desgaste, dict)
+    return [
+        TrilhaDesgaste(**resumo_trilha(recurso, desgaste), registrado=registrado and recurso in desgaste)
+        for recurso in TRILHAS_DESGASTE
     ]
 
 

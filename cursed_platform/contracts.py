@@ -704,3 +704,23 @@ class PreviaMigracaoCarta(BaseModel):
 class MigrarCartaRequest(BaseModel):
     versao_destino_id: str = Field(min_length=1, max_length=100)
     versao_esperada: int = Field(ge=0)
+
+
+class FaixaDesgaste(BaseModel):
+    id: str
+    nome: str
+    efeito: str
+    min: int
+    max: int
+
+
+class TrilhaDesgaste(BaseModel):
+    """Exaustão ou Estresse com a faixa atual e o próximo limiar, conforme as regras do domínio."""
+
+    recurso: Literal["exaustao", "estresse"]
+    atual: int
+    maximo: int
+    registrado: bool = Field(description="Falso quando a ficha ainda não registra a trilha (valor 0 presumido).")
+    faixa: FaixaDesgaste
+    proxima_faixa: FaixaDesgaste | None = None
+    pontos_ate_proxima: int | None = None

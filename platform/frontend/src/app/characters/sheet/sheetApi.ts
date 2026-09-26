@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import type { components } from "../../../api/generated/schema";
 
 import { useCommandPreview, type UseCommandPreviewResult } from "../../connectivity/useCommandPreview";
 import {
@@ -24,7 +25,23 @@ export const sheetKeys = {
   inventario: (mesaId: string, personagemId: string) => ["inventario", mesaId, personagemId] as const,
   efeitos: (mesaId: string, personagemId: string) => ["efeitos", mesaId, personagemId] as const,
   valoresDerivados: (mesaId: string, personagemId: string) => ["valores-derivados", mesaId, personagemId] as const,
+  desgaste: (mesaId: string, personagemId: string) => ["desgaste", mesaId, personagemId] as const,
 };
+
+export type TrilhaDesgaste = components["schemas"]["TrilhaDesgaste"];
+
+export function useDesgaste(api: ApiClient, mesaId: string, personagemId: string): UseQueryResult<TrilhaDesgaste[], Error> {
+  return useQuery({
+    queryKey: sheetKeys.desgaste(mesaId, personagemId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/mesas/{mesa_id}/personagens/{personagem_id}/desgaste", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível carregar Exaustão e Estresse."));
+      return data ?? [];
+    },
+  });
+}
 
 export function useFichaSnapshot(api: ApiClient, mesaId: string, personagemId: string): UseQueryResult<FichaSnapshot, Error> {
   return useQuery({

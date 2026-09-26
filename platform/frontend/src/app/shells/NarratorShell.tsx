@@ -4,6 +4,7 @@ import { AuditLog } from "../audit/AuditLog";
 import { NarratorLibrary } from "../cards/NarratorLibrary";
 import { InviteTools } from "../InviteTools";
 import { CharacterList } from "../characters/CharacterList";
+import { PendingRequests } from "../characters/PendingRequests";
 import { PublicEntities } from "../characters/PublicEntities";
 import { RestDialog } from "../characters/RestDialog";
 import type { ApiClient } from "../characters/types";
@@ -84,7 +85,7 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
               <InviteTools api={api} mesaId={mesa.id} />
               <span className="eyebrow">FILA DO NARRADOR</span>
               <h2>Pendências</h2>
-              <p className="body-copy">Solicitações de aprovação e ofertas de cartas aparecerão aqui quando as ferramentas do Narrador forem conectadas.</p>
+              <PendingRequests api={api} mesaId={mesa.id} />
               <div className="narrator-aside__foot"><Glyph name="scroll" size={16} /><span>Somente o Narrador vê este painel.</span></div>
             </aside>
           </div>
