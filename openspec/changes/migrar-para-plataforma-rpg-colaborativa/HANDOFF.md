@@ -28,7 +28,7 @@ Próximos passos da seção 10:
 - Python: `.venv/Scripts/python.exe -m unittest discover -s cursed_platform/tests -t .` (Streamlit: `cd app_streamlit && ../.venv/Scripts/python.exe -m unittest discover -s tests`).
 - Frontend (`platform/frontend`): `npm run typecheck`, `npm run lint -- --max-warnings 0`, `npm test`, `npm run build`, `npm run check:client`.
 - Contrato: após mudar a API, `python -m cursed_platform.export_openapi` e `npm run generate:client`.
-- Modo dev local (sem Supabase): API com `CURSED_DEV_AUTH=1` + SQLite em `platform/api/.dev/`; frontend com `platform/frontend/.env.local` (`VITE_DEV_AUTH=1`). Identidade `dev:<id>`, proibida em produção.
+- Modo dev local (sem Supabase): API com `CURSED_DEV_AUTH=1` + SQLite em `platform/api/.dev/`; frontend com `platform/frontend/.env.local` (`VITE_DEV_AUTH=1`). Identidade `dev:<id>`, proibida em produção. Os bancos em `platform/api/.dev/` (`cursed-dev.sqlite`, `capturas.sqlite`) estão na 0011: rode o `alembic upgrade head` de `platform/migration` apontando `CURSED_PLATFORM_DATABASE_URL` para eles antes de usar a sala.
 - Capturas de tela: `npm run capturas` (API dev na 8001, Vite na 5174; ver `platform/frontend/README.md`).
 - Supabase real (projeto `wvfrwmplruhwfkmwjtvl`, sa-east-1): credenciais em `platform/api/.env.supabase` e `platform/frontend/.env.supabase` (fora do Git; carregar com `set -a; . platform/api/.env.supabase; set +a`). Migrações aplicadas até `0012_sala`; RLS 25/25, bucket `cursed-privado`, 5 políticas. **Ainda sem contas de teste** — pedir ao usuário.
 - Não versionar: `app_streamlit/.streamlit/secrets.toml`, arquivos `.env*`, as skills copiadas do Codex em `.agents/skills` e `.claude/skills` (fora as `openspec-*`).
