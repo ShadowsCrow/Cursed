@@ -78,15 +78,15 @@
 
 ## 9. Catálogo e sistema de cartas
 
-- [ ] 9.1 Modelar definições, versões imutáveis, ativos, tags e procedência de cartas e verificar publicação e criação de nova versão
-- [ ] 9.2 Modelar campos específicos de habilidade, magia e item, preservando custos separados, e verificar que `custo` legado não preenche campos especializados por inferência
-- [ ] 9.3 Implementar editor e pré-visualização de cartas para o Narrador e verificar rascunho, validação e publicação
-- [ ] 9.4 Implementar concessão direta com destino por tipo e exceção explícita de aprendizado e verificar posse e auditoria
-- [ ] 9.5 Implementar ofertas independentes por destinatário com candidatos, limite de escolhas e validade e verificar limites mínimos/máximos e concorrência
-- [ ] 9.6 Implementar seleção de habilidade ou magia como disponibilidade para aprendizado e verificar que ela não aparece como aprendida sem completar o fluxo ou receber exceção
-- [ ] 9.7 Implementar ciclos de aprendizado, item/inventário, efeito e apresentação temporária separadamente e verificar suas transições permitidas e rejeitadas
-- [ ] 9.8 Criar interface animada e acessível de oferta, escolha e apresentação de cartas e verificar teclado, toque, movimento reduzido e confirmação
-- [ ] 9.9 Implementar migração explícita de instâncias para nova versão de carta e verificar prévia de diferenças, autorização e histórico
+- [x] 9.1 Modelar definições, versões imutáveis, ativos, tags e procedência de cartas e verificar publicação e criação de nova versão
+- [x] 9.2 Modelar campos específicos de habilidade, magia e item, preservando custos separados, e verificar que `custo` legado não preenche campos especializados por inferência
+- [x] 9.3 Implementar editor e pré-visualização de cartas para o Narrador e verificar rascunho, validação e publicação
+- [x] 9.4 Implementar concessão direta com destino por tipo e exceção explícita de aprendizado e verificar posse e auditoria
+- [x] 9.5 Implementar ofertas independentes por destinatário com candidatos, limite de escolhas e validade e verificar limites mínimos/máximos e concorrência
+- [x] 9.6 Implementar seleção de habilidade ou magia como disponibilidade para aprendizado e verificar que ela não aparece como aprendida sem completar o fluxo ou receber exceção
+- [x] 9.7 Implementar ciclos de aprendizado, item/inventário, efeito e apresentação temporária separadamente e verificar suas transições permitidas e rejeitadas
+- [x] 9.8 Criar interface animada e acessível de oferta, escolha e apresentação de cartas e verificar teclado, toque, movimento reduzido e confirmação
+- [x] 9.9 Implementar migração explícita de instâncias para nova versão de carta e verificar prévia de diferenças, autorização e histórico
 - [ ] 9.10 Realizar validação de mesa do fluxo de oferta e escolha e registrar clareza, ritmo, carga cognitiva e impacto sobre a percepção de evolução
 
 ## 10. Sala e grid em tempo real

@@ -414,3 +414,55 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
   .preview-footer { display: none; }
   .role-switch select { padding-left: .5rem; font-size: .66rem; }
 }
+
+/* ---- Cartas (9.3, 9.8) -------------------------------------------------- */
+.card-library { display: grid; gap: var(--space-6); }
+.section-heading__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.card-catalog, .card-group__list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.card-catalog__item, .card-group__item { display: grid; gap: var(--space-2); align-content: start; }
+.card-catalog__state { color: var(--muted); font-size: .85rem; margin: 0; }
+.card-catalog__actions, .card-group__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.card-face { display: grid; gap: var(--space-2); }
+.card-face__legacy { font-size: .8rem; color: var(--quiet); margin: 0; }
+.card-group { margin-top: var(--space-6); }
+.card-group__note { color: var(--muted); margin-top: 0; }
+.card-editor { width: min(64rem, 100%); }
+.card-editor__layout { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.card-editor__form { display: grid; gap: var(--space-3); }
+.card-editor__form label, .card-editor__costs label { display: grid; gap: var(--space-1); }
+.card-editor__costs { display: grid; gap: var(--space-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-3); }
+.card-editor__effect { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-3); display: grid; gap: var(--space-2); }
+.card-editor__problems { border-left: 3px solid var(--red); padding-left: var(--space-3); }
+.card-editor__review { color: var(--gold); border-left: 3px solid var(--gold); padding-left: var(--space-3); }
+.card-editor__versions { padding-left: var(--space-4); color: var(--muted); }
+.form-row { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.form-row > label { flex: 1 1 10rem; }
+.checkbox-row { display: flex; align-items: center; gap: var(--space-2); }
+.diff-table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+.diff-table th, .diff-table td { text-align: left; padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--border-subtle); }
+.offer-list { list-style: none; padding: 0; display: grid; gap: var(--space-3); }
+.offer-list__item { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-3); }
+.offer-dialog, .presentation-dialog { width: min(60rem, 100%); }
+.offer-chooser { display: grid; gap: var(--space-4); }
+.offer-chooser__cards { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); }
+.offer-card {
+  all: unset; box-sizing: border-box; cursor: pointer; border-radius: var(--radius-lg);
+  border: 2px solid transparent; padding: var(--space-1);
+  transition: transform var(--motion-normal) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-normal) ease;
+  animation: carta-entrada var(--motion-normal) ease both;
+  animation-delay: calc(var(--ordem, 0) * 90ms);
+}
+.offer-card:hover { transform: translateY(-4px); }
+.offer-card:focus-visible { box-shadow: var(--focus-ring); }
+.offer-card--selected { border-color: var(--gold); box-shadow: var(--shadow-float); transform: translateY(-6px); }
+.offer-chooser__counter { font-weight: 600; }
+.presentation .card-face { animation: carta-virada calc(var(--motion-normal) * 2) ease both; }
+@keyframes carta-entrada { from { opacity: 0; transform: translateY(18px) rotate(-2deg); } to { opacity: 1; transform: none; } }
+@keyframes carta-virada { from { opacity: 0; transform: perspective(900px) rotateY(80deg); } to { opacity: 1; transform: none; } }
+[data-movimento="reduzido"] .offer-card, [data-movimento="reduzido"] .card-face { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .offer-card, .presentation .card-face { animation: none; transition: none; }
+}
+@media (max-width: 720px) {
+  .card-editor__layout { grid-template-columns: 1fr; }
+}

@@ -1,6 +1,7 @@
 import type { components } from "../../api/generated/schema";
 import { Portrait } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
+import { PlayerLibrary, PresentationOverlay } from "../cards/PlayerLibrary";
 import { CharacterList } from "../characters/CharacterList";
 import { PublicEntities } from "../characters/PublicEntities";
 import type { ApiClient } from "../characters/types";
@@ -13,7 +14,7 @@ const playerCopy: Record<TableView, { eyebrow: string; title: string; descriptio
   overview: { eyebrow: "GRUPO", title: "Sua companhia", description: "Os personagens visíveis do grupo aparecerão aqui quando as consultas de ficha estiverem disponíveis." },
   character: { eyebrow: "MINHA FICHA", title: "Seu personagem em foco", description: "Abra, crie ou exclua suas fichas conforme a política definida pelo Narrador desta mesa." },
   activity: { eyebrow: "REGISTRO", title: "Registro", description: "As ações que dizem respeito a você e ao grupo, na ordem em que aconteceram." },
-  cards: { eyebrow: "BIBLIOTECA", title: "Suas cartas", description: "Habilidades, magias e itens autorizados aparecerão aqui quando o catálogo estiver conectado." },
+  cards: { eyebrow: "BIBLIOTECA", title: "Suas cartas", description: "Ofertas do Narrador aguardando sua escolha." },
   room: { eyebrow: "SALA", title: "Cena compartilhada", description: "A sala mostrará somente a cena e os elementos revelados ao grupo quando o módulo estiver ativo." },
 };
 
@@ -64,6 +65,8 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
         <CharacterList api={api} mesaId={mesa.id} userId={userId} role="jogador" onOpen={onOpenCharacter} />
       ) : view === "activity" ? (
         <AuditLog api={api} mesaId={mesa.id} role="jogador" />
+      ) : view === "cards" ? (
+        <PlayerLibrary api={api} mesaId={mesa.id} />
       ) : view === "overview" ? (
         <div className="screen-content">
           <section className="panel panel--wide workspace-status">
@@ -86,6 +89,7 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
           <span className="workspace-status__pill">Jogador</span>
         </section>
       )}
+      <PresentationOverlay api={api} mesaId={mesa.id} />
     </WorkspaceChrome>
   );
 }

@@ -79,7 +79,7 @@ export function EffectDetailIcon({ efeito, index }: { efeito: EfeitoResumo; inde
   );
 }
 
-function ModifiersEditor({ value, onChange, idPrefix }: { value: ModificadorResumo[]; onChange: (next: ModificadorResumo[]) => void; idPrefix: string }) {
+export function ModifiersEditor({ value, onChange, idPrefix }: { value: ModificadorResumo[]; onChange: (next: ModificadorResumo[]) => void; idPrefix: string }) {
   function updateRow(index: number, patch: Partial<ModificadorResumo>) {
     onChange(value.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }

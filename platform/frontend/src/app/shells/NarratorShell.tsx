@@ -1,6 +1,7 @@
 import type { components } from "../../api/generated/schema";
 import { Glyph } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
+import { NarratorLibrary } from "../cards/NarratorLibrary";
 import { CharacterList } from "../characters/CharacterList";
 import { PublicEntities } from "../characters/PublicEntities";
 import { RestDialog } from "../characters/RestDialog";
@@ -14,7 +15,7 @@ const narratorCopy: Record<TableView, { eyebrow: string; title: string; descript
   overview: { eyebrow: "PAINEL DO NARRADOR", title: "A campanha começa aqui.", description: "Este é o espaço da mesa para acompanhar personagens, decisões e cenas conforme os próximos módulos forem conectados." },
   character: { eyebrow: "PERSONAGENS", title: "O elenco da mesa", description: "Crie, abra, transfira e administre os personagens desta mesa, incluindo NPCs e fichas ocultas." },
   activity: { eyebrow: "REGISTRO", title: "História das mudanças", description: "Acompanhe, filtre e corrija as ações confirmadas desta mesa." },
-  cards: { eyebrow: "BIBLIOTECA", title: "Cartas da campanha", description: "O catálogo versionado e as ofertas serão adicionados em uma etapa própria." },
+  cards: { eyebrow: "BIBLIOTECA", title: "Cartas da campanha", description: "Crie, publique, ofereça e apresente habilidades, magias, itens e efeitos." },
   room: { eyebrow: "SALA", title: "Cena compartilhada", description: "A sala em tempo real será ativada quando o módulo de grid estiver implementado para esta mesa." },
 };
 
@@ -63,6 +64,8 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
         <CharacterList api={api} mesaId={mesa.id} userId={userId} role="narrador" onOpen={onOpenCharacter} />
       ) : view === "activity" ? (
         <AuditLog api={api} mesaId={mesa.id} role="narrador" />
+      ) : view === "cards" ? (
+        <NarratorLibrary api={api} mesaId={mesa.id} />
       ) : view === "overview" ? (
         <div className="screen-content">
           <div className="workspace-status-row">

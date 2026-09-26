@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 
 import { Glyph } from "../../../ui/Display";
+import { CharacterCardsPanel } from "../../cards/CharacterCardsPanel";
 import { useConnectivityStatus } from "../../connectivity/useConnectivityStatus";
 import type { ApiClient } from "../types";
 import { DerivedValueGroup } from "./DerivedValueGroup";
@@ -31,6 +32,7 @@ const SECTIONS = [
   { id: "inventario", label: "Inventário" },
   { id: "status", label: "Status" },
   { id: "efeitos", label: "Efeitos" },
+  { id: "cartas", label: "Cartas" },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -207,6 +209,15 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
           <EffectsPanel
             efeitos={efeitosQuery.data}
             admin={permissoes?.papel === "narrador" ? { api, mesaId, personagemId, versao, onVersaoConfirmada: bumpVersao } : undefined}
+          />
+        )}
+      </div>
+
+      <div hidden={secao !== "cartas"}>
+        {permissoes && (
+          <CharacterCardsPanel
+            api={api} mesaId={mesaId} personagemId={personagemId} versao={versao}
+            papel={permissoes.papel} podeEditar={permissoes.editar}
           />
         )}
       </div>
