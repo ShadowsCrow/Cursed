@@ -15,7 +15,7 @@ const PERMISSOES: PermissoesFicha = {
   papel: "jogador", editar: true, excluir: true, transferir: false, campos_bloqueados: [], campos_exigem_aprovacao: [],
 };
 const VALORES: ValorDerivadoResumo[] = [
-  { chave: "atributo:forca", rotulo: "Força", grupo: "atributo", total: 3,
+  { chave: "atributo:forca", rotulo: "Força", grupo: "atributo", calculavel: true, total: 3,
     fontes: [{ tipo: "base", descricao: "Valor base", valor: 2 }, { tipo: "ajuste", descricao: "Ajuste manual", valor: 1 }], situacionais: [] },
 ];
 
@@ -65,10 +65,54 @@ describe("AttributeTable — edição de atributos e perícias", () => {
     const onSave = montar();
     fireEvent.click(screen.getByRole("button", { name: "Editar valores" }));
     fireEvent.change(screen.getByLabelText("Base de Vigor"), { target: { value: "1.5" } });
-    expect(screen.getByText("Use apenas números inteiros.")).toBeTruthy();
+    expect(screen.getByText("Use um número inteiro.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Base de Vigor").textContent).toBe("—");
+  });
+
+  it("jogador digita valor inválido: erro junto ao campo e salvar indisponível", () => {
+    montar();
+    fireEvent.click(screen.getByRole("button", { name: "Editar valores" }));
+    const vigor = screen.getByLabelText("Base de Vigor");
+    expect((vigor as HTMLInputElement).min).toBe("1");
+    expect((vigor as HTMLInputElement).max).toBe("5");
+    fireEvent.change(vigor, { target: { value: "8" } });
+    expect(vigor.getAttribute("aria-invalid")).toBe("true");
+    expect(document.getElementById(vigor.getAttribute("aria-describedby") ?? "")?.textContent)
+      .toBe("Vai de 1 a 5; acima disso, use o ajuste.");
+    expect((screen.getByRole("button", { name: /Salvar alterações/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(vigor, { target: { value: "5" } });
+    expect(vigor.getAttribute("aria-invalid")).toBeNull();
+    expect((screen.getByRole("button", { name: "Salvar alterações (1)" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("ajuste não tem limite e NPC ou monstro não seguem os limites do valor base", () => {
+    montar();
+    fireEvent.click(screen.getByRole("button", { name: "Editar valores" }));
+    fireEvent.change(screen.getByLabelText("Ajuste manual de Vigor"), { target: { value: "9" } });
+    expect(screen.getByLabelText("Ajuste manual de Vigor").getAttribute("aria-invalid")).toBeNull();
+    cleanup();
+    render(
+      <AttributeTable categoria="atributo" titulo="Atributos" eyebrow="BASE" grupos={GRUPOS_ATRIBUTOS}
+        ficha={FICHA} valores={VALORES} permissoes={PERMISSOES} onSave={vi.fn()} aplicarLimites={false} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Editar valores" }));
+    fireEvent.change(screen.getByLabelText("Base de Vigor"), { target: { value: "8" } });
+    expect(screen.getByLabelText("Base de Vigor").getAttribute("aria-invalid")).toBeNull();
+  });
+
+  it("perícia base vai de 0 a 5", () => {
+    render(
+      <AttributeTable categoria="pericia" titulo="Perícias" eyebrow="ESP" grupos={[{ titulo: "Talentos", nomes: ["Esquiva"] }]}
+        ficha={FICHA} valores={[]} permissoes={PERMISSOES} onSave={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Editar valores" }));
+    const esquiva = screen.getByLabelText("Base de Esquiva") as HTMLInputElement;
+    expect(esquiva.max).toBe("5");
+    expect(esquiva.min).toBe("0");
+    fireEvent.change(esquiva, { target: { value: "0" } });
+    expect(esquiva.getAttribute("aria-invalid")).toBeNull();
   });
 
   it("respeita campos bloqueados, aprovação e leitura sem permissão", () => {

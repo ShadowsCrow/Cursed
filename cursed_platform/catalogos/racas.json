@@ -1,0 +1,110 @@
+[
+  {
+    "nome": "Humano",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Elfo",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Anão",
+    "deslocamento": 7,
+    "tamanho": "Pequeno",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Gnomo",
+    "deslocamento": 6,
+    "tamanho": "Pequeno",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Orc",
+    "deslocamento": 9,
+    "tamanho": "Grande",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Troll",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Goblin",
+    "deslocamento": 6,
+    "tamanho": "Pequeno",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Drow",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Golias",
+    "deslocamento": 10,
+    "tamanho": "Enorme",
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  }
+]

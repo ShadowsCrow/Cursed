@@ -14,7 +14,7 @@ describe("DerivedValueGroup — 6.7 explicação das fontes de valores derivados
       {
         chave: "defesa:armadura",
         rotulo: "Defesa (Armadura)",
-        grupo: "status",
+        grupo: "status", calculavel: true,
         total: 6,
         fontes: [
           { tipo: "atributo", descricao: "Vigor", valor: 3 },
@@ -54,7 +54,7 @@ describe("DerivedValueGroup — 6.7 explicação das fontes de valores derivados
 
   it("não apresenta violações de acessibilidade detectáveis automaticamente", async () => {
     const valores: ValorDerivadoResumo[] = [
-      { chave: "atributo:vigor", rotulo: "Vigor", grupo: "atributo", total: 3, fontes: [{ tipo: "base", descricao: "Valor base", valor: 3 }], situacionais: [] },
+      { chave: "atributo:vigor", rotulo: "Vigor", grupo: "atributo", calculavel: true, total: 3, fontes: [{ tipo: "base", descricao: "Valor base", valor: 3 }], situacionais: [] },
     ];
     render(<DerivedValueGroup eyebrow="BASE MECÂNICA" title="Atributos" valores={valores} grupo="atributo" emptyMessage="Nenhum." />);
     fireEvent.click(screen.getByRole("button", { name: "Fontes de Vigor" }));

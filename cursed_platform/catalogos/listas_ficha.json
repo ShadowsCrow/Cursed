@@ -1,0 +1,98 @@
+{
+  "sexos": [
+    "Masculino",
+    "Feminino",
+    "Outro"
+  ],
+  "alinhamentos": [
+    "Leal | Bom",
+    "Neutro | Bom",
+    "Caótico | Bom",
+    "Leal | Neutro",
+    "Neutro | Neutro",
+    "Caótico | Neutro",
+    "Leal | Mal",
+    "Neutro | Mal",
+    "Caótico | Mal"
+  ],
+  "pecados": [
+    {
+      "nome": "Ira",
+      "icone": "😡"
+    },
+    {
+      "nome": "Gula",
+      "icone": "🍔"
+    },
+    {
+      "nome": "Ganância",
+      "icone": "💰",
+      "equivalentes": [
+        "Ganancia"
+      ]
+    },
+    {
+      "nome": "Luxúria",
+      "icone": "🔥"
+    },
+    {
+      "nome": "Inveja",
+      "icone": "👀"
+    },
+    {
+      "nome": "Preguiça",
+      "icone": "😴"
+    },
+    {
+      "nome": "Orgulho",
+      "icone": "👑"
+    }
+  ],
+  "campos_personalidade": [
+    {
+      "chave": "coisa_favorita",
+      "rotulo": "Coisa favorita",
+      "dica": "Ex: runas antigas"
+    },
+    {
+      "chave": "odeia",
+      "rotulo": "O que odeia",
+      "dica": "Ex: traição"
+    },
+    {
+      "chave": "quando_me_veem",
+      "rotulo": "Quando me veem pensam que",
+      "dica": "Ex: um sábio distante"
+    },
+    {
+      "chave": "manias",
+      "rotulo": "Manias ou hábitos",
+      "dica": "Ex: roer unha"
+    },
+    {
+      "chave": "vivo_para",
+      "rotulo": "Vivo para",
+      "dica": "Ex: proteger os inocentes"
+    },
+    {
+      "chave": "meu_lema",
+      "rotulo": "Meu lema",
+      "dica": "Ex: O dever acima de tudo"
+    },
+    {
+      "chave": "medo",
+      "rotulo": "Medo ou fobia",
+      "dica": "Ex: aranhas gigantes"
+    },
+    {
+      "chave": "valor_inquebravel",
+      "rotulo": "Valor inquebrável",
+      "dica": "Ex: lealdade"
+    },
+    {
+      "chave": "religiao",
+      "rotulo": "Religião ou crença",
+      "dica": "Ex: Deusa da Lua"
+    }
+  ]
+}

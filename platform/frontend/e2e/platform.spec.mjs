@@ -36,11 +36,11 @@ test("mesa, ficha, auditoria e segredos em contextos separados", async ({ browse
     await jogador.pagina.goto(`${APP}/mesas/${m}/personagens/${lia}`);
     await expect(jogador.pagina.getByRole("heading", { name: "Lia Andarilha" })).toBeVisible();
     await jogador.pagina.getByRole("tab", { name: "Efeitos" }).click();
-    await expect(jogador.pagina.getByRole("tabpanel", { name: "Efeitos" }).getByRole("button", { name: "Envenenado" })).toBeVisible();
+    await expect(jogador.pagina.getByRole("tabpanel", { name: "Efeitos" }).getByRole("button", { name: "Envenenado", exact: true })).toBeVisible();
     await verificarAxe(jogador.pagina, "ficha");
     await jogador.pagina.setViewportSize({ width: 320, height: 700 });
     expect(await jogador.pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-    await jogador.pagina.getByRole("tabpanel", { name: "Efeitos" }).getByRole("button", { name: "Envenenado" }).tap();
+    await jogador.pagina.getByRole("tabpanel", { name: "Efeitos" }).getByRole("button", { name: "Envenenado", exact: true }).tap();
     await expect(jogador.pagina.getByText("Picada da aranha")).toBeVisible();
     await narrador.pagina.goto(`${APP}/mesas/${m}?painel=activity`);
     await expect(narrador.pagina.getByRole("heading", { name: "História das mudanças" })).toBeVisible();
@@ -124,5 +124,91 @@ test("sala recupera snapshot após desconexão sem revelar token oculto", async 
   } finally {
     await jogador.contexto.close();
     await narrador.contexto.close();
+  }
+});
+
+test("inventário em grade: colocar, girar e equipar", async ({ browser }) => {
+  const { m, lia } = await semear();
+  const jogador = await abrir(browser, "jogador-1", `/mesas/${m}/personagens/${lia}?secao=inventario`);
+  try {
+    const painel = jogador.pagina.getByRole("tabpanel", { name: "Inventário" });
+    const grade = painel.getByRole("region", { name: "Inventário em grade" });
+    await expect(grade).toBeVisible();
+    await grade.getByRole("region", { name: "Fora da grade" }).getByRole("button", { name: /Lâmina Rúnica/ }).click();
+    await grade.locator(".grade-inventario__celula").nth(0).click();
+    const lamina = grade.getByRole("button", { name: /^Lâmina Rúnica, arma de uma mão, 1 por 3, coluna 1, linha 1/ });
+    await expect(lamina).toBeVisible();
+    await expect(lamina).toHaveAttribute("aria-pressed", "true");
+    await grade.getByRole("button", { name: "Girar" }).click();
+    await expect(grade.getByRole("button", { name: /^Lâmina Rúnica, arma de uma mão, 3 por 1, coluna 1, linha 1/ })).toBeVisible();
+    await grade.getByRole("button", { name: "Equipar" }).click();
+    await expect(grade.getByRole("button", { name: /^Lâmina Rúnica.*, equipado/ })).toBeVisible();
+    await verificarAxe(jogador.pagina, "inventário em grade");
+    await expect.poll(async () => {
+      const servidor = await chamar("jogador-1", "GET", `/mesas/${m}/personagens/${lia}/inventario/grade`);
+      const item = servidor.itens.find((i) => i.nome === "Lâmina Rúnica");
+      return item && [item.coluna, item.linha, item.girado, item.equipado];
+    }, { timeout: 5000 }).toEqual([0, 0, true, true]);
+  } finally {
+    await jogador.contexto.close();
+  }
+});
+
+test("corpos padrão: o Narrador concede e o jogador carrega o que cabe", async ({ browser }) => {
+  const { m, lia } = await semear();
+  const narrador = await abrir(browser, "narrador", `/mesas/${m}/personagens/${lia}?secao=cartas`);
+  const jogador = await abrir(browser, "jogador-1", `/mesas/${m}/personagens/${lia}?secao=inventario`);
+  async function conceder(opcao) {
+    await narrador.pagina.getByRole("button", { name: "Conceder carta" }).click();
+    const dialogo = narrador.pagina.getByRole("dialog", { name: "Conceder carta" });
+    await dialogo.getByLabel("Carta publicada").selectOption({ label: opcao });
+    await dialogo.getByRole("button", { name: "Conceder" }).click();
+    await expect(dialogo).toBeHidden();
+  }
+  try {
+    await conceder("Corpo Médio (Item, v1)");
+    await jogador.pagina.reload();
+    const grade = jogador.pagina.getByRole("region", { name: "Inventário em grade" });
+    const fora = grade.getByRole("region", { name: "Fora da grade" });
+    // Lia é Média com Força 1: 4 colunas e 3 linhas, mais a linha vermelha. O corpo inteiro (4 x 5) não cabe.
+    await fora.getByRole("button", { name: "Corpo Médio (4 x 5)" }).click();
+    await grade.locator(".grade-inventario__celula").nth(0).click();
+    await expect(grade.getByText(/Não dá para soltar Corpo Médio aí: fica fora da grade/)).toBeVisible();
+    await conceder("Corpo Médio (com ajuda) (Item, v1)");
+    await jogador.pagina.reload();
+    await grade.getByRole("region", { name: "Fora da grade" }).getByRole("button", { name: "Corpo Médio (com ajuda) (4 x 3)" }).click();
+    await grade.locator(".grade-inventario__celula").nth(0).click();
+    await expect(grade.getByRole("button", { name: /^Corpo Médio \(com ajuda\), item, 4 por 3, coluna 1, linha 1/ })).toBeVisible();
+    await expect.poll(async () => {
+      const servidor = await chamar("jogador-1", "GET", `/mesas/${m}/personagens/${lia}/inventario/grade`);
+      const corpo = servidor.itens.find((i) => i.nome === "Corpo Médio (com ajuda)");
+      return corpo && [corpo.coluna, corpo.linha, servidor.celulas_ocupadas];
+    }, { timeout: 5000 }).toEqual([0, 0, 12]);
+  } finally {
+    await narrador.contexto.close();
+    await jogador.contexto.close();
+  }
+});
+
+test("troca de retrato pelo jogador aparece no cabeçalho da ficha", async ({ browser }) => {
+  const { m, lia } = await semear();
+  const jogador = await abrir(browser, "jogador-1", `/mesas/${m}/personagens/${lia}`);
+  try {
+    await expect(jogador.pagina.getByRole("heading", { name: "Lia Andarilha" })).toBeVisible();
+    // PNG 1 x 1 válido; o servidor confere o conteúdo, não a extensão.
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+    await jogador.pagina.getByTestId("upload-retrato").setInputFiles({ name: "retrato.png", mimeType: "image/png", buffer: png });
+    await expect(jogador.pagina.getByRole("status").filter({ hasText: "Imagem de retrato atualizada." })).toBeVisible();
+    const retrato = jogador.pagina.getByRole("img", { name: "Retrato de Lia Andarilha" });
+    await expect(retrato).toBeVisible();
+    await expect(retrato).toHaveAttribute("src", /^data:image\/webp;base64,/);
+    await expect(jogador.pagina.getByRole("button", { name: "Trocar retrato" })).toBeVisible();
+    const falso = Buffer.from("isto nao e uma imagem");
+    await jogador.pagina.getByTestId("upload-retrato").setInputFiles({ name: "falso.png", mimeType: "image/png", buffer: falso });
+    await expect(jogador.pagina.getByRole("alert").filter({ hasText: "PNG, JPEG ou WEBP" })).toBeVisible();
+    const registro = await chamar("narrador", "GET", `/mesas/${m}/auditoria`);
+    expect(registro.eventos.some((e) => e.resumo === "Lia Andarilha: retrato alterado")).toBe(true);
+  } finally {
+    await jogador.contexto.close();
   }
 });

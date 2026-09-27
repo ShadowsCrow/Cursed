@@ -17,13 +17,14 @@ function createFakeApi() {
   let versao = 2;
   const item: ItemInventarioResumo = {
     id: "item-1", tipo: "armadura", nome: "Cota de malha", quantidade: 1, equipado: false,
-    cargas_atuais: null, cargas_maximas: null, dados: { armadura: 2 }, efeitos: ["efeito-1"],
+    cargas_atuais: null, cargas_maximas: null, dados: { armadura: 2 }, efeitos: ["efeito-1"], girado: false,
+    subtipo: "peitoral", largura: 2, altura: 2, coluna: 0, linha: 0,
   };
 
   function efeito(): EfeitoResumo {
     return {
       id: "efeito-1", nome: "Bênção da armadura", descricao: "Reforça a proteção enquanto equipada.",
-      estado: equipped ? "ativo" : "suspenso", duracao_rodadas: null, ativacao: "enquanto_equipado",
+      estado: equipped ? "ativo" : "suspenso", derivado: false, icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" }, duracao_rodadas: null, ativacao: "enquanto_equipado",
       fontes: [{ tipo: "equipamento", descricao: "Cota de malha", equipamento_id: "item-1" }],
       modificadores: [{ alvo: "defesa:armadura", valor: 2, contexto: null }],
     };
@@ -31,7 +32,7 @@ function createFakeApi() {
 
   function valorDefesa(): ValorDerivadoResumo {
     return {
-      chave: "defesa:armadura", rotulo: "Defesa (Armadura)", grupo: "status",
+      chave: "defesa:armadura", rotulo: "Defesa (Armadura)", grupo: "status", calculavel: true,
       total: equipped ? 5 : 3,
       fontes: equipped
         ? [{ tipo: "atributo", descricao: "Vigor", valor: 3 }, { tipo: "efeito", descricao: "Cota de malha — Bênção da armadura", valor: 2, efeito_id: "efeito-1", item_id: "item-1" }]
@@ -42,11 +43,21 @@ function createFakeApi() {
 
   const GET = vi.fn(async (path: string) => {
     if (path.endsWith("/ficha")) {
-      const snapshot: FichaSnapshot = { mesa_id: "mesa-1", personagem_id: "pj-1", versao, ficha: { personagem: { nome: "Nara Exemplo" } } };
+      const snapshot: FichaSnapshot = { mesa_id: "mesa-1", personagem_id: "pj-1", versao, tipo: "personagem", ficha: { personagem: { nome: "Nara Exemplo" } } };
       return { data: snapshot, error: undefined };
     }
     if (path.endsWith("/permissoes")) return { data: permissoesFicha, error: undefined };
     if (path.endsWith("/inventario")) return { data: [{ ...item, equipado: equipped }], error: undefined };
+    if (path.endsWith("/inventario/grade")) {
+      return {
+        data: {
+          versao, forca: 2, tamanho: "medio", tamanho_origem: "raca", colunas_verdes: 4, linhas_verdes: 4, colunas: 4, linhas: 5,
+          ampliacoes: [], sobrecarga: false, itens_em_sobrecarga: [], maos_ocupadas: 0, celulas_ocupadas: 0, celulas_verdes: 16,
+          itens: [{ ...item, equipado: equipped }],
+        },
+        error: undefined,
+      };
+    }
     if (path.endsWith("/efeitos")) return { data: [efeito()], error: undefined };
     if (path.endsWith("/valores-derivados")) return { data: [valorDefesa()], error: undefined };
     if (path.endsWith("/desgaste")) return { data: [], error: undefined };
@@ -62,7 +73,18 @@ function createFakeApi() {
     throw new Error(`POST não simulado: ${path}`);
   });
 
-  return { api: { GET, POST } as unknown as ApiClient, GET, POST };
+  // Equipar pela grade grava a arrumação inteira: só o que está na grade é levado e equipado.
+  const PUT = vi.fn(async (path: string, options: { body: { itens: Array<{ item_id: string; equipado: boolean }> } }) => {
+    if (path.endsWith("/inventario/arrumacao")) {
+      equipped = options.body.itens.find((i) => i.item_id === "item-1")?.equipado ?? equipped;
+      versao += 1;
+      const grade = await GET("/inventario/grade");
+      return { data: grade.data, error: undefined, response: { status: 200 } };
+    }
+    throw new Error(`PUT não simulado: ${path}`);
+  });
+
+  return { api: { GET, POST, PUT } as unknown as ApiClient, GET, POST, PUT };
 }
 
 function renderPage(api: ApiClient, initialEntry = "/ficha") {
@@ -118,7 +140,7 @@ describe("CharacterSheetPage — 6.6/6.7 equipar atualiza efeitos e valores deri
   afterEach(() => cleanup());
 
   it("equipar o item muda o estado do efeito ligado e o total derivado exibido", async () => {
-    const { api } = createFakeApi();
+    const { api, PUT } = createFakeApi();
     renderPage(api);
 
     await screen.findByRole("tab", { name: "Informações básicas", selected: true });
@@ -133,9 +155,12 @@ describe("CharacterSheetPage — 6.6/6.7 equipar atualiza efeitos e valores deri
     expect(await screen.findByText("Nenhum item equipado no momento.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "Inventário" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Equipar" }));
+    const cota = await screen.findByRole("button", { name: /^Cota de malha, peitoral, 2 por 2, coluna 1, linha 1/ });
+    fireEvent.keyDown(cota, { key: "Enter" });
+    fireEvent.keyDown(cota, { key: "Escape" });
+    fireEvent.click(screen.getByRole("button", { name: "Equipar" }));
 
-    await waitFor(() => expect(api.POST).toHaveBeenCalled());
+    await waitFor(() => expect(PUT).toHaveBeenCalled(), { timeout: 2000 });
 
     fireEvent.click(screen.getByRole("tab", { name: "Efeitos" }));
     const painelEfeitos = within(screen.getByRole("tabpanel", { name: "Efeitos", hidden: true }));

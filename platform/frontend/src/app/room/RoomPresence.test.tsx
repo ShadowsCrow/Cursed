@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ApiClient } from "../characters/types";
-import { RoomPresence } from "./RoomPresence";
+import { RoomPresence, TableEvents } from "./RoomPresence";
 
 function ambiente() {
   let status: (status: "SUBSCRIBED" | "CHANNEL_ERROR") => void = () => {};
@@ -105,5 +105,54 @@ describe("presença privada da mesa", () => {
     await act(async () => { concluir(); await primeira; });
     await waitFor(() => expect(atualizar).toHaveBeenCalledTimes(2));
     expect(atualizar).toHaveBeenCalledWith({ queryKey: ["sala", "mesa"] });
+  });
+
+  it("recarrega trocas e grades quando uma oferta de item muda", async () => {
+    const a = ambiente();
+    const { queryClient } = montar(<RoomPresence api={a.api} mesaId="mesa" userId="ana"
+      realtime={{ client: a.client, accessToken: "token" }} />);
+    await waitFor(() => expect(a.channel).toHaveBeenCalledOnce());
+    const atualizar = vi.spyOn(queryClient, "invalidateQueries").mockResolvedValue(undefined);
+    await act(async () => { a.status("SUBSCRIBED"); });
+    atualizar.mockClear();
+    await act(async () => { a.evento("oferta.alterada"); });
+    expect(atualizar).toHaveBeenCalledWith({ queryKey: ["ofertas-item", "mesa"] });
+    expect(atualizar).toHaveBeenCalledWith({ queryKey: ["grade-inventario", "mesa"] });
+    expect(atualizar).not.toHaveBeenCalledWith({ queryKey: ["sala", "mesa"] });
+  });
+
+  it("na página da ficha, assina só as trocas, sem presença", async () => {
+    const a = ambiente();
+    const { queryClient, unmount } = montar(<TableEvents api={a.api} mesaId="mesa" realtime={{ client: a.client, accessToken: "token" }} />);
+    await waitFor(() => expect(a.channel).toHaveBeenCalledWith("mesa:mesa", { config: { private: true } }));
+    expect(a.setAuth).toHaveBeenCalledWith("token");
+    const atualizar = vi.spyOn(queryClient, "invalidateQueries").mockResolvedValue(undefined);
+    await act(async () => { a.evento("oferta.alterada"); });
+    expect(atualizar).toHaveBeenCalledWith({ queryKey: ["ofertas-item", "mesa"] });
+    expect(a.track).not.toHaveBeenCalled();
+    unmount();
+    expect(a.removeChannel).toHaveBeenCalledOnce();
+  });
+
+  it("sem acesso ao canal da mesa, a ficha não assina nada", async () => {
+    const a = ambiente();
+    a.GET.mockResolvedValue({ data: [], error: undefined });
+    montar(<TableEvents api={a.api} mesaId="mesa" realtime={{ client: a.client, accessToken: "token" }} />);
+    await waitFor(() => expect(a.GET).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 20));
+    expect(a.channel).not.toHaveBeenCalled();
+  });
+
+  it("recarrega a sala, inclusive chão e baús, quando um recipiente muda", async () => {
+    const a = ambiente();
+    const { queryClient } = montar(<RoomPresence api={a.api} mesaId="mesa" userId="ana"
+      realtime={{ client: a.client, accessToken: "token" }} />);
+    await waitFor(() => expect(a.channel).toHaveBeenCalledOnce());
+    const atualizar = vi.spyOn(queryClient, "invalidateQueries").mockResolvedValue(undefined);
+    await act(async () => { a.status("SUBSCRIBED"); });
+    await waitFor(() => expect(atualizar).toHaveBeenCalledTimes(1));
+    await act(async () => { a.evento("recipiente.alterado"); });
+    await waitFor(() => expect(atualizar).toHaveBeenCalledTimes(2));
+    expect(atualizar).toHaveBeenLastCalledWith({ queryKey: ["sala", "mesa"] });
   });
 });

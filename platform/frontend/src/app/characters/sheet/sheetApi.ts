@@ -9,6 +9,7 @@ import {
   type EfeitoResumo,
   type FichaContrato,
   type FichaSnapshot,
+  type GradeInventario,
   type ImportacaoResultado,
   type ItemInventarioResumo,
   type ModificadorResumo,
@@ -26,6 +27,7 @@ export const sheetKeys = {
   efeitos: (mesaId: string, personagemId: string) => ["efeitos", mesaId, personagemId] as const,
   valoresDerivados: (mesaId: string, personagemId: string) => ["valores-derivados", mesaId, personagemId] as const,
   desgaste: (mesaId: string, personagemId: string) => ["desgaste", mesaId, personagemId] as const,
+  grade: (mesaId: string, personagemId: string) => ["grade-inventario", mesaId, personagemId] as const,
 };
 
 export type TrilhaDesgaste = components["schemas"]["TrilhaDesgaste"];
@@ -203,6 +205,7 @@ export function useEquipCommand({
       );
       void queryClient.invalidateQueries({ queryKey: sheetKeys.efeitos(mesaId, personagemId) });
       void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
+      void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
       return resposta.item;
     },
   });
@@ -343,4 +346,138 @@ export function useImportarCodigo(api: ApiClient, mesaId: string, personagemId: 
       void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
     },
   });
+}
+
+/** Grade de carga calculada pelo servidor (carga-por-espacos). */
+export function useGradeInventario(api: ApiClient, mesaId: string, personagemId: string): UseQueryResult<GradeInventario, Error> {
+  return useQuery({
+    queryKey: sheetKeys.grade(mesaId, personagemId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/mesas/{mesa_id}/personagens/{personagem_id}/inventario/grade", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível carregar a grade do inventário."));
+      return data as GradeInventario;
+    },
+  });
+}
+
+export interface PosicaoArrumacao {
+  item_id: string;
+  coluna: number | null;
+  linha: number | null;
+  girado: boolean;
+  equipado: boolean;
+  /** Só armas versáteis: empunhadura com uma ou duas mãos. */
+  maos?: number;
+}
+
+export class ConflitoArrumacao extends Error {}
+
+export type OfertaItem = components["schemas"]["OfertaItemResumo"];
+
+export const ofertasItemKey = (mesaId: string) => ["ofertas-item", mesaId] as const;
+
+/** Ofertas pendentes em que o usuário pode agir. Sem tempo real, a lista é reconsultada a cada `intervaloMs`. */
+export function useOfertasItem(api: ApiClient, mesaId: string, intervaloMs?: number): UseQueryResult<OfertaItem[], Error> {
+  return useQuery({
+    queryKey: ofertasItemKey(mesaId),
+    refetchInterval: intervaloMs,
+    queryFn: async () => {
+      const { data, error } = await api.GET("/mesas/{mesa_id}/ofertas-item", { params: { path: { mesa_id: mesaId } } });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível carregar as trocas."));
+      return data ?? [];
+    },
+  });
+}
+
+export async function ofertarItem(
+  api: ApiClient, mesaId: string, personagemId: string, itemId: string, paraPersonagemId: string,
+): Promise<OfertaItem> {
+  const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/ofertas", {
+    params: { path: { mesa_id: mesaId, personagem_id: personagemId, item_id: itemId } },
+    body: { para_personagem_id: paraPersonagemId },
+  });
+  if (error || !data) throw new Error(extractErrorMessage(error, "Não foi possível oferecer o item."));
+  return data;
+}
+
+export async function aceitarOferta(
+  api: ApiClient, mesaId: string, ofertaId: string, versaoEsperada: number,
+  lugar?: { coluna: number; linha: number; girado: boolean },
+): Promise<void> {
+  const { error } = await api.POST("/mesas/{mesa_id}/ofertas-item/{oferta_id}/aceitar", {
+    params: { path: { mesa_id: mesaId, oferta_id: ofertaId } },
+    body: { versao_esperada: versaoEsperada, coluna: lugar?.coluna ?? null, linha: lugar?.linha ?? null, girado: lugar?.girado ?? false },
+  });
+  if (error) throw new Error(extractErrorMessage(error, "Não foi possível aceitar a oferta."));
+}
+
+export async function encerrarOferta(api: ApiClient, mesaId: string, ofertaId: string, acao: "recusar" | "cancelar"): Promise<void> {
+  const caminho = acao === "recusar" ? "/mesas/{mesa_id}/ofertas-item/{oferta_id}/recusar" : "/mesas/{mesa_id}/ofertas-item/{oferta_id}/cancelar";
+  const { error } = await api.POST(caminho, { params: { path: { mesa_id: mesaId, oferta_id: ofertaId } } });
+  if (error) throw new Error(extractErrorMessage(error, acao === "recusar" ? "Não foi possível recusar." : "Não foi possível cancelar."));
+}
+
+/** Deixa o item no chão da cena ativa (ou num baú). O item sai do personagem com seus efeitos. */
+export async function largarItem(
+  api: ApiClient, mesaId: string, personagemId: string, itemId: string, versaoEsperada: number, recipienteId?: string,
+): Promise<void> {
+  const { error, response } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/largar", {
+    params: { path: { mesa_id: mesaId, personagem_id: personagemId, item_id: itemId } },
+    body: { versao_esperada: versaoEsperada, recipiente_id: recipienteId ?? null },
+  });
+  if (error) {
+    const mensagem = extractErrorMessage(error, "Não foi possível largar o item.");
+    if (response.status === 409 && mensagem === "Versão da ficha desatualizada.") throw new ConflitoArrumacao(mensagem);
+    throw new Error(mensagem);
+  }
+}
+
+type PilhaMoedas = components["schemas"]["PilhaMoedas"];
+
+/** Adiciona ou retira moedas, grava os totais (`bolsa`: o servidor junta em pilhas) ou pilha a pilha (`pilhas`: para dividir). */
+export async function gravarMoedas(
+  api: ApiClient, mesaId: string, personagemId: string, versaoEsperada: number,
+  moedas: { bolsa: PilhaMoedas } | { pilhas: PilhaMoedas[] } | { adicionar: PilhaMoedas } | { retirar: PilhaMoedas },
+): Promise<GradeInventario> {
+  const { data, error, response } = await api.PUT("/mesas/{mesa_id}/personagens/{personagem_id}/inventario/moedas", {
+    params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+    body: { versao_esperada: versaoEsperada, ...moedas },
+  });
+  if (error) {
+    const mensagem = extractErrorMessage(error, "Não foi possível guardar as moedas.");
+    if (response.status === 409) throw new ConflitoArrumacao(mensagem);
+    throw new Error(mensagem);
+  }
+  return data as GradeInventario;
+}
+
+/** O Narrador define tipo e dimensão de um item; se o formato muda, o item sai da grade para ser recolocado. */
+export async function definirFormatoItem(
+  api: ApiClient, mesaId: string, personagemId: string, itemId: string, versaoEsperada: number,
+  formato: components["schemas"]["FormatoItemGrade"],
+): Promise<number> {
+  const { data, error } = await api.PUT("/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/formato", {
+    params: { path: { mesa_id: mesaId, personagem_id: personagemId, item_id: itemId } },
+    body: { formato, versao_esperada: versaoEsperada },
+  });
+  if (error) throw new Error(extractErrorMessage(error, "Não foi possível definir o formato."));
+  return data.versao;
+}
+
+/** Grava a arrumação inteira (tudo ou nada). Lança `ConflitoArrumacao` quando a ficha mudou em outro lugar. */
+export async function gravarArrumacao(
+  api: ApiClient, mesaId: string, personagemId: string, versaoEsperada: number, itens: PosicaoArrumacao[],
+): Promise<GradeInventario> {
+  const { data, error, response } = await api.PUT("/mesas/{mesa_id}/personagens/{personagem_id}/inventario/arrumacao", {
+    params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+    body: { versao_esperada: versaoEsperada, itens },
+  });
+  if (error) {
+    const mensagem = extractErrorMessage(error, "Não foi possível guardar a arrumação.");
+    if (response.status === 409) throw new ConflitoArrumacao(mensagem);
+    throw new Error(mensagem);
+  }
+  return data as GradeInventario;
 }

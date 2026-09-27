@@ -21,6 +21,7 @@ function wrapper(queryClient: QueryClient) {
 const fichaBase: FichaSnapshot = {
   mesa_id: "mesa-1",
   personagem_id: "pj-1",
+  tipo: "personagem",
   versao: 2,
   ficha: { personagem: { nome: "Nara Exemplo" } },
 };
@@ -109,6 +110,7 @@ describe("sheetApi — 6.6 comando de equipar/desequipar", () => {
     cargas_maximas: null,
     dados: {},
     efeitos: ["efeito-1"],
+    girado: false,
   };
 
   it("ao confirmar, atualiza o inventário em cache e invalida efeitos e valores derivados", async () => {

@@ -4,6 +4,7 @@ import { Glyph } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
 import { NarratorLibrary } from "../cards/NarratorLibrary";
 import { InviteTools } from "../InviteTools";
+import { CoinStackSetting } from "../inventory/CoinStackSetting";
 import { CharacterList } from "../characters/CharacterList";
 import { useSolicitacoes } from "../characters/api";
 import { PendingRequests } from "../characters/PendingRequests";
@@ -90,6 +91,10 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
               <span className="eyebrow">CONVIDAR JOGADORES</span>
               <h2>Convites</h2>
               <InviteTools api={api} mesaId={mesa.id} />
+              <span className="eyebrow">CONFIGURAÇÕES DA CAMPANHA</span>
+              <h2>Regras da campanha</h2>
+              <p className="preview-note">Números que cada campanha ajusta, sem mudar o livro de regras.</p>
+              <CoinStackSetting api={api} mesaId={mesa.id} />
               <span className="eyebrow">FILA DO NARRADOR</span>
               <h2>Pendências</h2>
               <PendingRequests api={api} mesaId={mesa.id} />

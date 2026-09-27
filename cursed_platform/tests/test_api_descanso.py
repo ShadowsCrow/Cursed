@@ -23,11 +23,12 @@ with patch.dict("os.environ", {"CURSED_PLATFORM_DATABASE_URL": "sqlite:///:memor
     from cursed_api.main import create_app  # noqa: E402
 
 
-def ficha(nome, pv, pp, exaustao, estresse):
+def ficha(nome, classe, vigor, proposito, pv, pp, exaustao, estresse):
+    """Máximos e Escalas vêm da classe (calcular-valores-da-ficha); a ficha guarda só o atual."""
     return {
-        "personagem": {"nome": nome},
-        "recursos": {"pv": dict(zip(("atual", "maximo", "escala"), pv)),
-                     "pp": dict(zip(("atual", "maximo", "escala"), pp))},
+        "personagem": {"nome": nome, "classe": classe, "nivel": 1},
+        "atributos": {"valores": {"Vigor": vigor, "Proposito": proposito}},
+        "recursos": {"pv": {"atual": pv}, "pp": {"atual": pp}},
         "desgaste": {"exaustao": exaustao, "estresse": estresse},
     }
 
@@ -49,11 +50,11 @@ class ApiDescansoTest(unittest.TestCase):
             session.flush()
             session.add_all([
                 PersonagemRegistro(id="lia", mesa_id="mesa", proprietario_id="ana",
-                                   ficha=ficha("Lia", (2, 20, 8), (0, 12, 6), 7, 5)),
+                                   ficha=ficha("Lia", "Acolito", 3, 2, 2, 0, 7, 5)),
                 PersonagemRegistro(id="bram", mesa_id="mesa", proprietario_id="bruno",
-                                   ficha=ficha("Bram", (10, 10, 4), (1, 8, 4), 0, 2)),
+                                   ficha=ficha("Bram", "Especialista de Combate", 1, 1, 24, 1, 0, 2)),
                 PersonagemRegistro(id="guia", mesa_id="mesa", tipo="npc", visibilidade="narrador",
-                                   ficha=ficha("Guia", (0, 6, 6), (0, 4, 4), 3, 0)),
+                                   ficha=ficha("Guia", "Mago", 4, 1, 0, 0, 3, 0)),
             ])
             session.commit()
         settings = PlatformSettings(
@@ -106,7 +107,7 @@ class ApiDescansoTest(unittest.TestCase):
         self.assertEqual(fichas["lia"][0], 1)
         self.assertEqual(fichas["lia"][1]["recursos"]["pv"]["atual"], 8)
         self.assertEqual(fichas["lia"][1]["desgaste"], {"exaustao": 6, "estresse": 4})
-        self.assertEqual(fichas["bram"][1]["recursos"]["pv"]["atual"], 10)
+        self.assertEqual(fichas["bram"][1]["recursos"]["pv"]["atual"], 24)
         self.assertEqual(fichas["guia"][1]["recursos"]["pv"]["atual"], 4)
         self.assertEqual(eventos, 3)
 

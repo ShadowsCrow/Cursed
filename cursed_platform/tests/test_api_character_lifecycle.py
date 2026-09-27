@@ -68,7 +68,7 @@ class ApiCharacterLifecycleTest(unittest.TestCase):
 
     def create(self, actor: str, name: str) -> str:
         response = self.as_(actor).post(
-            "/mesas/mesa-1/personagens", json={"ficha": {"personagem": {"nome": name, "nivel": 2}}},
+            "/mesas/mesa-1/personagens", json={"ficha": {"personagem": {"nome": name, "idade": 20}}},
         )
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["personagem_id"]
@@ -179,7 +179,7 @@ class ApiCharacterLifecycleTest(unittest.TestCase):
 
         self.assertEqual(self.listed("jogador"), ["Lia"])
         ficha = self.as_("jogador").get(f"/mesas/mesa-1/personagens/{character_id}/ficha").json()
-        self.assertEqual(ficha["ficha"]["personagem"], {"nome": "Lia", "nivel": 2})
+        self.assertEqual(ficha["ficha"]["personagem"], {"nome": "Lia", "idade": 20, "nivel": 1})
         self.assertEqual(self.as_("mestre").post(f"{restore}?versao_esperada=2").status_code, 404)
 
     def test_restauracao_fora_da_retencao_e_recusada(self):

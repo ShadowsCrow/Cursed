@@ -13,6 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from cursed_platform.config import PlatformSettings
 from cursed_platform.domain.equip_codec import encode_equipment_eq1
+from cursed_platform.tests.grade_teste import colocar_na_grade
 from cursed_platform.persistence import (
     Base, EventoAuditoriaRegistro, MembroRegistro, MesaRegistro, PersonagemRegistro, SessaoRegistro,
 )
@@ -84,7 +85,7 @@ class AuditoriaTest(unittest.TestCase):
 
     def criar(self, actor: str, nome: str, **extra) -> str:
         response = self.as_(actor).post("/mesas/mesa/personagens", json={"ficha": {
-            "personagem": {"nome": nome}, "atributos": {"valores": {"Vigor": 2}}, **extra,
+            "personagem": {"nome": nome, "raca": "Humano"}, "atributos": {"valores": {"Vigor": 2}}, **extra,
         }})
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["personagem_id"]
@@ -136,6 +137,7 @@ class AuditoriaTest(unittest.TestCase):
         self.assertEqual(resposta.status_code, 200)
         item = self.as_("ana").post(f"/mesas/mesa/personagens/{lia}/importacoes",
                                     json={"codigo": ESCUDO, "versao_esperada": 1}).json()["item"]["id"]
+        colocar_na_grade(self.engine, item)
         self.as_("ana").post(f"/mesas/mesa/personagens/{lia}/inventario/{item}/equipar",
                              json={"equipado": True, "versao_esperada": 2})
         self.as_("mestre").put("/mesas/mesa/politicas", json={
@@ -227,6 +229,7 @@ class AuditoriaTest(unittest.TestCase):
         bram = self.criar("bruno", "Bram")
         item = self.as_("ana").post(f"/mesas/mesa/personagens/{lia}/importacoes",
                                     json={"codigo": ESCUDO, "versao_esperada": 0}).json()["item"]["id"]
+        colocar_na_grade(self.engine, item)
         self.as_("ana").post(f"/mesas/mesa/personagens/{lia}/inventario/{item}/equipar",
                              json={"equipado": True, "versao_esperada": 1})
         self.salvar("bruno", bram, lambda f: f["personagem"].update(apelido="B"))
@@ -258,7 +261,7 @@ class AuditoriaTest(unittest.TestCase):
 
     def test_correcao_cria_novo_evento_vinculado_e_preserva_o_original(self):
         lia = self.criar("ana", "Lia")
-        self.salvar("ana", lia, lambda f: f["atributos"]["valores"].update(Vigor=9))
+        self.salvar("ana", lia, lambda f: f["atributos"]["valores"].update(Vigor=4))
         original = self.eventos(categoria="ficha")[0]
         self.assertTrue(original["corrigivel"])
         self.assertFalse(self.eventos("ana", categoria="ficha")[0]["corrigivel"])
@@ -272,7 +275,7 @@ class AuditoriaTest(unittest.TestCase):
         self.assertEqual((corpo["acao"], corpo["corrige_evento_id"], corpo["ator_id"], corpo["motivo"]),
                          ("correcao.aplicada", original["id"], "mestre", "Valor digitado errado"))
         self.assertEqual([(m["campo"], m["antes"], m["depois"]) for m in corpo["mudancas"]],
-                         [("atributos.valores.Vigor", 9, 2)])
+                         [("atributos.valores.Vigor", 4, 2)])
         self.assertEqual(self.ficha("ana", lia)["ficha"]["atributos"]["valores"]["Vigor"], 2)
 
         historico = {e["id"]: e for e in self.eventos(categoria="ficha")}
@@ -291,6 +294,7 @@ class AuditoriaTest(unittest.TestCase):
         lia = self.criar("ana", "Lia")
         item = self.as_("ana").post(f"/mesas/mesa/personagens/{lia}/importacoes",
                                     json={"codigo": ESCUDO, "versao_esperada": 0}).json()["item"]["id"]
+        colocar_na_grade(self.engine, item)
         self.as_("ana").post(f"/mesas/mesa/personagens/{lia}/inventario/{item}/equipar",
                              json={"equipado": True, "versao_esperada": 1})
         equipou = self.eventos(categoria="inventario")[0]

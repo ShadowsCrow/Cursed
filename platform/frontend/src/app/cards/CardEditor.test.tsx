@@ -115,6 +115,29 @@ describe("CardEditor — 9.3 rascunho, validação e publicação", () => {
     expect(await screen.findByText("Rascunho alterado por outra edição.")).toBeTruthy();
   });
 
+  it("carta de item: o subtipo do formato define o tipo de item e o rascunho é salvo com o formato", async () => {
+    const simulada = apiSimulada({
+      GET: { "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] } },
+      PUT: {
+        "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": ({ body }) => ({
+          data: { ...DEFINICAO, tipo: "item", versao: 1, rascunho: (body as { rascunho: unknown }).rascunho },
+        }),
+      },
+    });
+    renderComQuery(<CardEditor api={simulada.api} mesaId="mesa" onClose={vi.fn()} definicao={{
+      ...DEFINICAO, tipo: "item", rascunho: { tipo: "item", titulo: "Escudo de carvalho", texto: "Robusto.", item_tipo: "outro" },
+    }} />);
+    expect(screen.getByLabelText("Peso aproximado (só descrição)")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "escudo" } });
+    expect((screen.getByLabelText("Tipo de item") as HTMLSelectElement).value).toBe("armadura");
+    expect((screen.getByLabelText("Tipo de item") as HTMLSelectElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }));
+    await waitFor(() => expect(simulada.PUT).toHaveBeenCalled());
+    const corpo = em(simulada.PUT.mock.calls, 0)[1]?.body as { rascunho: Record<string, unknown> };
+    expect(corpo.rascunho.item_tipo).toBe("armadura");
+    expect(corpo.rascunho.formato).toEqual({ subtipo: "escudo", largura: 2, altura: 2 });
+  });
+
   it("não apresenta violações de acessibilidade detectáveis", async () => {
     montar();
     await screen.findByText("Nenhuma versão publicada ainda.");

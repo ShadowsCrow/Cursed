@@ -7,14 +7,8 @@ Destreza de Queda =Destreza limitada ao máximo de 2
 ```
 
 ```
-Altura Segura =3 m+ Destreza de Queda- Penalidade de Carga
+Altura Segura = 3 m + Destreza de Queda - 2 m se estiver em Sobrecarga
 ```
-
-|Carga|Penalidade|
-|---|---|
-|Normal|0 m|
-|Excedente|-1 m|
-|Excesso Crítico|-2 m|
 
 ```
 Dano de Queda =metros completos acima da Altura Segura
@@ -24,11 +18,11 @@ Dano de Queda =metros completos acima da Altura Segura
 
 ## C.2. Tabela de Altura Segura
 
-|Destreza atual|Carga Normal|Carga Excedente|Excesso Crítico|
-|---|---|---|---|
-|0|3 m|2 m|1 m|
-|1|4 m|3 m|2 m|
-|2 ou mais|5 m|4 m|3 m|
+|Destreza atual|Sem Sobrecarga|Em Sobrecarga|
+|---|---|---|
+|0|3 m|1 m|
+|1|4 m|2 m|
+|2 ou mais|5 m|3 m|
 
 A Destreza acima de 2 não aumenta a Altura Segura.
 
@@ -36,9 +30,9 @@ Penalidades que reduzam a Destreza são aplicadas antes de limitar seu valor.
 
 ---
 
-## C.3. Exemplo — Carga Normal
+## C.3. Exemplo — Sem Sobrecarga
 
-Um personagem possui Destreza 1 e Carga Normal.
+Um personagem possui Destreza 1 e não está em Sobrecarga.
 
 ```
 Altura Segura = 3 + 1Altura Segura = 4 m
@@ -56,7 +50,7 @@ Altura Segura = 3 + 1Altura Segura = 4 m
 
 ## C.4. Exemplo — Destreza elevada
 
-Um personagem possui Destreza 4 e Carga Normal.
+Um personagem possui Destreza 4 e não está em Sobrecarga.
 
 Sua Destreza de Queda continua limitada a 2.
 
@@ -72,25 +66,9 @@ Uma queda de `9 m` causa:
 
 ---
 
-## C.5. Exemplo — Carga Excedente
+## C.5. Exemplo — Em Sobrecarga
 
-Um personagem possui Destreza 1 e Carga Excedente.
-
-```
-Altura Segura = 3 + 1 - 1Altura Segura = 3 m
-```
-
-Uma queda de `6 m` causa:
-
-```
-6 - 3 = 3 de dano
-```
-
----
-
-## C.6. Exemplo — Excesso Crítico
-
-Um personagem possui Destreza 1 e está em Excesso Crítico.
+Um personagem possui Destreza 1 e está em Sobrecarga, com um fardo na área vermelha da grade.
 
 ```
 Altura Segura = 3 + 1 - 2Altura Segura = 2 m
@@ -104,7 +82,7 @@ Uma queda de `5 m` causa:
 
 ---
 
-## C.7. Frações de metro
+## C.6. Frações de metro
 
 Apenas metros completos acima da Altura Segura causam dano.
 
@@ -124,7 +102,7 @@ Uma queda de `5,9 m` também causaria `1 ponto`, enquanto uma queda de `6 m` cau
 
 ---
 
-## C.8. Queda causada por um ataque
+## C.7. Queda causada por um ataque
 
 Um ataque causa `5 pontos de dano` e empurra o alvo de uma plataforma de `7 m`.
 
@@ -152,7 +130,7 @@ As duas fontes são resolvidas separadamente.
 
 ---
 
-## C.9. Queda em múltiplas etapas
+## C.8. Queda em múltiplas etapas
 
 Um personagem possui Altura Segura de `3 m`.
 
@@ -182,7 +160,7 @@ Se o personagem atravessar uma estrutura frágil sem reduzir significativamente 
 
 ---
 
-## C.10. RDB e proteção contra quedas
+## C.9. RDB e proteção contra quedas
 
 O RDB comum não reduz dano de queda.
 
@@ -204,7 +182,7 @@ Um efeito pode reduzir o dano quando declarar expressamente algo como:
 
 ---
 
-## C.11. Esquiva e Bloqueio
+## C.10. Esquiva e Bloqueio
 
 Uma queda não é um ataque comum.
 
@@ -227,7 +205,7 @@ Uma habilidade pode permitir uma rolagem especial, desde que determine:
 
 ---
 
-## C.12. Altura Segura reduzida
+## C.11. Altura Segura reduzida
 
 A Altura Segura nunca pode ser inferior a `0 m`.
 

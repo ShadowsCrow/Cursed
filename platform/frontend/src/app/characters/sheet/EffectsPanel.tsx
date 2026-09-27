@@ -1,16 +1,13 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Glyph } from "../../../ui/Display";
 import { Dialog, Popover } from "../../../ui/primitives";
 import type { ApiClient, EfeitoResumo, ModificadorResumo } from "../types";
-import { useAjustarEfeito, useAplicarEfeito, useTransicionarEfeito } from "./sheetApi";
-
-const symbolByIndex = ["✧", "◈", "◇", "✦", "❖", "◆"];
-
-function toneByIndex(index: number): "violet" | "gold" | "teal" {
-  const tones = ["violet", "gold", "teal"] as const;
-  return tones[index % tones.length]!;
-}
+import { ImageUpload } from "../../assets/ImageUpload";
+import { useEfeitosDefault, type EfeitoDefault } from "./catalogoApi";
+import { EffectImage } from "./EffectImage";
+import { sheetKeys, useAjustarEfeito, useAplicarEfeito, useTransicionarEfeito } from "./sheetApi";
 
 function comSinal(valor: number): string {
   return valor >= 0 ? `+${valor}` : `${valor}`;
@@ -20,6 +17,7 @@ const fonteTipoLabel: Record<string, string> = {
   equipamento: "Equipamento",
   importacao: "Código importado",
   narrador: "Aplicado pelo Narrador",
+  catalogo: "Condição do catálogo",
 };
 
 /**
@@ -29,15 +27,15 @@ const fonteTipoLabel: Record<string, string> = {
  * um popover — nunca dependente apenas de hover. Efeitos suspensos aparecem
  * esmaecidos e rotulados como tal, tanto no gatilho quanto no conteúdo.
  */
-export function EffectDetailIcon({ efeito, index }: { efeito: EfeitoResumo; index: number }) {
+export function EffectDetailIcon({ efeito, api, mesaId }: { efeito: EfeitoResumo; api?: ApiClient; mesaId?: string }) {
   const suspenso = efeito.estado === "suspenso";
   const modificadoresDiretos = (efeito.modificadores ?? []).filter((mod) => !mod.contexto);
   const situacionais = (efeito.modificadores ?? []).filter((mod) => mod.contexto);
   return (
     <Popover
       label={suspenso ? `${efeito.nome} (suspenso)` : efeito.nome}
-      triggerContent={<span aria-hidden="true">{symbolByIndex[index % symbolByIndex.length]}</span>}
-      triggerClassName={`effect-icon effect-icon--${toneByIndex(index)}${suspenso ? " effect-icon--suspenso" : ""}`}
+      triggerContent={<EffectImage icone={efeito.icone} api={api} mesaId={mesaId} />}
+      triggerClassName={`effect-icon effect-icon--imagem${suspenso ? " effect-icon--suspenso" : ""}`}
     >
       <dl>
         <dt>Nome</dt>
@@ -126,16 +124,72 @@ export interface AplicarEfeitoPayload {
   motivo: string | null;
 }
 
+function comSinalModificador(m: { alvo: string; valor: number; quando?: string | null }): string {
+  return `${m.alvo} ${comSinal(m.valor)}${m.quando ? ` (${m.quando})` : ""}`;
+}
+
+/** Efeitos default agrupados como nas regras, com prévia e o aviso de substituição. */
+function DefaultEffectList({
+  defaults, ativos, escolhido, onEscolher,
+}: {
+  defaults: EfeitoDefault[] | undefined; ativos: EfeitoResumo[]; escolhido: string; onEscolher: (associacao: string) => void;
+}) {
+  if (!defaults) return <p>Carregando condições…</p>;
+  const grupos = [...new Set(defaults.map((e) => e.grupo ?? "Outros"))];
+  const selecionado = defaults.find((e) => e.associacao === escolhido);
+  const encerrados = selecionado
+    ? ativos.filter((e) => e.estado !== "encerrado" && e.associacao && selecionado.substitui?.includes(e.associacao))
+    : [];
+  return (
+    <div className="default-effects">
+      {grupos.map((grupo) => (
+        <fieldset key={grupo} className="default-effects__group">
+          <legend>{grupo}</legend>
+          {defaults.filter((e) => (e.grupo ?? "Outros") === grupo).map((efeito) => (
+            <label key={efeito.associacao} className="default-effects__item">
+              <input type="radio" name="aplicar-efeito-default" checked={escolhido === efeito.associacao}
+                onChange={() => onEscolher(efeito.associacao)} />
+              <EffectImage icone={efeito.icone} />
+              <span>
+                <strong>{efeito.nome}</strong>
+                <small>{efeito.descricao}</small>
+                {(efeito.modificadores ?? []).length > 0 && (
+                  <small className="default-effects__mods">{(efeito.modificadores ?? []).map(comSinalModificador).join(" · ")}</small>
+                )}
+                {(efeito.substitui_nomes ?? []).length > 0 && (
+                  <small>Substitui {(efeito.substitui_nomes ?? []).join(", ")}.</small>
+                )}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      ))}
+      {selecionado && encerrados.length > 0 && (
+        <p role="status" className="field-warning">
+          {selecionado.nome} substitui {encerrados.map((e) => e.nome).join(", ")}: ao aplicar, {encerrados.length > 1 ? "eles serão encerrados" : `${encerrados[0]!.nome} será encerrado`}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ApplyEffectDialog({
   onClose,
   onSubmit,
   pending,
   error,
+  defaults,
+  ativos,
+  permitirPersonalizado,
 }: {
   onClose: () => void;
   onSubmit: (payload: AplicarEfeitoPayload) => void;
   pending: boolean;
   error: string | null;
+  defaults: EfeitoDefault[] | undefined;
+  ativos: EfeitoResumo[];
+  /** Só o Narrador cria efeitos personalizados. */
+  permitirPersonalizado: boolean;
 }) {
   const [modo, setModo] = useState<"catalogo" | "personalizado">("catalogo");
   const [associacao, setAssociacao] = useState("");
@@ -146,54 +200,54 @@ function ApplyEffectDialog({
   const [origem, setOrigem] = useState("");
   const [motivo, setMotivo] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const semEscolha = modo === "catalogo" && !associacao;
 
   return (
     <Dialog
       open
       onClose={onClose}
-      title="Aplicar efeito"
-      description="Use um efeito do catálogo por associação, ou descreva um efeito personalizado."
-      initialFocusRef={inputRef}
+      title={permitirPersonalizado ? "Aplicar efeito" : "Aplicar condição"}
+      description={permitirPersonalizado
+        ? "Escolha uma condição do sistema ou descreva um efeito personalizado."
+        : "Escolha a condição do sistema que vale para o seu personagem agora."}
     >
       <form
         onSubmit={(event) => {
           event.preventDefault();
           onSubmit({
-            associacao: modo === "catalogo" ? (associacao.trim() || null) : null,
+            associacao: modo === "catalogo" ? (associacao || null) : null,
             nome: modo === "personalizado" ? (nome.trim() || null) : null,
             descricao: modo === "personalizado" ? (descricao.trim() || null) : null,
-            modificadores: modificadores.length > 0 ? modificadores : undefined,
+            modificadores: modo === "personalizado" && modificadores.length > 0 ? modificadores : undefined,
             duracaoRodadas: duracao.trim() ? Number(duracao) : null,
             origem: origem.trim() || null,
             motivo: motivo.trim() || null,
           });
         }}
       >
-        <fieldset>
-          <legend>Origem do efeito</legend>
-          <label>
-            <input type="radio" name="aplicar-efeito-modo" checked={modo === "catalogo"} onChange={() => setModo("catalogo")} /> Efeito do catálogo
-          </label>
-          <label>
-            <input type="radio" name="aplicar-efeito-modo" checked={modo === "personalizado"} onChange={() => setModo("personalizado")} /> Efeito personalizado
-          </label>
-        </fieldset>
+        {permitirPersonalizado && (
+          <fieldset>
+            <legend>Origem do efeito</legend>
+            <label>
+              <input type="radio" name="aplicar-efeito-modo" checked={modo === "catalogo"} onChange={() => setModo("catalogo")} /> Condição do sistema
+            </label>
+            <label>
+              <input type="radio" name="aplicar-efeito-modo" checked={modo === "personalizado"} onChange={() => setModo("personalizado")} /> Efeito personalizado
+            </label>
+          </fieldset>
+        )}
 
         {modo === "catalogo" ? (
-          <>
-            <label htmlFor="efeito-associacao">Associação do catálogo</label>
-            <input id="efeito-associacao" ref={inputRef} value={associacao} onChange={(event) => setAssociacao(event.target.value)} placeholder="ex.: cc_above" />
-          </>
+          <DefaultEffectList defaults={defaults} ativos={ativos} escolhido={associacao} onEscolher={setAssociacao} />
         ) : (
           <>
             <label htmlFor="efeito-nome">Nome</label>
             <input id="efeito-nome" ref={inputRef} value={nome} onChange={(event) => setNome(event.target.value)} />
             <label htmlFor="efeito-descricao">Descrição</label>
             <textarea id="efeito-descricao" value={descricao} onChange={(event) => setDescricao(event.target.value)} />
+            <ModifiersEditor value={modificadores} onChange={setModificadores} idPrefix="aplicar" />
           </>
         )}
-
-        <ModifiersEditor value={modificadores} onChange={setModificadores} idPrefix="aplicar" />
 
         <label htmlFor="efeito-duracao">Duração (rodadas, opcional)</label>
         <input id="efeito-duracao" type="number" min={1} value={duracao} onChange={(event) => setDuracao(event.target.value)} />
@@ -207,8 +261,8 @@ function ApplyEffectDialog({
         {error && <p role="alert">{error}</p>}
         <div className="confirmation__actions">
           <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="button button--primary" disabled={pending}>
-            {pending ? "Aplicando…" : "Aplicar efeito"}
+          <button type="submit" className="button button--primary" disabled={pending || semEscolha}>
+            {pending ? "Aplicando…" : permitirPersonalizado ? "Aplicar efeito" : "Aplicar condição"}
           </button>
         </div>
       </form>
@@ -336,13 +390,35 @@ function EffectAdminList({
   efeitos,
   onAjustar,
   onTransicionar,
+  narrador,
+  imagem,
 }: {
   efeitos: EfeitoResumo[];
   onAjustar: (efeito: EfeitoResumo) => void;
   onTransicionar: (efeito: EfeitoResumo, acao: TransicaoAcao) => void;
+  narrador: boolean;
+  /** Envio da imagem de um efeito personalizado (os do catálogo usam o ícone da mesa). */
+  imagem?: (efeito: EfeitoResumo) => ReactNode;
 }) {
-  const administraveis = efeitos.filter((efeito) => efeito.estado !== "encerrado");
+  const administraveis = efeitos.filter((efeito) => efeito.estado !== "encerrado" && !efeito.derivado);
   if (administraveis.length === 0) return null;
+  if (!narrador) {
+    return (
+      <div className="effect-admin-list">
+        <span className="eyebrow">EFEITOS DO SEU PERSONAGEM</span>
+        {administraveis.map((efeito) => (
+          <div key={efeito.id} className="effect-admin-list__row">
+            <span>{efeito.nome}</span>
+            <div className="effect-admin-list__actions">
+              {efeito.associacao
+                ? <button type="button" className="button button--ghost" onClick={() => onTransicionar(efeito, "encerrar")}>Encerrar {efeito.nome}</button>
+                : imagem?.(efeito)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="effect-admin-list">
       <span className="eyebrow">ADMINISTRAÇÃO DO NARRADOR</span>
@@ -358,6 +434,7 @@ function EffectAdminList({
               <button type="button" className="button button--ghost" onClick={() => onTransicionar(efeito, "retomar")}>Retomar</button>
             )}
             <button type="button" className="button button--ghost" onClick={() => onTransicionar(efeito, "encerrar")}>Encerrar</button>
+            {!efeito.associacao && imagem?.(efeito)}
           </div>
         </div>
       ))}
@@ -372,6 +449,8 @@ export interface EffectsAdmin {
   /** Versão atual do personagem, compartilhada por todos os comandos de efeito. */
   versao: number;
   onVersaoConfirmada: (versao: number) => void;
+  /** O Narrador administra tudo; o jogador aplica e encerra condições do catálogo no próprio personagem. */
+  papel?: "narrador" | "jogador";
 }
 
 type DialogState =
@@ -385,8 +464,13 @@ type DialogState =
  * suspender, retomar e encerrar efeitos. O jogador nunca recebe `admin`, então
  * nenhum desses controles chega a ser renderizado para ele.
  */
-export function EffectsPanel({ efeitos, admin }: { efeitos: EfeitoResumo[]; admin?: EffectsAdmin }) {
+export function EffectsPanel({ efeitos, admin, api, mesaId }: {
+  efeitos: EfeitoResumo[]; admin?: EffectsAdmin; api?: ApiClient; mesaId?: string;
+}) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const queryClient = useQueryClient();
+  const narrador = (admin?.papel ?? "narrador") === "narrador";
+  const defaults = useEfeitosDefault(admin?.api as ApiClient, admin?.mesaId ?? "", Boolean(admin) && dialog?.kind === "aplicar");
 
   const aplicarMutation = useAplicarEfeito(admin?.api as ApiClient, admin?.mesaId ?? "", admin?.personagemId ?? "");
   const ajustarMutation = useAjustarEfeito(admin?.api as ApiClient, admin?.mesaId ?? "", admin?.personagemId ?? "");
@@ -429,7 +513,7 @@ export function EffectsPanel({ efeitos, admin }: { efeitos: EfeitoResumo[]; admi
         <div><span className="eyebrow">ESTADO ATIVO</span><h2>Efeitos</h2></div>
         {admin && (
           <button type="button" className="button button--primary" onClick={() => setDialog({ kind: "aplicar" })}>
-            <Glyph name="spark" size={16} /> Aplicar efeito
+            <Glyph name="spark" size={16} /> {narrador ? "Aplicar efeito" : "Aplicar condição"}
           </button>
         )}
       </div>
@@ -438,9 +522,9 @@ export function EffectsPanel({ efeitos, admin }: { efeitos: EfeitoResumo[]; admi
       ) : (
         <>
           <ul className="effect-strip">
-            {efeitos.map((efeito, index) => (
+            {efeitos.map((efeito) => (
               <li key={efeito.id} className={`effect-chip ${efeito.estado === "suspenso" ? "effect-chip--suspenso" : ""}`.trim()}>
-                <EffectDetailIcon efeito={efeito} index={index} />
+                <EffectDetailIcon efeito={efeito} api={api ?? admin?.api} mesaId={mesaId ?? admin?.mesaId} />
                 <span aria-hidden="true">{efeito.nome}{efeito.estado === "suspenso" ? " · suspenso" : ""}</span>
               </li>
             ))}
@@ -449,10 +533,23 @@ export function EffectsPanel({ efeitos, admin }: { efeitos: EfeitoResumo[]; admi
         </>
       )}
 
-      {admin && <EffectAdminList efeitos={efeitos} onAjustar={(efeito) => setDialog({ kind: "ajustar", efeito })} onTransicionar={(efeito, acao) => setDialog({ kind: "transicao", efeito, acao })} />}
+      {admin && <EffectAdminList efeitos={efeitos} narrador={narrador}
+        onAjustar={(efeito) => setDialog({ kind: "ajustar", efeito })}
+        onTransicionar={(efeito, acao) => setDialog({ kind: "transicao", efeito, acao })}
+        imagem={(efeito) => (
+          <ImageUpload api={admin.api} mesaId={admin.mesaId} destino="efeito" alvo={efeito.id} versao={admin.versao}
+            rotulo={`imagem de ${efeito.nome}`} temImagem={efeito.icone?.origem === "efeito"}
+            onConcluido={(resposta) => {
+              if (resposta.versao != null) admin.onVersaoConfirmada(resposta.versao);
+              void queryClient.invalidateQueries({ queryKey: sheetKeys.efeitos(admin.mesaId, admin.personagemId) });
+            }} />
+        )} />}
 
       {admin && dialog?.kind === "aplicar" && (
         <ApplyEffectDialog
+          defaults={defaults.data}
+          ativos={efeitos}
+          permitirPersonalizado={narrador}
           onClose={closeDialog}
           onSubmit={handleAplicar}
           pending={aplicarMutation.isPending}

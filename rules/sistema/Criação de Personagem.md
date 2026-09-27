@@ -77,7 +77,7 @@ Escolha uma raça permitida pela campanha e registre:
 - habilidades raciais concluídas;
 - escolhas exigidas pela raça.
 
-O Deslocamento racial substitui o valor geral de `9 metros`. O Tamanho participa do cálculo da Capacidade de Carga conforme [Carga e Transporte](Carga.md).
+O Deslocamento racial substitui o valor geral de `9 metros`. O Tamanho define quantas colunas tem a grade de carga, conforme [Carga e Transporte](Carga.md).
 
 Uma habilidade racial marcada como placeholder ou sem funcionamento mecânico concluído não concede efeitos até ser escrita.
 
@@ -223,13 +223,13 @@ O personagem recebe o equipamento determinado por sua classe, origem ou proposta
 Para cada item, registre:
 
 - nome e quantidade;
-- peso;
+- dimensão na grade;
 - propriedades e requisitos;
 - dano e tipo, no caso de armas;
 - Armadura, RDB e penalidades, no caso de proteções;
 - se está equipado, empunhado ou apenas transportado.
 
-Proficiência, requisito e espaço disponível ainda precisam ser respeitados. Some todo o peso transportado e compare com a Capacidade de Carga.
+Proficiência, requisito e espaço disponível ainda precisam ser respeitados. Coloque todo o equipamento na grade de carga; o que ficar na área vermelha deixa o personagem em Sobrecarga, e o que não couber não é levado.
 
 Dinheiro, munição, provisões e itens pessoais iniciais são definidos pela campanha enquanto não houver uma regra específica de riqueza inicial.
 
@@ -239,7 +239,7 @@ Calcule e registre os valores abaixo usando os totais permanentes atuais.
 
 ### Deslocamento
 
-Use o Deslocamento da raça, modificado por equipamento, Carga, condições e outros efeitos aplicáveis.
+Use o Deslocamento da raça, modificado por equipamento, Sobrecarga, condições e outros efeitos aplicáveis.
 
 ### Iniciativa
 
@@ -265,13 +265,14 @@ Bloqueio = 1d20 + Vigor + Armadura + Escudo + modificadores
 
 Registre separadamente a RDB aplicável. Esquiva e Bloqueio seguem [Defesa](Defesa.md).
 
-### Capacidade de Carga
+### Grade de carga
 
 ```text
-CC = Força × 20 kg × Modificador de Tamanho
+Linhas = 2 + Força atual
+Colunas = conforme o Tamanho (Médio: 5)
 ```
 
-Compare a Carga Atual com a CC e aplique qualquer penalidade antes da primeira sessão.
+Arrume o equipamento na grade e confira se há algo na área vermelha antes da primeira sessão. Veja [Carga e Transporte](Carga.md).
 
 ### Ataques
 
@@ -328,7 +329,7 @@ Antes da primeira sessão, jogador e Narrador verificam:
 - [ ] Acessos e suas fontes registrados;
 - [ ] criações iniciais e Escola de Especialização conferidas;
 - [ ] Vantagens, Desvantagens e pontos restantes registrados;
-- [ ] equipamento, peso e Carga conferidos;
+- [ ] equipamento arrumado na grade de carga e Sobrecarga conferida;
 - [ ] Iniciativa, Defesas, RDB e ataques calculados;
 - [ ] objetivos e vínculos definidos;
 - [ ] ficha aprovada pelo Narrador.
@@ -355,7 +356,7 @@ PP máximo = 8 + 2 = 10
 Escala de PP = 5 + 2 = 7
 Modificador de Iniciativa = 1 + 2 = +3
 Deslocamento = 9 m
-CC = 1 × 20 kg × 1 = 20 kg
+Grade de carga = 5 colunas × 3 linhas (Médio, Força 1)
 Bônus de Proficiência = +1
 ```
 

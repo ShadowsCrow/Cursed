@@ -32,8 +32,8 @@ describe("ResourceBar", () => {
   });
 
   it("estado parcial: rótulo textual acessível reflete o valor real", () => {
-    render(<ResourceBar label="Pontos de Poder" current={7} max={12} kind="power" />);
-    const bar = screen.getByRole("progressbar", { name: "Pontos de Poder" });
+    render(<ResourceBar label="Pontos de Propósito" current={7} max={12} kind="power" />);
+    const bar = screen.getByRole("progressbar", { name: "Pontos de Propósito" });
     expect(bar.getAttribute("aria-valuetext")).toBe("7 de 12");
   });
 

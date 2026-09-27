@@ -8,6 +8,25 @@ import { chaveDerivada } from "./sheetCatalog";
 type Categoria = "atributo" | "pericia";
 export interface Alteracao { path: string; value: number }
 
+/** Limites do valor base (Criação de Personagem e Progressão e Proficiência); o ajuste não tem limite. */
+const LIMITES_BASE: Record<Categoria, { min: number; max: number }> = {
+  atributo: { min: 1, max: 5 },
+  pericia: { min: 0, max: 5 },
+};
+
+function erroDoValor(texto: string, limite: { min: number; max: number } | null): string | null {
+  const limpo = texto.trim();
+  if (!limpo) return null;
+  const valor = Number(limpo);
+  if (!Number.isInteger(valor)) return "Use um número inteiro.";
+  if (limite && (valor < limite.min || valor > limite.max)) {
+    return valor > limite.max
+      ? `Vai de ${limite.min} a ${limite.max}; acima disso, use o ajuste.`
+      : `Vai de ${limite.min} a ${limite.max}.`;
+  }
+  return null;
+}
+
 function numero(valor: unknown): number | null {
   return typeof valor === "number" && Number.isFinite(valor) ? valor : null;
 }
@@ -21,6 +40,8 @@ export interface AttributeTableProps {
   valores: ValorDerivadoResumo[];
   permissoes: PermissoesFicha | undefined;
   onSave: (alteracoes: Alteracao[]) => Promise<{ status: "salvo" | "pendente" }>;
+  /** Personagens seguem os limites do valor base; NPCs e monstros, não. */
+  aplicarLimites?: boolean;
 }
 
 /**
@@ -29,7 +50,8 @@ export interface AttributeTableProps {
  * oficiais aparecem mesmo quando ainda não existem na ficha; nomes extras da
  * ficha são preservados em "Outros".
  */
-export function AttributeTable({ categoria, titulo, eyebrow, grupos, ficha, valores, permissoes, onSave }: AttributeTableProps) {
+export function AttributeTable({ categoria, titulo, eyebrow, grupos, ficha, valores, permissoes, onSave, aplicarLimites = true }: AttributeTableProps) {
+  const limiteBase = aplicarLimites ? LIMITES_BASE[categoria] : null;
   const secao = categoria === "atributo" ? "atributos" : "pericias";
   const dados = asRecord(asRecord(ficha)[secao]);
   const base = asRecord(dados.valores);
@@ -65,7 +87,9 @@ export function AttributeTable({ categoria, titulo, eyebrow, grupos, ficha, valo
     const novo = Number(limpo);
     return Number.isInteger(novo) && novo !== anterior ? [{ path, value: novo }] : [];
   });
-  const invalidos = Object.values(rascunho).some((texto) => texto.trim() !== "" && !Number.isInteger(Number(texto.trim())));
+  const erroDe = (path: string): string | null =>
+    path in rascunho ? erroDoValor(rascunho[path] ?? "", path.split(".")[1] === "valores" ? limiteBase : null) : null;
+  const invalidos = Object.keys(rascunho).some((path) => erroDe(path) !== null);
   const exigeAprovacao = alteracoes.some((a) => permissoes && campoExigeAprovacao(a.path, permissoes));
 
   async function salvar() {
@@ -111,11 +135,18 @@ export function AttributeTable({ categoria, titulo, eyebrow, grupos, ficha, valo
                       return (
                         <td key={tipo}>
                           {editando && campoEditavel(path, permissoes) ? (
-                            <input
-                              type="number" step={1} aria-label={rotulo} className="attribute-table__input"
-                              value={valorAtual(tipo, nome)}
-                              onChange={(event) => setRascunho((atual) => ({ ...atual, [path]: event.target.value }))}
-                            />
+                            <>
+                              <input
+                                type="number" step={1} aria-label={rotulo} className="attribute-table__input"
+                                min={tipo === "valores" ? limiteBase?.min : undefined}
+                                max={tipo === "valores" ? limiteBase?.max : undefined}
+                                aria-invalid={erroDe(path) ? true : undefined}
+                                aria-describedby={erroDe(path) ? `erro-${path}` : undefined}
+                                value={valorAtual(tipo, nome)}
+                                onChange={(event) => setRascunho((atual) => ({ ...atual, [path]: event.target.value }))}
+                              />
+                              {erroDe(path) && <small id={`erro-${path}`} className="field-error" role="alert">{erroDe(path)}</small>}
+                            </>
                           ) : (
                             <span aria-label={rotulo}>{valorAtual(tipo, nome) || "—"}</span>
                           )}
@@ -133,7 +164,7 @@ export function AttributeTable({ categoria, titulo, eyebrow, grupos, ficha, valo
       {editando && (
         <div className="attribute-table__actions">
           {exigeAprovacao && <p className="preview-note">Algumas alterações serão enviadas para aprovação do Narrador.</p>}
-          {invalidos && <p role="alert">Use apenas números inteiros.</p>}
+          {invalidos && <p className="preview-note">Corrija os valores marcados antes de salvar.</p>}
           {erro && <p role="alert">{erro}</p>}
           <button type="button" className="button button--ghost" onClick={() => { setRascunho({}); setEditando(false); setErro(null); }}>Cancelar</button>
           <button type="button" className="button" disabled={pendente || invalidos || alteracoes.length === 0} onClick={() => void salvar()}>

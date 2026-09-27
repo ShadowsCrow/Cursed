@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class FichaContrato(BaseModel):
@@ -114,6 +114,10 @@ class PoliticaMesaContrato(BaseModel):
     permitir_exclusao_propria: bool
     campos_bloqueados: list[str] = Field(default_factory=list, max_length=100)
     campos_exigem_aprovacao: list[str] = Field(default_factory=list, max_length=100)
+    moedas_por_pilha: int | None = Field(
+        default=None, ge=1, le=10_000,
+        description="Moedas (de qualquer tipo) por pilha, ou seja, por célula da grade. Ausente mantém o valor atual.",
+    )
 
     @field_validator("campos_bloqueados", "campos_exigem_aprovacao")
     @classmethod
@@ -208,6 +212,12 @@ class PermissoesFicha(BaseModel):
     campos_exigem_aprovacao: list[str] = Field(default_factory=list)
 
 
+SubtipoItemGrade = Literal[
+    "peitoral", "capacete", "luvas", "botas", "uma_mao", "duas_maos", "escudo",
+    "mochila", "aljava", "moedas", "outro",
+]
+
+
 class ItemInventarioResumo(BaseModel):
     id: str
     tipo: Literal["arma", "armadura", "outro"]
@@ -218,6 +228,176 @@ class ItemInventarioResumo(BaseModel):
     cargas_maximas: int | None = None
     dados: dict[str, Any] = Field(default_factory=dict)
     efeitos: list[str] = Field(default_factory=list, description="Efeitos cuja fonte é este item.")
+    # Grade de carga (carga-por-espacos). Sem subtipo/dimensão o item fica fora da grade.
+    subtipo: SubtipoItemGrade | None = None
+    largura: int | None = None
+    altura: int | None = None
+    coluna: int | None = None
+    linha: int | None = None
+    girado: bool = False
+    maos: int | None = None
+    pilha_max: int | None = None
+
+
+class AmpliacaoGradeResumo(BaseModel):
+    fonte: Literal["mochila", "magia", "habilidade"]
+    rotulo: str
+    linhas: int
+    colunas: int
+
+
+class GradeInventario(BaseModel):
+    """Grade de carga calculada pelo servidor: é a autoridade sobre posições e sobrecarga."""
+
+    versao: int
+    forca: int
+    tamanho: Literal["minusculo", "pequeno", "medio", "grande", "enorme", "colossal"]
+    tamanho_origem: Literal["ficha", "raca"]
+    colunas_verdes: int
+    linhas_verdes: int
+    colunas: int = Field(description="Colunas exibidas, incluindo áreas perdidas ocupadas.")
+    linhas: int = Field(description="Linhas exibidas: verdes, a vermelha extra e áreas perdidas ocupadas.")
+    ampliacoes: list[AmpliacaoGradeResumo] = Field(default_factory=list)
+    sobrecarga: bool
+    itens_em_sobrecarga: list[str] = Field(default_factory=list)
+    maos_ocupadas: int
+    celulas_ocupadas: int
+    celulas_verdes: int
+    itens: list[ItemInventarioResumo]
+
+
+class PosicaoItemGrade(BaseModel):
+    item_id: str = Field(min_length=1, max_length=100)
+    coluna: int | None = Field(default=None, ge=0, le=40)
+    linha: int | None = Field(default=None, ge=0, le=40)
+    girado: bool = False
+    equipado: bool = False
+    maos: int | None = Field(default=None, ge=1, le=2, description="Só armas versáteis: empunhadura com uma ou duas mãos.")
+
+
+class ArrumacaoGradeRequest(BaseModel):
+    versao_esperada: int = Field(ge=0)
+    itens: list[PosicaoItemGrade] = Field(max_length=300)
+
+
+class PilhaMoedas(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cobre: int = Field(default=0, ge=0)
+    prata: int = Field(default=0, ge=0)
+    ouro: int = Field(default=0, ge=0)
+    platina: int = Field(default=0, ge=0)
+
+
+class MoedasRequest(BaseModel):
+    """Um modo por pedido: `adicionar` enche as pilhas com espaço e cria novas; `retirar` tira das últimas pilhas;
+    `bolsa` define os totais e o servidor junta tudo em pilhas; `pilhas` define cada pilha (para dividir)."""
+
+    versao_esperada: int = Field(ge=0)
+    adicionar: PilhaMoedas | None = None
+    retirar: PilhaMoedas | None = None
+    bolsa: PilhaMoedas | None = None
+    pilhas: list[PilhaMoedas] | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def _um_modo(self) -> "MoedasRequest":
+        modos = [m for m in (self.adicionar, self.retirar, self.bolsa, self.pilhas) if m is not None]
+        if len(modos) != 1:
+            raise ValueError("Informe um só modo: adicionar, retirar, bolsa ou pilhas.")
+        for delta in (self.adicionar, self.retirar):
+            if delta is not None and not any(delta.model_dump().values()):
+                raise ValueError("Informe alguma quantidade de moedas.")
+        return self
+
+
+class ItemRecipienteResumo(BaseModel):
+    id: str
+    nome: str
+    tipo: Literal["arma", "armadura", "outro"]
+    subtipo: SubtipoItemGrade | None = None
+    quantidade: int
+    largura: int | None = None
+    altura: int | None = None
+    coluna: int | None = None
+    linha: int | None = None
+    girado: bool = False
+    grupo: str | None = Field(default=None, description="Itens largados juntos (por exemplo, com a mochila).")
+    efeitos: list[str] = Field(default_factory=list, description="Nomes dos efeitos que o item carrega.")
+    icone_grade: str | None = None
+
+
+class RecipienteResumo(BaseModel):
+    id: str
+    tipo: Literal["chao", "bau"]
+    nome: str
+    colunas: int
+    linhas: int
+    versao: int
+    itens: list[ItemRecipienteResumo]
+
+
+class CriarBauRequest(BaseModel):
+    nome: str = Field(min_length=1, max_length=200)
+    colunas: int = Field(ge=1, le=20)
+    linhas: int = Field(ge=1, le=20)
+
+
+class ColocarCartaRequest(BaseModel):
+    versao_id: str = Field(min_length=1, max_length=100)
+
+
+class LargarItemRequest(BaseModel):
+    versao_esperada: int = Field(ge=0)
+    recipiente_id: str | None = Field(default=None, description="Sem recipiente, vai para o chão da cena ativa.")
+
+
+class PegarItemRequest(BaseModel):
+    personagem_id: str = Field(min_length=1, max_length=100)
+    versao_esperada: int = Field(ge=0)
+    coluna: int | None = Field(default=None, ge=0, le=40)
+    linha: int | None = Field(default=None, ge=0, le=40)
+    girado: bool = False
+
+
+class OfertarItemRequest(BaseModel):
+    para_personagem_id: str = Field(min_length=1, max_length=100)
+
+
+class AceitarOfertaRequest(BaseModel):
+    versao_esperada: int = Field(ge=0, description="Versão da ficha de quem recebe.")
+    coluna: int | None = Field(default=None, ge=0, le=40, description="Sem lugar, o item chega fora da grade.")
+    linha: int | None = Field(default=None, ge=0, le=40)
+    girado: bool = False
+
+
+class OfertaItemResumo(BaseModel):
+    id: str
+    estado: Literal["pendente", "aceita", "recusada", "cancelada"]
+    item_id: str
+    item_nome: str
+    subtipo: SubtipoItemGrade | None = None
+    largura: int | None = None
+    altura: int | None = None
+    de_personagem_id: str
+    de_nome: str
+    para_personagem_id: str
+    para_nome: str
+    criado_em: datetime
+
+
+class VersaoRequest(BaseModel):
+    versao_esperada: int = Field(ge=0)
+
+
+class DefinirFormatoRequest(BaseModel):
+    formato: FormatoItemGrade
+    versao_esperada: int = Field(ge=0)
+
+
+class ProblemaArrumacao(BaseModel):
+    item_id: str | None = None
+    motivo: str
+    mensagem: str
 
 
 class EquiparItemRequest(BaseModel):
@@ -242,6 +422,13 @@ class FonteEfeitoResumo(BaseModel):
     equipamento_id: str | None = None
 
 
+class IconeResumo(BaseModel):
+    """Ícone resolvido de um efeito: mesa → catálogo → padrão."""
+
+    origem: Literal["mesa", "efeito", "catalogo", "padrao"]
+    caminho: str = Field(description="Objeto do armazenamento (mesa, efeito) ou caminho público do frontend.")
+
+
 class EfeitoResumo(BaseModel):
     id: str
     nome: str
@@ -251,10 +438,14 @@ class EfeitoResumo(BaseModel):
     ativacao: str | None = None
     modificadores: list[ModificadorResumo] = Field(default_factory=list)
     fontes: list[FonteEfeitoResumo] = Field(default_factory=list)
+    derivado: bool = Field(default=False, description="Calculado pelo sistema (ex.: Sobrecarga); não se encerra nem se ajusta.")
+    consequencias: list[str] = Field(default_factory=list, description="Consequências sem valor numérico na ficha.")
+    associacao: str | None = Field(default=None, description="Código do efeito default, quando vem do catálogo.")
+    icone: IconeResumo
 
 
 class FonteValorResumo(BaseModel):
-    tipo: Literal["base", "ajuste", "atributo", "pericia", "equipamento", "efeito"]
+    tipo: Literal["base", "ajuste", "atributo", "pericia", "equipamento", "efeito", "classe", "nivel", "ajuste_narrador"]
     descricao: str
     valor: float
     efeito_id: str | None = None
@@ -271,10 +462,31 @@ class SituacionalResumo(BaseModel):
 class ValorDerivadoResumo(BaseModel):
     chave: str
     rotulo: str
-    grupo: Literal["atributo", "pericia", "status"]
-    total: float
+    grupo: Literal["atributo", "pericia", "status", "recurso"]
+    total: float | None = Field(description="Vazio quando o valor não é calculável.")
     fontes: list[FonteValorResumo]
     situacionais: list[SituacionalResumo] = Field(default_factory=list)
+    calculavel: bool = True
+    motivo: str | None = Field(default=None, description="Entrada que falta quando o valor não é calculável.")
+    divergencia_legada: float | None = Field(
+        default=None, description="Valor gravado à mão numa ficha antiga, quando difere do calculado.")
+
+
+class AjustarRecursoRequest(BaseModel):
+    """Ajuste do Narrador em PV/PP máximo ou Escala, quando uma regra específica prevalece."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    versao_esperada: int = Field(ge=0)
+    alvo: Literal["pv_maximo", "pp_maximo", "escala_pv", "escala_pp"]
+    valor: int
+    origem: str = Field(min_length=1, max_length=200)
+    justificativa: str = Field(min_length=1, max_length=1000)
+
+
+class AjusteRecursoResposta(BaseModel):
+    versao: int
+    valores: list[ValorDerivadoResumo]
 
 
 class PreviaImportacaoRequest(BaseModel):
@@ -526,12 +738,70 @@ class EfeitoDeclarado(BaseModel):
     ativacao: Literal["enquanto_equipado", "manual"] = "enquanto_equipado"
 
 
+CATEGORIA_POR_SUBTIPO: dict[str, str] = {
+    "uma_mao": "arma", "duas_maos": "arma",
+    "peitoral": "armadura", "capacete": "armadura", "luvas": "armadura", "botas": "armadura", "escudo": "armadura",
+    "mochila": "outro", "aljava": "outro", "moedas": "outro", "outro": "outro",
+}
+
+
+class MochilaFormato(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    linhas: int = Field(default=0, ge=0, le=4)
+    colunas: int = Field(default=0, ge=0, le=4)
+    requisito_forca: int | None = Field(default=None, ge=0, le=10)
+
+
+class AljavaFormato(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    capacidade_flechas: int = Field(ge=1, le=200)
+
+
+class FormatoItemGrade(BaseModel):
+    """Formato do item na grade de carga, definido na criação (carga-por-espacos)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    subtipo: SubtipoItemGrade
+    largura: int = Field(ge=1, le=12)
+    altura: int = Field(ge=1, le=12)
+    maos: int | None = Field(default=None, ge=0, le=2, description="Só itens do tipo Outros.")
+    pilha_max: int | None = Field(default=None, ge=1, le=999, description="Só itens do tipo Outros.")
+    mochila: MochilaFormato | None = None
+    aljava: AljavaFormato | None = None
+    icone_grade: str | None = Field(default=None, max_length=500, description="Imagem na proporção da dimensão.")
+    versatil: bool = Field(default=False, description="Só armas de uma mão: podem ser empunhadas com uma ou duas mãos.")
+
+    @model_validator(mode="after")
+    def _coerente(self) -> "FormatoItemGrade":
+        if self.versatil and self.subtipo != "uma_mao":
+            raise ValueError("Só armas de uma mão podem ser versáteis.")
+        if self.subtipo == "moedas":
+            raise ValueError("Moedas são do sistema e não se criam como item.")
+        if self.subtipo != "outro" and (self.maos is not None or self.pilha_max is not None):
+            raise ValueError("Mãos e pilha só se definem em itens do tipo Outros.")
+        if (self.subtipo == "mochila") != (self.mochila is not None):
+            raise ValueError("A ampliação da mochila é obrigatória na mochila e só nela.")
+        if (self.subtipo == "aljava") != (self.aljava is not None):
+            raise ValueError("A capacidade de flechas é obrigatória na aljava e só nela.")
+        return self
+
+
 class ConteudoItem(_ConteudoBase):
     tipo: Literal["item"] = "item"
     item_tipo: Literal["arma", "armadura", "outro"]
     dados: dict[str, Any] = Field(default_factory=dict, description="Dano, armadura, rdb, peso e demais atributos.")
     quantidade: int = Field(default=1, ge=1)
     efeitos: list[EfeitoDeclarado] = Field(default_factory=list, max_length=10)
+    formato: FormatoItemGrade | None = Field(default=None, description="Obrigatório para publicar (carga em grade).")
+
+    @model_validator(mode="after")
+    def _formato_compativel(self) -> "ConteudoItem":
+        if self.formato is not None and CATEGORIA_POR_SUBTIPO[self.formato.subtipo] != self.item_tipo:
+            raise ValueError("O tipo do item não combina com o subtipo do formato.")
+        return self
 
 
 class ConteudoEfeito(_ConteudoBase):
@@ -590,6 +860,8 @@ class CartaDefinicaoResumo(BaseModel):
     versao_publicada: int | None = None
     publicada: CartaVersaoResumo | None = None
     arquivada: bool = False
+    origem_sistema: str | None = Field(
+        default=None, description="Habilidade do catálogo que a carta materializa; o JSON prevalece sobre edições.")
 
 
 class ImportarCartaRequest(BaseModel):
@@ -625,6 +897,8 @@ class CartaPersonagemResumo(BaseModel):
     adquirida_em: datetime
     carta: CartaVisivel
     versao_mais_recente: int | None = Field(default=None, description="Somente para o Narrador.")
+    concedida_por: str | None = Field(
+        default=None, description="Escolha que concedeu a carta (ex.: classe:Druida); vazio para ofertas e concessões avulsas.")
 
 
 class ConcederCartaRequest(BaseModel):
@@ -809,3 +1083,102 @@ class SalaSnapshot(BaseModel):
     modulo_ativo: bool
     cenas: list[CenaResumoSala] = Field(default_factory=list, description="Somente para o Narrador.")
     cena: CenaSala | None = None
+
+
+# ------------------------------------------------------------------ catálogos do sistema
+
+
+class BaseClasseResumo(BaseModel):
+    valor: int
+    atributo: str = Field(description="Chave normalizada do atributo: vigor ou proposito.")
+    texto: str
+
+
+class HabilidadeCatalogoResumo(BaseModel):
+    nome: str
+    descricao: str
+    tipo: str
+
+
+class ArquetipoResumo(BaseModel):
+    nome: str
+    conceito: str
+    habilidades: list[HabilidadeCatalogoResumo]
+
+
+class ClasseCatalogoResumo(BaseModel):
+    nome: str
+    cor: str | None = None
+    pv: BaseClasseResumo | None = None
+    escala_pv: BaseClasseResumo | None = None
+    pp: BaseClasseResumo | None = None
+    escala_pp: BaseClasseResumo | None = None
+    habilidades: list[HabilidadeCatalogoResumo]
+    arquetipos: list[ArquetipoResumo]
+
+
+class RacaCatalogoResumo(BaseModel):
+    nome: str
+    deslocamento: int | None = None
+    tamanho: str | None = None
+    habilidades: list[HabilidadeCatalogoResumo]
+
+
+class PecadoResumo(BaseModel):
+    nome: str
+    icone: str
+    equivalentes: list[str] = Field(default_factory=list)
+
+
+class CampoPersonalidadeResumo(BaseModel):
+    chave: str
+    rotulo: str
+    dica: str
+
+
+class ListasFichaResumo(BaseModel):
+    sexos: list[str]
+    alinhamentos: list[str]
+    pecados: list[PecadoResumo]
+    campos_personalidade: list[CampoPersonalidadeResumo]
+
+
+class ModificadorCatalogoResumo(BaseModel):
+    alvo: str
+    valor: float
+    quando: str | None = None
+
+
+class EfeitoDefaultResumo(BaseModel):
+    associacao: str
+    nome: str
+    descricao: str
+    grupo: str | None = None
+    modificadores: list[ModificadorCatalogoResumo] = Field(default_factory=list)
+    substitui: list[str] = Field(default_factory=list, description="Associações que este efeito encerra ao ser aplicado.")
+    substitui_nomes: list[str] = Field(default_factory=list)
+    icone: IconeResumo
+
+
+class ErroCatalogoResumo(BaseModel):
+    arquivo: str
+    motivo: str
+    em: datetime
+
+
+class EstadoCatalogoResumo(BaseModel):
+    versao: str
+    erro: ErroCatalogoResumo | None = None
+
+
+# ------------------------------------------------------------------ envio de imagens
+
+
+class ImagemResposta(BaseModel):
+    """Referência gravada no ponto de envio; a imagem nunca volta na resposta."""
+
+    destino: Literal["retrato", "item", "icone-grade", "efeito", "carta", "mapa", "icone-efeito"]
+    alvo: str
+    objeto: str | None = Field(default=None, description="Objeto original no armazenamento privado; vazio após remover.")
+    exibicao: str | None = Field(default=None, description="Versão reduzida em WEBP, quando o destino tem uma.")
+    versao: int | None = Field(default=None, description="Nova versão do personagem ou do rascunho da carta.")

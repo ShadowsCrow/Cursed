@@ -21,7 +21,7 @@ from uuid import uuid4
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
@@ -30,11 +30,13 @@ sys.path.insert(0, str(RAIZ))
 from cursed_platform.migracao_ativos import (  # noqa: E402
     ArmazenamentoLocal, migrar_ativos, migrar_ativos_catalogos,
 )
+from cursed_platform import catalogos  # noqa: E402
+from cursed_platform.completar_fichas import completar  # noqa: E402
 from cursed_platform.migracao_equivalencia import gerar_relatorio_equivalencia  # noqa: E402
 from cursed_platform.migracao_json import migrar_json_catalogos  # noqa: E402
 from cursed_platform.migracao_tabelas import migrar_tabelas  # noqa: E402
 from cursed_platform.observabilidade import registrar  # noqa: E402
-from cursed_platform.persistence import MembroRegistro, MesaRegistro  # noqa: E402
+from cursed_platform.persistence import CartaPersonagemRegistro, MembroRegistro, MesaRegistro  # noqa: E402
 
 
 def ensaiar(*, origem_sqlite: Path, postgres_admin_url: str, origem_id: str,
@@ -150,6 +152,29 @@ def ensaiar(*, origem_sqlite: Path, postgres_admin_url: str, origem_id: str,
             "pendencias_por_motivo": dict(Counter(item["motivo"] for item in equivalencia.pendencias)),
         }
         duracoes["equivalencia"] = round(perf_counter() - comeco, 3)
+
+        # Depois da equivalência (que compara a importação com a origem), a ficha é completada:
+        # nível, PV/PP, vínculo com o catálogo e cartas de classe (calcular-valores-da-ficha, 8.1).
+        comeco = perf_counter()
+        catalogo = catalogos.obter()
+        with Session(destino) as session:
+            previa_fichas = completar(session, mesa_id, catalogo)
+            session.rollback()
+            aplicado_fichas = completar(session, mesa_id, catalogo, aplicar=True)
+            session.commit()
+            repeticao_fichas = completar(session, mesa_id, catalogo, aplicar=True)
+            session.commit()
+            cartas_concedidas = session.scalar(select(func.count()).select_from(CartaPersonagemRegistro).where(
+                CartaPersonagemRegistro.concedida_por.is_not(None)))
+        resultado["completar_fichas"] = {
+            "previa": previa_fichas.contagens(),
+            "aplicado": aplicado_fichas.contagens(),
+            "repeticao_alteradas": repeticao_fichas.contagens()["alteradas"],
+            "cartas_de_catalogo_concedidas": cartas_concedidas,
+            "sinalizacoes": [s for f in aplicado_fichas.fichas for s in f.sinalizacoes],
+            "erros": [e for f in aplicado_fichas.fichas for e in f.erros],
+        }
+        duracoes["completar_fichas"] = round(perf_counter() - comeco, 3)
     finally:
         if origem is not None:
             origem.dispose()

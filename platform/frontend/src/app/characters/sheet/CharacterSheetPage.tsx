@@ -9,11 +9,16 @@ import type { ApiClient } from "../types";
 import { ActiveStateStrip } from "./ActiveStateStrip";
 import { AttributeTable, type Alteracao } from "./AttributeTable";
 import { DerivedValueGroup } from "./DerivedValueGroup";
-import { EditableField } from "./EditableField";
 import { EffectsPanel } from "./EffectsPanel";
-import { personagemInfo, personalidadeInfo } from "./fichaAccess";
+import { campoEditavel } from "../fieldPolicy";
+import { useClasses, useListasFicha, useRacas } from "./catalogoApi";
+import { personagemInfo } from "./fichaAccess";
+import { IdentityPanel } from "./IdentityPanel";
+import { PersonalityPanel } from "./PersonalityPanel";
+import type { AlteracaoCampo } from "./SelectField";
 import { ImportDialog } from "./ImportDialog";
-import { EquippedItemsPanel, InventoryItemsPanel } from "./InventoryPanel";
+import { EquippedItemsPanel } from "./InventoryPanel";
+import { InventoryGridPanel } from "./InventoryGridPanel";
 import {
   sheetKeys,
   useEfeitos,
@@ -86,6 +91,9 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
   const desgasteQuery = useDesgaste(api, mesaId, personagemId);
   const abas = useRef<(HTMLButtonElement | null)[]>([]);
   const salvarCampo = useSalvarCampoFicha(api, mesaId, personagemId, userId);
+  const classesQuery = useClasses(api, mesaId);
+  const racasQuery = useRacas(api, mesaId);
+  const listasQuery = useListasFicha(api, mesaId);
 
   if (fichaQuery.isPending) return <p>Carregando ficha…</p>;
   if (fichaQuery.isError) return <p role="alert">{fichaQuery.error.message}</p>;
@@ -94,11 +102,16 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
   const versao = fichaQuery.data.versao;
   const permissoes = permissoesQuery.data;
   const info = personagemInfo(ficha);
-  const personalidade = personalidadeInfo(ficha);
+  const avisos = Object.fromEntries((fichaQuery.data.avisos ?? []).map((a) => [a.campo, a.mensagem]));
+  const narrador = permissoes?.papel === "narrador";
 
-  async function saveField(path: string, value: string | number): Promise<{ status: "salvo" | "pendente" }> {
-    const resultado = await salvarCampo.mutateAsync({ path, value, ficha, versao });
+  async function saveCampos(alteracoes: AlteracaoCampo[]): Promise<{ status: "salvo" | "pendente" }> {
+    const [primeira, ...demais] = alteracoes;
+    if (!primeira) return { status: "salvo" };
+    const resultado = await salvarCampo.mutateAsync({ path: primeira.path, value: primeira.value, ficha, versao, extras: demais });
+    // Classe, nível e atributos mudam PV/PP; a troca de classe muda as cartas concedidas.
     void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
+    void queryClient.invalidateQueries({ queryKey: ["cartas-personagem", mesaId, personagemId] });
     return { status: resultado.status };
   }
 
@@ -141,8 +154,26 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         <p className="preview-note" role="note"><Glyph name="eye" size={16} /> Você está vendo esta ficha em modo de leitura.</p>
       )}
 
-      <SheetHeader ficha={ficha} api={api} mesaId={mesaId} />
-      <ActiveStateStrip desgaste={desgasteQuery.data} efeitos={efeitosQuery.data} />
+      <SheetHeader
+        ficha={ficha} api={api} mesaId={mesaId} classes={classesQuery.data}
+        envioRetrato={campoEditavel("personagem.imagem_ativo", permissoes) ? {
+          personagemId, versao,
+          onConcluido: () => { void queryClient.invalidateQueries({ queryKey: sheetKeys.ficha(mesaId, personagemId) }); },
+        } : undefined}
+        recursos={{
+          valores: valoresQuery.data,
+          avisoNivel: avisos["personagem.nivel"]?.includes("migração") ? avisos["personagem.nivel"] : undefined,
+          ajuste: narrador ? {
+            api, mesaId, personagemId, versao,
+            onAjustado: () => {
+              void queryClient.invalidateQueries({ queryKey: sheetKeys.ficha(mesaId, personagemId) });
+              void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
+            },
+          } : undefined,
+          onConfirmarNivel: narrador ? () => saveCampos([{ path: "personagem.nivel_pela_migracao", value: false }]) : undefined,
+        }}
+      />
+      <ActiveStateStrip desgaste={desgasteQuery.data} efeitos={efeitosQuery.data} api={api} mesaId={mesaId} />
 
       <div className="sheet-tabs" role="tablist" aria-label="Seções da ficha">
         {SECTIONS.map((section, indice) => (
@@ -164,26 +195,13 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
       </div>
 
       <div hidden={secao !== "informacoes"} role="tabpanel" id="painel-informacoes" aria-labelledby="aba-informacoes" tabIndex={0}>
-        <section className="panel">
-          <div className="section-heading"><div><span className="eyebrow">IDENTIDADE</span><h2>Informações básicas</h2></div></div>
-          <div className="detail-grid">
-            <EditableField label="Nome" path="personagem.nome" value={info.nome} permissoes={permissoes} onSave={saveField} />
-            <EditableField label="Raça" path="personagem.raca" value={info.raca ?? ""} permissoes={permissoes} onSave={saveField} />
-            <EditableField label="Classe" path="personagem.classe" value={info.classe ?? ""} permissoes={permissoes} onSave={saveField} />
-            <EditableField label="Arquétipo" path="personagem.arquetipo" value={info.arquetipo ?? ""} permissoes={permissoes} onSave={saveField} />
-          </div>
-        </section>
+        <IdentityPanel ficha={ficha} permissoes={permissoes} classes={classesQuery.data ?? []} racas={racasQuery.data ?? []}
+          listas={listasQuery.data} avisos={avisos} onSave={saveCampos} />
       </div>
 
       <div hidden={secao !== "personalidade"} role="tabpanel" id="painel-personalidade" aria-labelledby="aba-personalidade" tabIndex={0}>
-        <section className="panel">
-          <div className="section-heading"><div><span className="eyebrow">QUEM É {info.nome.toUpperCase()}</span><h2>Personalidade</h2></div></div>
-          <div className="detail-grid">
-            <EditableField label="Alinhamento" path="personalidade.alinhamento" value={String(personalidade.alinhamento ?? "")} permissoes={permissoes} onSave={saveField} />
-            <EditableField label="Pecado" path="personalidade.pecado" value={String(personalidade.pecado ?? "")} permissoes={permissoes} onSave={saveField} />
-            <EditableField label="Lema" path="personalidade.meu_lema" kind="textarea" value={String(personalidade.meu_lema ?? "")} permissoes={permissoes} onSave={saveField} />
-          </div>
-        </section>
+        <PersonalityPanel nome={info.nome} ficha={ficha} permissoes={permissoes} listas={listasQuery.data}
+          avisos={avisos} onSave={saveCampos} />
       </div>
 
       <div hidden={secao !== "atributos"} role="tabpanel" id="painel-atributos" aria-labelledby="aba-atributos" tabIndex={0}>
@@ -193,6 +211,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
           <AttributeTable
             categoria="atributo" eyebrow="BASE MECÂNICA" titulo="Atributos" grupos={GRUPOS_ATRIBUTOS}
             ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
+            aplicarLimites={fichaQuery.data.tipo === "personagem"}
           />
         )}
       </div>
@@ -202,6 +221,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
           <AttributeTable
             categoria="pericia" eyebrow="ESPECIALIDADES" titulo="Perícias" grupos={GRUPOS_PERICIAS}
             ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
+            aplicarLimites={fichaQuery.data.tipo === "personagem"}
           />
         )}
       </div>
@@ -218,19 +238,19 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         <div className="section-heading"><div /><ImportDialog api={api} mesaId={mesaId} personagemId={personagemId} versao={versao} permissoes={permissoes} onImported={(resultado) => {
           bumpVersao(resultado.versao);
           void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
+          void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
           void queryClient.invalidateQueries({ queryKey: sheetKeys.efeitos(mesaId, personagemId) });
           void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
         }} /></div>
-        {inventarioQuery.isPending && <p>Carregando inventário…</p>}
-        {inventarioQuery.isError && <p role="alert">{inventarioQuery.error.message}</p>}
-        {inventarioQuery.isSuccess && (
-          <InventoryItemsPanel api={api} mesaId={mesaId} personagemId={personagemId} itens={inventarioQuery.data} versao={versao} permissoes={permissoes} online={online} onVersaoConfirmada={bumpVersao} />
-        )}
+        <InventoryGridPanel api={api} mesaId={mesaId} personagemId={personagemId} permissoes={permissoes} versao={versao} online={online} onVersaoConfirmada={bumpVersao} />
       </div>
 
       <div hidden={secao !== "status"} role="tabpanel" id="painel-status" aria-labelledby="aba-status" tabIndex={0}>
         {valoresQuery.isSuccess && (
-          <DerivedValueGroup eyebrow="ESTADO" title="Status" valores={valoresQuery.data} grupo="status" emptyMessage="Nenhum status calculado." />
+          <>
+            <DerivedValueGroup eyebrow="REGRAS DA CLASSE" title="Recursos" valores={valoresQuery.data} grupo="recurso" emptyMessage="Nenhum recurso calculado." />
+            <DerivedValueGroup eyebrow="ESTADO" title="Status" valores={valoresQuery.data} grupo="status" emptyMessage="Nenhum status calculado." />
+          </>
         )}
       </div>
 
@@ -239,8 +259,10 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         {efeitosQuery.isError && <p role="alert">{efeitosQuery.error.message}</p>}
         {efeitosQuery.isSuccess && (
           <EffectsPanel
-            efeitos={efeitosQuery.data}
-            admin={permissoes?.papel === "narrador" ? { api, mesaId, personagemId, versao, onVersaoConfirmada: bumpVersao } : undefined}
+            efeitos={efeitosQuery.data} api={api} mesaId={mesaId}
+            admin={permissoes?.papel === "narrador" || permissoes?.editar
+              ? { api, mesaId, personagemId, versao, onVersaoConfirmada: bumpVersao, papel: narrador ? "narrador" : "jogador" }
+              : undefined}
           />
         )}
       </div>

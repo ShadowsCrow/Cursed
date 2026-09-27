@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, cartas
+from cursed_platform import auditoria, cartas, corpos
 from cursed_platform.migracao_ativos import AtivoInvalido
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
@@ -38,6 +38,13 @@ def _definicao(session: Session, mesa_id: str, carta_id: str) -> CartaDefinicaoR
     return definicao
 
 
+def _editavel(session: Session, mesa_id: str, carta_id: str) -> CartaDefinicaoRegistro:
+    definicao = _definicao(session, mesa_id, carta_id)
+    if corpos.eh_padrao(definicao):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Os corpos padrão do sistema não se editam.")
+    return definicao
+
+
 def versao_resumo(versao: CartaVersaoRegistro) -> CartaVersaoResumo:
     return CartaVersaoResumo(
         id=versao.id, definicao_id=versao.definicao_id, numero=versao.numero, tipo=versao.tipo,
@@ -53,6 +60,7 @@ def _resumo(session: Session, definicao: CartaDefinicaoRegistro) -> CartaDefinic
         id=definicao.id, tipo=definicao.tipo, versao=definicao.versao, rascunho=rascunho.get("conteudo"),
         procedencia_rascunho=rascunho.get("procedencia") or {}, versao_publicada=definicao.versao_publicada,
         publicada=versao_resumo(publicada) if publicada is not None else None, arquivada=definicao.arquivada,
+        origem_sistema=definicao.origem_sistema,
     )
 
 
@@ -61,6 +69,8 @@ def listar_catalogo(
     mesa_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
 ) -> list[CartaDefinicaoResumo]:
     _exigir_narrador(session, mesa_id, ator)
+    if corpos.garantir(session, mesa_id):
+        session.commit()
     definicoes = session.scalars(
         select(CartaDefinicaoRegistro).where(CartaDefinicaoRegistro.mesa_id == mesa_id)
         .order_by(CartaDefinicaoRegistro.criado_em, CartaDefinicaoRegistro.id)
@@ -88,7 +98,7 @@ def salvar_rascunho(
 ) -> CartaDefinicaoResumo:
     """Rascunhos não geram auditoria: somente a publicação é uma alteração confirmada."""
     _exigir_narrador(session, mesa_id, ator)
-    definicao = _definicao(session, mesa_id, carta_id)
+    definicao = _editavel(session, mesa_id, carta_id)
     try:
         cartas.salvar_rascunho(session, definicao, pedido.rascunho, pedido.versao_esperada)
     except cartas.ConflitoRascunho:
@@ -116,7 +126,7 @@ def publicar_carta(
     correlacao: str = Depends(get_correlacao),
 ) -> CartaVersaoResumo:
     _exigir_narrador(session, mesa_id, ator)
-    definicao = _definicao(session, mesa_id, carta_id)
+    definicao = _editavel(session, mesa_id, carta_id)
     try:
         versao, validacao = cartas.publicar(
             session, definicao, ator_id=ator.usuario_id, versao_esperada=pedido.versao_esperada,
@@ -166,7 +176,7 @@ def _previa(codigo: str, mesa_id: str) -> tuple[str, dict, list[str], dict, Vali
         tipo, rascunho, avisos, procedencia = cartas.rascunho_de_codigo(codigo)
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(erro)) from None
-    _, validacao = cartas.validar(tipo, rascunho, mesa_id)
+    _, validacao = cartas.validar(tipo, rascunho, mesa_id, para_publicar=False)
     return tipo, rascunho, avisos, procedencia, validacao
 
 

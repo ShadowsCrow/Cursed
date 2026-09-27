@@ -208,12 +208,13 @@ class NarradorTest(unittest.TestCase):
     def test_efeitos_do_catalogo_e_validacao(self):
         ana = self.as_("ana").post("/mesas/mesa/personagens", json={"ficha": {"personagem": {"nome": "Ana"}}}).json()["personagem_id"]
         base = f"/mesas/mesa/personagens/{ana}/efeitos"
-        catalogo = self.as_("mestre").post(base, json={"associacao": "cc_above", "versao_esperada": 0})
+        catalogo = self.as_("mestre").post(base, json={"associacao": "condicao_derrubado", "versao_esperada": 0})
         self.assertEqual(catalogo.status_code, 201, catalogo.text)
         self.assertEqual((catalogo.json()["efeito"]["nome"], catalogo.json()["efeito"]["fontes"][0]["tipo"]),
-                         ("Sobrepeso", "catalogo"))
+                         ("Derrubado", "catalogo"))
         for corpo in (
             {"associacao": "inexistente", "versao_esperada": 1},
+            {"associacao": "cc_above", "versao_esperada": 1},
             {"nome": "Sem descrição", "versao_esperada": 1},
             {"nome": "X", "descricao": "Y", "modificadores": [{"alvo": "", "valor": 1}], "versao_esperada": 1},
         ):

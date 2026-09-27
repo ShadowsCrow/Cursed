@@ -12,8 +12,8 @@ const permissoes: PermissoesFicha = {
 };
 
 const itens: ItemInventarioResumo[] = [
-  { id: "item-1", tipo: "armadura", nome: "Cota de malha", quantidade: 1, equipado: true, cargas_atuais: null, cargas_maximas: null, dados: {}, efeitos: ["efeito-1"] },
-  { id: "item-2", tipo: "outro", nome: "Kit de viagem", quantidade: 1, equipado: false, cargas_atuais: null, cargas_maximas: null, dados: {}, efeitos: [] },
+  { id: "item-1", tipo: "armadura", nome: "Cota de malha", quantidade: 1, equipado: true, cargas_atuais: null, cargas_maximas: null, dados: {}, efeitos: ["efeito-1"], girado: false },
+  { id: "item-2", tipo: "outro", nome: "Kit de viagem", quantidade: 1, equipado: false, cargas_atuais: null, cargas_maximas: null, dados: {}, efeitos: [], girado: false },
 ];
 
 function renderPanels(api: ApiClient, extra: Partial<PermissoesFicha> = {}) {

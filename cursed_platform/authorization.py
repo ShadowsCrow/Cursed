@@ -23,6 +23,8 @@ class Acao(StrEnum):
     EDITAR_FICHA = "editar_ficha"
     EXCLUIR_PERSONAGEM = "excluir_personagem"
     APLICAR_EFEITO = "aplicar_efeito"
+    # Jogador aplica e encerra efeitos default (condições do catálogo) no próprio personagem.
+    APLICAR_EFEITO_PADRAO_PROPRIO = "aplicar_efeito_padrao_proprio"
     LER_CONTEUDO_NARRADOR = "ler_conteudo_narrador"
     TRANSFERIR_PERSONAGEM = "transferir_personagem"
     RESTAURAR_PERSONAGEM = "restaurar_personagem"
@@ -31,6 +33,7 @@ class Acao(StrEnum):
     ADMINISTRAR_DESCANSO = "administrar_descanso"
     GERENCIAR_CARTAS = "gerenciar_cartas"
     ADMINISTRAR_SALA = "administrar_sala"
+    DEFINIR_FORMATO_ITEM = "definir_formato_item"
 
 
 @dataclass(frozen=True)
@@ -85,6 +88,7 @@ class Autorizador:
             Acao.ADMINISTRAR_DESCANSO,
             Acao.GERENCIAR_CARTAS,
             Acao.ADMINISTRAR_SALA,
+            Acao.DEFINIR_FORMATO_ITEM,
         }:
             return DecisaoAcesso(narrador, motivo="Ação reservada ao Narrador.")
         if acao == Acao.CRIAR_PERSONAGEM:
@@ -112,6 +116,11 @@ class Autorizador:
             return DecisaoAcesso(
                 narrador or mesa.permitir_edicao_propria,
                 motivo="Edição não permitida nesta mesa.",
+            )
+        if acao == Acao.APLICAR_EFEITO_PADRAO_PROPRIO:
+            return DecisaoAcesso(
+                narrador or mesa.permitir_edicao_propria,
+                motivo="Esta mesa não permite que jogadores alterem a própria ficha.",
             )
         if acao == Acao.EXCLUIR_PERSONAGEM:
             return DecisaoAcesso(

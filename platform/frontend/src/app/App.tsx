@@ -9,7 +9,7 @@ import { extractErrorMessage, type ApiClient } from "./characters/types";
 import type { createPlatformClients } from "./clients";
 import { TableWorkspace } from "./TableWorkspace";
 import { routePatterns, routes } from "./routes";
-import type { RealtimeSession } from "./room/RoomPresence";
+import { TableEvents, type RealtimeSession } from "./room/RoomPresence";
 
 type Clients = ReturnType<typeof createPlatformClients>;
 
@@ -136,7 +136,7 @@ export function TablePage({ api, userId, onSignOut, realtime }: { api: ApiClient
   return <TableWorkspace mesa={mesa} api={api} userId={userId} onSignOut={onSignOut} realtime={realtime} />;
 }
 
-function CharacterPage({ api, userId }: { api: ApiClient; userId: string }) {
+function CharacterPage({ api, userId, realtime }: { api: ApiClient; userId: string; realtime?: RealtimeSession }) {
   const { mesaId, personagemId } = useParams<"mesaId" | "personagemId">();
   const navigate = useNavigate();
   if (!mesaId || !personagemId) {
@@ -144,6 +144,7 @@ function CharacterPage({ api, userId }: { api: ApiClient; userId: string }) {
   }
   return (
     <main className="page">
+      {realtime && <TableEvents api={api} mesaId={mesaId} realtime={realtime} />}
       <CharacterSheetPage
         api={api}
         mesaId={mesaId}
@@ -195,7 +196,7 @@ export function AppRoutes({ api, userId, onSignOut, realtime }: { api: ApiClient
     <Routes>
       <Route path={routePatterns.home} element={<Tables api={api} userId={userId} onSignOut={onSignOut} />} />
       <Route path={routePatterns.table} element={<TablePage api={api} userId={userId} onSignOut={onSignOut} realtime={realtime} />} />
-      <Route path={routePatterns.character} element={<CharacterPage api={api} userId={userId} />} />
+      <Route path={routePatterns.character} element={<CharacterPage api={api} userId={userId} realtime={realtime} />} />
       <Route path="*" element={<main className="page"><h1>Página não encontrada</h1><Link to={routes.home()}>Ir às mesas</Link></main>} />
     </Routes>
   );

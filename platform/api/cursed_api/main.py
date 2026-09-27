@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from time import perf_counter
 from pathlib import Path
 
@@ -26,7 +27,11 @@ from .rest import router as rest_router
 from .cards import router as cards_router
 from .card_lifecycle import router as card_lifecycle_router
 from .room import router as room_router
+from .stashes import router as stashes_router
 from .assets import router as assets_router
+from .catalogs import router as catalogs_router
+from .images import router as images_router
+from .sincronizacao import SincronizadorCatalogo
 
 
 class HealthResponse(BaseModel):
@@ -36,7 +41,21 @@ class HealthResponse(BaseModel):
 def create_app(settings: PlatformSettings | None = None, *, engine: Engine | None = None,
                armazenamento: ArmazenamentoObjetos | None = None) -> FastAPI:
     configuracao = settings or load_settings()
+    @asynccontextmanager
+    async def ciclo_de_vida(app: FastAPI):
+        # Em testes, a sincronização é chamada diretamente; fora deles, o JSON do catálogo é
+        # conferido ao subir (sem versão válida o servidor não sobe) e acompanhado depois.
+        sincronizador = None
+        if configuracao.environment != "test":
+            sincronizador = SincronizadorCatalogo(app.state.session_factory)
+            sincronizador.iniciar()
+        app.state.sincronizador_catalogo = sincronizador
+        yield
+        if sincronizador is not None:
+            sincronizador.parar()
+
     api = FastAPI(
+        lifespan=ciclo_de_vida,
         title="Cursed — Plataforma Colaborativa",
         version="0.1.0",
         description="API autoritativa da plataforma colaborativa Cursed.",
@@ -88,7 +107,10 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(cards_router)
     api.include_router(card_lifecycle_router)
     api.include_router(room_router)
+    api.include_router(stashes_router)
     api.include_router(assets_router)
+    api.include_router(catalogs_router)
+    api.include_router(images_router)
 
     @api.get("/health", response_model=HealthResponse, tags=["Operação"])
     def health() -> HealthResponse:

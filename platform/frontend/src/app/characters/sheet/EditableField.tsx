@@ -13,6 +13,11 @@ export interface EditableFieldProps {
   permissoes: PermissoesFicha | undefined;
   onSave: (path: string, value: string | number) => Promise<{ status: "salvo" | "pendente" }>;
   emptyLabel?: string;
+  /** Dica de preenchimento no campo vazio; nunca é gravada como valor. */
+  placeholder?: string;
+  min?: number;
+  /** Aviso do servidor para o valor atual (ex.: fora das regras). */
+  aviso?: string;
 }
 
 /**
@@ -23,7 +28,9 @@ export interface EditableFieldProps {
  * aviso antes de salvar e, após o envio, uma confirmação de que a alteração
  * foi para aprovação do Narrador em vez de ser aplicada de imediato.
  */
-export function EditableField({ label, path, value, kind = "text", permissoes, onSave, emptyLabel = "Não informado" }: EditableFieldProps) {
+export function EditableField({
+  label, path, value, kind = "text", permissoes, onSave, emptyLabel = "Não informado", placeholder, min, aviso,
+}: EditableFieldProps) {
   const editavel = campoEditavel(path, permissoes);
   const exigeAprovacao = permissoes ? campoExigeAprovacao(path, permissoes) : false;
   const [draft, setDraft] = useState(value);
@@ -37,7 +44,8 @@ export function EditableField({ label, path, value, kind = "text", permissoes, o
     setPending(true);
     setError(null);
     try {
-      const result = await onSave(path, kind === "number" ? Number(draft) : draft);
+      // Número vazio segue como texto vazio: quem salva decide se isso limpa o campo.
+      const result = await onSave(path, kind === "number" && draft.trim() !== "" ? Number(draft) : draft);
       if (result.status === "pendente") {
         setNotice("Alteração enviada para aprovação do Narrador.");
       } else {
@@ -53,7 +61,8 @@ export function EditableField({ label, path, value, kind = "text", permissoes, o
   return (
     <div className="editable-field">
       <span className="eyebrow">{label}</span>
-      <strong>{value.trim() ? value : emptyLabel}</strong>
+      {value.trim() ? <strong>{value}</strong> : <strong className="editable-field__vazio">{emptyLabel}</strong>}
+      {aviso && <small className="field-warning">{aviso}</small>}
       {notice && <p className="preview-note">{notice}</p>}
       {editavel && (
         <Popover
@@ -68,11 +77,13 @@ export function EditableField({ label, path, value, kind = "text", permissoes, o
           >
             <label htmlFor={fieldId}>{label}</label>
             {kind === "textarea" ? (
-              <textarea id={fieldId} value={draft} onChange={(event) => setDraft(event.target.value)} />
+              <textarea id={fieldId} value={draft} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} />
             ) : (
               <input
                 id={fieldId}
                 type={kind === "number" ? "number" : "text"}
+                min={min}
+                placeholder={placeholder}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
               />

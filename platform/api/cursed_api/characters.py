@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -9,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria
+from cursed_platform import auditoria, inventario_grade
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CriarPersonagemRequest, DecidirPedidoRequest, FichaContrato,
@@ -21,8 +22,10 @@ from cursed_platform.persistence import MesaRegistro, PedidoAlteracaoRegistro, P
 from cursed_platform.repositories import FichaRepository, MesaRepository
 
 from .auth import Ator, get_actor
+from .catalogo_ficha import atualizar_cartas
 from .dependencies import get_correlacao, get_session
 from .sheets import FichaSnapshot
+from .validacao import ajustar_recursos_atuais, exigir_ficha_valida, preparar_ficha_nova
 
 
 router = APIRouter(tags=["Personagens e políticas"])
@@ -49,6 +52,7 @@ def _politica(mesa: MesaRegistro) -> PoliticaMesaContrato:
         permitir_exclusao_propria=mesa.permitir_exclusao_propria,
         campos_bloqueados=mesa.campos_bloqueados,
         campos_exigem_aprovacao=mesa.campos_exigem_aprovacao,
+        moedas_por_pilha=mesa.moedas_por_pilha,
     )
 
 
@@ -86,7 +90,11 @@ def configurar_politicas(
     mesa.permitir_exclusao_propria = politica.permitir_exclusao_propria
     mesa.campos_bloqueados = politica.campos_bloqueados
     mesa.campos_exigem_aprovacao = politica.campos_exigem_aprovacao
-    alteracoes = auditoria.mudancas(anterior, politica.model_dump())
+    if politica.moedas_por_pilha is not None and politica.moedas_por_pilha != mesa.moedas_por_pilha:
+        mesa.moedas_por_pilha = politica.moedas_por_pilha
+        session.flush()
+        inventario_grade.redistribuir_mesa(session, mesa)
+    alteracoes = auditoria.mudancas(anterior, _politica(mesa).model_dump())
     if alteracoes:
         auditoria.registrar(
             session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="permissao",
@@ -228,6 +236,8 @@ def criar_personagem(
     nome = payload["personagem"].get("nome")
     if not isinstance(nome, str) or not nome.strip():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Nome do personagem obrigatório.")
+    preparar_ficha_nova(payload, tipo="personagem", pelo_narrador=False)
+    exigir_ficha_valida(None, payload, tipo="personagem")
     personagem_id = uuid4().hex
     personagem = PersonagemRegistro(
         id=personagem_id, mesa_id=mesa_id, proprietario_id=ator.usuario_id,
@@ -240,6 +250,7 @@ def criar_personagem(
         acao="personagem.criado", relevancia="organizacional", personagem=personagem,
         resumo=f"{auditoria.nome_personagem(personagem)}: personagem criado", correlacao_id=correlacao,
     )
+    atualizar_cartas(session, personagem, None, payload, ator_id=ator.usuario_id, correlacao_id=correlacao)
     session.commit()
     return FichaSnapshot(
         mesa_id=mesa_id, personagem_id=personagem_id, versao=0,
@@ -310,6 +321,12 @@ def decidir_solicitacao(
     if personagem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação não encontrada.")
     anterior = FichaDraft.de_payload(personagem.ficha).para_payload()
+    if decisao.aprovar:
+        # Um pedido antigo pode ter valores que as regras não aceitam: recusa e o pedido segue pendente.
+        exigir_ficha_valida(anterior, pedido.ficha_proposta, tipo=personagem.tipo)
+        proposta = deepcopy(pedido.ficha_proposta)
+        ajustar_recursos_atuais(proposta, novo=False)
+        pedido.ficha_proposta = proposta
     if decisao.aprovar and not FichaRepository(session).substituir_se_versao(
         mesa_id, pedido.personagem_id, pedido.versao_base, pedido.ficha_proposta,
     ):
@@ -332,5 +349,8 @@ def decidir_solicitacao(
                   "campos_propostos": pedido.campos_alterados},
         correlacao_id=correlacao,
     )
+    if decisao.aprovar:
+        atualizar_cartas(session, personagem, anterior, pedido.ficha_proposta,
+                         ator_id=ator.usuario_id, correlacao_id=correlacao)
     session.commit()
     return _resumo(pedido)

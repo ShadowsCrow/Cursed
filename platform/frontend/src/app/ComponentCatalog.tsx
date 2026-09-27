@@ -103,7 +103,7 @@ function ResourceBarCatalog() {
   return (
     <CatalogSection eyebrow="BARRA DE RECURSO" title="Cheia, parcial, vazia e acima do máximo">
       <div className="catalog-item catalog-item--wide"><ResourceBar label="Pontos de Vida (cheia)" current={24} max={24} kind="life" /></div>
-      <div className="catalog-item catalog-item--wide"><ResourceBar label="Pontos de Poder (parcial)" current={7} max={12} kind="power" /></div>
+      <div className="catalog-item catalog-item--wide"><ResourceBar label="Pontos de Propósito (parcial)" current={7} max={12} kind="power" /></div>
       <div className="catalog-item catalog-item--wide"><ResourceBar label="Foco (vazio)" current={0} max={4} kind="focus" /></div>
       <div className="catalog-item catalog-item--wide"><ResourceBar label="Pontos de Vida (acima do máximo)" current={30} max={24} kind="life" /></div>
     </CatalogSection>
@@ -158,7 +158,7 @@ function CardCatalog() {
         description="Um manto de energia protege um aliado no momento de maior necessidade."
         meta="Aprendida"
         emblem="✦"
-        costs={[{ label: "Custo de aprendizado", value: "3 pontos de magia (ilustrativo)" }, { label: "Custo de uso", value: "2 Pontos de Poder (ilustrativo)" }]}
+        costs={[{ label: "Custo de aprendizado", value: "3 pontos de magia (ilustrativo)" }, { label: "Custo de uso", value: "2 Pontos de Propósito (ilustrativo)" }]}
       />
       <ContentCard
         kind="ITEM"

@@ -19,6 +19,7 @@ class Base(DeclarativeBase):
 
 class MesaRegistro(Base):
     __tablename__ = "rpg_tables"
+    __table_args__ = (CheckConstraint("moedas_por_pilha >= 1", name="ck_rpg_tables_moedas_por_pilha"),)
 
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
     nome: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -37,6 +38,8 @@ class MesaRegistro(Base):
     retencao_personagens_dias: Mapped[int] = mapped_column(
         Integer, nullable=False, default=30, server_default="30"
     )
+    # Quantas moedas (de qualquer tipo) cabem numa pilha, ou seja, numa célula da grade de carga.
+    moedas_por_pilha: Mapped[int] = mapped_column(Integer, nullable=False, default=100, server_default="100")
 
 
 class MembroRegistro(Base):
@@ -167,6 +170,21 @@ class ItemInventarioRegistro(Base):
         CheckConstraint("tipo IN ('arma', 'armadura', 'outro')", name="ck_inventory_items_tipo"),
         CheckConstraint("quantidade > 0", name="ck_inventory_items_quantidade"),
         CheckConstraint(
+            "subtipo IS NULL OR subtipo IN ('peitoral', 'capacete', 'luvas', 'botas', 'uma_mao', 'duas_maos', "
+            "'escudo', 'mochila', 'aljava', 'moedas', 'outro')",
+            name="ck_inventory_items_subtipo",
+        ),
+        CheckConstraint(
+            "(largura IS NULL AND altura IS NULL) OR (largura BETWEEN 1 AND 12 AND altura BETWEEN 1 AND 12)",
+            name="ck_inventory_items_dimensao",
+        ),
+        CheckConstraint(
+            "(coluna IS NULL AND linha IS NULL) OR (coluna >= 0 AND linha >= 0 AND largura IS NOT NULL)",
+            name="ck_inventory_items_posicao",
+        ),
+        CheckConstraint("maos IS NULL OR maos BETWEEN 0 AND 2", name="ck_inventory_items_maos"),
+        CheckConstraint("pilha_max IS NULL OR pilha_max >= 1", name="ck_inventory_items_pilha"),
+        CheckConstraint(
             "cargas_atuais IS NULL OR cargas_atuais >= 0", name="ck_inventory_items_cargas_atuais"
         ),
         CheckConstraint(
@@ -188,6 +206,16 @@ class ItemInventarioRegistro(Base):
     cargas_atuais: Mapped[int | None] = mapped_column(Integer)
     cargas_maximas: Mapped[int | None] = mapped_column(Integer)
     dados: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    # Grade de carga (mudança carga-por-espacos): sem dimensão/posição o item fica fora da grade.
+    # Escudo, mochila e aljava são distinguidos pelo subtipo; o tipo continua arma/armadura/outro.
+    subtipo: Mapped[str | None] = mapped_column(String(20))
+    largura: Mapped[int | None] = mapped_column(Integer)
+    altura: Mapped[int | None] = mapped_column(Integer)
+    coluna: Mapped[int | None] = mapped_column(Integer)
+    linha: Mapped[int | None] = mapped_column(Integer)
+    girado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    maos: Mapped[int | None] = mapped_column(Integer)
+    pilha_max: Mapped[int | None] = mapped_column(Integer)
 
 
 class EfeitoAplicadoRegistro(Base):
@@ -367,6 +395,7 @@ class CartaDefinicaoRegistro(Base):
         CheckConstraint(TIPOS_CARTA, name="ck_card_definitions_tipo"),
         CheckConstraint("versao >= 0", name="ck_card_definitions_versao"),
         UniqueConstraint("mesa_id", "id", name="uq_card_definitions_mesa_id"),
+        Index("uq_card_definitions_origem_sistema", "mesa_id", "origem_sistema", unique=True),
     )
 
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
@@ -380,6 +409,8 @@ class CartaDefinicaoRegistro(Base):
     versao_publicada: Mapped[int | None] = mapped_column(Integer)
     arquivada: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    # Habilidade do catálogo do sistema que esta carta materializa (ex.: "classes/Druida/habilidades/Forma Selvagem").
+    origem_sistema: Mapped[str | None] = mapped_column(String(200))
 
 
 class CartaVersaoRegistro(Base):
@@ -439,6 +470,8 @@ class CartaPersonagemRegistro(Base):
     estado: Mapped[str] = mapped_column(String(20), nullable=False)
     origem: Mapped[str] = mapped_column(String(20), nullable=False)
     excecao_aprendizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    # Escolha que concedeu a carta (ex.: "classe:Druida"); vazio para cartas obtidas por outras vias.
+    concedida_por: Mapped[str | None] = mapped_column(String(200))
     item_id: Mapped[str | None] = mapped_column(String(100))
     efeito_id: Mapped[str | None] = mapped_column(String(100))
     adquirida_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -642,6 +675,84 @@ class TokenRegistro(Base):
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 
 
+class RecipienteCenaRegistro(Base):
+    """Chão ou baú de uma cena: grade compartilhada de itens largados ou saque (carga-por-espacos D8)."""
+
+    __tablename__ = "scene_stashes"
+    __table_args__ = (
+        ForeignKeyConstraint(["mesa_id", "cena_id"], ["scenes.mesa_id", "scenes.id"], name="fk_scene_stashes_scene"),
+        UniqueConstraint("mesa_id", "id", name="uq_scene_stashes_mesa_id"),
+        CheckConstraint("tipo IN ('chao', 'bau')", name="ck_scene_stashes_tipo"),
+        CheckConstraint("colunas BETWEEN 1 AND 20 AND linhas BETWEEN 1 AND 20", name="ck_scene_stashes_grade"),
+        CheckConstraint("versao >= 0", name="ck_scene_stashes_versao"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    cena_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(10), nullable=False)
+    nome: Mapped[str] = mapped_column(String(200), nullable=False)
+    colunas: Mapped[int] = mapped_column(Integer, nullable=False)
+    linhas: Mapped[int] = mapped_column(Integer, nullable=False)
+    versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
+class ItemRecipienteRegistro(Base):
+    """Retrato de um item fora de personagem, com os efeitos vinculados; recriado em quem o pega."""
+
+    __tablename__ = "scene_stash_items"
+    __table_args__ = (
+        ForeignKeyConstraint(["mesa_id", "stash_id"], ["scene_stashes.mesa_id", "scene_stashes.id"],
+                             name="fk_scene_stash_items_stash", ondelete="CASCADE"),
+        CheckConstraint("tipo IN ('arma', 'armadura', 'outro')", name="ck_scene_stash_items_tipo"),
+        CheckConstraint("quantidade > 0", name="ck_scene_stash_items_quantidade"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    stash_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False)
+    subtipo: Mapped[str | None] = mapped_column(String(20))
+    nome: Mapped[str] = mapped_column(String(200), nullable=False)
+    quantidade: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    largura: Mapped[int | None] = mapped_column(Integer)
+    altura: Mapped[int | None] = mapped_column(Integer)
+    coluna: Mapped[int | None] = mapped_column(Integer)
+    linha: Mapped[int | None] = mapped_column(Integer)
+    girado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    maos: Mapped[int | None] = mapped_column(Integer)
+    pilha_max: Mapped[int | None] = mapped_column(Integer)
+    cargas_atuais: Mapped[int | None] = mapped_column(Integer)
+    cargas_maximas: Mapped[int | None] = mapped_column(Integer)
+    dados: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    efeitos: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    origem_personagem_id: Mapped[str | None] = mapped_column(String(100))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class OfertaItemRegistro(Base):
+    """Item oferecido por um personagem a outro; aceitar move o item (carga-por-espacos D8)."""
+
+    __tablename__ = "item_offers"
+    __table_args__ = (
+        ForeignKeyConstraint(["mesa_id", "de_personagem_id"], ["characters.mesa_id", "characters.id"],
+                             name="fk_item_offers_de"),
+        ForeignKeyConstraint(["mesa_id", "para_personagem_id"], ["characters.mesa_id", "characters.id"],
+                             name="fk_item_offers_para"),
+        CheckConstraint("estado IN ('pendente', 'aceita', 'recusada', 'cancelada')", name="ck_item_offers_estado"),
+        CheckConstraint("de_personagem_id <> para_personagem_id", name="ck_item_offers_distintos"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    item_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    de_personagem_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    para_personagem_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    estado: Mapped[str] = mapped_column(String(12), nullable=False, default="pendente", server_default="pendente")
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    decidido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class MigracaoLegadaRegistro(Base):
     """Vínculo imutável entre um registro de origem e sua entidade convertida."""
 
@@ -702,3 +813,14 @@ class AtivoCatalogoRegistro(Base):
     tamanho: Mapped[int] = mapped_column(Integer, nullable=False)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     procedencias: Mapped[list[dict[str, str]]] = mapped_column(JSON, nullable=False)
+
+
+class IconeEfeitoRegistro(Base):
+    """Ícone que o Narrador enviou para um efeito default, válido só na mesa dele."""
+
+    __tablename__ = "effect_icons"
+
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="RESTRICT"), primary_key=True)
+    associacao: Mapped[str] = mapped_column(String(100), primary_key=True)
+    objeto: Mapped[str] = mapped_column(String(500), nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

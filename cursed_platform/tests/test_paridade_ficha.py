@@ -18,6 +18,7 @@ from cursed_platform.config import PlatformSettings
 from cursed_platform.domain.efeitos_codec import encode_effect
 from cursed_platform.domain.equip_codec import encode_equipment
 from cursed_platform.ficha_viva import chave
+from cursed_platform.tests.grade_teste import colocar_na_grade
 from cursed_platform.persistence import Base, MembroRegistro, MesaRegistro
 
 
@@ -74,7 +75,11 @@ class ParidadeFichaTest(unittest.TestCase):
         return response.json()["personagem_id"]
 
     def test_create_character_authorization(self):
-        response = self.client.post("/mesas/mesa/personagens", json={"ficha": fixture("ficha_simples.json")})
+        # A ficha antiga tem classe e alinhamento fora do catálogo; personagem novo precisa segui-lo.
+        ficha = fixture("ficha_simples.json")
+        ficha["personagem"].update(classe="Especialista de Combate", arquetipo="")
+        ficha["personalidade"]["alinhamento"] = "Neutro | Bom"
+        response = self.client.post("/mesas/mesa/personagens", json={"ficha": ficha})
         self.assertEqual(response.status_code, 201, response.text)
         corpo = response.json()
         self.assertTrue(corpo["personagem_id"])
@@ -87,7 +92,7 @@ class ParidadeFichaTest(unittest.TestCase):
             "permitir_criacao_propria": False, "permitir_edicao_propria": True, "permitir_exclusao_propria": True,
         })
         self.actor = "jogador"
-        negado = self.client.post("/mesas/mesa/personagens", json={"ficha": fixture("ficha_simples.json")})
+        negado = self.client.post("/mesas/mesa/personagens", json={"ficha": ficha})
         self.assertEqual(negado.status_code, 403)
         self.assertEqual(len(self.client.get("/mesas/mesa/personagens").json()), 1)
 
@@ -95,6 +100,8 @@ class ParidadeFichaTest(unittest.TestCase):
         original = fixture("ficha_complexa.json")
         personagem_id = self.criar(original)
         lida = self.client.get(f"/mesas/mesa/personagens/{personagem_id}/ficha").json()["ficha"]
+        # Personagem novo recebe o nível 1 (calcular-valores-da-ficha); o resto volta intacto.
+        original["personagem"]["nivel"] = 1
         for campo in CAMPOS_CRITICOS:
             with self.subTest(campo=campo):
                 self.assertEqual(lida[campo], original[campo])
@@ -120,14 +127,14 @@ class ParidadeFichaTest(unittest.TestCase):
         depois = self.client.get(caminho).json()
         self.assertEqual(depois["versao"], 1)
         self.assertEqual(depois["ficha"]["personalidade"]["pecado"], "Ira")
-        self.assertEqual(depois["ficha"]["personagem"], fixture("ficha_complexa.json")["personagem"])
+        self.assertEqual(depois["ficha"]["personagem"], {**fixture("ficha_complexa.json")["personagem"], "nivel": 1})
 
         ficha["personalidade"]["pecado"] = "Gula"
         self.assertEqual(self.client.put(caminho, json={**comando, "id": "c2"}).status_code, 409)
         self.assertEqual(self.client.get(caminho).json()["ficha"]["personalidade"]["pecado"], "Ira")
 
     def test_equip_and_unequip_recalculates_effects(self):
-        personagem_id = self.criar({"personagem": {"nome": "Teste"},
+        personagem_id = self.criar({"personagem": {"nome": "Teste", "raca": "Humano"},
                                     "pericias": {"valores": {"Investigação": 2}}})
         base = f"/mesas/mesa/personagens/{personagem_id}"
         legado = fixture("equipamento_legado.json")
@@ -141,6 +148,7 @@ class ParidadeFichaTest(unittest.TestCase):
             return valor["total"], [(f["tipo"], f["item_id"]) for f in valor["fontes"] if f["tipo"] == "efeito"]
 
         self.assertEqual(investigacao(), (2, []))
+        colocar_na_grade(self.engine, item_id)
         self.client.post(f"{base}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": 1})
         self.assertEqual(investigacao(), (3, [("efeito", item_id)]))
         self.client.post(f"{base}/inventario/{item_id}/equipar", json={"equipado": False, "versao_esperada": 2})

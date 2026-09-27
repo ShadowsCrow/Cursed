@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CATALOGS_DIR = PROJECT_ROOT / "app_streamlit" / "data" / "catalogs"
+# Catálogos do sistema da plataforma (fonte de trabalho; ver cursed_platform/catalogos.py).
+CATALOGS_DIR = Path(__file__).resolve().parents[1] / "catalogos"
 
 
 DEFAULT_EFFECTS_PATH = CATALOGS_DIR / "efeitos_default.json"

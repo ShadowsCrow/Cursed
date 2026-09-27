@@ -5,3 +5,4 @@ SQLAlchemy>=2,<3
 psycopg[binary]>=3,<4
 alembic>=1.13,<2
 Pillow>=11,<13
+python-multipart>=0.0.18,<1

@@ -62,6 +62,25 @@ export function usePoliticaMesa(api: ApiClient, mesaId: string): UseQueryResult<
   });
 }
 
+/** O Narrador grava a política inteira; o servidor reorganiza as moedas se o limite por pilha mudar. */
+export function useConfigurarPolitica(api: ApiClient, mesaId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (politica: PoliticaMesaContrato) => {
+      const { data, error } = await api.PUT("/mesas/{mesa_id}/politicas", {
+        params: { path: { mesa_id: mesaId } },
+        body: politica,
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível salvar as políticas da mesa."));
+      return data as PoliticaMesaContrato;
+    },
+    onSuccess: (politica) => {
+      queryClient.setQueryData(characterQueryKeys.politica(mesaId), politica);
+      void queryClient.invalidateQueries({ queryKey: ["grade-inventario", mesaId] });
+    },
+  });
+}
+
 export function useParticipantes(
   api: ApiClient,
   mesaId: string,

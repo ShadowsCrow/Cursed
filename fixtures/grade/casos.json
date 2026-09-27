@@ -1,0 +1,229 @@
+{
+  "_descricao": "Casos do motor da grade de carga (mudança carga-por-espacos). Executados pelas suítes TypeScript e Python; as duas precisam dar a mesma resposta. Números provisórios até a calibração.",
+  "grade": [
+    {
+      "nome": "Médio com Força 3",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [],
+      "esperado": { "colunasVerdes": 5, "linhasVerdes": 5 }
+    },
+    {
+      "nome": "Pequeno com Força 1",
+      "parametros": { "forca": 1, "tamanho": "pequeno" },
+      "itens": [],
+      "esperado": { "colunasVerdes": 4, "linhasVerdes": 3 }
+    },
+    {
+      "nome": "Mochila equipada amplia; mochila guardada não",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "m1", "nome": "Mochila de viagem", "subtipo": "mochila", "largura": 2, "altura": 2, "coluna": null, "linha": null, "girado": false, "equipado": true, "ampliacao": { "linhas": 1, "colunas": 0 } },
+        { "id": "m2", "nome": "Mochila de expedição", "subtipo": "mochila", "largura": 2, "altura": 2, "coluna": 0, "linha": 0, "girado": false, "equipado": false, "ampliacao": { "linhas": 2, "colunas": 0 } }
+      ],
+      "esperado": { "colunasVerdes": 5, "linhasVerdes": 6 }
+    },
+    {
+      "nome": "Fontes diferentes somam; mesma fonte vale a maior",
+      "parametros": {
+        "forca": 2, "tamanho": "medio",
+        "ampliacoes": [
+          { "fonte": "habilidade", "rotulo": "Mochileiro", "linhas": 0, "colunas": 1 },
+          { "fonte": "magia", "rotulo": "Bolso pequeno", "linhas": 1, "colunas": 0 },
+          { "fonte": "magia", "rotulo": "Bolso grande", "linhas": 2, "colunas": 0 }
+        ]
+      },
+      "itens": [],
+      "esperado": { "colunasVerdes": 6, "linhasVerdes": 6 }
+    }
+  ],
+  "posicao": [
+    {
+      "nome": "Espada longa cabe em pé",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "e", "nome": "Espada longa", "subtipo": "uma_mao", "largura": 1, "altura": 3, "coluna": null, "linha": null, "girado": false, "equipado": false }
+      ],
+      "mover": { "id": "e", "coluna": 3, "linha": 0, "girado": false },
+      "esperado": { "ok": true }
+    },
+    {
+      "nome": "Girada ela passa da largura",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "e", "nome": "Espada longa", "subtipo": "uma_mao", "largura": 1, "altura": 3, "coluna": null, "linha": null, "girado": false, "equipado": false }
+      ],
+      "mover": { "id": "e", "coluna": 3, "linha": 0, "girado": true },
+      "esperado": { "ok": false, "motivo": "fora_da_grade" }
+    },
+    {
+      "nome": "Linha vermelha extra aceita itens",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "p", "nome": "Poção", "subtipo": "outro", "largura": 1, "altura": 1, "coluna": null, "linha": null, "girado": false, "equipado": false }
+      ],
+      "mover": { "id": "p", "coluna": 0, "linha": 5, "girado": false },
+      "esperado": { "ok": true }
+    },
+    {
+      "nome": "Abaixo da linha vermelha não",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "p", "nome": "Poção", "subtipo": "outro", "largura": 1, "altura": 1, "coluna": null, "linha": null, "girado": false, "equipado": false }
+      ],
+      "mover": { "id": "p", "coluna": 0, "linha": 6, "girado": false },
+      "esperado": { "ok": false, "motivo": "fora_da_grade" }
+    },
+    {
+      "nome": "Sobreposição é recusada",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "a", "nome": "Escudo", "subtipo": "escudo", "largura": 2, "altura": 2, "coluna": 0, "linha": 0, "girado": false, "equipado": false },
+        { "id": "b", "nome": "Poção", "subtipo": "outro", "largura": 1, "altura": 1, "coluna": null, "linha": null, "girado": false, "equipado": false }
+      ],
+      "mover": { "id": "b", "coluna": 1, "linha": 1, "girado": false },
+      "esperado": { "ok": false, "motivo": "sobreposicao", "conflitos": ["a"] }
+    }
+  ],
+  "avaliacao": [
+    {
+      "nome": "Tudo no verde, sem sobrecarga",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "a", "nome": "Peitoral", "subtipo": "peitoral", "largura": 2, "altura": 3, "coluna": 0, "linha": 0, "girado": false, "equipado": true }
+      ],
+      "esperado": { "sobrecarga": false, "itensEmSobrecarga": [], "celulasOcupadas": 6, "celulasVerdes": 25 }
+    },
+    {
+      "nome": "Item na linha vermelha causa sobrecarga",
+      "parametros": { "forca": 3, "tamanho": "medio" },
+      "itens": [
+        { "id": "a", "nome": "Peitoral", "subtipo": "peitoral", "largura": 2, "altura": 3, "coluna": 0, "linha": 3, "girado": false, "equipado": true }
+      ],
+      "esperado": { "sobrecarga": true, "itensEmSobrecarga": ["a"], "celulasOcupadas": 6, "celulasVerdes": 25 }
+    },
+    {
+      "nome": "Força reduzida pinta a linha perdida de vermelho",
+      "parametros": { "forca": 2, "tamanho": "medio" },
+      "itens": [
+        { "id": "c", "nome": "Corda", "subtipo": "outro", "largura": 1, "altura": 2, "coluna": 3, "linha": 3, "girado": false, "equipado": false }
+      ],
+      "esperado": { "sobrecarga": true, "itensEmSobrecarga": ["c"], "celulasOcupadas": 2, "celulasVerdes": 20 }
+    }
+  ],
+  "equipar": [
+    {
+      "nome": "Arma de uma mão e escudo",
+      "forca": 3,
+      "itens": [
+        { "id": "s", "nome": "Espada", "subtipo": "uma_mao", "largura": 1, "altura": 3, "coluna": 0, "linha": 0, "girado": false, "equipado": true },
+        { "id": "e", "nome": "Escudo", "subtipo": "escudo", "largura": 2, "altura": 2, "coluna": 1, "linha": 0, "girado": false, "equipado": false }
+      ],
+      "equipar": "e",
+      "esperado": { "ok": true }
+    },
+    {
+      "nome": "Arma de duas mãos com escudo não",
+      "forca": 3,
+      "itens": [
+        { "id": "m", "nome": "Montante", "subtipo": "duas_maos", "largura": 1, "altura": 4, "coluna": 0, "linha": 0, "girado": false, "equipado": true },
+        { "id": "e", "nome": "Escudo", "subtipo": "escudo", "largura": 2, "altura": 2, "coluna": 1, "linha": 0, "girado": false, "equipado": false }
+      ],
+      "equipar": "e",
+      "esperado": { "ok": false, "motivo": "maos_insuficientes" }
+    },
+    {
+      "nome": "Segundo capacete não",
+      "forca": 3,
+      "itens": [
+        { "id": "c1", "nome": "Elmo", "subtipo": "capacete", "largura": 2, "altura": 2, "coluna": 0, "linha": 0, "girado": false, "equipado": true },
+        { "id": "c2", "nome": "Capuz", "subtipo": "capacete", "largura": 1, "altura": 1, "coluna": 2, "linha": 0, "girado": false, "equipado": false }
+      ],
+      "equipar": "c2",
+      "esperado": { "ok": false, "motivo": "peca_repetida" }
+    },
+    {
+      "nome": "Tocha ocupa uma mão definida pelo Narrador",
+      "forca": 3,
+      "itens": [
+        { "id": "s", "nome": "Espada", "subtipo": "uma_mao", "largura": 1, "altura": 3, "coluna": 0, "linha": 0, "girado": false, "equipado": true },
+        { "id": "e", "nome": "Escudo", "subtipo": "escudo", "largura": 2, "altura": 2, "coluna": 1, "linha": 0, "girado": false, "equipado": true },
+        { "id": "t", "nome": "Tocha", "subtipo": "outro", "largura": 1, "altura": 2, "coluna": 3, "linha": 0, "girado": false, "equipado": false, "maos": 1 }
+      ],
+      "equipar": "t",
+      "esperado": { "ok": false, "motivo": "maos_insuficientes" }
+    },
+    {
+      "nome": "Corda não é equipável",
+      "forca": 3,
+      "itens": [
+        { "id": "c", "nome": "Corda", "subtipo": "outro", "largura": 1, "altura": 2, "coluna": 0, "linha": 0, "girado": false, "equipado": false, "maos": 0 }
+      ],
+      "equipar": "c",
+      "esperado": { "ok": false, "motivo": "nao_equipavel" }
+    },
+    {
+      "nome": "Mochila exige Força",
+      "forca": 1,
+      "itens": [
+        { "id": "m", "nome": "Mochila de expedição", "subtipo": "mochila", "largura": 2, "altura": 2, "coluna": null, "linha": null, "girado": false, "equipado": false, "requisitoForca": 3, "ampliacao": { "linhas": 2, "colunas": 0 } }
+      ],
+      "equipar": "m",
+      "esperado": { "ok": false, "motivo": "requisito_forca" }
+    },
+    {
+      "nome": "Item fora da grade não é levado e não se equipa",
+      "forca": 3,
+      "itens": [
+        { "id": "s", "nome": "Espada", "subtipo": "uma_mao", "largura": 1, "altura": 3, "coluna": null, "linha": null, "girado": false, "equipado": false }
+      ],
+      "equipar": "s",
+      "esperado": { "ok": false, "motivo": "fora_da_grade" }
+    },
+    {
+      "nome": "Mochila equipada não ocupa célula",
+      "forca": 3,
+      "itens": [
+        { "id": "m", "nome": "Mochila", "subtipo": "mochila", "largura": 2, "altura": 2, "coluna": null, "linha": null, "girado": false, "equipado": false, "ampliacao": { "linhas": 1, "colunas": 0 } }
+      ],
+      "equipar": "m",
+      "esperado": { "ok": true }
+    },
+    {
+      "nome": "Arma versátil com as duas mãos não deixa usar escudo",
+      "forca": 3,
+      "itens": [
+        { "id": "v", "nome": "Espada bastarda", "subtipo": "uma_mao", "largura": 1, "altura": 3, "coluna": 0, "linha": 0, "girado": false, "equipado": true, "maos": 2 },
+        { "id": "e", "nome": "Escudo", "subtipo": "escudo", "largura": 2, "altura": 2, "coluna": 1, "linha": 0, "girado": false, "equipado": false }
+      ],
+      "equipar": "e",
+      "esperado": { "ok": false, "motivo": "maos_insuficientes" }
+    },
+    {
+      "nome": "Arma versátil com uma mão deixa usar escudo",
+      "forca": 3,
+      "itens": [
+        { "id": "v", "nome": "Espada bastarda", "subtipo": "uma_mao", "largura": 1, "altura": 3, "coluna": 0, "linha": 0, "girado": false, "equipado": true, "maos": 1 },
+        { "id": "e", "nome": "Escudo", "subtipo": "escudo", "largura": 2, "altura": 2, "coluna": 1, "linha": 0, "girado": false, "equipado": false }
+      ],
+      "equipar": "e",
+      "esperado": { "ok": true }
+    }
+  ],
+  "moedas": [
+    {
+      "nome": "Pilhas mistas de 100",
+      "porPilha": 100,
+      "bolsa": { "cobre": 40, "prata": 95, "ouro": 12, "platina": 0 },
+      "esperado": [
+        { "cobre": 40, "prata": 60, "ouro": 0, "platina": 0 },
+        { "cobre": 0, "prata": 35, "ouro": 12, "platina": 0 }
+      ]
+    },
+    {
+      "nome": "Mil moedas de ouro em pilhas de 100",
+      "porPilha": 100,
+      "bolsa": { "cobre": 0, "prata": 0, "ouro": 1000, "platina": 0 },
+      "esperadoQuantidade": 10
+    }
+  ]
+}

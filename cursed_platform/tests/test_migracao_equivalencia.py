@@ -103,7 +103,8 @@ class EquivalenciaTest(unittest.TestCase):
 
     def test_catalogo_pendente_e_destino_ausente_bloqueiam_aprovacao(self):
         self.migrar()
-        (self.catalogos_dir / "racas.json").write_text(json.dumps([{"nome": "Humano"}]), encoding="utf-8")
+        # Raça fora do catálogo da plataforma continua pendente e bloqueia a aprovação.
+        (self.catalogos_dir / "racas.json").write_text(json.dumps([{"nome": "Centauro"}]), encoding="utf-8")
         (self.fichas_dir / "novo.json").write_text(json.dumps({
             "personagem": {"nome": "Nova"}, "personalidade": {}, "atributos": {}, "pericias": {},
         }), encoding="utf-8")

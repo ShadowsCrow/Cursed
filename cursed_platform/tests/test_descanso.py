@@ -2,7 +2,27 @@ from __future__ import annotations
 
 import unittest
 
-from cursed_platform.domain.descanso import ParametrosDescanso, aplicar, calcular
+from cursed_platform import catalogos
+from cursed_platform.domain import recursos
+from cursed_platform.domain.descanso import ParametrosDescanso, aplicar
+from cursed_platform.domain.descanso import calcular as calcular_descanso
+from cursed_platform.domain.recursos import FonteRecurso, Recursos, ValorRecurso
+
+
+def _valor(nome: str, total):
+    if total is None:
+        return ValorRecurso(f"recurso:{nome}", nome, False, motivo="Classe não definida.")
+    return ValorRecurso(f"recurso:{nome}", nome, True, (FonteRecurso("classe", "Base", total),))
+
+
+def calcular(f, parametros, **kwargs):
+    """Isola a regra do descanso: máximo e Escala dos fixtures entram como valores calculados."""
+    calculado = {}
+    for recurso in ("pv", "pp"):
+        dados = f.get("recursos", {}).get(recurso, {})
+        calculado[f"{recurso}_maximo"] = _valor(f"{recurso}_maximo", dados.get("maximo"))
+        calculado[f"escala_{recurso}"] = _valor(f"escala_{recurso}", dados.get("escala"))
+    return calcular_descanso(f, parametros, calculado=Recursos(calculado), **kwargs)
 
 
 def ficha(pv=(2, 20, 8), pp=(0, 12, 6), exaustao=7, estresse=5):
@@ -82,6 +102,30 @@ class DescansoTest(unittest.TestCase):
             with self.subTest(parametros=parametros), self.assertRaises(ValueError):
                 calcular(ficha(), parametros)
 
+
+    def test_escala_vem_da_classe_e_ignora_a_gravada(self):
+        # Mago com Vigor 3: Escala de PV 5; a escala 99 gravada numa ficha antiga não conta.
+        mago = {
+            "personagem": {"nome": "Ayla", "classe": "Mago", "nivel": 1},
+            "atributos": {"valores": {"Vigor": 3, "Proposito": 2}},
+            "recursos": {"pv": {"atual": 0, "maximo": 99, "escala": 99}, "pp": {"atual": 0}},
+        }
+        calculado = recursos.calcular(mago, catalogos.ler())
+        r = calcular_descanso(mago, ParametrosDescanso("curto"), calculado=calculado)
+        self.assertEqual([(x.calculado, x.maximo) for x in r.recursos], [(2, 15), (3, 10)])
+
+    def test_descanso_curto_apos_subida_de_vigor(self):
+        mago = {"personagem": {"classe": "Mago", "nivel": 1}, "atributos": {"valores": {"Vigor": 5, "Proposito": 2}},
+                "recursos": {"pv": {"atual": 0}, "pp": {"atual": 0}}}
+        r = calcular_descanso(mago, ParametrosDescanso("curto"), calculado=recursos.calcular(mago, catalogos.ler()))
+        self.assertEqual(r.recursos[0].calculado, 3)  # Escala de PV 2 + 5 = 7; metade, arredondada para baixo
+
+    def test_recurso_nao_calculavel_informa_o_motivo(self):
+        sem_classe = {"personagem": {"classe": "Bardo Errante", "nivel": 1}, "recursos": {"pv": {"atual": 1}}}
+        r = calcular_descanso(sem_classe, ParametrosDescanso("longo", 4, 4),
+                              calculado=recursos.calcular(sem_classe, catalogos.ler()))
+        self.assertEqual([x.aplicado for x in r.recursos], [0, 0])
+        self.assertIn("não está no catálogo", r.avisos[0])
 
 if __name__ == "__main__":
     unittest.main()

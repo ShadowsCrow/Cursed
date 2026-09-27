@@ -2,12 +2,14 @@
 
 Armaduras são equipamentos defensivos que podem favorecer **Esquiva**, **Bloqueio** ou ambos.
 
-O peso da armadura entra normalmente na **Carga Atual** e na **Carga Aquática**.
+A armadura vestida no corpo é o **peitoral**: é dele, e do escudo, que vêm a Armadura e o RDB do personagem. Capacete, luvas e botas não concedem Armadura nem RDB; eles só aplicam os efeitos que cada peça declarar.
+
+Toda peça ocupa a grade de carga pela sua **dimensão**, vestida ou não; veja [Carga e Transporte](Carga.md). O personagem veste no máximo um peitoral, um capacete, um par de luvas e um par de botas.
 
 ## Campos da armadura
 
 ```
-Nome:Categoria:Perfil:Peso:Bônus de Esquiva:Armadura:RDB:Penalidade de Esquiva:Penalidade de Destreza:Penalidade de Furtividade:Penalidade de Deslocamento:Requisito de Força:Propriedades:Descrição:
+Nome:Categoria:Perfil:Dimensão:Bônus de Esquiva:Armadura:RDB:Penalidade de Esquiva:Penalidade de Destreza:Penalidade de Furtividade:Penalidade de Deslocamento:Requisito de Força:Propriedades:Descrição:
 ```
 
 Campos sem efeito possuem valor `0` ou podem ser omitidos.
@@ -40,7 +42,7 @@ Armaduras médias podem possuir três perfis:
 
 Armaduras pesadas favorecem exclusivamente o Bloqueio.
 
-Concedem Armadura e RDB elevados, mas normalmente possuem maior peso, penalidades e Requisito de Força.
+Concedem Armadura e RDB elevados, mas normalmente ocupam mais espaço na grade e possuem penalidades e Requisito de Força. Na água, um peitoral pesado causa arrasto.
 
 Não concedem Bônus de Esquiva.
 
@@ -104,7 +106,7 @@ Furtividade = 1d20 + Destreza + Perícia Furtividade - Penalidade de Destreza - 
 
 Reduz diretamente o deslocamento do personagem em metros.
 
-As penalidades acumulam com Carga, Exaustão, condições e outras fontes aplicáveis.
+As penalidades acumulam com Sobrecarga, Exaustão, condições e outras fontes aplicáveis.
 
 ---
 
@@ -127,7 +129,7 @@ Escudos são equipamentos defensivos utilizados em conjunto com armaduras ou out
 Um escudo pode possuir:
 
 ```
-Nome:Categoria:Peso:Armadura:RDB:Penalidade de Esquiva:Penalidade de Destreza:Penalidade de Furtividade:Penalidade de Deslocamento:Requisito de Força:Propriedades:Descrição:
+Nome:Categoria:Dimensão:Armadura:RDB:Penalidade de Esquiva:Penalidade de Destreza:Penalidade de Furtividade:Penalidade de Deslocamento:Requisito de Força:Propriedades:Descrição:
 ```
 
 O escudo só concede seus valores quando:
@@ -157,7 +159,7 @@ Escudos normalmente ocupam uma mão. Escudos especiais podem possuir regras dife
 
 Escudos apropriados podem permitir Bloqueio contra cones, rajadas ou ataques em área vindos de uma direção definida. Explosões que envolvam completamente o personagem normalmente não podem ser bloqueadas por um escudo comum.
 
-O peso do escudo entra na Carga Atual e, quando estiver empunhado, é contabilizado novamente na Carga Aquática.
+O escudo ocupa a grade de carga pela sua dimensão e uma mão enquanto estiver empunhado. Empunhado, causa arrasto na água; guardado, não.
 
 # Armas
 
@@ -168,7 +170,7 @@ Armas comuns não concedem bônus direto na rolagem de ataque.
 ## Campos da arma
 
 ```
-Nome:Categoria:Família de Proficiência:Peso:Empunhadura:Atributo de Ataque:Perícia de Ataque:Dano:Atributo de Dano:Tipo de Dano:Alcance Normal:Alcance Máximo:Requisito de Força:Propriedades:Descrição:
+Nome:Categoria:Família de Proficiência:Dimensão:Empunhadura:Atributo de Ataque:Perícia de Ataque:Dano:Atributo de Dano:Tipo de Dano:Alcance Normal:Alcance Máximo:Requisito de Força:Propriedades:Descrição:
 ```
 
 Campos que não se aplicarem podem ser omitidos.
@@ -221,6 +223,8 @@ Armas especiais podem possuir outros tipos.
 
 ## Empunhadura
 
+O personagem tem duas mãos. A empunhadura define quantas delas a arma ocupa enquanto está equipada, e a soma de tudo o que ocupa mãos nunca passa de duas.
+
 ### Uma mão
 
 Pode ser utilizada com uma mão, permitindo que a outra segure um escudo, arma ou objeto.
@@ -231,7 +235,7 @@ Exige as duas mãos para ser utilizada corretamente.
 
 ### Versátil
 
-Possui valores diferentes conforme a empunhadura.
+Possui valores diferentes conforme a empunhadura. O jogador alterna a empunhadura entre uma e duas mãos: com uma, a outra mão fica livre; com as duas, a arma ocupa as duas mãos e usa o valor de duas mãos.
 
 Exemplo:
 
@@ -297,7 +301,7 @@ Sem Proficiência, o personagem também não pode utilizar:
 - combos específicos da arma;
 - propriedades técnicas que exijam treinamento.
 
-Propriedades físicas, como Duas Mãos, Versátil, Peso e Alcance, continuam funcionando normalmente.
+Propriedades físicas, como Duas Mãos, Versátil e Alcance, continuam funcionando normalmente.
 
 Armas Exóticas podem exigir Proficiência específica para serem utilizadas funcionalmente.
 
@@ -322,7 +326,7 @@ Uma arma pode possuir uma ou mais propriedades.
 Exemplos:
 
 - **Leve:** apropriada para técnicas rápidas ou combate com duas armas.
-- **Pesada:** possui Requisito de Força ou grande peso.
+- **Pesada:** possui Requisito de Força ou ocupa muito espaço na grade.
 - **Versátil:** possui dano diferente com uma ou duas mãos.
 - **Arremesso:** pode ser utilizada como ataque à distância.
 - **Alcance:** atinge inimigos a uma distância corpo a corpo maior.
@@ -333,6 +337,16 @@ Exemplos:
 - **Exótica:** exige Proficiência específica.
 
 As propriedades só precisam ser incluídas quando alterarem mecanicamente o funcionamento da arma.
+
+# Acessórios
+
+## Mochila
+
+Equipada, a mochila não ocupa célula e amplia a grade de carga com as linhas ou colunas que declarar. Possui Requisito de Força. Só uma mochila fica equipada por vez; as demais ocupam o próprio tamanho como itens comuns. Largá-la é uma interação livre. Veja [Carga e Transporte](Carga.md).
+
+## Aljava
+
+Ocupa um tamanho fixo na grade, mesmo vazia, e guarda flechas até a sua capacidade. As flechas guardadas não ocupam células próprias. Só uma aljava fica equipada por vez.
 
 # Armas e Armaduras
 

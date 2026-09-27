@@ -2,14 +2,10 @@
 A **Altura Segura** determina quantos metros um personagem pode cair sem sofrer dano.
 
 ```
-Altura Segura =3 m+ Destreza limitada a 2- Penalidade de Carga
+Altura Segura = 3 m + Destreza (limitada a 2) - 2 m se estiver em Sobrecarga
 ```
 
-|Faixa de Carga|Penalidade|
-|---|---|
-|Até 100% da CC|0 m|
-|Acima de 100% até 150%|-1 m|
-|Acima de 150%|-2 m|
+A penalidade vale enquanto houver algum item na área vermelha da grade de carga; veja [Carga e Transporte](Carga.md).
 
 A Altura Segura mínima é `0 m`.
 
@@ -31,7 +27,7 @@ Altura Segura: 3 mQueda: 6 mDano: 3
 
 O RDB de armaduras, escudos e Bloqueios não reduz dano de queda.
 
-Armaduras influenciam quedas apenas por meio de seu peso e da faixa de Carga do personagem.
+Armaduras influenciam quedas apenas quando deixam o personagem em Sobrecarga.
 
 Uma queda não permite Esquiva ou Bloqueio comuns. Habilidades, magias ou equipamentos só alteram a queda quando declararem isso expressamente.
 

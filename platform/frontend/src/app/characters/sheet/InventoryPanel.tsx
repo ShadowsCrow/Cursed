@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type { GlyphName } from "../../../ui/Display";
 import { EquipmentSlot } from "../../../ui/Display";
 import { campoEditavel } from "../fieldPolicy";
@@ -25,6 +27,10 @@ function detalhe(item: ItemInventarioResumo): string | undefined {
   if (item.efeitos && item.efeitos.length > 0) {
     partes.push(item.equipado ? "Efeito ativo enquanto equipado" : "Efeito suspenso até equipar");
   }
+  const peso = item.dados?.peso;
+  if (typeof peso === "number" || (typeof peso === "string" && peso.trim())) {
+    partes.push(`Peso: ${String(peso)} (só descrição)`);
+  }
   return partes.length > 0 ? partes.join(" · ") : undefined;
 }
 
@@ -37,6 +43,8 @@ function ItemRow({
   editable,
   online,
   onVersaoConfirmada,
+  acao,
+  permitirEquipar = true,
 }: {
   api: ApiClient;
   mesaId: string;
@@ -46,6 +54,9 @@ function ItemRow({
   editable: boolean;
   online: boolean;
   onVersaoConfirmada: (versao: number) => void;
+  acao?: ReactNode;
+  /** Sem formato o item não pode ser colocado na grade, então não é levado nem equipado; ainda pode ser desequipado. */
+  permitirEquipar?: boolean;
 }) {
   const command = useEquipCommand({ api, mesaId, personagemId, item, versaoEsperada: versao, online, onVersaoConfirmada });
   const atual = command.value;
@@ -57,9 +68,10 @@ function ItemRow({
         icon={tipoIcon[atual.tipo]}
         item={atual.nome}
         detail={detalhe(atual)}
-        onAction={editable ? () => void command.execute(!atual.equipado) : undefined}
+        onAction={editable && (atual.equipado || permitirEquipar) ? () => void command.execute(!atual.equipado) : undefined}
         actionLabel={command.isPending ? "Enviando…" : atual.equipado ? "Desequipar" : "Equipar"}
       />
+      {acao}
       {command.errorMessage && <p role="alert">{command.errorMessage}</p>}
     </div>
   );
@@ -97,18 +109,29 @@ export function EquippedItemsPanel({ api, mesaId, personagemId, itens, versao, p
 }
 
 /** Área "Inventário" — visualmente distinta do equipamento, mostrando itens possuídos mas não equipados. */
-export function InventoryItemsPanel({ api, mesaId, personagemId, itens, versao, permissoes, online, onVersaoConfirmada }: InventoryPanelProps) {
+export function InventoryItemsPanel({
+  api, mesaId, personagemId, itens, versao, permissoes, online, onVersaoConfirmada, titulo = "Inventário", descricao,
+  incluirEquipados = false, acaoItem, permitirEquipar = true,
+}: InventoryPanelProps & {
+  titulo?: string;
+  descricao?: string;
+  incluirEquipados?: boolean;
+  permitirEquipar?: boolean;
+  acaoItem?: (item: ItemInventarioResumo) => ReactNode;
+}) {
   const editable = campoEditavel("inventario.equipado", permissoes);
-  const outros = itens.filter((item) => !item.equipado);
+  const outros = incluirEquipados ? itens : itens.filter((item) => !item.equipado);
   return (
-    <section className="panel" aria-label="Inventário">
-      <div className="section-heading"><div><span className="eyebrow">PERTENCES</span><h2>Inventário</h2></div></div>
+    <section className="panel" aria-label={titulo}>
+      <div className="section-heading"><div><span className="eyebrow">PERTENCES</span><h2>{titulo}</h2></div></div>
+      {descricao && <p className="preview-note">{descricao}</p>}
       {outros.length === 0 ? (
         <p className="preview-note">Nenhum item no inventário.</p>
       ) : (
         <div className="equipment-list">
           {outros.map((item) => (
-            <ItemRow key={item.id} api={api} mesaId={mesaId} personagemId={personagemId} item={item} versao={versao} editable={editable} online={online} onVersaoConfirmada={onVersaoConfirmada} />
+            <ItemRow key={item.id} api={api} mesaId={mesaId} personagemId={personagemId} item={item} versao={versao} editable={editable} online={online} onVersaoConfirmada={onVersaoConfirmada}
+              acao={acaoItem?.(item)} permitirEquipar={permitirEquipar} />
           ))}
         </div>
       )}

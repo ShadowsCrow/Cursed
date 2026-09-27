@@ -27,8 +27,8 @@ with patch.dict("os.environ", {"CURSED_PLATFORM_DATABASE_URL": "sqlite:///:memor
 
 
 FICHA = {
-    "personagem": {"nome": "Lia"},
-    "atributos": {"valores": {"Destreza": 2, "Vigor": 3}, "ajustes": {"Destreza": 1}, "totais": {}},
+    "personagem": {"nome": "Lia", "tamanho": "Médio"},
+    "atributos": {"valores": {"Destreza": 2, "Vigor": 3, "Força": 3}, "ajustes": {"Destreza": 1}, "totais": {}},
     "pericias": {"valores": {"Esquiva": 1, "Arcanismo": 4}, "ajustes": {"Arcanismo": 1}, "totais": {}},
 }
 BASE = "/mesas/mesa-1/personagens/lia"
@@ -97,6 +97,34 @@ class ApiLiveSheetTest(unittest.TestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()
 
+    def colocar_na_grade(self, item_id: str, formato: dict) -> int:
+        """O Narrador define o formato e o jogador coloca o item na grade; devolve a versão da ficha."""
+        ator, self.actor = self.actor, "mestre"
+        versao = self.client.get(f"{BASE}/inventario/grade").json()["versao"]
+        definido = self.client.put(f"{BASE}/inventario/{item_id}/formato", json={"formato": formato, "versao_esperada": versao})
+        self.assertEqual(definido.status_code, 200, definido.text)
+        self.actor = ator
+        colocado = self.client.put(f"{BASE}/inventario/arrumacao", json={"versao_esperada": definido.json()["versao"], "itens": [
+            {"item_id": item_id, "coluna": 0, "linha": 0, "girado": False, "equipado": False}]})
+        self.assertEqual(colocado.status_code, 200, colocado.text)
+        return colocado.json()["versao"]
+
+    def test_item_so_se_equipa_colocado_na_grade(self):
+        """carga-por-espacos: só é levado o que está na grade; sem formato, não há como colocar nem equipar."""
+        item_id = self.importar(ARMADURA, 0)["item"]["id"]
+        sem_formato = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": 1})
+        self.assertEqual(sem_formato.status_code, 422)
+        self.assertIn("defina o formato e coloque o item na grade", sem_formato.json()["detail"])
+        self.actor = "mestre"
+        definido = self.client.put(f"{BASE}/inventario/{item_id}/formato", json={
+            "formato": {"subtipo": "peitoral", "largura": 2, "altura": 3}, "versao_esperada": 1})
+        self.actor = "jogador"
+        na_bandeja = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={
+            "equipado": True, "versao_esperada": definido.json()["versao"]})
+        self.assertEqual(na_bandeja.status_code, 422)
+        self.assertIn("precisa estar na grade", na_bandeja.json()["detail"])
+        self.assertFalse(self.client.get(f"{BASE}/inventario").json()[0]["equipado"])
+
     def test_valores_derivados_explicam_atributo_equipamento_e_efeito(self):
         self.assertEqual(self.derivado("defesa:armadura")["total"], 3)
         resultado = self.importar(ARMADURA, 0)
@@ -104,10 +132,11 @@ class ApiLiveSheetTest(unittest.TestCase):
         self.assertFalse(resultado["item"]["equipado"])
         self.assertEqual([e["estado"] for e in resultado["efeitos"]], ["suspenso"])
         self.assertEqual(self.derivado("defesa:armadura")["total"], 3)
+        versao = self.colocar_na_grade(item_id, {"subtipo": "peitoral", "largura": 2, "altura": 3})
 
-        equipar = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": 1})
+        equipar = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": versao})
         self.assertEqual(equipar.status_code, 200, equipar.text)
-        self.assertEqual(equipar.json()["versao"], 2)
+        self.assertEqual(equipar.json()["versao"], versao + 1)
         self.assertEqual(self.client.get(f"{BASE}/efeitos").json()[0]["estado"], "ativo")
 
         defesa = self.derivado("defesa:armadura")
@@ -121,20 +150,29 @@ class ApiLiveSheetTest(unittest.TestCase):
             [(s["valor"], s["contexto"]) for s in defesa["situacionais"]], [(2, "contra projéteis")]
         )
         self.assertEqual(self.derivado("rdb:armadura")["total"], 1)
-        self.assertEqual(self.derivado("carga:peso")["total"], 10.5)
+        chaves = [v["chave"] for v in self.client.get(f"{BASE}/valores-derivados").json()]
+        self.assertNotIn("carga:peso", chaves, "O peso é só descrição; a carga é a grade.")
         self.assertEqual(self.derivado("defesa:esquiva")["total"], 4)
 
         desequipar = self.client.post(
-            f"{BASE}/inventario/{item_id}/equipar", json={"equipado": False, "versao_esperada": 2}
+            f"{BASE}/inventario/{item_id}/equipar", json={"equipado": False, "versao_esperada": versao + 1}
         )
         self.assertEqual(desequipar.status_code, 200)
         self.assertEqual(self.client.get(f"{BASE}/efeitos").json()[0]["estado"], "suspenso")
         self.assertEqual(self.derivado("defesa:armadura")["total"], 3)
-        self.assertEqual(self.derivado("carga:peso")["total"], 10.5)
 
-        antigo = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": 2})
+        antigo = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": versao + 1})
         self.assertEqual(antigo.status_code, 409)
         self.assertFalse(self.client.get(f"{BASE}/inventario").json()[0]["equipado"])
+
+    def test_equipamento_importado_chega_sem_dimensao_com_peso_so_como_descricao(self):
+        """carga-por-espacos 7.2: códigos EQ1 antigos não trazem formato e nada é convertido de kg."""
+        item = self.importar(ARMADURA, 0)["item"]
+        self.assertEqual((item["subtipo"], item["largura"], item["altura"], item["coluna"], item["linha"]), (None,) * 5)
+        self.assertEqual(item["dados"]["peso"], 10.5)
+        with Session(self.engine) as session:
+            registro = session.get(ItemInventarioRegistro, item["id"])
+            self.assertEqual((registro.subtipo, registro.largura, registro.coluna), (None, None, None))
 
     def test_importacao_de_efeito_soma_somente_modificadores_do_alvo(self):
         self.assertEqual(self.derivado("pericia:arcanismo")["total"], 5)
@@ -179,7 +217,9 @@ class ApiLiveSheetTest(unittest.TestCase):
         resultado = self.importar(codigo, 0)
         self.assertEqual([e["nome"] for e in resultado["efeitos"]], ["Sobrepeso", "Sobrepeso"])
         item_id = resultado["item"]["id"]
-        self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": 1})
+        versao = self.colocar_na_grade(item_id, {"subtipo": "outro", "largura": 2, "altura": 2, "maos": 1})
+        equipado = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": versao})
+        self.assertEqual(equipado.status_code, 200, equipado.text)
         estados = sorted((e["ativacao"], e["estado"]) for e in self.client.get(f"{BASE}/efeitos").json())
         self.assertEqual(estados, [("enquanto_equipado", "ativo"), ("manual", "suspenso")])
         self.assertEqual(self.derivado("defesa:esquiva")["total"], 2)

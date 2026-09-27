@@ -38,8 +38,17 @@ def _modificadores(conteudo: Mapping[str, Any]) -> list[list[Mapping[str, Any]]]
     return grupos
 
 
-def validar(tipo: str, rascunho: Mapping[str, Any] | None, mesa_id: str) -> tuple[dict[str, Any] | None, ValidacaoCarta]:
-    """Valida o conteúdo para publicação. Não altera nada."""
+AVISO_FORMATO_PENDENTE = "Defina o tipo e a dimensão do item na grade antes de publicar."
+
+
+def validar(
+    tipo: str, rascunho: Mapping[str, Any] | None, mesa_id: str, *, para_publicar: bool = True,
+) -> tuple[dict[str, Any] | None, ValidacaoCarta]:
+    """Valida o conteúdo. Não altera nada.
+
+    Para publicar, um item precisa de formato na grade. Rascunhos (importação, migração) podem ficar
+    sem formato: a falta aparece como revisão pendente em vez de problema.
+    """
     problemas: list[ProblemaValidacao] = []
     dados = {**dict(rascunho or {}), "tipo": tipo}
     privados = dados.pop("ativos_privados", [])
@@ -64,14 +73,45 @@ def validar(tipo: str, rascunho: Mapping[str, Any] | None, mesa_id: str) -> tupl
             problemas.append(ProblemaValidacao(
                 campo=f"ativos.{indice}", mensagem=f"Ativos de cartas precisam ficar em {prefixo}.",
             ))
+    formato_pendente = tipo == "item" and conteudo.get("formato") is None
+    if formato_pendente and para_publicar:
+        problemas.append(ProblemaValidacao(campo="formato", mensagem=AVISO_FORMATO_PENDENTE))
+    icone = (conteudo.get("formato") or {}).get("icone_grade")
+    icone_privado = bool(icone) and icone.startswith(prefixo_enviado(mesa_id)) and "/../" not in f"/{icone}/"
+    if icone and not icone_privado and (not icone.startswith(prefixo) or "/../" in f"/{icone}/" or icone.endswith("/")):
+        problemas.append(ProblemaValidacao(campo="formato.icone_grade", mensagem=f"O ícone de grade precisa ficar em {prefixo}."))
     revisao = []
-    if privados:
+    if formato_pendente and not para_publicar:
+        revisao.append(AVISO_FORMATO_PENDENTE)
+    if privados or icone_privado:
         revisao.append(AVISO_ARTE_PRIVADA)
     if tipo in {"habilidade", "magia"} and conteudo.get("custo_legado") and any(conteudo.get(c) is None for c in CUSTOS):
         revisao.append(AVISO_CUSTO_LEGADO)
     return (conteudo if not problemas else None), ValidacaoCarta(
         valida=not problemas, problemas=problemas, revisao_pendente=revisao,
     )
+
+
+def prefixo_enviado(mesa_id: str) -> str:
+    """Espaço do Narrador onde ficam as imagens enviadas para cartas ainda não publicadas."""
+    return f"mesas/{mesa_id}/narrador/cartas/"
+
+
+def _promover_enviado(armazenamento: ArmazenamentoObjetos, mesa_id: str, caminho: str) -> dict[str, Any]:
+    """Copia uma imagem enviada (nome = SHA-256 do conteúdo) para o espaço da mesa."""
+    nome = caminho.rsplit("/", 1)[-1]
+    sha, _, extensao = nome.partition(".")
+    tipos = {"png": "image/png", "jpg": "image/jpeg", "webp": "image/webp"}
+    if "/../" in f"/{caminho}/" or extensao not in tipos:
+        raise AtivoInvalido("Imagem enviada com nome inválido.")
+    objeto = armazenamento.ler(BUCKET_PRIVADO, caminho)
+    if objeto is None or hashlib.sha256(objeto).hexdigest() != sha:
+        raise AtivoInvalido("Integridade da imagem enviada falhou.")
+    destino = f"mesas/{mesa_id}/mesa/cartas/{sha}.{extensao}"
+    armazenamento.gravar(BUCKET_PRIVADO, destino, objeto, tipos[extensao])
+    if hashlib.sha256(armazenamento.ler(BUCKET_PRIVADO, destino) or b"").hexdigest() != sha:
+        raise AtivoInvalido("Integridade da arte compartilhada falhou.")
+    return {"origem": caminho, "destino": destino, "sha256": sha, "tipo": tipos[extensao], "tamanho": len(objeto)}
 
 
 def criar_definicao(
@@ -115,14 +155,24 @@ def publicar(
     if not isinstance(privados, list) or any(not isinstance(item, str) for item in privados):
         return None, ValidacaoCarta(valida=False, problemas=[ProblemaValidacao(
             campo="ativos_privados", mensagem="Lista de artes privadas inválida.")])
-    if privados and (not promover_ativos or armazenamento is None):
+    formato = dict(dados.get("formato") or {})
+    icone_privado = str(formato.get("icone_grade") or "").startswith(prefixo_enviado(definicao.mesa_id))
+    if (privados or icone_privado) and (not promover_ativos or armazenamento is None):
         return None, ValidacaoCarta(valida=False, problemas=[ProblemaValidacao(
             campo="ativos_privados", mensagem="Confirme a cópia da arte privada para a mesa antes de publicar.")])
+    if icone_privado:
+        if definicao.versao != versao_esperada:
+            raise ConflitoRascunho()
+        formato["icone_grade"] = _promover_enviado(armazenamento, definicao.mesa_id, formato["icone_grade"])["destino"]
+        dados["formato"] = formato
     if privados:
         if definicao.versao != versao_esperada:
             raise ConflitoRascunho()
         promovidos = []
         for caminho in dict.fromkeys(privados):
+            if caminho.startswith(prefixo_enviado(definicao.mesa_id)):
+                promovidos.append(_promover_enviado(armazenamento, definicao.mesa_id, caminho))
+                continue
             ativo = session.scalar(select(AtivoCatalogoRegistro).where(
                 AtivoCatalogoRegistro.mesa_id == definicao.mesa_id,
                 AtivoCatalogoRegistro.bucket == BUCKET_PRIVADO,

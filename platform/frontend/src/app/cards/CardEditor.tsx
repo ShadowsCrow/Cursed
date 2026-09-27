@@ -2,6 +2,8 @@ import { useState } from "react";
 
 import { Confirmation, Dialog } from "../../ui/primitives";
 import { ModifiersEditor } from "../characters/sheet/EffectsPanel";
+import { ImageUpload } from "../assets/ImageUpload";
+import { ItemFormatEditor, type FormatoItem } from "../inventory/ItemFormatEditor";
 import type { ApiClient, ModificadorResumo } from "../characters/types";
 import { usePublicarCarta, useSalvarRascunho, useValidarCarta, useVersoesCarta } from "./api";
 import { inteiroOuNulo } from "./cardFormat";
@@ -16,7 +18,13 @@ const CAMPOS_CUSTO: [string, string][] = [
   ["potencia_uso", "Potência de Uso"],
   ["custo_uso", "Custo de Uso"],
 ];
-const DADOS_ITEM: [string, string][] = [["dano", "Dano"], ["armadura", "Armadura"], ["rdb", "RDB"], ["peso", "Peso (kg)"]];
+const DADOS_ITEM: [string, string][] = [["dano", "Dano"], ["armadura", "Armadura"], ["rdb", "RDB"], ["peso", "Peso aproximado (só descrição)"]];
+
+const CATEGORIA_POR_SUBTIPO: Record<FormatoItem["subtipo"], "arma" | "armadura" | "outro"> = {
+  uma_mao: "arma", duas_maos: "arma",
+  peitoral: "armadura", capacete: "armadura", luvas: "armadura", botas: "armadura", escudo: "armadura",
+  mochila: "outro", aljava: "outro", moedas: "outro", outro: "outro",
+};
 
 function texto(valor: unknown): string {
   return typeof valor === "string" ? valor : "";
@@ -47,7 +55,9 @@ function Problemas({ validacao, erro }: { validacao?: ValidacaoCarta | null; err
   );
 }
 
-function CamposPorTipo({ tipo, rascunho, alterar }: { tipo: TipoCarta; rascunho: Rascunho; alterar: (patch: Rascunho) => void }) {
+function CamposPorTipo({ tipo, rascunho, alterar, api, mesaId }: {
+  tipo: TipoCarta; rascunho: Rascunho; alterar: (patch: Rascunho) => void; api: ApiClient; mesaId: string;
+}) {
   if (tipo === "habilidade" || tipo === "magia") {
     const adicionais = Array.isArray(rascunho.custos_adicionais) ? (rascunho.custos_adicionais as Rascunho[]) : [];
     return (
@@ -94,11 +104,25 @@ function CamposPorTipo({ tipo, rascunho, alterar }: { tipo: TipoCarta; rascunho:
   if (tipo === "item") {
     const dados = rascunho.dados && typeof rascunho.dados === "object" ? (rascunho.dados as Rascunho) : {};
     const efeitos = Array.isArray(rascunho.efeitos) ? (rascunho.efeitos as Rascunho[]) : [];
+    const formato = (rascunho.formato ?? null) as FormatoItem | null;
+    const arte = lista(rascunho.ativos_privados)[0] ?? lista(rascunho.ativos)[0] ?? null;
     return (
       <>
+        <ItemFormatEditor
+          valor={formato}
+          onChange={(proximo) => alterar(proximo
+            ? { formato: proximo, item_tipo: CATEGORIA_POR_SUBTIPO[proximo.subtipo] }
+            : { formato: null })}
+          nome={texto(rascunho.titulo)}
+          idPrefix="carta-item"
+          api={api}
+          mesaId={mesaId}
+          arte={arte}
+        />
         <div className="form-row">
           <label>Tipo de item
-            <select value={texto(rascunho.item_tipo)} onChange={(e) => alterar({ item_tipo: e.target.value })}>
+            <select value={texto(rascunho.item_tipo)} disabled={formato !== null}
+              onChange={(e) => alterar({ item_tipo: e.target.value })}>
               <option value="">Escolha…</option><option value="arma">Arma</option><option value="armadura">Armadura</option><option value="outro">Outro</option>
             </select>
           </label>
@@ -205,6 +229,12 @@ export function CardEditor({ api, mesaId, definicao, onClose }: CardEditorProps)
     <Dialog open title={`Editar ${ROTULO_TIPO[tipo].toLowerCase()}`} onClose={onClose} className="card-editor">
       <div className="card-editor__layout">
         <form className="card-editor__form" onSubmit={(e) => { e.preventDefault(); void salvarRascunho().catch(() => undefined); }}>
+          {definicao.origem_sistema && (
+            <p className="field-warning" role="note">
+              Carta do catálogo do sistema ({definicao.origem_sistema}). O JSON do catálogo prevalece: o que você editar aqui
+              será substituído na próxima atualização dele.
+            </p>
+          )}
           <label>Título<input value={texto(rascunho.titulo)} onChange={(e) => alterar({ titulo: e.target.value })} /></label>
           <label>Texto<textarea value={texto(rascunho.texto)} onChange={(e) => alterar({ texto: e.target.value })} /></label>
           <label>Requisitos (um por linha)
@@ -213,7 +243,27 @@ export function CardEditor({ api, mesaId, definicao, onClose }: CardEditorProps)
           <label>Tags (separadas por vírgula)
             <input value={lista(rascunho.tags).join(", ")} onChange={(e) => alterar({ tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} />
           </label>
-          <CamposPorTipo tipo={tipo} rascunho={rascunho} alterar={alterar} />
+          <CamposPorTipo tipo={tipo} rascunho={rascunho} alterar={alterar} api={api} mesaId={mesaId} />
+          {!definicao.origem_sistema && (
+            <div className="card-editor__images">
+              <ImageUpload api={api} mesaId={mesaId} destino="carta" alvo={definicao.id} versao={versao} rotulo="arte da carta"
+                temImagem={lista(rascunho.ativos).length + lista(rascunho.ativos_privados).length > 0}
+                onConcluido={(resposta) => {
+                  // A imagem já foi gravada no rascunho do servidor; o rascunho local acompanha sem perder o que está em edição.
+                  if (resposta.versao != null) setVersao(resposta.versao);
+                  setRascunho((atual) => ({ ...atual, ativos: [], ativos_privados: resposta.objeto ? [resposta.objeto] : [] }));
+                }} />
+              {tipo === "item" && Boolean(rascunho.formato) && (
+                <ImageUpload api={api} mesaId={mesaId} destino="icone-grade" alvo={`carta:${definicao.id}`} versao={versao}
+                  rotulo="ícone de grade" temImagem={Boolean((rascunho.formato as { icone_grade?: string } | undefined)?.icone_grade)}
+                  onConcluido={(resposta) => {
+                    if (resposta.versao != null) setVersao(resposta.versao);
+                    setRascunho((atual) => ({ ...atual, formato: { ...(atual.formato as object), icone_grade: resposta.objeto ?? null } }));
+                  }} />
+              )}
+              <p className="preview-note">A imagem fica só com o Narrador até a publicação, que a copia para a mesa.</p>
+            </div>
+          )}
           {salvar.isError && <p role="alert">{salvar.error.message}</p>}
           <div className="dialog__actions">
             <button type="submit" className="button button--secondary" disabled={salvar.isPending}>{alterado ? "Salvar rascunho" : "Rascunho salvo"}</button>

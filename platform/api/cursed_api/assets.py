@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from cursed_platform.acesso_privado import AutorizadorRecursos, BUCKET_PRIVADO
+from cursed_platform.imagens import caminho_exibicao
 from cursed_platform.migracao_ativos import AtivoInvalido
 
 from .auth import Ator, get_actor
@@ -25,8 +26,9 @@ class AtivoResposta(BaseModel):
 
 
 @router.get("", response_model=AtivoResposta)
-def ler_ativo(mesa_id: str, caminho: str, request: Request,
+def ler_ativo(mesa_id: str, caminho: str, request: Request, exibicao: bool = False,
               ator: Ator = Depends(get_actor), session: Session = Depends(get_session)) -> AtivoResposta:
+    """``exibicao=true`` entrega a versão reduzida (WEBP) quando ela existe; senão, a original."""
     prefixo = f"mesas/{mesa_id}/"
     if not caminho.startswith(prefixo) or not AutorizadorRecursos(session).decidir_objeto(
         ator.usuario_id, BUCKET_PRIVADO, caminho
@@ -36,6 +38,9 @@ def ler_ativo(mesa_id: str, caminho: str, request: Request,
     if armazenamento is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Armazenamento indisponível.")
     try:
+        reduzida = armazenamento.ler(BUCKET_PRIVADO, caminho_exibicao(caminho)) if exibicao else None
+        if reduzida is not None:
+            return AtivoResposta(tipo="image/webp", base64=base64.b64encode(reduzida).decode("ascii"))
         dados = armazenamento.ler(BUCKET_PRIVADO, caminho)
     except AtivoInvalido as erro:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Falha ao ler o ativo.") from erro

@@ -11,7 +11,7 @@ from typing import Any, Iterable
 
 
 LOGGER = logging.getLogger("cursed.operacao")
-EVENTOS = {"comando", "conflito", "erro", "realtime_falha", "migracao"}
+EVENTOS = {"comando", "conflito", "erro", "realtime_falha", "migracao", "catalogo"}
 
 
 def configurar() -> None:

@@ -7,8 +7,8 @@ da aplicação Streamlit e tornam explícitas as fontes de cada total.
 Um modificador contribui para um valor derivado somente quando seu alvo,
 normalizado sem acentos e em minúsculas, é igual à chave do valor:
 `atributo:<nome>`, `pericia:<nome>`, `defesa:esquiva`, `defesa:armadura`,
-`rdb:armadura` ou `carga:peso`. Alvos de rolagem, como `ataque` ou
-`teste:percepcao`, não alteram totais.
+ou `rdb:armadura`. Alvos de rolagem, como `ataque` ou `teste:percepcao`, não
+alteram totais. O peso de um item é só descrição: a carga é a grade.
 """
 
 from __future__ import annotations
@@ -22,7 +22,8 @@ from uuid import uuid4
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from cursed_platform.domain.efeitos import carregar_catalogo, indexar_catalogo
+from cursed_platform import catalogos
+from cursed_platform.domain.efeitos import indexar_catalogo
 from cursed_platform.domain.efeitos_codec import decode_effect
 from cursed_platform.domain.equip_codec import decode_equipment
 from cursed_platform.persistence import (
@@ -60,13 +61,6 @@ def _inteiro_opcional(valor: Any) -> int | None:
     return None
 
 
-def _decimal(valor: Any) -> float:
-    try:
-        return float(valor or 0)
-    except (TypeError, ValueError):
-        return 0.0
-
-
 # ----------------------------------------------------------------- consultas
 
 @dataclass(frozen=True)
@@ -86,6 +80,7 @@ class EfeitoAtual:
     modificadores: list[Modificador]
     fontes: list[FonteEfeitoRegistro]
     conteudo: dict[str, Any] = field(default_factory=dict)
+    associacao: str | None = None
 
     @property
     def equipamento_id(self) -> str | None:
@@ -137,7 +132,7 @@ def efeitos(session: Session, mesa_id: str, personagem_id: str) -> list[EfeitoAt
         EfeitoAtual(
             id=r.id, nome=r.nome, descricao=r.descricao, estado=r.estado,
             duracao_rodadas=r.duracao_rodadas, modificadores=operacoes[r.id],
-            fontes=fontes[r.id], conteudo=r.conteudo or {},
+            fontes=fontes[r.id], conteudo=r.conteudo or {}, associacao=r.associacao,
         )
         for r in registros
     ]
@@ -246,12 +241,7 @@ def calcular_valores_derivados(
               item_id=item.id)
         for item in armaduras
     ], [])
-    peso = ValorDerivado("carga:peso", "Peso", "status", [
-        Fonte("equipamento", item.nome, max(0.0, _decimal(item.dados.get("peso"))) * max(1, item.quantidade),
-              item_id=item.id)
-        for item in inventario if _decimal(item.dados.get("peso"))
-    ], [])
-    resultado.extend(com_efeitos(v) for v in (esquiva, armadura, rdb, peso))
+    resultado.extend(com_efeitos(v) for v in (esquiva, armadura, rdb))
     return resultado
 
 
@@ -285,6 +275,14 @@ def definir_equipado(
     """Equipa ou desequipa o item e alterna os efeitos que dependem dele. Não confirma a transação."""
     nova_versao = _avancar_versao(session, personagem, versao_esperada)
     item.equipado = equipado
+    alternar_efeitos_vinculados(session, personagem, item, equipado)
+    return nova_versao
+
+
+def alternar_efeitos_vinculados(
+    session: Session, personagem: PersonagemRegistro, item: ItemInventarioRegistro, equipado: bool,
+) -> None:
+    """Ativa ou suspende os efeitos "enquanto equipado" cuja fonte é o item. Não avança versão."""
     vinculados = session.scalars(
         select(FonteEfeitoRegistro.efeito_id).where(
             FonteEfeitoRegistro.mesa_id == personagem.mesa_id,
@@ -299,7 +297,6 @@ def definir_equipado(
     ):
         if (efeito.conteudo or {}).get("ativacao", {}).get("tipo", "enquanto_equipado") == "enquanto_equipado":
             efeito.estado = "ativo" if equipado else "suspenso"
-    return nova_versao
 
 
 # ----------------------------------------------------------------- importação
@@ -322,6 +319,7 @@ class PreviaImportacao:
     item: dict[str, Any] | None = None
     item_tipo: str | None = None
     avisos: list[str] = field(default_factory=list)
+    formato: dict[str, Any] | None = None
 
 
 _ITEM_CAMPOS_TABELA = {"nome", "quantidade", "equipado", "cargas_atuais", "cargas_maximas"}
@@ -360,7 +358,7 @@ def preparar_importacao(codigo: str, catalogo: list[Mapping[str, Any]] | None = 
     if prefixo not in {"EQ1", "EQ2"}:
         raise ValueError("Código não reconhecido. Use um código de efeito (E1/E2) ou de equipamento (EQ1/EQ2).")
     equipamento = decode_equipment(texto)
-    indice = indexar_catalogo(catalogo if catalogo is not None else carregar_catalogo())
+    indice = indexar_catalogo(catalogo if catalogo is not None else catalogos.obter().efeitos_default)
     item = _sem_imagem(equipamento["item"], avisos, "o item")
     if not str(item.get("nome") or "").strip():
         raise ValueError("O equipamento precisa ter nome.")
@@ -381,6 +379,50 @@ def preparar_importacao(codigo: str, catalogo: list[Mapping[str, Any]] | None = 
     return PreviaImportacao("equipamento", importados, item=item, item_tipo=equipamento["tipo"], avisos=avisos)
 
 
+_CATEGORIA_POR_SUBTIPO = {
+    "uma_mao": "arma", "duas_maos": "arma",
+    "peitoral": "armadura", "capacete": "armadura", "luvas": "armadura", "botas": "armadura", "escudo": "armadura",
+}
+
+
+def aplicar_formato(item: ItemInventarioRegistro, formato: Mapping[str, Any]) -> bool:
+    """Grava o formato da grade no item. Devolve True se a posição precisou ser desfeita."""
+    subtipo = str(formato["subtipo"])
+    largura, altura = int(formato["largura"]), int(formato["altura"])
+    mudou = (item.subtipo, item.largura, item.altura) != (subtipo, largura, altura)
+    item.tipo = _CATEGORIA_POR_SUBTIPO.get(subtipo, "outro")
+    item.subtipo, item.largura, item.altura = subtipo, largura, altura
+    versatil = subtipo == "uma_mao" and bool(formato.get("versatil"))
+    if subtipo == "outro":
+        item.maos = formato.get("maos")
+    elif versatil:
+        item.maos = item.maos if item.maos in (1, 2) else 1
+    else:
+        item.maos = None
+    item.pilha_max = formato.get("pilha_max") if subtipo == "outro" else None
+    dados = {k: v for k, v in (item.dados or {}).items()
+             if k not in {"ampliacao", "requisito_forca", "capacidade_flechas", "icone_grade", "versatil"}}
+    if versatil:
+        dados["versatil"] = True
+    mochila = formato.get("mochila")
+    if subtipo == "mochila" and mochila:
+        dados["ampliacao"] = {"linhas": int(mochila.get("linhas", 0)), "colunas": int(mochila.get("colunas", 0))}
+        if mochila.get("requisito_forca") is not None:
+            dados["requisito_forca"] = int(mochila["requisito_forca"])
+    aljava = formato.get("aljava")
+    if subtipo == "aljava" and aljava:
+        dados["capacidade_flechas"] = int(aljava["capacidade_flechas"])
+        dados.setdefault("flechas", 0)
+    if formato.get("icone_grade"):
+        dados["icone_grade"] = formato["icone_grade"]
+    item.dados = dados
+    if mudou and item.coluna is not None:
+        item.coluna = item.linha = None
+        item.girado = False
+        return True
+    return False
+
+
 def aplicar_importacao(
     session: Session, personagem: PersonagemRegistro, previa: PreviaImportacao, versao_esperada: int,
 ) -> tuple[int, ItemInventarioRegistro | None, list[EfeitoAplicadoRegistro]]:
@@ -399,6 +441,8 @@ def aplicar_importacao(
             cargas_maximas=_inteiro_opcional(dados.get("cargas_maximas")),
             dados={k: v for k, v in dados.items() if k not in _ITEM_CAMPOS_TABELA},
         )
+        if previa.formato:
+            aplicar_formato(item_registro, previa.formato)
         session.add(item_registro)
         session.flush()
     criados = []

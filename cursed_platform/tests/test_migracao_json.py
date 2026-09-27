@@ -10,6 +10,8 @@ import unittest
 from sqlalchemy import JSON, Column, Integer, MetaData, String, Table, create_engine, func, select
 from sqlalchemy.orm import Session
 
+from cursed_platform import cartas
+from cursed_platform import cartas_catalogo, catalogos
 from cursed_platform.migracao_json import migrar_json_catalogos
 from cursed_platform.persistence import (
     Base, CartaDefinicaoRegistro, EfeitoAplicadoRegistro, ItemInventarioRegistro,
@@ -49,15 +51,22 @@ class MigracaoJsonTest(unittest.TestCase):
         segunda = self.executar()
         self.assertGreater(primeira.contagens["convertido"], 1)
         self.assertEqual(primeira.contagens["rejeitado"], 0)
-        self.assertEqual(segunda.contagens["existente"], primeira.contagens["convertido"])
+        # Classes e raças cobertas pelo catálogo da plataforma já aparecem como existentes na primeira execução.
+        self.assertEqual(segunda.contagens["existente"], primeira.contagens["convertido"] + primeira.contagens["existente"])
         self.assertEqual(segunda.contagens["convertido"], 0)
         self.assertFalse(primeira.aprovavel)
         pendentes = {(item.fonte, item.identificador) for item in primeira.registros
                      if item.situacao == "pendente"}
-        self.assertIn(("json:racas.json", "0"), pendentes)
+        self.assertNotIn(("json:racas.json", "0"), pendentes)
+        self.assertNotIn(("json:classes.json", "0"), pendentes)
+        cobertos = {item.fonte for item in primeira.registros
+                    if item.situacao == "existente" and "catálogo da plataforma" in (item.motivo or "")}
+        self.assertEqual(cobertos, {"json:classes.json", "json:racas.json"})
         self.assertIn(("json:tipos_dano.json", "0"), pendentes)
-        self.assertIn(("json:classes.json", "0"), pendentes)
         self.assertIn(("json:efeitos_externos_lib.json", "0"), pendentes)
+        [arma] = [r for r in primeira.registros if r.fonte == "json:armas_lib.json"]
+        self.assertEqual(arma.situacao, "pendente")
+        self.assertIn("Tipo e dimensão na grade também ficam pendentes", arma.motivo or "")
 
         with Session(self.engine) as session:
             [personagem] = session.scalars(select(PersonagemRegistro)).all()
@@ -67,12 +76,14 @@ class MigracaoJsonTest(unittest.TestCase):
             self.assertEqual(session.scalar(select(func.count()).select_from(ItemInventarioRegistro)), 3)
             self.assertEqual(session.scalar(select(func.count()).select_from(EfeitoAplicadoRegistro)), 1)
             self.assertEqual(session.scalar(select(func.count()).select_from(OperacaoEfeitoRegistro)), 1)
+            # Habilidades de classe não entram como cartas avulsas: o catálogo as materializa com o custo antigo.
             cartas = session.scalars(select(CartaDefinicaoRegistro)).all()
-            custo = next(c for c in cartas if c.rascunho["conteudo"]["titulo"] == "Manifestar Gêmeo")
-            self.assertEqual(custo.rascunho["conteudo"]["custo_legado"], "2 PP")
+            self.assertFalse(any(c.rascunho["conteudo"].get("titulo") == "Manifestar Gêmeo" for c in cartas))
+            [manifestar] = [h for h in cartas_catalogo.todas_as_habilidades(catalogos.obter())
+                            if h.conteudo["titulo"] == "Manifestar Gêmeo"]
+            self.assertEqual(manifestar.conteudo["custo_legado"], "2 PP")
             for campo in ("custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso"):
-                self.assertNotIn(campo, custo.rascunho["conteudo"])
-            self.assertEqual(custo.rascunho["procedencia"]["dados_originais"]["custo"], "2 PP")
+                self.assertNotIn(campo, manifestar.conteudo)
             self.assertEqual(session.scalar(select(func.count()).select_from(MigracaoLegadaRegistro)),
                              sum(item.destino_id is not None for item in primeira.registros))
 
@@ -112,7 +123,7 @@ class MigracaoJsonTest(unittest.TestCase):
         meta.create_all(legado)
         with legado.begin() as conexao:
             conexao.execute(equipamentos.insert().values(id=10, tipo="arma",
-                dados={"nome": "Sabre", "descricao": "Lâmina antiga.", "dano": "1d6"}))
+                dados={"nome": "Sabre", "descricao": "Lâmina antiga.", "dano": "1d6", "peso": 2.5}))
             conexao.execute(efeitos.insert().values(id=20,
                 dados={"nome": "Bênção", "descricao": "+1 em Vontade."}))
         try:
@@ -126,13 +137,22 @@ class MigracaoJsonTest(unittest.TestCase):
                 session.commit()
                 sabre = session.scalar(select(CartaDefinicaoRegistro).where(
                     CartaDefinicaoRegistro.rascunho["conteudo"]["titulo"].as_string() == "Sabre"))
-                self.assertEqual(sabre.rascunho["conteudo"]["dados"]["dano"], "1d6")
-            self.assertEqual([(r.fonte, r.situacao) for r in primeira.registros
-                              if r.fonte.startswith("sql:")],
-                             [("sql:equipment_library", "convertido"), ("sql:effects_library", "convertido")])
-            self.assertEqual([(r.fonte, r.situacao) for r in segunda.registros
-                              if r.fonte.startswith("sql:")],
-                             [("sql:equipment_library", "existente"), ("sql:effects_library", "existente")])
+                self.assertEqual(sabre.rascunho["conteudo"]["dados"], {"dano": "1d6", "peso": 2.5})
+                # carga-por-espacos 7.2: nenhum formato é inferido; o Narrador define tipo e dimensão.
+                self.assertNotIn("formato", sabre.rascunho["conteudo"])
+                _, validacao = cartas.validar("item", sabre.rascunho["conteudo"], "mesa")
+                self.assertIn("formato", [p.campo for p in validacao.problemas])
+                self.assertEqual(session.scalar(select(func.count()).select_from(CartaDefinicaoRegistro).where(
+                    CartaDefinicaoRegistro.rascunho["conteudo"]["titulo"].as_string() == "Sabre")), 1)
+            [sabre_primeira] = [r for r in primeira.registros if r.fonte == "sql:equipment_library"]
+            [sabre_segunda] = [r for r in segunda.registros if r.fonte == "sql:equipment_library"]
+            self.assertEqual((sabre_primeira.situacao, sabre_segunda.situacao), ("pendente", "pendente"))
+            self.assertEqual(sabre_primeira.destino_id, sabre_segunda.destino_id)
+            self.assertIn("Tipo e dimensão na grade pendentes", sabre_primeira.motivo or "")
+            self.assertEqual([(r.fonte, r.situacao) for r in primeira.registros if r.fonte == "sql:effects_library"],
+                             [("sql:effects_library", "convertido")])
+            self.assertEqual([(r.fonte, r.situacao) for r in segunda.registros if r.fonte == "sql:effects_library"],
+                             [("sql:effects_library", "existente")])
         finally:
             legado.dispose()
 

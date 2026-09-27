@@ -12,7 +12,7 @@ const efeitos: EfeitoResumo[] = [
     id: "efeito-1",
     nome: "Bênção da armadura",
     descricao: "Reforça a proteção enquanto a armadura estiver vestida.",
-    estado: "ativo",
+    estado: "ativo", derivado: false, icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" },
     duracao_rodadas: null,
     ativacao: "enquanto_equipado",
     fontes: [{ tipo: "equipamento", descricao: "Cota de malha", equipamento_id: "item-1" }],
@@ -25,7 +25,7 @@ const efeitos: EfeitoResumo[] = [
     id: "efeito-2",
     nome: "Veneno lento",
     descricao: "Reduz o vigor enquanto ativo.",
-    estado: "suspenso",
+    estado: "suspenso", derivado: false, icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" },
     duracao_rodadas: 3,
     ativacao: null,
     fontes: [],
@@ -99,21 +99,33 @@ describe("EffectsPanel — 6.5 efeitos ativos legíveis e acessíveis", () => {
 
 function efeitoAtivo(overrides: Partial<EfeitoResumo> = {}): EfeitoResumo {
   return {
-    id: "efeito-1", nome: "Aturdido", descricao: "Reação atrasada em combate.", estado: "ativo",
+    id: "efeito-1", nome: "Aturdido", descricao: "Reação atrasada em combate.", estado: "ativo", derivado: false, icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" },
     duracao_rodadas: 3, modificadores: [{ alvo: "iniciativa", valor: -2, contexto: null }],
     fontes: [{ tipo: "narrador", descricao: "Golpe na cabeça", equipamento_id: null }],
     ...overrides,
   };
 }
 
-function renderAdminPanel(api: ApiClient, efeitosAdmin: EfeitoResumo[], admin = true) {
+const DEFAULTS = [
+  { associacao: "condicao_derrubado", nome: "Derrubado", descricao: "Sem Movimento voluntário normal.", grupo: "Abertura e mobilidade",
+    modificadores: [], substitui: [], substitui_nomes: [], icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" } },
+  { associacao: "condicao_ofuscado", nome: "Ofuscado", descricao: "-2 em ataques dependentes da visão.", grupo: "Sentidos e comunicação",
+    modificadores: [{ alvo: "ataque", valor: -2, quando: "depende_visao" }], substitui: [], substitui_nomes: [],
+    icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" } },
+  { associacao: "condicao_cego", nome: "Cego", descricao: "Não enxerga.", grupo: "Sentidos e comunicação",
+    modificadores: [{ alvo: "ataque", valor: -4, quando: "depende_visao" }], substitui: ["condicao_ofuscado"],
+    substitui_nomes: ["Ofuscado"], icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" } },
+];
+const getDefaults = vi.fn(async () => ({ data: DEFAULTS, error: undefined }));
+
+function renderAdminPanel(api: ApiClient, efeitosAdmin: EfeitoResumo[], admin = true, papel: "narrador" | "jogador" = "narrador") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   const onVersaoConfirmada = vi.fn();
   render(
     <QueryClientProvider client={queryClient}>
       <EffectsPanel
         efeitos={efeitosAdmin}
-        admin={admin ? { api, mesaId: "mesa-1", personagemId: "pj-1", versao: 5, onVersaoConfirmada } : undefined}
+        admin={admin ? { api, mesaId: "mesa-1", personagemId: "pj-1", versao: 5, onVersaoConfirmada, papel } : undefined}
       />
     </QueryClientProvider>,
   );
@@ -123,22 +135,30 @@ function renderAdminPanel(api: ApiClient, efeitosAdmin: EfeitoResumo[], admin = 
 describe("EffectsPanel — 8.3 comandos de efeito do Narrador", () => {
   afterEach(() => cleanup());
 
-  it("Narrador aplica um efeito do catálogo com modificador e origem", async () => {
+  it("a Sobrecarga, calculada pela grade, não aparece para ajustar nem encerrar", () => {
+    const api = { POST: vi.fn() } as unknown as ApiClient;
+    renderAdminPanel(api, [
+      efeitoAtivo(),
+      efeitoAtivo({ id: "derivado:sobrecarga", nome: "Sobrecarga", derivado: true, consequencias: ["Deslocamento pela metade"] }),
+    ]);
+    expect(screen.getAllByRole("button", { name: "Ajustar" })).toHaveLength(1);
+  });
+
+  it("Narrador aplica uma condição escolhida da lista, sem digitar código", async () => {
     const POST = vi.fn(async (path: string) => {
       if (path.endsWith("/efeitos")) {
-        return { data: { versao: 6, efeito: efeitoAtivo({ id: "efeito-2", nome: "Sangrando" }) }, error: undefined };
+        return { data: { versao: 6, efeito: efeitoAtivo({ id: "efeito-2", nome: "Derrubado" }) }, error: undefined };
       }
       throw new Error(`POST não simulado: ${path}`);
     });
-    const api = { POST } as unknown as ApiClient;
+    const api = { POST, GET: getDefaults } as unknown as ApiClient;
     const { onVersaoConfirmada } = renderAdminPanel(api, []);
 
     fireEvent.click(screen.getByRole("button", { name: /Aplicar efeito/ }));
     const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Associação do catálogo"), { target: { value: "cc_above" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Adicionar modificador" }));
-    fireEvent.change(within(dialog).getByLabelText("Alvo"), { target: { value: "defesa" } });
-    fireEvent.change(within(dialog).getByLabelText("Valor"), { target: { value: "-1" } });
+    expect(within(dialog).queryByLabelText("Associação do catálogo")).toBeNull();
+    const grupo = await within(dialog).findByRole("group", { name: "Abertura e mobilidade" });
+    fireEvent.click(within(grupo).getByRole("radio", { name: /Derrubado/ }));
     fireEvent.change(within(dialog).getByLabelText("Origem (o que causou o efeito na ficção)"), { target: { value: "Queda de uma escada" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Aplicar efeito" }));
 
@@ -147,18 +167,22 @@ describe("EffectsPanel — 8.3 comandos de efeito do Narrador", () => {
         "/mesas/{mesa_id}/personagens/{personagem_id}/efeitos",
         expect.objectContaining({
           body: expect.objectContaining({
-            associacao: "cc_above",
-            nome: null,
-            descricao: null,
-            modificadores: [{ alvo: "defesa", valor: -1, contexto: null }],
-            origem: "Queda de uma escada",
-            versao_esperada: 5,
+            associacao: "condicao_derrubado", nome: null, descricao: null, origem: "Queda de uma escada", versao_esperada: 5,
           }),
         }),
       ),
     );
     await waitFor(() => expect(onVersaoConfirmada).toHaveBeenCalledWith(6));
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("mostra que Cego substitui Ofuscado antes de aplicar", async () => {
+    const api = { POST: vi.fn(), GET: getDefaults } as unknown as ApiClient;
+    renderAdminPanel(api, [efeitoAtivo({ id: "o", nome: "Ofuscado", associacao: "condicao_ofuscado" })]);
+    fireEvent.click(screen.getByRole("button", { name: /Aplicar efeito/ }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(await within(dialog).findByRole("radio", { name: /Cego/ }));
+    expect(within(dialog).getByRole("status").textContent).toBe("Cego substitui Ofuscado: ao aplicar, Ofuscado será encerrado.");
   });
 
   it("Narrador ajusta um efeito existente enviando a versão esperada correta", async () => {
@@ -273,6 +297,47 @@ describe("EffectsPanel — 8.3 comandos de efeito do Narrador", () => {
   it("não apresenta violações de acessibilidade detectáveis automaticamente", async () => {
     const api = { POST: vi.fn(), PATCH: vi.fn() } as unknown as ApiClient;
     renderAdminPanel(api, [efeitoAtivo()]);
+    const results = await axe.run(document.body, { rules: { region: { enabled: false } } });
+    expect(results.violations).toEqual([]);
+  });
+});
+
+describe("EffectsPanel — condições pelo jogador e ícones estáveis", () => {
+  afterEach(() => cleanup());
+
+  it("jogador aplica só condições do catálogo e encerra só as dele", async () => {
+    const api = { POST: vi.fn(), GET: getDefaults } as unknown as ApiClient;
+    renderAdminPanel(api, [
+      efeitoAtivo({ id: "d", nome: "Derrubado", associacao: "condicao_derrubado" }),
+      efeitoAtivo({ id: "m", nome: "Maldição do Narrador" }),
+    ], true, "jogador");
+    expect(screen.getByRole("button", { name: "Encerrar Derrubado" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Encerrar Maldição/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Ajustar" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Aplicar condição/ }));
+    const dialog = screen.getByRole("dialog", { name: "Aplicar condição" });
+    expect(within(dialog).queryByRole("radio", { name: /Efeito personalizado/ })).toBeNull();
+    expect(await within(dialog).findByRole("radio", { name: /Derrubado/ })).toBeTruthy();
+  });
+
+  it("o ícone é a imagem do efeito, igual em qualquer posição, e o nome é o nome acessível", () => {
+    const icone = { origem: "catalogo" as const, caminho: "/icones/efeitos/cc_above.webp" };
+    renderPanel([efeitoAtivo({ id: "a", nome: "Agarrado" }), efeitoAtivo({ id: "s", nome: "Sobrecarga", icone })]);
+    const antes = screen.getByRole("button", { name: "Sobrecarga" }).querySelector("img")?.getAttribute("src");
+    cleanup();
+    renderPanel([efeitoAtivo({ id: "s", nome: "Sobrecarga", icone })]);
+    const depois = screen.getByRole("button", { name: "Sobrecarga" }).querySelector("img");
+    expect(antes).toBe("/icones/efeitos/cc_above.webp");
+    expect(depois?.getAttribute("src")).toBe(antes);
+    expect(depois?.getAttribute("alt")).toBe("");
+    expect(screen.getByRole("button", { name: "Sobrecarga" })).toBeTruthy();
+  });
+
+  it("não apresenta violações de acessibilidade detectáveis na lista de condições", async () => {
+    const api = { POST: vi.fn(), GET: getDefaults } as unknown as ApiClient;
+    renderAdminPanel(api, [], true, "jogador");
+    fireEvent.click(screen.getByRole("button", { name: /Aplicar condição/ }));
+    await screen.findByRole("radio", { name: /Cego/ });
     const results = await axe.run(document.body, { rules: { region: { enabled: false } } });
     expect(results.violations).toEqual([]);
   });

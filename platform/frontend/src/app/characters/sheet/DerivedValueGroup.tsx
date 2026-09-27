@@ -9,6 +9,9 @@ const tipoFonteLabel: Record<string, string> = {
   pericia: "Perícia",
   equipamento: "Equipamento",
   efeito: "Efeito",
+  classe: "Classe",
+  nivel: "Nível",
+  ajuste_narrador: "Ajuste do Narrador",
 };
 
 function comSinal(valor: number): string {
@@ -18,8 +21,17 @@ function comSinal(valor: number): string {
 /** Total com as fontes sob demanda (popover acessível); situacionais aparecem à parte. */
 export function FontesDoValor({ valor }: { valor: ValorDerivadoResumo }) {
   const situacionais = valor.situacionais ?? [];
+  if (valor.total === null) {
+    // Faltou uma entrada (classe fora do catálogo, nível ausente…): nada é estimado.
+    return (
+      <Popover label={`${valor.rotulo}: não calculável`} triggerContent={<b>—</b>} triggerClassName="derived-value__trigger">
+        <p>Não calculável. {valor.motivo}</p>
+      </Popover>
+    );
+  }
+  const total = valor.grupo === "recurso" ? String(valor.total) : comSinal(valor.total);
   return (
-    <Popover label={`Fontes de ${valor.rotulo}`} triggerContent={<b>{comSinal(valor.total)}</b>} triggerClassName="derived-value__trigger">
+    <Popover label={`Fontes de ${valor.rotulo}`} triggerContent={<b>{total}</b>} triggerClassName="derived-value__trigger">
       <dl>
         <dt>Total</dt>
         <dd>{valor.total}</dd>

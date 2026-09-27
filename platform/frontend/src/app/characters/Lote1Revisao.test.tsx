@@ -26,8 +26,8 @@ const DESGASTE: TrilhaDesgaste[] = [
     proxima_faixa: faixa("pressionado", "Pressionado", "…", 5, 6), pontos_ate_proxima: 5 },
 ];
 const EFEITOS: EfeitoResumo[] = [
-  { id: "e1", nome: "Envenenado", descricao: "−1 em Furtividade.", estado: "ativo", modificadores: [], fontes: [] },
-  { id: "e2", nome: "Runas", descricao: "+1.", estado: "suspenso", modificadores: [], fontes: [] },
+  { id: "e1", nome: "Envenenado", descricao: "−1 em Furtividade.", estado: "ativo", derivado: false, icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" }, modificadores: [], fontes: [] },
+  { id: "e2", nome: "Runas", descricao: "+1.", estado: "suspenso", derivado: false, icone: { origem: "padrao", caminho: "/icones/efeitos/padrao.webp" }, modificadores: [], fontes: [] },
 ];
 
 describe("Faixa de estado ativo", () => {

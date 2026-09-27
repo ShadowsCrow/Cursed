@@ -105,6 +105,13 @@ function MigrarDialog({ api, mesaId, personagemId, carta, versao, onClose }: {
   );
 }
 
+/** "classe:Druida" -> "Classe: Druida"; "arquetipo:Druida/Animalista" -> "Arquétipo: Animalista". */
+function rotuloConcessao(concedidaPor: string): string {
+  const [tipo = "", nome = ""] = concedidaPor.split(":");
+  const prefixo: Record<string, string> = { classe: "Classe", arquetipo: "Arquétipo", raca: "Raça" };
+  return `${prefixo[tipo] ?? tipo}: ${nome.split("/").pop()}`;
+}
+
 export interface CharacterCardsPanelProps {
   api: ApiClient;
   mesaId: string;
@@ -148,7 +155,9 @@ export function CharacterCardsPanel({ api, mesaId, personagemId, versao, papel, 
               {doGrupo.map((carta) => (
                 <li key={carta.id} className="card-group__item">
                   <CardFace tipo={carta.carta.tipo} conteudo={carta.carta.conteudo} numero={carta.carta.numero} api={api} mesaId={mesaId} />
-                  {carta.excecao_aprendizado && <p className="tag tag--accent">Concedida como aprendida (exceção)</p>}
+                  {carta.concedida_por
+                    ? <p className="tag tag--accent">{rotuloConcessao(carta.concedida_por)} · habilidade automática</p>
+                    : carta.excecao_aprendizado && <p className="tag tag--accent">Concedida como aprendida (exceção)</p>}
                   <div className="card-group__actions">
                     {acoes(carta).map(({ acao, rotulo }) => (
                       <button key={acao} type="button" className="button button--secondary" disabled={transicao.isPending}

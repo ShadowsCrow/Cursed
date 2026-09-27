@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Mapping
 from uuid import uuid4
@@ -9,8 +10,8 @@ from uuid import uuid4
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from cursed_platform import ficha_viva
-from cursed_platform.domain.efeitos import carregar_catalogo, indexar_catalogo, normalizar_modificador
+from cursed_platform import catalogos, ficha_viva
+from cursed_platform.domain.efeitos import indexar_catalogo, normalizar_modificador
 from cursed_platform.persistence import (
     EfeitoAplicadoRegistro, FonteEfeitoRegistro, ItemInventarioRegistro, OperacaoEfeitoRegistro,
     PersonagemRegistro,
@@ -81,7 +82,19 @@ def efeito_do_personagem(session: Session, personagem: PersonagemRegistro, efeit
     return efeito
 
 
-def aplicar_efeito(
+@dataclass
+class AplicacaoEfeito:
+    efeito: EfeitoAplicadoRegistro
+    # Efeitos encerrados porque o catálogo declara que o novo os substitui (ex.: Cego encerra Ofuscado).
+    substituidos: list[EfeitoAplicadoRegistro] = field(default_factory=list)
+
+
+def aplicar_efeito(session: Session, personagem: PersonagemRegistro, **kwargs: Any) -> EfeitoAplicadoRegistro:
+    """Aplica um efeito ativo com origem registrada. Não confirma a transação."""
+    return aplicar_efeito_substituindo(session, personagem, **kwargs).efeito
+
+
+def aplicar_efeito_substituindo(
     session: Session,
     personagem: PersonagemRegistro,
     *,
@@ -93,12 +106,16 @@ def aplicar_efeito(
     duracao_rodadas: int | None = None,
     origem: str | None = None,
     catalogo: list[Mapping[str, Any]] | None = None,
-) -> EfeitoAplicadoRegistro:
-    """Aplica um efeito ativo com origem registrada. Não confirma a transação."""
+) -> AplicacaoEfeito:
+    """Aplica o efeito e encerra, na mesma transação, os efeitos que ele substitui. Não confirma."""
+    substitui: list[str] = []
     if associacao:
-        referencia = indexar_catalogo(catalogo if catalogo is not None else carregar_catalogo()).get(associacao)
+        referencia = indexar_catalogo(catalogo if catalogo is not None else catalogos.obter().efeitos_default).get(associacao)
         if referencia is None:
             raise ValueError(f"Efeito do catálogo não encontrado: {associacao}.")
+        if referencia.get("suspenso"):
+            # Regra que não vigora mais (ex.: Sobrepeso, substituído pela Sobrecarga da grade).
+            raise ValueError(referencia["suspenso"]["motivo"])
         nome, descricao = referencia["nome"], referencia["descricao"]
         declarados = [
             {"alvo": m["alvo"], "valor": m["valor"], "contexto": m.get("quando")}
@@ -106,6 +123,7 @@ def aplicar_efeito(
         ]
         conteudo = {k: v for k, v in referencia.items() if k != "imagem_base64"}
         fonte_tipo = "catalogo"
+        substitui = list(referencia.get("substitui") or [])
     else:
         if not (nome or "").strip() or not (descricao or "").strip():
             raise ValueError("Informe nome e descrição do efeito ou uma associação do catálogo.")
@@ -127,8 +145,21 @@ def aplicar_efeito(
         tipo=fonte_tipo, referencia_id=associacao or None,
         descricao=(origem or "").strip()[:500] or ("Catálogo" if associacao else "Narrador"),
     ))
+    substituidos: list[EfeitoAplicadoRegistro] = []
+    if substitui:
+        for anterior in session.scalars(select(EfeitoAplicadoRegistro).where(
+            EfeitoAplicadoRegistro.mesa_id == personagem.mesa_id,
+            EfeitoAplicadoRegistro.personagem_id == personagem.id,
+            EfeitoAplicadoRegistro.associacao.in_(substitui),
+            EfeitoAplicadoRegistro.estado.in_(("ativo", "suspenso")),
+            EfeitoAplicadoRegistro.id != efeito.id,
+        )):
+            anterior.estado = "encerrado"
+            anterior.encerrado_em = datetime.now(UTC)
+            anterior.versao += 1
+            substituidos.append(anterior)
     session.flush()
-    return efeito
+    return AplicacaoEfeito(efeito, substituidos)
 
 
 def ajustar_efeito(

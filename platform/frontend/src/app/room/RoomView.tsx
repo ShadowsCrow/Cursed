@@ -4,8 +4,11 @@ import type { components } from "../../api/generated/schema";
 import { extractErrorMessage, type ApiClient } from "../characters/types";
 import { useCommandPreview } from "../connectivity/useCommandPreview";
 import { useConnectivityStatus } from "../connectivity/useConnectivityStatus";
+import { ImageUpload } from "../assets/ImageUpload";
+import { useAssetImage } from "../assets/useAssetImage";
 import { RoomCanvas } from "./RoomCanvas";
 import type { RealtimeSession } from "./RoomPresence";
+import { SceneStashes } from "./SceneStashes";
 import { useRoomEphemera } from "./useRoomEphemera";
 import "./room.css";
 
@@ -77,6 +80,7 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   });
 
   const cena = sala.data?.cena;
+  const mapa = useAssetImage(api, mesaId, cena?.mapa_objeto ?? "", { enabled: Boolean(cena?.mapa_objeto) });
   const token = cena?.tokens.find((item: Token) => item.id === tokenEscolhido);
   const moverX = destino && token && destino.tokenId === token.id ? destino.x : token?.x ?? 0;
   const moverY = destino && token && destino.tokenId === token.id ? destino.y : token?.y ?? 0;
@@ -138,7 +142,11 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
     </div>}
     {!cena ? <p className="panel">Ainda não há cena ativa para mostrar.</p> : <>
       <h2>{cena.nome}</h2>
-      <RoomCanvas cena={cenaVisual ?? cena} onSelectToken={setTokenEscolhido}
+      {narrator && (
+        <ImageUpload api={api} mesaId={mesaId} destino="mapa" alvo={cena.id} rotulo="mapa da cena"
+          temImagem={Boolean(cena.mapa_objeto)} onConcluido={() => { void atualizar(); }} />
+      )}
+      <RoomCanvas cena={cenaVisual ?? cena} onSelectToken={setTokenEscolhido} mapaUrl={cena.mapa_objeto ? mapa.data : undefined}
         cursores={ephemera.cursores} pings={ephemera.pings} arrastes={ephemera.arrastes}
         onCursor={ephemera.cursor} onPing={ephemera.ping}
         onDragPreview={ephemera.arraste}
@@ -178,6 +186,7 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
         {movimento.status === "previa-local" && <p role="status">Prévia local, aguardando confirmação…</p>}
         {movimento.errorMessage && <p role="alert">{movimento.errorMessage} A última posição confirmada foi restaurada.</p>}
       </div>
+      <SceneStashes api={api} mesaId={mesaId} userId={userId} narrator={narrator} />
       {narrator && <form className="room-view__token-form panel" onSubmit={enviarToken}>
         <h3>Colocar token</h3>
         <label>Rótulo <input value={rotulo} onChange={(e) => setRotulo(e.target.value)} required maxLength={100} /></label>

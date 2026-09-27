@@ -96,7 +96,7 @@ def adquirir(
         raise RegraCarta("A exceção de aprendizado só se aplica a habilidades e magias.")
     elif versao.tipo == "item":
         previa = ficha_viva.PreviaImportacao(
-            tipo="equipamento", item_tipo=conteudo["item_tipo"],
+            tipo="equipamento", item_tipo=conteudo["item_tipo"], formato=conteudo.get("formato"),
             item={**conteudo.get("dados", {}), "nome": conteudo["titulo"], "quantidade": conteudo.get("quantidade", 1)},
             efeitos=[
                 ficha_viva.EfeitoImportado(

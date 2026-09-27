@@ -5,13 +5,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria
+from cursed_platform import auditoria, catalogos
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     ConfirmarDescansoRequest, PreviaDescansoRequest, ResultadoDescansoPersonagem, ResultadoDescansoResumo,
     ResultadoRecursoDescanso, ResultadoTrilhaDescanso,
 )
-from cursed_platform.domain import descanso
+from cursed_platform.domain import descanso, recursos
 from cursed_platform.domain.ficha import FichaDraft
 from cursed_platform.persistence import PersonagemRegistro
 from cursed_platform.repositories import FichaRepository
@@ -43,7 +43,8 @@ def _calcular(
                 raise ValueError(f"Personagem indisponível para o descanso: {alvo.personagem_id}.")
             ficha = FichaDraft.de_payload(personagem.ficha).para_payload()
             calculados.append((personagem, descanso.calcular(
-                ficha, parametros, foco=alvo.foco, ajustes=dict(alvo.ajustes),
+                ficha, parametros, calculado=recursos.calcular(ficha, catalogos.obter()),
+                foco=alvo.foco, ajustes=dict(alvo.ajustes),
             )))
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(erro)) from None

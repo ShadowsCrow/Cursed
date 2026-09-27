@@ -17,6 +17,7 @@ from sqlalchemy import Engine, MetaData, Table, select
 from sqlalchemy.orm import Session
 
 from cursed_platform import cartas
+from cursed_platform import catalogos
 from cursed_platform.migracao_ambiguidades import preservar_custo_legado
 from cursed_platform.migracao_tabelas import DivergenciaMigracao, _registrar
 from cursed_platform.narrador import modificadores_validos
@@ -116,7 +117,8 @@ def _rascunho(tipo: str, dados: dict[str, Any], *, item_tipo: str | None = None)
             raise ValueError("Quantidade inválida.")
         base["quantidade"] = quantidade
         if dados.get("efeitos"):
-            raise RevisaoPendente("Efeitos de item exigem conversão explícita.")
+            raise RevisaoPendente("Efeitos de item exigem conversão explícita. "
+                                  "Tipo e dimensão na grade também ficam pendentes de definição pelo Narrador.")
     elif tipo == "efeito":
         base["modificadores"] = modificadores_validos(dados.get("modificadores") or [])
     return base
@@ -131,7 +133,7 @@ def _importar_carta(session: Session, relatorio: RelatorioJson, *, fonte: str,
     imagem_pendente = _tem_imagem_pendente(dados)
     try:
         rascunho = _rascunho(tipo, _sem_imagens(dados), item_tipo=item_tipo)
-        _, validacao = cartas.validar(tipo, rascunho, relatorio.mesa_id)
+        _, validacao = cartas.validar(tipo, rascunho, relatorio.mesa_id, para_publicar=False)
         if not validacao.valida:
             relatorio.adicionar(fonte, identificador, "pendente",
                                motivo="Rascunho requer revisão: " + "; ".join(p.mensagem for p in validacao.problemas))
@@ -157,8 +159,10 @@ def _importar_carta(session: Session, relatorio: RelatorioJson, *, fonte: str,
     elif session.get(CartaDefinicaoRegistro, destino_id) is None:
         raise DivergenciaMigracao(f"{fonte}#{identificador}: destino não encontrado.")
     pendencias = []
-    if validacao.revisao_pendente:
+    if cartas.AVISO_CUSTO_LEGADO in validacao.revisao_pendente:
         pendencias.append("Custo legado exige revisão.")
+    if cartas.AVISO_FORMATO_PENDENTE in validacao.revisao_pendente:
+        pendencias.append("Tipo e dimensão na grade pendentes de definição pelo Narrador; o peso fica só como descrição.")
     imagem_extraida = bool((session.get(CartaDefinicaoRegistro, destino_id).rascunho or {})
                           .get("conteudo", {}).get("ativos_privados"))
     if imagem_pendente and not imagem_extraida:
@@ -255,6 +259,21 @@ def _importar_ficha(session: Session, relatorio: RelatorioJson, caminho: Path,
     relatorio.adicionar(fonte, relativo, "convertido" if criado else "existente", destino_id)
 
 
+def _catalogo_da_plataforma(relatorio: RelatorioJson, fonte: str, ident: str, entrada: Any, tipo: str) -> None:
+    if not isinstance(entrada, dict) or not str(entrada.get("nome") or "").strip():
+        relatorio.adicionar(fonte, ident, "rejeitado", motivo=f"{tipo.capitalize()} inválida.")
+        return
+    catalogo = catalogos.obter()
+    nome = str(entrada["nome"]).strip()
+    encontrado = catalogo.classe(nome) if tipo == "classe" else catalogo.raca(nome)
+    if encontrado is None:
+        relatorio.adicionar(fonte, ident, "pendente",
+                            motivo=f"{tipo.capitalize()} \"{nome}\" não está no catálogo da plataforma.")
+    else:
+        relatorio.adicionar(fonte, ident, "existente",
+                            motivo=f"Coberta pelo catálogo da plataforma ({encontrado.nome}).")
+
+
 def _catalogos(session: Session, relatorio: RelatorioJson, raiz: Path, narrador_id: str) -> None:
     for nome in CATALOGOS:
         caminho = raiz / nome
@@ -269,29 +288,12 @@ def _catalogos(session: Session, relatorio: RelatorioJson, raiz: Path, narrador_
             continue
         for indice, entrada in enumerate(dados):
             ident = str(indice)
-            if nome in {"racas.json", "tipos_dano.json"}:
+            if nome == "tipos_dano.json":
                 relatorio.adicionar(fonte, ident, "pendente", motivo="Não há entidade de catálogo aprovada.")
-            elif nome == "classes.json":
-                relatorio.adicionar(fonte, ident, "pendente", motivo="Definição de classe não possui destino aprovado.")
-                if not isinstance(entrada, dict):
-                    relatorio.adicionar(fonte + ":habilidade", ident, "rejeitado", motivo="Classe inválida.")
-                    continue
-                grupos = [(entrada.get("habilidades") or [], None)]
-                for arq_indice, arquetipo in enumerate(entrada.get("arquetipos") or []):
-                    if isinstance(arquetipo, dict):
-                        grupos.append((arquetipo.get("habilidades") or [], str(arq_indice)))
-                for habilidades, arq_indice in grupos:
-                    if not isinstance(habilidades, list):
-                        relatorio.adicionar(fonte + ":habilidade", ident, "rejeitado", motivo="Lista de habilidades inválida.")
-                        continue
-                    for habilidade_indice, habilidade in enumerate(habilidades):
-                        subid = f"{indice}:{arq_indice or 'base'}:{habilidade_indice}"
-                        contexto = {"classe": str(entrada.get("nome") or "")}
-                        if arq_indice is not None:
-                            contexto["arquetipo"] = str((entrada["arquetipos"][int(arq_indice)]).get("nome") or "")
-                        _importar_carta(session, relatorio, fonte=fonte + ":habilidade",
-                            identificador=subid, dados=habilidade, tipo="habilidade", narrador_id=narrador_id,
-                            contexto=contexto)
+            elif nome in {"classes.json", "racas.json"}:
+                # Classes e raças são o catálogo da plataforma (calcular-valores-da-ficha): as habilidades
+                # viram cartas quando um personagem usa a classe, e não são importadas como cartas avulsas.
+                _catalogo_da_plataforma(relatorio, fonte, ident, entrada, "classe" if nome == "classes.json" else "raca")
             elif nome == "armas_lib.json":
                 _importar_carta(session, relatorio, fonte=fonte, identificador=ident,
                                 dados=entrada, tipo="item", item_tipo="arma", narrador_id=narrador_id)

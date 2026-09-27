@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "../characters/types";
 import { RoomView } from "./RoomView";
 
+vi.mock("./SceneStashes", () => ({ SceneStashes: () => null }));
+
 vi.mock("./RoomCanvas", () => ({
   RoomCanvas: ({ cena }: { cena: { tokens: { id: string; x: number; y: number }[] } }) =>
     <div data-testid="grid">{cena.tokens.map((token) => `${token.id}:${token.x},${token.y}`).join(";")}</div>,

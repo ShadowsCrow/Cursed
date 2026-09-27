@@ -9,6 +9,7 @@ export type FichaSnapshot = components["schemas"]["FichaSnapshot"];
 export type FichaContrato = components["schemas"]["FichaContrato"];
 export type PermissoesFicha = components["schemas"]["PermissoesFicha"];
 export type ItemInventarioResumo = components["schemas"]["ItemInventarioResumo"];
+export type GradeInventario = components["schemas"]["GradeInventario"];
 export type EfeitoResumo = components["schemas"]["EfeitoResumo"];
 export type ModificadorResumo = components["schemas"]["ModificadorResumo"];
 export type FonteEfeitoResumo = components["schemas"]["FonteEfeitoResumo"];
@@ -42,7 +43,11 @@ export function extractErrorMessage(error: unknown, fallback: string): string {
     if (typeof detail === "string" && detail.trim()) return detail;
     if (Array.isArray(detail) && detail.length > 0) {
       const messages = detail
-        .map((item) => (item && typeof item === "object" && "msg" in item ? String((item as { msg: unknown }).msg) : null))
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          if ("mensagem" in item) return String((item as { mensagem: unknown }).mensagem);
+          return "msg" in item ? String((item as { msg: unknown }).msg) : null;
+        })
         .filter((msg): msg is string => Boolean(msg));
       if (messages.length > 0) return messages.join(" ");
     }

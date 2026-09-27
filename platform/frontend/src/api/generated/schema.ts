@@ -96,7 +96,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Ler Ativo */
+        /**
+         * Ler Ativo
+         * @description ``exibicao=true`` entrega a versão reduzida (WEBP) quando ela existe; senão, a original.
+         */
         get: operations["ler_ativo_mesas__mesa_id__ativos_get"];
         put?: never;
         post?: never;
@@ -289,6 +292,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/catalogos/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Classes */
+        get: operations["listar_classes_mesas__mesa_id__catalogos_classes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/catalogos/efeitos-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Efeitos Default */
+        get: operations["listar_efeitos_default_mesas__mesa_id__catalogos_efeitos_default_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/catalogos/estado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado Do Catalogo
+         * @description Versão carregada e último erro de recarga do JSON, para o Narrador.
+         */
+        get: operations["estado_do_catalogo_mesas__mesa_id__catalogos_estado_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/catalogos/listas-ficha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Listas */
+        get: operations["listar_listas_mesas__mesa_id__catalogos_listas_ficha_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/catalogos/racas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Racas */
+        get: operations["listar_racas_mesas__mesa_id__catalogos_racas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/convites": {
         parameters: {
             query?: never;
@@ -386,6 +477,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/imagens/{destino}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Enviar Imagem */
+        put: operations["enviar_imagem_mesas__mesa_id__imagens__destino__put"];
+        post?: never;
+        /** Remover Imagem */
+        delete: operations["remover_imagem_mesas__mesa_id__imagens__destino__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/modulos": {
         parameters: {
             query?: never;
@@ -416,6 +525,77 @@ export interface paths {
         put?: never;
         /** Criar Oferta */
         post: operations["criar_oferta_mesas__mesa_id__ofertas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/ofertas-item": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Ofertas
+         * @description Ofertas pendentes em que o usuário pode agir: dadas ou recebidas por personagens que ele edita.
+         */
+        get: operations["listar_ofertas_mesas__mesa_id__ofertas_item_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/ofertas-item/{oferta_id}/aceitar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aceitar Oferta */
+        post: operations["aceitar_oferta_mesas__mesa_id__ofertas_item__oferta_id__aceitar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/ofertas-item/{oferta_id}/cancelar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancelar Oferta */
+        post: operations["cancelar_oferta_mesas__mesa_id__ofertas_item__oferta_id__cancelar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/ofertas-item/{oferta_id}/recusar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recusar Oferta */
+        post: operations["recusar_oferta_mesas__mesa_id__ofertas_item__oferta_id__recusar_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -741,6 +921,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/arrumacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Gravar Arrumacao
+         * @description Grava a arrumação inteira da grade (tudo ou nada). Mover itens dentro da grade não gera evento no
+         *     histórico; colocar na grade, retirar para a bandeja, equipar, desequipar e entrar ou sair de sobrecarga geram.
+         */
+        put: operations["gravar_arrumacao_mesas__mesa_id__personagens__personagem_id__inventario_arrumacao_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Grade */
+        get: operations["ler_grade_mesas__mesa_id__personagens__personagem_id__inventario_grade_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/mochila/largar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Largar Mochila
+         * @description Interação livre: a mochila vai para o chão da cena ativa com os itens das linhas que ela acrescentava.
+         */
+        post: operations["largar_mochila_mesas__mesa_id__personagens__personagem_id__inventario_mochila_largar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/moedas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Gravar Moedas
+         * @description Adiciona ou retira moedas, define os totais (o servidor junta em pilhas) ou as pilhas (para dividir).
+         *     Nenhuma moeda some: pilhas sem espaço vão para a área vermelha ou ficam fora da grade.
+         */
+        put: operations["gravar_moedas_mesas__mesa_id__personagens__personagem_id__inventario_moedas_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/equipar": {
         parameters: {
             query?: never;
@@ -758,6 +1017,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/formato": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Definir Formato
+         * @description O Narrador define tipo e dimensão de um item (por exemplo, os que chegaram sem dimensão).
+         *     Se o formato muda, o item sai da grade para ser recolocado; se o subtipo muda, ele é desequipado.
+         */
+        put: operations["definir_formato_mesas__mesa_id__personagens__personagem_id__inventario__item_id__formato_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/largar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Largar Item */
+        post: operations["largar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__largar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/ofertas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ofertar Item */
+        post: operations["ofertar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__ofertas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/personagens/{personagem_id}/permissoes": {
         parameters: {
             query?: never;
@@ -769,6 +1083,26 @@ export interface paths {
         get: operations["ler_permissoes_mesas__mesa_id__personagens__personagem_id__permissoes_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/recursos/ajustes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ajustar Recurso
+         * @description O Narrador soma um ajuste com origem e justificativa a PV/PP máximo ou a uma Escala.
+         */
+        post: operations["ajustar_recurso_mesas__mesa_id__personagens__personagem_id__recursos_ajustes_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -935,6 +1269,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/sala/recipientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Recipientes
+         * @description Chão e baús da cena ativa, visíveis a todos os participantes.
+         */
+        get: operations["listar_recipientes_mesas__mesa_id__sala_recipientes_get"];
+        put?: never;
+        /** Criar Bau */
+        post: operations["criar_bau_mesas__mesa_id__sala_recipientes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/recipientes/{recipiente_id}/cartas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Colocar Carta */
+        post: operations["colocar_carta_mesas__mesa_id__sala_recipientes__recipiente_id__cartas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/recipientes/{recipiente_id}/itens/{retrato_id}/pegar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pegar Item
+         * @description O primeiro pedido confirmado leva o item; os seguintes recebem 409.
+         */
+        post: operations["pegar_item_mesas__mesa_id__sala_recipientes__recipiente_id__itens__retrato_id__pegar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/sala/tokens/{token_id}": {
         parameters: {
             query?: never;
@@ -1032,6 +1424,26 @@ export interface components {
             /** Codigo */
             codigo: string;
         };
+        /** AceitarOfertaRequest */
+        AceitarOfertaRequest: {
+            /**
+             * Coluna
+             * @description Sem lugar, o item chega fora da grade.
+             */
+            coluna?: number | null;
+            /**
+             * Girado
+             * @default false
+             */
+            girado: boolean;
+            /** Linha */
+            linha?: number | null;
+            /**
+             * Versao Esperada
+             * @description Versão da ficha de quem recebe.
+             */
+            versao_esperada: number;
+        };
         /**
          * AjustarEfeitoRequest
          * @description Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração.
@@ -1047,6 +1459,37 @@ export interface components {
             motivo?: string | null;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /**
+         * AjustarRecursoRequest
+         * @description Ajuste do Narrador em PV/PP máximo ou Escala, quando uma regra específica prevalece.
+         */
+        AjustarRecursoRequest: {
+            /**
+             * Alvo
+             * @enum {string}
+             */
+            alvo: "pv_maximo" | "pp_maximo" | "escala_pv" | "escala_pp";
+            /** Justificativa */
+            justificativa: string;
+            /** Origem */
+            origem: string;
+            /** Valor */
+            valor: number;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /** AjusteRecursoResposta */
+        AjusteRecursoResposta: {
+            /** Valores */
+            valores: components["schemas"]["ValorDerivadoResumo"][];
+            /** Versao */
+            versao: number;
+        };
+        /** AljavaFormato */
+        AljavaFormato: {
+            /** Capacidade Flechas */
+            capacidade_flechas: number;
         };
         /** AlterarVisibilidadeRequest */
         AlterarVisibilidadeRequest: {
@@ -1072,6 +1515,20 @@ export interface components {
             foco?: ("pv" | "pp" | "exaustao" | "estresse") | null;
             /** Personagem Id */
             personagem_id: string;
+        };
+        /** AmpliacaoGradeResumo */
+        AmpliacaoGradeResumo: {
+            /** Colunas */
+            colunas: number;
+            /**
+             * Fonte
+             * @enum {string}
+             */
+            fonte: "mochila" | "magia" | "habilidade";
+            /** Linhas */
+            linhas: number;
+            /** Rotulo */
+            rotulo: string;
         };
         /** AplicarEfeitoRequest */
         AplicarEfeitoRequest: {
@@ -1136,6 +1593,22 @@ export interface components {
             /** Versao */
             versao: number;
         };
+        /** ArquetipoResumo */
+        ArquetipoResumo: {
+            /** Conceito */
+            conceito: string;
+            /** Habilidades */
+            habilidades: components["schemas"]["HabilidadeCatalogoResumo"][];
+            /** Nome */
+            nome: string;
+        };
+        /** ArrumacaoGradeRequest */
+        ArrumacaoGradeRequest: {
+            /** Itens */
+            itens: components["schemas"]["PosicaoItemGrade"][];
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** AtivoResposta */
         AtivoResposta: {
             /** Base64 */
@@ -1163,6 +1636,27 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** BaseClasseResumo */
+        BaseClasseResumo: {
+            /**
+             * Atributo
+             * @description Chave normalizada do atributo: vigor ou proposito.
+             */
+            atributo: string;
+            /** Texto */
+            texto: string;
+            /** Valor */
+            valor: number;
+        };
+        /** Body_enviar_imagem_mesas__mesa_id__imagens__destino__put */
+        Body_enviar_imagem_mesas__mesa_id__imagens__destino__put: {
+            /** Alvo */
+            alvo: string;
+            /** Arquivo */
+            arquivo: string;
+            /** Versao Esperada */
+            versao_esperada?: number | null;
+        };
         /** CamadaSala */
         CamadaSala: {
             /** Id */
@@ -1176,6 +1670,15 @@ export interface components {
              * @enum {string}
              */
             visibilidade: "mesa" | "narrador";
+        };
+        /** CampoPersonalidadeResumo */
+        CampoPersonalidadeResumo: {
+            /** Chave */
+            chave: string;
+            /** Dica */
+            dica: string;
+            /** Rotulo */
+            rotulo: string;
         };
         /** CanalPrivado */
         CanalPrivado: {
@@ -1198,6 +1701,11 @@ export interface components {
             arquivada: boolean;
             /** Id */
             id: string;
+            /**
+             * Origem Sistema
+             * @description Habilidade do catálogo que a carta materializa; o JSON prevalece sobre edições.
+             */
+            origem_sistema?: string | null;
             /** Procedencia Rascunho */
             procedencia_rascunho?: {
                 [key: string]: unknown;
@@ -1228,6 +1736,11 @@ export interface components {
              */
             adquirida_em: string;
             carta: components["schemas"]["CartaVisivel"];
+            /**
+             * Concedida Por
+             * @description Escolha que concedeu a carta (ex.: classe:Druida); vazio para ofertas e concessões avulsas.
+             */
+            concedida_por?: string | null;
             /** Efeito Id */
             efeito_id?: string | null;
             /**
@@ -1341,6 +1854,26 @@ export interface components {
             /** Versao */
             versao: number;
         };
+        /** ClasseCatalogoResumo */
+        ClasseCatalogoResumo: {
+            /** Arquetipos */
+            arquetipos: components["schemas"]["ArquetipoResumo"][];
+            /** Cor */
+            cor?: string | null;
+            escala_pp?: components["schemas"]["BaseClasseResumo"] | null;
+            escala_pv?: components["schemas"]["BaseClasseResumo"] | null;
+            /** Habilidades */
+            habilidades: components["schemas"]["HabilidadeCatalogoResumo"][];
+            /** Nome */
+            nome: string;
+            pp?: components["schemas"]["BaseClasseResumo"] | null;
+            pv?: components["schemas"]["BaseClasseResumo"] | null;
+        };
+        /** ColocarCartaRequest */
+        ColocarCartaRequest: {
+            /** Versao Id */
+            versao_id: string;
+        };
         /** ConcederCartaRequest */
         ConcederCartaRequest: {
             /**
@@ -1394,6 +1927,15 @@ export interface components {
             motivo?: string | null;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /** CriarBauRequest */
+        CriarBauRequest: {
+            /** Colunas */
+            colunas: number;
+            /** Linhas */
+            linhas: number;
+            /** Nome */
+            nome: string;
         };
         /** CriarCartaRequest */
         CriarCartaRequest: {
@@ -1513,6 +2055,12 @@ export interface components {
             /** Aprovar */
             aprovar: boolean;
         };
+        /** DefinirFormatoRequest */
+        DefinirFormatoRequest: {
+            formato: components["schemas"]["FormatoItemGrade"];
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** DestinatarioOferta */
         DestinatarioOferta: {
             /** Escolhas */
@@ -1542,6 +2090,27 @@ export interface components {
             /** Versao */
             versao: number;
         };
+        /** EfeitoDefaultResumo */
+        EfeitoDefaultResumo: {
+            /** Associacao */
+            associacao: string;
+            /** Descricao */
+            descricao: string;
+            /** Grupo */
+            grupo?: string | null;
+            icone: components["schemas"]["IconeResumo"];
+            /** Modificadores */
+            modificadores?: components["schemas"]["ModificadorCatalogoResumo"][];
+            /** Nome */
+            nome: string;
+            /**
+             * Substitui
+             * @description Associações que este efeito encerra ao ser aplicado.
+             */
+            substitui?: string[];
+            /** Substitui Nomes */
+            substitui_nomes?: string[];
+        };
         /** EfeitoPrevia */
         EfeitoPrevia: {
             /** Ativacao */
@@ -1555,8 +2124,24 @@ export interface components {
         };
         /** EfeitoResumo */
         EfeitoResumo: {
+            /**
+             * Associacao
+             * @description Código do efeito default, quando vem do catálogo.
+             */
+            associacao?: string | null;
             /** Ativacao */
             ativacao?: string | null;
+            /**
+             * Consequencias
+             * @description Consequências sem valor numérico na ficha.
+             */
+            consequencias?: string[];
+            /**
+             * Derivado
+             * @description Calculado pelo sistema (ex.: Sobrecarga); não se encerra nem se ajusta.
+             * @default false
+             */
+            derivado: boolean;
             /** Descricao */
             descricao: string;
             /** Duracao Rodadas */
@@ -1568,6 +2153,7 @@ export interface components {
             estado: "ativo" | "suspenso" | "encerrado";
             /** Fontes */
             fontes?: components["schemas"]["FonteEfeitoResumo"][];
+            icone: components["schemas"]["IconeResumo"];
             /** Id */
             id: string;
             /** Modificadores */
@@ -1599,6 +2185,24 @@ export interface components {
             item: components["schemas"]["ItemInventarioResumo"];
             /** Versao */
             versao: number;
+        };
+        /** ErroCatalogoResumo */
+        ErroCatalogoResumo: {
+            /** Arquivo */
+            arquivo: string;
+            /**
+             * Em
+             * Format: date-time
+             */
+            em: string;
+            /** Motivo */
+            motivo: string;
+        };
+        /** EstadoCatalogoResumo */
+        EstadoCatalogoResumo: {
+            erro?: components["schemas"]["ErroCatalogoResumo"] | null;
+            /** Versao */
+            versao: string;
         };
         /** EventoAuditoriaResumo */
         EventoAuditoriaResumo: {
@@ -1711,11 +2315,22 @@ export interface components {
         };
         /** FichaSnapshot */
         FichaSnapshot: {
+            /**
+             * Avisos
+             * @description Valores fora das regras ou do catálogo, mantidos até o Narrador corrigir.
+             */
+            avisos?: components["schemas"]["ProblemaValidacao"][];
             ficha: components["schemas"]["FichaContrato"];
             /** Mesa Id */
             mesa_id: string;
             /** Personagem Id */
             personagem_id: string;
+            /**
+             * Tipo
+             * @description personagem, npc ou monstro: só personagens seguem limites e catálogo.
+             * @default personagem
+             */
+            tipo: string;
             /** Versao */
             versao: number;
         };
@@ -1740,19 +2355,158 @@ export interface components {
              * Tipo
              * @enum {string}
              */
-            tipo: "base" | "ajuste" | "atributo" | "pericia" | "equipamento" | "efeito";
+            tipo: "base" | "ajuste" | "atributo" | "pericia" | "equipamento" | "efeito" | "classe" | "nivel" | "ajuste_narrador";
             /** Valor */
             valor: number;
+        };
+        /**
+         * FormatoItemGrade
+         * @description Formato do item na grade de carga, definido na criação (carga-por-espacos).
+         */
+        FormatoItemGrade: {
+            aljava?: components["schemas"]["AljavaFormato"] | null;
+            /** Altura */
+            altura: number;
+            /**
+             * Icone Grade
+             * @description Imagem na proporção da dimensão.
+             */
+            icone_grade?: string | null;
+            /** Largura */
+            largura: number;
+            /**
+             * Maos
+             * @description Só itens do tipo Outros.
+             */
+            maos?: number | null;
+            mochila?: components["schemas"]["MochilaFormato"] | null;
+            /**
+             * Pilha Max
+             * @description Só itens do tipo Outros.
+             */
+            pilha_max?: number | null;
+            /**
+             * Subtipo
+             * @enum {string}
+             */
+            subtipo: "peitoral" | "capacete" | "luvas" | "botas" | "uma_mao" | "duas_maos" | "escudo" | "mochila" | "aljava" | "moedas" | "outro";
+            /**
+             * Versatil
+             * @description Só armas de uma mão: podem ser empunhadas com uma ou duas mãos.
+             * @default false
+             */
+            versatil: boolean;
+        };
+        /**
+         * GradeInventario
+         * @description Grade de carga calculada pelo servidor: é a autoridade sobre posições e sobrecarga.
+         */
+        GradeInventario: {
+            /** Ampliacoes */
+            ampliacoes?: components["schemas"]["AmpliacaoGradeResumo"][];
+            /** Celulas Ocupadas */
+            celulas_ocupadas: number;
+            /** Celulas Verdes */
+            celulas_verdes: number;
+            /**
+             * Colunas
+             * @description Colunas exibidas, incluindo áreas perdidas ocupadas.
+             */
+            colunas: number;
+            /** Colunas Verdes */
+            colunas_verdes: number;
+            /** Forca */
+            forca: number;
+            /** Itens */
+            itens: components["schemas"]["ItemInventarioResumo"][];
+            /** Itens Em Sobrecarga */
+            itens_em_sobrecarga?: string[];
+            /**
+             * Linhas
+             * @description Linhas exibidas: verdes, a vermelha extra e áreas perdidas ocupadas.
+             */
+            linhas: number;
+            /** Linhas Verdes */
+            linhas_verdes: number;
+            /** Maos Ocupadas */
+            maos_ocupadas: number;
+            /** Sobrecarga */
+            sobrecarga: boolean;
+            /**
+             * Tamanho
+             * @enum {string}
+             */
+            tamanho: "minusculo" | "pequeno" | "medio" | "grande" | "enorme" | "colossal";
+            /**
+             * Tamanho Origem
+             * @enum {string}
+             */
+            tamanho_origem: "ficha" | "raca";
+            /** Versao */
+            versao: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HabilidadeCatalogoResumo */
+        HabilidadeCatalogoResumo: {
+            /** Descricao */
+            descricao: string;
+            /** Nome */
+            nome: string;
+            /** Tipo */
+            tipo: string;
+        };
         /** HealthResponse */
         HealthResponse: {
             /** Status */
             status: string;
+        };
+        /**
+         * IconeResumo
+         * @description Ícone resolvido de um efeito: mesa → catálogo → padrão.
+         */
+        IconeResumo: {
+            /**
+             * Caminho
+             * @description Objeto do armazenamento (mesa, efeito) ou caminho público do frontend.
+             */
+            caminho: string;
+            /**
+             * Origem
+             * @enum {string}
+             */
+            origem: "mesa" | "efeito" | "catalogo" | "padrao";
+        };
+        /**
+         * ImagemResposta
+         * @description Referência gravada no ponto de envio; a imagem nunca volta na resposta.
+         */
+        ImagemResposta: {
+            /** Alvo */
+            alvo: string;
+            /**
+             * Destino
+             * @enum {string}
+             */
+            destino: "retrato" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito";
+            /**
+             * Exibicao
+             * @description Versão reduzida em WEBP, quando o destino tem uma.
+             */
+            exibicao?: string | null;
+            /**
+             * Objeto
+             * @description Objeto original no armazenamento privado; vazio após remover.
+             */
+            objeto?: string | null;
+            /**
+             * Versao
+             * @description Nova versão do personagem ou do rascunho da carta.
+             */
+            versao?: number | null;
         };
         /** ImportacaoResultado */
         ImportacaoResultado: {
@@ -1776,10 +2530,14 @@ export interface components {
         };
         /** ItemInventarioResumo */
         ItemInventarioResumo: {
+            /** Altura */
+            altura?: number | null;
             /** Cargas Atuais */
             cargas_atuais?: number | null;
             /** Cargas Maximas */
             cargas_maximas?: number | null;
+            /** Coluna */
+            coluna?: number | null;
             /** Dados */
             dados?: {
                 [key: string]: unknown;
@@ -1791,12 +2549,27 @@ export interface components {
             efeitos?: string[];
             /** Equipado */
             equipado: boolean;
+            /**
+             * Girado
+             * @default false
+             */
+            girado: boolean;
             /** Id */
             id: string;
+            /** Largura */
+            largura?: number | null;
+            /** Linha */
+            linha?: number | null;
+            /** Maos */
+            maos?: number | null;
             /** Nome */
             nome: string;
+            /** Pilha Max */
+            pilha_max?: number | null;
             /** Quantidade */
             quantidade: number;
+            /** Subtipo */
+            subtipo?: ("peitoral" | "capacete" | "luvas" | "botas" | "uma_mao" | "duas_maos" | "escudo" | "mochila" | "aljava" | "moedas" | "outro") | null;
             /**
              * Tipo
              * @enum {string}
@@ -1817,6 +2590,68 @@ export interface components {
              */
             tipo: "arma" | "armadura" | "outro";
         };
+        /** ItemRecipienteResumo */
+        ItemRecipienteResumo: {
+            /** Altura */
+            altura?: number | null;
+            /** Coluna */
+            coluna?: number | null;
+            /**
+             * Efeitos
+             * @description Nomes dos efeitos que o item carrega.
+             */
+            efeitos?: string[];
+            /**
+             * Girado
+             * @default false
+             */
+            girado: boolean;
+            /**
+             * Grupo
+             * @description Itens largados juntos (por exemplo, com a mochila).
+             */
+            grupo?: string | null;
+            /** Icone Grade */
+            icone_grade?: string | null;
+            /** Id */
+            id: string;
+            /** Largura */
+            largura?: number | null;
+            /** Linha */
+            linha?: number | null;
+            /** Nome */
+            nome: string;
+            /** Quantidade */
+            quantidade: number;
+            /** Subtipo */
+            subtipo?: ("peitoral" | "capacete" | "luvas" | "botas" | "uma_mao" | "duas_maos" | "escudo" | "mochila" | "aljava" | "moedas" | "outro") | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "arma" | "armadura" | "outro";
+        };
+        /** LargarItemRequest */
+        LargarItemRequest: {
+            /**
+             * Recipiente Id
+             * @description Sem recipiente, vai para o chão da cena ativa.
+             */
+            recipiente_id?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /** ListasFichaResumo */
+        ListasFichaResumo: {
+            /** Alinhamentos */
+            alinhamentos: string[];
+            /** Campos Personalidade */
+            campos_personalidade: components["schemas"]["CampoPersonalidadeResumo"][];
+            /** Pecados */
+            pecados: components["schemas"]["PecadoResumo"][];
+            /** Sexos */
+            sexos: string[];
+        };
         /** MesaResumo */
         MesaResumo: {
             /** Id */
@@ -1836,6 +2671,30 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** MochilaFormato */
+        MochilaFormato: {
+            /**
+             * Colunas
+             * @default 0
+             */
+            colunas: number;
+            /**
+             * Linhas
+             * @default 0
+             */
+            linhas: number;
+            /** Requisito Forca */
+            requisito_forca?: number | null;
+        };
+        /** ModificadorCatalogoResumo */
+        ModificadorCatalogoResumo: {
+            /** Alvo */
+            alvo: string;
+            /** Quando */
+            quando?: string | null;
+            /** Valor */
+            valor: number;
+        };
         /** ModificadorResumo */
         ModificadorResumo: {
             /** Alvo */
@@ -1852,6 +2711,20 @@ export interface components {
              * @default false
              */
             sala: boolean;
+        };
+        /**
+         * MoedasRequest
+         * @description Um modo por pedido: `adicionar` enche as pilhas com espaço e cria novas; `retirar` tira das últimas pilhas;
+         *     `bolsa` define os totais e o servidor junta tudo em pilhas; `pilhas` define cada pilha (para dividir).
+         */
+        MoedasRequest: {
+            adicionar?: components["schemas"]["PilhaMoedas"] | null;
+            bolsa?: components["schemas"]["PilhaMoedas"] | null;
+            /** Pilhas */
+            pilhas?: components["schemas"]["PilhaMoedas"][] | null;
+            retirar?: components["schemas"]["PilhaMoedas"] | null;
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** MoverTokenRequest */
         MoverTokenRequest: {
@@ -1877,6 +2750,39 @@ export interface components {
             depois?: unknown;
             /** Rotulo */
             rotulo?: string | null;
+        };
+        /** OfertaItemResumo */
+        OfertaItemResumo: {
+            /** Altura */
+            altura?: number | null;
+            /**
+             * Criado Em
+             * Format: date-time
+             */
+            criado_em: string;
+            /** De Nome */
+            de_nome: string;
+            /** De Personagem Id */
+            de_personagem_id: string;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "pendente" | "aceita" | "recusada" | "cancelada";
+            /** Id */
+            id: string;
+            /** Item Id */
+            item_id: string;
+            /** Item Nome */
+            item_nome: string;
+            /** Largura */
+            largura?: number | null;
+            /** Para Nome */
+            para_nome: string;
+            /** Para Personagem Id */
+            para_personagem_id: string;
+            /** Subtipo */
+            subtipo?: ("peitoral" | "capacete" | "luvas" | "botas" | "uma_mao" | "duas_maos" | "escudo" | "mochila" | "aljava" | "moedas" | "outro") | null;
         };
         /** OfertaResumo */
         OfertaResumo: {
@@ -1910,6 +2816,11 @@ export interface components {
             /** Titulo */
             titulo: string;
         };
+        /** OfertarItemRequest */
+        OfertarItemRequest: {
+            /** Para Personagem Id */
+            para_personagem_id: string;
+        };
         /** PaginaAuditoria */
         PaginaAuditoria: {
             /** Eventos */
@@ -1928,6 +2839,15 @@ export interface components {
             papel: "narrador" | "jogador";
             /** Usuario Id */
             usuario_id: string;
+        };
+        /** PecadoResumo */
+        PecadoResumo: {
+            /** Equivalentes */
+            equivalentes?: string[];
+            /** Icone */
+            icone: string;
+            /** Nome */
+            nome: string;
         };
         /** PedidoAlteracaoResumo */
         PedidoAlteracaoResumo: {
@@ -1949,6 +2869,22 @@ export interface components {
             solicitante_id: string;
             /** Versao Base */
             versao_base: number;
+        };
+        /** PegarItemRequest */
+        PegarItemRequest: {
+            /** Coluna */
+            coluna?: number | null;
+            /**
+             * Girado
+             * @default false
+             */
+            girado: boolean;
+            /** Linha */
+            linha?: number | null;
+            /** Personagem Id */
+            personagem_id: string;
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** PermissoesFicha */
         PermissoesFicha: {
@@ -1996,18 +2932,70 @@ export interface components {
              */
             visibilidade: "mesa" | "narrador";
         };
+        /** PilhaMoedas */
+        PilhaMoedas: {
+            /**
+             * Cobre
+             * @default 0
+             */
+            cobre: number;
+            /**
+             * Ouro
+             * @default 0
+             */
+            ouro: number;
+            /**
+             * Platina
+             * @default 0
+             */
+            platina: number;
+            /**
+             * Prata
+             * @default 0
+             */
+            prata: number;
+        };
         /** PoliticaMesaContrato */
         PoliticaMesaContrato: {
             /** Campos Bloqueados */
             campos_bloqueados?: string[];
             /** Campos Exigem Aprovacao */
             campos_exigem_aprovacao?: string[];
+            /**
+             * Moedas Por Pilha
+             * @description Moedas (de qualquer tipo) por pilha, ou seja, por célula da grade. Ausente mantém o valor atual.
+             */
+            moedas_por_pilha?: number | null;
             /** Permitir Criacao Propria */
             permitir_criacao_propria: boolean;
             /** Permitir Edicao Propria */
             permitir_edicao_propria: boolean;
             /** Permitir Exclusao Propria */
             permitir_exclusao_propria: boolean;
+        };
+        /** PosicaoItemGrade */
+        PosicaoItemGrade: {
+            /** Coluna */
+            coluna?: number | null;
+            /**
+             * Equipado
+             * @default false
+             */
+            equipado: boolean;
+            /**
+             * Girado
+             * @default false
+             */
+            girado: boolean;
+            /** Item Id */
+            item_id: string;
+            /** Linha */
+            linha?: number | null;
+            /**
+             * Maos
+             * @description Só armas versáteis: empunhadura com uma ou duas mãos.
+             */
+            maos?: number | null;
         };
         /** PreviaDescansoRequest */
         PreviaDescansoRequest: {
@@ -2067,6 +3055,15 @@ export interface components {
             /** Origem Numero */
             origem_numero: number;
         };
+        /** ProblemaArrumacao */
+        ProblemaArrumacao: {
+            /** Item Id */
+            item_id?: string | null;
+            /** Mensagem */
+            mensagem: string;
+            /** Motivo */
+            motivo: string;
+        };
         /** ProblemaValidacao */
         ProblemaValidacao: {
             /** Campo */
@@ -2083,6 +3080,37 @@ export interface components {
             promover_ativos: boolean;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /** RacaCatalogoResumo */
+        RacaCatalogoResumo: {
+            /** Deslocamento */
+            deslocamento?: number | null;
+            /** Habilidades */
+            habilidades: components["schemas"]["HabilidadeCatalogoResumo"][];
+            /** Nome */
+            nome: string;
+            /** Tamanho */
+            tamanho?: string | null;
+        };
+        /** RecipienteResumo */
+        RecipienteResumo: {
+            /** Colunas */
+            colunas: number;
+            /** Id */
+            id: string;
+            /** Itens */
+            itens: components["schemas"]["ItemRecipienteResumo"][];
+            /** Linhas */
+            linhas: number;
+            /** Nome */
+            nome: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "chao" | "bau";
+            /** Versao */
+            versao: number;
         };
         /** ResponderOfertaRequest */
         ResponderOfertaRequest: {
@@ -2315,21 +3343,44 @@ export interface components {
         };
         /** ValorDerivadoResumo */
         ValorDerivadoResumo: {
+            /**
+             * Calculavel
+             * @default true
+             */
+            calculavel: boolean;
             /** Chave */
             chave: string;
+            /**
+             * Divergencia Legada
+             * @description Valor gravado à mão numa ficha antiga, quando difere do calculado.
+             */
+            divergencia_legada?: number | null;
             /** Fontes */
             fontes: components["schemas"]["FonteValorResumo"][];
             /**
              * Grupo
              * @enum {string}
              */
-            grupo: "atributo" | "pericia" | "status";
+            grupo: "atributo" | "pericia" | "status" | "recurso";
+            /**
+             * Motivo
+             * @description Entrada que falta quando o valor não é calculável.
+             */
+            motivo?: string | null;
             /** Rotulo */
             rotulo: string;
             /** Situacionais */
             situacionais?: components["schemas"]["SituacionalResumo"][];
-            /** Total */
-            total: number;
+            /**
+             * Total
+             * @description Vazio quando o valor não é calculável.
+             */
+            total: number | null;
+        };
+        /** VersaoRequest */
+        VersaoRequest: {
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** VisibilidadeTokenRequest */
         VisibilidadeTokenRequest: {
@@ -2557,6 +3608,7 @@ export interface operations {
         parameters: {
             query: {
                 caminho: string;
+                exibicao?: boolean;
             };
             header?: never;
             path: {
@@ -2964,6 +4016,161 @@ export interface operations {
             };
         };
     };
+    listar_classes_mesas__mesa_id__catalogos_classes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClasseCatalogoResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_efeitos_default_mesas__mesa_id__catalogos_efeitos_default_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EfeitoDefaultResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    estado_do_catalogo_mesas__mesa_id__catalogos_estado_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoCatalogoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_listas_mesas__mesa_id__catalogos_listas_ficha_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListasFichaResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_racas_mesas__mesa_id__catalogos_racas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RacaCatalogoResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     criar_convite_mesas__mesa_id__convites_post: {
         parameters: {
             query?: never;
@@ -3135,6 +4342,77 @@ export interface operations {
             };
         };
     };
+    enviar_imagem_mesas__mesa_id__imagens__destino__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                destino: "retrato" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_enviar_imagem_mesas__mesa_id__imagens__destino__put"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImagemResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remover_imagem_mesas__mesa_id__imagens__destino__delete: {
+        parameters: {
+            query: {
+                alvo: string;
+                versao_esperada?: number | null;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+                destino: "retrato" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImagemResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ler_modulos_mesas__mesa_id__modulos_get: {
         parameters: {
             query?: never;
@@ -3254,6 +4532,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OfertaResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_ofertas_mesas__mesa_id__ofertas_item_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfertaItemResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    aceitar_oferta_mesas__mesa_id__ofertas_item__oferta_id__aceitar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                oferta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AceitarOfertaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemInventarioResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelar_oferta_mesas__mesa_id__ofertas_item__oferta_id__cancelar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                oferta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfertaItemResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recusar_oferta_mesas__mesa_id__ofertas_item__oferta_id__recusar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                oferta_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfertaItemResumo"];
                 };
             };
             /** @description Validation Error */
@@ -4031,6 +5440,146 @@ export interface operations {
             };
         };
     };
+    gravar_arrumacao_mesas__mesa_id__personagens__personagem_id__inventario_arrumacao_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArrumacaoGradeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeInventario"];
+                };
+            };
+            /** @description Arrumação inválida; nada foi gravado. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemaArrumacao"][];
+                };
+            };
+        };
+    };
+    ler_grade_mesas__mesa_id__personagens__personagem_id__inventario_grade_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeInventario"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    largar_mochila_mesas__mesa_id__personagens__personagem_id__inventario_mochila_largar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeInventario"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gravar_moedas_mesas__mesa_id__personagens__personagem_id__inventario_moedas_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoedasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeInventario"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     equipar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__equipar_post: {
         parameters: {
             query?: never;
@@ -4068,6 +5617,117 @@ export interface operations {
             };
         };
     };
+    definir_formato_mesas__mesa_id__personagens__personagem_id__inventario__item_id__formato_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefinirFormatoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EquiparItemResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    largar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__largar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LargarItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipienteResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ofertar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__ofertas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfertarItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfertaItemResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ler_permissoes_mesas__mesa_id__personagens__personagem_id__permissoes_get: {
         parameters: {
             query?: never;
@@ -4087,6 +5747,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PermissoesFicha"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ajustar_recurso_mesas__mesa_id__personagens__personagem_id__recursos_ajustes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AjustarRecursoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AjusteRecursoResposta"];
                 };
             };
             /** @description Validation Error */
@@ -4427,6 +6123,145 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenSala"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_recipientes_mesas__mesa_id__sala_recipientes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipienteResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    criar_bau_mesas__mesa_id__sala_recipientes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarBauRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipienteResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    colocar_carta_mesas__mesa_id__sala_recipientes__recipiente_id__cartas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                recipiente_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColocarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipienteResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pegar_item_mesas__mesa_id__sala_recipientes__recipiente_id__itens__retrato_id__pegar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                recipiente_id: string;
+                retrato_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PegarItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemInventarioResumo"];
                 };
             };
             /** @description Validation Error */

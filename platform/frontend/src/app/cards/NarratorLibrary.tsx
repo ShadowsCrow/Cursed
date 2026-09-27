@@ -8,6 +8,8 @@ import {
   useImportarCarta, useOfertas, usePreviaImportacaoCarta, useRecolherCarta,
 } from "./api";
 import { CardEditor } from "./CardEditor";
+import { CatalogStatusNotice } from "./CatalogStatusNotice";
+import { EffectIconsPanel } from "./EffectIconsPanel";
 import { CardFace } from "./cardView";
 import {
   ROTULO_TIPO, TIPOS_CARTA, type CartaDefinicaoResumo, type CartaVersaoResumo, type ProblemaValidacao, type TipoCarta,
@@ -187,6 +189,7 @@ export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: strin
 
   return (
     <div className="screen-content card-library">
+      <CatalogStatusNotice api={api} mesaId={mesaId} />
       <section className="panel">
         <div className="section-heading">
           <div><span className="eyebrow">CATÁLOGO</span><h2>Suas cartas</h2></div>
@@ -201,15 +204,22 @@ export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: strin
         <ul className="card-catalog">
           {definicoes.map((definicao) => {
             const conteudo = (definicao.publicada?.conteudo ?? definicao.rascunho ?? {}) as Record<string, unknown>;
+            // Corpos padrão não se editam; cartas do catálogo de classes se editam, mas o JSON prevalece.
+            const padrao = definicao.procedencia_rascunho?.origem === "sistema" && !definicao.origem_sistema;
             return (
               <li key={definicao.id} className="card-catalog__item">
                 <CardFace tipo={definicao.tipo} conteudo={conteudo} numero={definicao.publicada?.numero} api={api} mesaId={mesaId} />
-                <p className="card-catalog__state">{estadoCarta(definicao)}</p>
+                <p className="card-catalog__state">
+                  {padrao ? "Padrão do sistema · não se edita"
+                    : definicao.origem_sistema ? `Catálogo do sistema · ${estadoCarta(definicao)}` : estadoCarta(definicao)}
+                </p>
                 <div className="card-catalog__actions">
-                  <button type="button" className="button button--ghost" onClick={() => setEditando(definicao)}
-                    aria-label={`Editar ${String(conteudo.titulo ?? "")}`}>
-                    Editar
-                  </button>
+                  {!padrao && (
+                    <button type="button" className="button button--ghost" onClick={() => setEditando(definicao)}
+                      aria-label={`Editar ${String(conteudo.titulo ?? "")}`}>
+                      Editar
+                    </button>
+                  )}
                   {definicao.publicada && (
                     <button type="button" className="button button--ghost" onClick={() => setApresentando(definicao.publicada ?? null)}>
                       Apresentar
@@ -262,6 +272,7 @@ export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: strin
       )}
       {dialogo === "importar" && <ImportarCartaDialog api={api} mesaId={mesaId} onClose={() => setDialogo(null)} />}
       {dialogo === "oferta" && <NovaOfertaDialog api={api} mesaId={mesaId} publicadas={publicadas} onClose={() => setDialogo(null)} />}
+      <EffectIconsPanel api={api} mesaId={mesaId} />
       {editando && <CardEditor api={api} mesaId={mesaId} definicao={editando} onClose={() => setEditando(null)} />}
       {apresentando && <ApresentarDialog api={api} mesaId={mesaId} versao={apresentando} onClose={() => setApresentando(null)} />}
       <Confirmation

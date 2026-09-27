@@ -30,26 +30,6 @@ export function personalidadeInfo(ficha: FichaContrato): Record<string, unknown>
   return asRecord(ficha.personalidade);
 }
 
-export interface RecursoValor {
-  atual: number;
-  maximo: number;
-}
-
-/**
- * PV, PP e outros recursos não existem na ficha legada e não têm fórmula nesta
- * mudança (design 7.1). Lemos `ficha.recursos.<chave>` quando presente; na
- * ausência devolvemos `null` para que a interface informe "não registrado" em
- * vez de inventar um valor.
- */
-export function recurso(ficha: FichaContrato, chave: string): RecursoValor | null {
-  const recursos = asRecord((ficha as Record<string, unknown>).recursos);
-  const valor = asRecord(recursos[chave]);
-  const atual = asNumber(valor.atual);
-  const maximo = asNumber(valor.maximo);
-  if (atual === undefined || maximo === undefined) return null;
-  return { atual, maximo };
-}
-
 /**
  * Devolve uma cópia de `ficha` com o valor em `path` (ex.: "personagem.nome")
  * substituído. Cria objetos intermediários ausentes; nunca modifica o original.

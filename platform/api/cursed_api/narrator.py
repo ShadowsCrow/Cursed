@@ -8,7 +8,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, ficha_viva, narrador
+from cursed_platform import auditoria, catalogos, ficha_viva, narrador
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     AjustarEfeitoRequest, AlterarVisibilidadeRequest, AplicarEfeitoRequest, CriarEntidadeRequest,
@@ -21,7 +21,10 @@ from cursed_platform.repositories import FichaRepository, MesaRepository
 
 from .auth import Ator, get_actor
 from .characters import _personagem_resumo
+from .catalogo_ficha import atualizar_cartas
+from .live_sheet import icones_para
 from .dependencies import get_correlacao, get_session
+from .validacao import exigir_ficha_valida, preparar_ficha_nova
 
 
 router = APIRouter(tags=["Ferramentas do Narrador"])
@@ -46,6 +49,35 @@ def _personagem_do_narrador(session: Session, mesa_id: str, personagem_id: str, 
     return personagem
 
 
+def _eh_efeito_default(associacao: str | None) -> bool:
+    return bool(associacao) and any(e["associacao"] == associacao for e in catalogos.obter().efeitos_aplicaveis())
+
+
+def _personagem_para_efeito(
+    session: Session, mesa_id: str, personagem_id: str, ator: Ator, *, efeito_default: bool,
+) -> PersonagemRegistro:
+    """Narrador em qualquer personagem; jogador só com efeito default, no próprio personagem e se a mesa permitir."""
+    autorizador = Autorizador(session)
+    do_narrador = autorizador.decidir(Acao.APLICAR_EFEITO, usuario_id=ator.usuario_id, mesa_id=mesa_id)
+    if not do_narrador.permitido:
+        if do_narrador.ocultar_existencia:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recurso não encontrado.")
+        if not efeito_default:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                                detail="Efeitos personalizados são aplicados pelo Narrador.")
+        decisao = autorizador.decidir(Acao.APLICAR_EFEITO_PADRAO_PROPRIO, usuario_id=ator.usuario_id,
+                                      mesa_id=mesa_id, personagem_id=personagem_id)
+        if not decisao.permitido:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND if decisao.ocultar_existencia else status.HTTP_403_FORBIDDEN,
+                detail="Recurso não encontrado." if decisao.ocultar_existencia else decisao.motivo,
+            )
+    personagem = FichaRepository(session).get(mesa_id, personagem_id)
+    if personagem is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recurso não encontrado.")
+    return personagem
+
+
 # ---------------------------------------------------------------- entidades
 
 @router.post("/mesas/{mesa_id}/entidades", response_model=PersonagemResumo, status_code=status.HTTP_201_CREATED)
@@ -60,6 +92,8 @@ def criar_entidade(
     nome = payload["personagem"].get("nome")
     if not isinstance(nome, str) or not nome.strip():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Nome da entidade obrigatório.")
+    preparar_ficha_nova(payload, tipo=pedido.tipo, pelo_narrador=True)
+    exigir_ficha_valida(None, payload, tipo=pedido.tipo)
     if pedido.proprietario_id is not None:
         membro = MesaRepository(session).membro(mesa_id, pedido.proprietario_id)
         if membro is None or not membro.ativo:
@@ -80,6 +114,7 @@ def criar_entidade(
         resumo=f"{auditoria.nome_personagem(personagem)}: {pedido.tipo} criado pelo Narrador",
         correlacao_id=correlacao,
     )
+    atualizar_cartas(session, personagem, None, payload, ator_id=ator.usuario_id, correlacao_id=correlacao)
     session.commit()
     return _personagem_resumo(personagem)
 
@@ -137,6 +172,7 @@ def _efeito_resumo(session: Session, efeito: EfeitoAplicadoRegistro) -> EfeitoRe
     modificadores = atual.modificadores if atual is not None else []
     fontes = atual.fontes if atual is not None else []
     return EfeitoResumo(
+        associacao=efeito.associacao, icone=icones_para(session, efeito.mesa_id)(efeito.associacao, efeito.conteudo),
         id=efeito.id, nome=efeito.nome, descricao=efeito.descricao, estado=efeito.estado,
         duracao_rodadas=efeito.duracao_rodadas, ativacao=((efeito.conteudo or {}).get("ativacao") or {}).get("tipo"),
         modificadores=[ModificadorResumo(alvo=m.alvo, valor=m.valor, contexto=m.contexto) for m in modificadores],
@@ -166,9 +202,10 @@ def aplicar_efeito(
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
     correlacao: str = Depends(get_correlacao),
 ) -> EfeitoComandoResposta:
-    personagem = _personagem_do_narrador(session, mesa_id, personagem_id, ator, Acao.APLICAR_EFEITO)
+    personagem = _personagem_para_efeito(session, mesa_id, personagem_id, ator,
+                                         efeito_default=_eh_efeito_default(pedido.associacao))
     try:
-        efeito = narrador.aplicar_efeito(
+        aplicacao = narrador.aplicar_efeito_substituindo(
             session, personagem, versao_esperada=pedido.versao_esperada, associacao=pedido.associacao,
             nome=pedido.nome, descricao=pedido.descricao,
             modificadores=[m.model_dump() for m in pedido.modificadores],
@@ -180,6 +217,7 @@ def aplicar_efeito(
     except ValueError as erro:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(erro)) from None
+    efeito = aplicacao.efeito
     resumo = _efeito_resumo(session, efeito)
     _registrar_efeito(
         session, personagem, efeito, ator, "efeito.aplicado", "aplicado",
@@ -192,6 +230,12 @@ def aplicar_efeito(
           ]))}],
         pedido.motivo, correlacao,
     )
+    for substituido in aplicacao.substituidos:
+        _registrar_efeito(
+            session, personagem, substituido, ator, "efeito.encerrado", f"encerrado: substituído por {efeito.nome}",
+            [{"campo": "estado", "antes": "ativo", "depois": "encerrado", "completo": True, "rotulo": substituido.nome}],
+            None, correlacao,
+        )
     session.commit()
     return EfeitoComandoResposta(versao=pedido.versao_esperada + 1, efeito=resumo)
 
@@ -249,7 +293,11 @@ def transicionar_efeito(
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
     correlacao: str = Depends(get_correlacao),
 ) -> EfeitoComandoResposta:
-    personagem = _personagem_do_narrador(session, mesa_id, personagem_id, ator, Acao.APLICAR_EFEITO)
+    alvo = FichaRepository(session).get(mesa_id, personagem_id)
+    registro = narrador.efeito_do_personagem(session, alvo, efeito_id) if alvo is not None else None
+    # O jogador só encerra efeitos default; suspender e retomar continuam com o Narrador.
+    default = acao == "encerrar" and registro is not None and _eh_efeito_default(registro.associacao)
+    personagem = _personagem_para_efeito(session, mesa_id, personagem_id, ator, efeito_default=default)
     efeito = narrador.efeito_do_personagem(session, personagem, efeito_id)
     if efeito is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Efeito não encontrado.")

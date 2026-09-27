@@ -65,6 +65,7 @@ try {
     ...process.env,
     CURSED_PLATFORM_DATABASE_URL: databaseUrl,
     CURSED_DEV_AUTH: "1",
+    CURSED_LOCAL_OBJECTS_DIR: join(temporario, "objetos"),
     CURSED_ENV: "test",
     CURSED_CORS_ORIGINS: appUrl,
   };

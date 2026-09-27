@@ -15,6 +15,53 @@
         "title": "AceitarConviteRequest",
         "type": "object"
       },
+      "AceitarOfertaRequest": {
+        "properties": {
+          "coluna": {
+            "anyOf": [
+              {
+                "maximum": 40.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sem lugar, o item chega fora da grade.",
+            "title": "Coluna"
+          },
+          "girado": {
+            "default": false,
+            "title": "Girado",
+            "type": "boolean"
+          },
+          "linha": {
+            "anyOf": [
+              {
+                "maximum": 40.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linha"
+          },
+          "versao_esperada": {
+            "description": "Versão da ficha de quem recebe.",
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "AceitarOfertaRequest",
+        "type": "object"
+      },
       "AjustarEfeitoRequest": {
         "description": "Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração.",
         "properties": {
@@ -79,6 +126,89 @@
           "versao_esperada"
         ],
         "title": "AjustarEfeitoRequest",
+        "type": "object"
+      },
+      "AjustarRecursoRequest": {
+        "additionalProperties": false,
+        "description": "Ajuste do Narrador em PV/PP máximo ou Escala, quando uma regra específica prevalece.",
+        "properties": {
+          "alvo": {
+            "enum": [
+              "pv_maximo",
+              "pp_maximo",
+              "escala_pv",
+              "escala_pp"
+            ],
+            "title": "Alvo",
+            "type": "string"
+          },
+          "justificativa": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Justificativa",
+            "type": "string"
+          },
+          "origem": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Origem",
+            "type": "string"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "integer"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada",
+          "alvo",
+          "valor",
+          "origem",
+          "justificativa"
+        ],
+        "title": "AjustarRecursoRequest",
+        "type": "object"
+      },
+      "AjusteRecursoResposta": {
+        "properties": {
+          "valores": {
+            "items": {
+              "$ref": "#/components/schemas/ValorDerivadoResumo"
+            },
+            "title": "Valores",
+            "type": "array"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "valores"
+        ],
+        "title": "AjusteRecursoResposta",
+        "type": "object"
+      },
+      "AljavaFormato": {
+        "additionalProperties": false,
+        "properties": {
+          "capacidade_flechas": {
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Capacidade Flechas",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "capacidade_flechas"
+        ],
+        "title": "AljavaFormato",
         "type": "object"
       },
       "AlterarVisibilidadeRequest": {
@@ -153,6 +283,39 @@
           "personagem_id"
         ],
         "title": "AlvoDescanso",
+        "type": "object"
+      },
+      "AmpliacaoGradeResumo": {
+        "properties": {
+          "colunas": {
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "fonte": {
+            "enum": [
+              "mochila",
+              "magia",
+              "habilidade"
+            ],
+            "title": "Fonte",
+            "type": "string"
+          },
+          "linhas": {
+            "title": "Linhas",
+            "type": "integer"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fonte",
+          "rotulo",
+          "linhas",
+          "colunas"
+        ],
+        "title": "AmpliacaoGradeResumo",
         "type": "object"
       },
       "AplicarEfeitoRequest": {
@@ -343,6 +506,55 @@
         "title": "AquisicaoCartasResposta",
         "type": "object"
       },
+      "ArquetipoResumo": {
+        "properties": {
+          "conceito": {
+            "title": "Conceito",
+            "type": "string"
+          },
+          "habilidades": {
+            "items": {
+              "$ref": "#/components/schemas/HabilidadeCatalogoResumo"
+            },
+            "title": "Habilidades",
+            "type": "array"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "conceito",
+          "habilidades"
+        ],
+        "title": "ArquetipoResumo",
+        "type": "object"
+      },
+      "ArrumacaoGradeRequest": {
+        "properties": {
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/PosicaoItemGrade"
+            },
+            "maxItems": 300,
+            "title": "Itens",
+            "type": "array"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada",
+          "itens"
+        ],
+        "title": "ArrumacaoGradeRequest",
+        "type": "object"
+      },
       "AtivoResposta": {
         "properties": {
           "base64": {
@@ -414,6 +626,63 @@
         "title": "AtualizarFichaComando",
         "type": "object"
       },
+      "BaseClasseResumo": {
+        "properties": {
+          "atributo": {
+            "description": "Chave normalizada do atributo: vigor ou proposito.",
+            "title": "Atributo",
+            "type": "string"
+          },
+          "texto": {
+            "title": "Texto",
+            "type": "string"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "valor",
+          "atributo",
+          "texto"
+        ],
+        "title": "BaseClasseResumo",
+        "type": "object"
+      },
+      "Body_enviar_imagem_mesas__mesa_id__imagens__destino__put": {
+        "properties": {
+          "alvo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Alvo",
+            "type": "string"
+          },
+          "arquivo": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Arquivo",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Versao Esperada"
+          }
+        },
+        "required": [
+          "arquivo",
+          "alvo"
+        ],
+        "title": "Body_enviar_imagem_mesas__mesa_id__imagens__destino__put",
+        "type": "object"
+      },
       "CamadaSala": {
         "properties": {
           "id": {
@@ -444,6 +713,29 @@
           "ordem"
         ],
         "title": "CamadaSala",
+        "type": "object"
+      },
+      "CampoPersonalidadeResumo": {
+        "properties": {
+          "chave": {
+            "title": "Chave",
+            "type": "string"
+          },
+          "dica": {
+            "title": "Dica",
+            "type": "string"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chave",
+          "rotulo",
+          "dica"
+        ],
+        "title": "CampoPersonalidadeResumo",
         "type": "object"
       },
       "CanalPrivado": {
@@ -490,6 +782,18 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "origem_sistema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Habilidade do catálogo que a carta materializa; o JSON prevalece sobre edições.",
+            "title": "Origem Sistema"
           },
           "procedencia_rascunho": {
             "additionalProperties": true,
@@ -562,6 +866,18 @@
           },
           "carta": {
             "$ref": "#/components/schemas/CartaVisivel"
+          },
+          "concedida_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Escolha que concedeu a carta (ex.: classe:Druida); vazio para ofertas e concessões avulsas.",
+            "title": "Concedida Por"
           },
           "efeito_id": {
             "anyOf": [
@@ -846,6 +1162,101 @@
         "title": "CenaSala",
         "type": "object"
       },
+      "ClasseCatalogoResumo": {
+        "properties": {
+          "arquetipos": {
+            "items": {
+              "$ref": "#/components/schemas/ArquetipoResumo"
+            },
+            "title": "Arquetipos",
+            "type": "array"
+          },
+          "cor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cor"
+          },
+          "escala_pp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BaseClasseResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "escala_pv": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BaseClasseResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "habilidades": {
+            "items": {
+              "$ref": "#/components/schemas/HabilidadeCatalogoResumo"
+            },
+            "title": "Habilidades",
+            "type": "array"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "pp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BaseClasseResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pv": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BaseClasseResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "nome",
+          "habilidades",
+          "arquetipos"
+        ],
+        "title": "ClasseCatalogoResumo",
+        "type": "object"
+      },
+      "ColocarCartaRequest": {
+        "properties": {
+          "versao_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Versao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versao_id"
+        ],
+        "title": "ColocarCartaRequest",
+        "type": "object"
+      },
       "ConcederCartaRequest": {
         "properties": {
           "excecao_aprendizado": {
@@ -1001,6 +1412,35 @@
           "versao_esperada"
         ],
         "title": "CorrigirEventoRequest",
+        "type": "object"
+      },
+      "CriarBauRequest": {
+        "properties": {
+          "colunas": {
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "linhas": {
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Linhas",
+            "type": "integer"
+          },
+          "nome": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "colunas",
+          "linhas"
+        ],
+        "title": "CriarBauRequest",
         "type": "object"
       },
       "CriarCartaRequest": {
@@ -1294,6 +1734,24 @@
         "title": "DecidirPedidoRequest",
         "type": "object"
       },
+      "DefinirFormatoRequest": {
+        "properties": {
+          "formato": {
+            "$ref": "#/components/schemas/FormatoItemGrade"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "formato",
+          "versao_esperada"
+        ],
+        "title": "DefinirFormatoRequest",
+        "type": "object"
+      },
       "DestinatarioOferta": {
         "properties": {
           "escolhas": {
@@ -1373,6 +1831,66 @@
         "title": "EfeitoComandoResposta",
         "type": "object"
       },
+      "EfeitoDefaultResumo": {
+        "properties": {
+          "associacao": {
+            "title": "Associacao",
+            "type": "string"
+          },
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "grupo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grupo"
+          },
+          "icone": {
+            "$ref": "#/components/schemas/IconeResumo"
+          },
+          "modificadores": {
+            "items": {
+              "$ref": "#/components/schemas/ModificadorCatalogoResumo"
+            },
+            "title": "Modificadores",
+            "type": "array"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "substitui": {
+            "description": "Associações que este efeito encerra ao ser aplicado.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Substitui",
+            "type": "array"
+          },
+          "substitui_nomes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Substitui Nomes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "associacao",
+          "nome",
+          "descricao",
+          "icone"
+        ],
+        "title": "EfeitoDefaultResumo",
+        "type": "object"
+      },
       "EfeitoPrevia": {
         "properties": {
           "ativacao": {
@@ -1411,6 +1929,18 @@
       },
       "EfeitoResumo": {
         "properties": {
+          "associacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Código do efeito default, quando vem do catálogo.",
+            "title": "Associacao"
+          },
           "ativacao": {
             "anyOf": [
               {
@@ -1421,6 +1951,20 @@
               }
             ],
             "title": "Ativacao"
+          },
+          "consequencias": {
+            "description": "Consequências sem valor numérico na ficha.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Consequencias",
+            "type": "array"
+          },
+          "derivado": {
+            "default": false,
+            "description": "Calculado pelo sistema (ex.: Sobrecarga); não se encerra nem se ajusta.",
+            "title": "Derivado",
+            "type": "boolean"
           },
           "descricao": {
             "title": "Descricao",
@@ -1453,6 +1997,9 @@
             "title": "Fontes",
             "type": "array"
           },
+          "icone": {
+            "$ref": "#/components/schemas/IconeResumo"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1473,7 +2020,8 @@
           "id",
           "nome",
           "descricao",
-          "estado"
+          "estado",
+          "icone"
         ],
         "title": "EfeitoResumo",
         "type": "object"
@@ -1548,6 +2096,53 @@
           "item"
         ],
         "title": "EquiparItemResposta",
+        "type": "object"
+      },
+      "ErroCatalogoResumo": {
+        "properties": {
+          "arquivo": {
+            "title": "Arquivo",
+            "type": "string"
+          },
+          "em": {
+            "format": "date-time",
+            "title": "Em",
+            "type": "string"
+          },
+          "motivo": {
+            "title": "Motivo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arquivo",
+          "motivo",
+          "em"
+        ],
+        "title": "ErroCatalogoResumo",
+        "type": "object"
+      },
+      "EstadoCatalogoResumo": {
+        "properties": {
+          "erro": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErroCatalogoResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versao"
+        ],
+        "title": "EstadoCatalogoResumo",
         "type": "object"
       },
       "EventoAuditoriaResumo": {
@@ -1826,6 +2421,14 @@
       },
       "FichaSnapshot": {
         "properties": {
+          "avisos": {
+            "description": "Valores fora das regras ou do catálogo, mantidos até o Narrador corrigir.",
+            "items": {
+              "$ref": "#/components/schemas/ProblemaValidacao"
+            },
+            "title": "Avisos",
+            "type": "array"
+          },
           "ficha": {
             "$ref": "#/components/schemas/FichaContrato"
           },
@@ -1835,6 +2438,12 @@
           },
           "personagem_id": {
             "title": "Personagem Id",
+            "type": "string"
+          },
+          "tipo": {
+            "default": "personagem",
+            "description": "personagem, npc ou monstro: só personagens seguem limites e catálogo.",
+            "title": "Tipo",
             "type": "string"
           },
           "versao": {
@@ -1921,7 +2530,10 @@
               "atributo",
               "pericia",
               "equipamento",
-              "efeito"
+              "efeito",
+              "classe",
+              "nivel",
+              "ajuste_narrador"
             ],
             "title": "Tipo",
             "type": "string"
@@ -1939,6 +2551,220 @@
         "title": "FonteValorResumo",
         "type": "object"
       },
+      "FormatoItemGrade": {
+        "additionalProperties": false,
+        "description": "Formato do item na grade de carga, definido na criação (carga-por-espacos).",
+        "properties": {
+          "aljava": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AljavaFormato"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "altura": {
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Altura",
+            "type": "integer"
+          },
+          "icone_grade": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Imagem na proporção da dimensão.",
+            "title": "Icone Grade"
+          },
+          "largura": {
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Largura",
+            "type": "integer"
+          },
+          "maos": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só itens do tipo Outros.",
+            "title": "Maos"
+          },
+          "mochila": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MochilaFormato"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pilha_max": {
+            "anyOf": [
+              {
+                "maximum": 999.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só itens do tipo Outros.",
+            "title": "Pilha Max"
+          },
+          "subtipo": {
+            "enum": [
+              "peitoral",
+              "capacete",
+              "luvas",
+              "botas",
+              "uma_mao",
+              "duas_maos",
+              "escudo",
+              "mochila",
+              "aljava",
+              "moedas",
+              "outro"
+            ],
+            "title": "Subtipo",
+            "type": "string"
+          },
+          "versatil": {
+            "default": false,
+            "description": "Só armas de uma mão: podem ser empunhadas com uma ou duas mãos.",
+            "title": "Versatil",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "subtipo",
+          "largura",
+          "altura"
+        ],
+        "title": "FormatoItemGrade",
+        "type": "object"
+      },
+      "GradeInventario": {
+        "description": "Grade de carga calculada pelo servidor: é a autoridade sobre posições e sobrecarga.",
+        "properties": {
+          "ampliacoes": {
+            "items": {
+              "$ref": "#/components/schemas/AmpliacaoGradeResumo"
+            },
+            "title": "Ampliacoes",
+            "type": "array"
+          },
+          "celulas_ocupadas": {
+            "title": "Celulas Ocupadas",
+            "type": "integer"
+          },
+          "celulas_verdes": {
+            "title": "Celulas Verdes",
+            "type": "integer"
+          },
+          "colunas": {
+            "description": "Colunas exibidas, incluindo áreas perdidas ocupadas.",
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "colunas_verdes": {
+            "title": "Colunas Verdes",
+            "type": "integer"
+          },
+          "forca": {
+            "title": "Forca",
+            "type": "integer"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemInventarioResumo"
+            },
+            "title": "Itens",
+            "type": "array"
+          },
+          "itens_em_sobrecarga": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Itens Em Sobrecarga",
+            "type": "array"
+          },
+          "linhas": {
+            "description": "Linhas exibidas: verdes, a vermelha extra e áreas perdidas ocupadas.",
+            "title": "Linhas",
+            "type": "integer"
+          },
+          "linhas_verdes": {
+            "title": "Linhas Verdes",
+            "type": "integer"
+          },
+          "maos_ocupadas": {
+            "title": "Maos Ocupadas",
+            "type": "integer"
+          },
+          "sobrecarga": {
+            "title": "Sobrecarga",
+            "type": "boolean"
+          },
+          "tamanho": {
+            "enum": [
+              "minusculo",
+              "pequeno",
+              "medio",
+              "grande",
+              "enorme",
+              "colossal"
+            ],
+            "title": "Tamanho",
+            "type": "string"
+          },
+          "tamanho_origem": {
+            "enum": [
+              "ficha",
+              "raca"
+            ],
+            "title": "Tamanho Origem",
+            "type": "string"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "forca",
+          "tamanho",
+          "tamanho_origem",
+          "colunas_verdes",
+          "linhas_verdes",
+          "colunas",
+          "linhas",
+          "sobrecarga",
+          "maos_ocupadas",
+          "celulas_ocupadas",
+          "celulas_verdes",
+          "itens"
+        ],
+        "title": "GradeInventario",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1952,6 +2778,29 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HabilidadeCatalogoResumo": {
+        "properties": {
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "descricao",
+          "tipo"
+        ],
+        "title": "HabilidadeCatalogoResumo",
+        "type": "object"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -1963,6 +2812,96 @@
           "status"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "IconeResumo": {
+        "description": "Ícone resolvido de um efeito: mesa → catálogo → padrão.",
+        "properties": {
+          "caminho": {
+            "description": "Objeto do armazenamento (mesa, efeito) ou caminho público do frontend.",
+            "title": "Caminho",
+            "type": "string"
+          },
+          "origem": {
+            "enum": [
+              "mesa",
+              "efeito",
+              "catalogo",
+              "padrao"
+            ],
+            "title": "Origem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "origem",
+          "caminho"
+        ],
+        "title": "IconeResumo",
+        "type": "object"
+      },
+      "ImagemResposta": {
+        "description": "Referência gravada no ponto de envio; a imagem nunca volta na resposta.",
+        "properties": {
+          "alvo": {
+            "title": "Alvo",
+            "type": "string"
+          },
+          "destino": {
+            "enum": [
+              "retrato",
+              "item",
+              "icone-grade",
+              "efeito",
+              "carta",
+              "mapa",
+              "icone-efeito"
+            ],
+            "title": "Destino",
+            "type": "string"
+          },
+          "exibicao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Versão reduzida em WEBP, quando o destino tem uma.",
+            "title": "Exibicao"
+          },
+          "objeto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Objeto original no armazenamento privado; vazio após remover.",
+            "title": "Objeto"
+          },
+          "versao": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nova versão do personagem ou do rascunho da carta.",
+            "title": "Versao"
+          }
+        },
+        "required": [
+          "destino",
+          "alvo"
+        ],
+        "title": "ImagemResposta",
         "type": "object"
       },
       "ImportacaoResultado": {
@@ -2034,6 +2973,17 @@
       },
       "ItemInventarioResumo": {
         "properties": {
+          "altura": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altura"
+          },
           "cargas_atuais": {
             "anyOf": [
               {
@@ -2056,6 +3006,17 @@
             ],
             "title": "Cargas Maximas"
           },
+          "coluna": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coluna"
+          },
           "dados": {
             "additionalProperties": true,
             "title": "Dados",
@@ -2073,17 +3034,90 @@
             "title": "Equipado",
             "type": "boolean"
           },
+          "girado": {
+            "default": false,
+            "title": "Girado",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "largura": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largura"
+          },
+          "linha": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linha"
+          },
+          "maos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maos"
           },
           "nome": {
             "title": "Nome",
             "type": "string"
           },
+          "pilha_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pilha Max"
+          },
           "quantidade": {
             "title": "Quantidade",
             "type": "integer"
+          },
+          "subtipo": {
+            "anyOf": [
+              {
+                "enum": [
+                  "peitoral",
+                  "capacete",
+                  "luvas",
+                  "botas",
+                  "uma_mao",
+                  "duas_maos",
+                  "escudo",
+                  "mochila",
+                  "aljava",
+                  "moedas",
+                  "outro"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtipo"
           },
           "tipo": {
             "enum": [
@@ -2131,6 +3165,209 @@
           "nome"
         ],
         "title": "ItemPrevia",
+        "type": "object"
+      },
+      "ItemRecipienteResumo": {
+        "properties": {
+          "altura": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altura"
+          },
+          "coluna": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coluna"
+          },
+          "efeitos": {
+            "description": "Nomes dos efeitos que o item carrega.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Efeitos",
+            "type": "array"
+          },
+          "girado": {
+            "default": false,
+            "title": "Girado",
+            "type": "boolean"
+          },
+          "grupo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Itens largados juntos (por exemplo, com a mochila).",
+            "title": "Grupo"
+          },
+          "icone_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icone Grade"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "largura": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largura"
+          },
+          "linha": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linha"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "quantidade": {
+            "title": "Quantidade",
+            "type": "integer"
+          },
+          "subtipo": {
+            "anyOf": [
+              {
+                "enum": [
+                  "peitoral",
+                  "capacete",
+                  "luvas",
+                  "botas",
+                  "uma_mao",
+                  "duas_maos",
+                  "escudo",
+                  "mochila",
+                  "aljava",
+                  "moedas",
+                  "outro"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtipo"
+          },
+          "tipo": {
+            "enum": [
+              "arma",
+              "armadura",
+              "outro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "tipo",
+          "quantidade"
+        ],
+        "title": "ItemRecipienteResumo",
+        "type": "object"
+      },
+      "LargarItemRequest": {
+        "properties": {
+          "recipiente_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sem recipiente, vai para o chão da cena ativa.",
+            "title": "Recipiente Id"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "LargarItemRequest",
+        "type": "object"
+      },
+      "ListasFichaResumo": {
+        "properties": {
+          "alinhamentos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Alinhamentos",
+            "type": "array"
+          },
+          "campos_personalidade": {
+            "items": {
+              "$ref": "#/components/schemas/CampoPersonalidadeResumo"
+            },
+            "title": "Campos Personalidade",
+            "type": "array"
+          },
+          "pecados": {
+            "items": {
+              "$ref": "#/components/schemas/PecadoResumo"
+            },
+            "title": "Pecados",
+            "type": "array"
+          },
+          "sexos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sexos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sexos",
+          "alinhamentos",
+          "pecados",
+          "campos_personalidade"
+        ],
+        "title": "ListasFichaResumo",
         "type": "object"
       },
       "MesaResumo": {
@@ -2181,6 +3418,69 @@
         "title": "MigrarCartaRequest",
         "type": "object"
       },
+      "MochilaFormato": {
+        "additionalProperties": false,
+        "properties": {
+          "colunas": {
+            "default": 0,
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "linhas": {
+            "default": 0,
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Linhas",
+            "type": "integer"
+          },
+          "requisito_forca": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requisito Forca"
+          }
+        },
+        "title": "MochilaFormato",
+        "type": "object"
+      },
+      "ModificadorCatalogoResumo": {
+        "properties": {
+          "alvo": {
+            "title": "Alvo",
+            "type": "string"
+          },
+          "quando": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quando"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "alvo",
+          "valor"
+        ],
+        "title": "ModificadorCatalogoResumo",
+        "type": "object"
+      },
       "ModificadorResumo": {
         "properties": {
           "alvo": {
@@ -2219,6 +3519,66 @@
           }
         },
         "title": "ModulosMesa",
+        "type": "object"
+      },
+      "MoedasRequest": {
+        "description": "Um modo por pedido: `adicionar` enche as pilhas com espaço e cria novas; `retirar` tira das últimas pilhas;\n`bolsa` define os totais e o servidor junta tudo em pilhas; `pilhas` define cada pilha (para dividir).",
+        "properties": {
+          "adicionar": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilhaMoedas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bolsa": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilhaMoedas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pilhas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PilhaMoedas"
+                },
+                "maxItems": 200,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pilhas"
+          },
+          "retirar": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilhaMoedas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "MoedasRequest",
         "type": "object"
       },
       "MoverTokenRequest": {
@@ -2280,6 +3640,112 @@
           "campo"
         ],
         "title": "MudancaAuditoria",
+        "type": "object"
+      },
+      "OfertaItemResumo": {
+        "properties": {
+          "altura": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altura"
+          },
+          "criado_em": {
+            "format": "date-time",
+            "title": "Criado Em",
+            "type": "string"
+          },
+          "de_nome": {
+            "title": "De Nome",
+            "type": "string"
+          },
+          "de_personagem_id": {
+            "title": "De Personagem Id",
+            "type": "string"
+          },
+          "estado": {
+            "enum": [
+              "pendente",
+              "aceita",
+              "recusada",
+              "cancelada"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "string"
+          },
+          "item_nome": {
+            "title": "Item Nome",
+            "type": "string"
+          },
+          "largura": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largura"
+          },
+          "para_nome": {
+            "title": "Para Nome",
+            "type": "string"
+          },
+          "para_personagem_id": {
+            "title": "Para Personagem Id",
+            "type": "string"
+          },
+          "subtipo": {
+            "anyOf": [
+              {
+                "enum": [
+                  "peitoral",
+                  "capacete",
+                  "luvas",
+                  "botas",
+                  "uma_mao",
+                  "duas_maos",
+                  "escudo",
+                  "mochila",
+                  "aljava",
+                  "moedas",
+                  "outro"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtipo"
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "item_id",
+          "item_nome",
+          "de_personagem_id",
+          "de_nome",
+          "para_personagem_id",
+          "para_nome",
+          "criado_em"
+        ],
+        "title": "OfertaItemResumo",
         "type": "object"
       },
       "OfertaResumo": {
@@ -2360,6 +3826,21 @@
         "title": "OfertaResumo",
         "type": "object"
       },
+      "OfertarItemRequest": {
+        "properties": {
+          "para_personagem_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Para Personagem Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "para_personagem_id"
+        ],
+        "title": "OfertarItemRequest",
+        "type": "object"
+      },
       "PaginaAuditoria": {
         "properties": {
           "eventos": {
@@ -2420,6 +3901,31 @@
         "title": "ParticipanteResumo",
         "type": "object"
       },
+      "PecadoResumo": {
+        "properties": {
+          "equivalentes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Equivalentes",
+            "type": "array"
+          },
+          "icone": {
+            "title": "Icone",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "icone"
+        ],
+        "title": "PecadoResumo",
+        "type": "object"
+      },
       "PedidoAlteracaoResumo": {
         "properties": {
           "campos_alterados": {
@@ -2473,6 +3979,58 @@
           "ficha_proposta"
         ],
         "title": "PedidoAlteracaoResumo",
+        "type": "object"
+      },
+      "PegarItemRequest": {
+        "properties": {
+          "coluna": {
+            "anyOf": [
+              {
+                "maximum": 40.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coluna"
+          },
+          "girado": {
+            "default": false,
+            "title": "Girado",
+            "type": "boolean"
+          },
+          "linha": {
+            "anyOf": [
+              {
+                "maximum": 40.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linha"
+          },
+          "personagem_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "personagem_id",
+          "versao_esperada"
+        ],
+        "title": "PegarItemRequest",
         "type": "object"
       },
       "PermissoesFicha": {
@@ -2614,6 +4172,37 @@
         "title": "PersonagemResumo",
         "type": "object"
       },
+      "PilhaMoedas": {
+        "additionalProperties": false,
+        "properties": {
+          "cobre": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Cobre",
+            "type": "integer"
+          },
+          "ouro": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Ouro",
+            "type": "integer"
+          },
+          "platina": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Platina",
+            "type": "integer"
+          },
+          "prata": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Prata",
+            "type": "integer"
+          }
+        },
+        "title": "PilhaMoedas",
+        "type": "object"
+      },
       "PoliticaMesaContrato": {
         "properties": {
           "campos_bloqueados": {
@@ -2631,6 +4220,20 @@
             "maxItems": 100,
             "title": "Campos Exigem Aprovacao",
             "type": "array"
+          },
+          "moedas_por_pilha": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Moedas (de qualquer tipo) por pilha, ou seja, por célula da grade. Ausente mantém o valor atual.",
+            "title": "Moedas Por Pilha"
           },
           "permitir_criacao_propria": {
             "title": "Permitir Criacao Propria",
@@ -2651,6 +4254,71 @@
           "permitir_exclusao_propria"
         ],
         "title": "PoliticaMesaContrato",
+        "type": "object"
+      },
+      "PosicaoItemGrade": {
+        "properties": {
+          "coluna": {
+            "anyOf": [
+              {
+                "maximum": 40.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coluna"
+          },
+          "equipado": {
+            "default": false,
+            "title": "Equipado",
+            "type": "boolean"
+          },
+          "girado": {
+            "default": false,
+            "title": "Girado",
+            "type": "boolean"
+          },
+          "item_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Item Id",
+            "type": "string"
+          },
+          "linha": {
+            "anyOf": [
+              {
+                "maximum": 40.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linha"
+          },
+          "maos": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só armas versáteis: empunhadura com uma ou duas mãos.",
+            "title": "Maos"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "title": "PosicaoItemGrade",
         "type": "object"
       },
       "PreviaDescansoRequest": {
@@ -2834,6 +4502,35 @@
         "title": "PreviaMigracaoCarta",
         "type": "object"
       },
+      "ProblemaArrumacao": {
+        "properties": {
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "mensagem": {
+            "title": "Mensagem",
+            "type": "string"
+          },
+          "motivo": {
+            "title": "Motivo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "motivo",
+          "mensagem"
+        ],
+        "title": "ProblemaArrumacao",
+        "type": "object"
+      },
       "ProblemaValidacao": {
         "properties": {
           "campo": {
@@ -2869,6 +4566,99 @@
           "versao_esperada"
         ],
         "title": "PublicarCartaRequest",
+        "type": "object"
+      },
+      "RacaCatalogoResumo": {
+        "properties": {
+          "deslocamento": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deslocamento"
+          },
+          "habilidades": {
+            "items": {
+              "$ref": "#/components/schemas/HabilidadeCatalogoResumo"
+            },
+            "title": "Habilidades",
+            "type": "array"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "tamanho": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho"
+          }
+        },
+        "required": [
+          "nome",
+          "habilidades"
+        ],
+        "title": "RacaCatalogoResumo",
+        "type": "object"
+      },
+      "RecipienteResumo": {
+        "properties": {
+          "colunas": {
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemRecipienteResumo"
+            },
+            "title": "Itens",
+            "type": "array"
+          },
+          "linhas": {
+            "title": "Linhas",
+            "type": "integer"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "chao",
+              "bau"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "nome",
+          "colunas",
+          "linhas",
+          "versao",
+          "itens"
+        ],
+        "title": "RecipienteResumo",
         "type": "object"
       },
       "ResponderOfertaRequest": {
@@ -3545,9 +5335,26 @@
       },
       "ValorDerivadoResumo": {
         "properties": {
+          "calculavel": {
+            "default": true,
+            "title": "Calculavel",
+            "type": "boolean"
+          },
           "chave": {
             "title": "Chave",
             "type": "string"
+          },
+          "divergencia_legada": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Valor gravado à mão numa ficha antiga, quando difere do calculado.",
+            "title": "Divergencia Legada"
           },
           "fontes": {
             "items": {
@@ -3560,10 +5367,23 @@
             "enum": [
               "atributo",
               "pericia",
-              "status"
+              "status",
+              "recurso"
             ],
             "title": "Grupo",
             "type": "string"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Entrada que falta quando o valor não é calculável.",
+            "title": "Motivo"
           },
           "rotulo": {
             "title": "Rotulo",
@@ -3577,8 +5397,16 @@
             "type": "array"
           },
           "total": {
-            "title": "Total",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vazio quando o valor não é calculável.",
+            "title": "Total"
           }
         },
         "required": [
@@ -3589,6 +5417,20 @@
           "fontes"
         ],
         "title": "ValorDerivadoResumo",
+        "type": "object"
+      },
+      "VersaoRequest": {
+        "properties": {
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao_esperada"
+        ],
+        "title": "VersaoRequest",
         "type": "object"
       },
       "VisibilidadeTokenRequest": {
@@ -3949,6 +5791,7 @@
     },
     "/mesas/{mesa_id}/ativos": {
       "get": {
+        "description": "``exibicao=true`` entrega a versão reduzida (WEBP) quando ela existe; senão, a original.",
         "operationId": "ler_ativo_mesas__mesa_id__ativos_get",
         "parameters": [
           {
@@ -3967,6 +5810,16 @@
             "schema": {
               "title": "Caminho",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exibicao",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Exibicao",
+              "type": "boolean"
             }
           }
         ],
@@ -4762,6 +6615,254 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/catalogos/classes": {
+      "get": {
+        "operationId": "listar_classes_mesas__mesa_id__catalogos_classes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClasseCatalogoResumo"
+                  },
+                  "title": "Response Listar Classes Mesas  Mesa Id  Catalogos Classes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Classes",
+        "tags": [
+          "Catálogos"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/catalogos/efeitos-default": {
+      "get": {
+        "operationId": "listar_efeitos_default_mesas__mesa_id__catalogos_efeitos_default_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EfeitoDefaultResumo"
+                  },
+                  "title": "Response Listar Efeitos Default Mesas  Mesa Id  Catalogos Efeitos Default Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Efeitos Default",
+        "tags": [
+          "Catálogos"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/catalogos/estado": {
+      "get": {
+        "description": "Versão carregada e último erro de recarga do JSON, para o Narrador.",
+        "operationId": "estado_do_catalogo_mesas__mesa_id__catalogos_estado_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoCatalogoResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Estado Do Catalogo",
+        "tags": [
+          "Catálogos"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/catalogos/listas-ficha": {
+      "get": {
+        "operationId": "listar_listas_mesas__mesa_id__catalogos_listas_ficha_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListasFichaResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Listas",
+        "tags": [
+          "Catálogos"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/catalogos/racas": {
+      "get": {
+        "operationId": "listar_racas_mesas__mesa_id__catalogos_racas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RacaCatalogoResumo"
+                  },
+                  "title": "Response Listar Racas Mesas  Mesa Id  Catalogos Racas Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Racas",
+        "tags": [
+          "Catálogos"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/convites": {
       "post": {
         "operationId": "criar_convite_mesas__mesa_id__convites_post",
@@ -5045,6 +7146,169 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/imagens/{destino}": {
+      "delete": {
+        "operationId": "remover_imagem_mesas__mesa_id__imagens__destino__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "destino",
+            "required": true,
+            "schema": {
+              "enum": [
+                "retrato",
+                "item",
+                "icone-grade",
+                "efeito",
+                "carta",
+                "mapa",
+                "icone-efeito"
+              ],
+              "title": "Destino",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "alvo",
+            "required": true,
+            "schema": {
+              "title": "Alvo",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versao_esperada",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Versao Esperada"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImagemResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remover Imagem",
+        "tags": [
+          "Imagens"
+        ]
+      },
+      "put": {
+        "operationId": "enviar_imagem_mesas__mesa_id__imagens__destino__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "destino",
+            "required": true,
+            "schema": {
+              "enum": [
+                "retrato",
+                "item",
+                "icone-grade",
+                "efeito",
+                "carta",
+                "mapa",
+                "icone-efeito"
+              ],
+              "title": "Destino",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_enviar_imagem_mesas__mesa_id__imagens__destino__put"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImagemResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Enviar Imagem",
+        "tags": [
+          "Imagens"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/modulos": {
       "get": {
         "operationId": "ler_modulos_mesas__mesa_id__modulos_get",
@@ -5250,6 +7514,236 @@
         "summary": "Criar Oferta",
         "tags": [
           "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/ofertas-item": {
+      "get": {
+        "description": "Ofertas pendentes em que o usuário pode agir: dadas ou recebidas por personagens que ele edita.",
+        "operationId": "listar_ofertas_mesas__mesa_id__ofertas_item_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OfertaItemResumo"
+                  },
+                  "title": "Response Listar Ofertas Mesas  Mesa Id  Ofertas Item Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Ofertas",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/ofertas-item/{oferta_id}/aceitar": {
+      "post": {
+        "operationId": "aceitar_oferta_mesas__mesa_id__ofertas_item__oferta_id__aceitar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "oferta_id",
+            "required": true,
+            "schema": {
+              "title": "Oferta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AceitarOfertaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemInventarioResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Aceitar Oferta",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/ofertas-item/{oferta_id}/cancelar": {
+      "post": {
+        "operationId": "cancelar_oferta_mesas__mesa_id__ofertas_item__oferta_id__cancelar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "oferta_id",
+            "required": true,
+            "schema": {
+              "title": "Oferta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfertaItemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancelar Oferta",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/ofertas-item/{oferta_id}/recusar": {
+      "post": {
+        "operationId": "recusar_oferta_mesas__mesa_id__ofertas_item__oferta_id__recusar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "oferta_id",
+            "required": true,
+            "schema": {
+              "title": "Oferta Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfertaItemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recusar Oferta",
+        "tags": [
+          "Sala"
         ]
       }
     },
@@ -6695,6 +9189,267 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/arrumacao": {
+      "put": {
+        "description": "Grava a arrumação inteira da grade (tudo ou nada). Mover itens dentro da grade não gera evento no\nhistórico; colocar na grade, retirar para a bandeja, equipar, desequipar e entrar ou sair de sobrecarga geram.",
+        "operationId": "gravar_arrumacao_mesas__mesa_id__personagens__personagem_id__inventario_arrumacao_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArrumacaoGradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeInventario"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProblemaArrumacao"
+                  },
+                  "title": "Response 422 Gravar Arrumacao Mesas  Mesa Id  Personagens  Personagem Id  Inventario Arrumacao Put",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Arrumação inválida; nada foi gravado."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Gravar Arrumacao",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/grade": {
+      "get": {
+        "operationId": "ler_grade_mesas__mesa_id__personagens__personagem_id__inventario_grade_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeInventario"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Grade",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/mochila/largar": {
+      "post": {
+        "description": "Interação livre: a mochila vai para o chão da cena ativa com os itens das linhas que ela acrescentava.",
+        "operationId": "largar_mochila_mesas__mesa_id__personagens__personagem_id__inventario_mochila_largar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeInventario"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Largar Mochila",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/moedas": {
+      "put": {
+        "description": "Adiciona ou retira moedas, define os totais (o servidor junta em pilhas) ou as pilhas (para dividir).\nNenhuma moeda some: pilhas sem espaço vão para a área vermelha ou ficam fora da grade.",
+        "operationId": "gravar_moedas_mesas__mesa_id__personagens__personagem_id__inventario_moedas_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoedasRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeInventario"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Gravar Moedas",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/equipar": {
       "post": {
         "operationId": "equipar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__equipar_post",
@@ -6770,6 +9525,232 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/formato": {
+      "put": {
+        "description": "O Narrador define tipo e dimensão de um item (por exemplo, os que chegaram sem dimensão).\nSe o formato muda, o item sai da grade para ser recolocado; se o subtipo muda, ele é desequipado.",
+        "operationId": "definir_formato_mesas__mesa_id__personagens__personagem_id__inventario__item_id__formato_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirFormatoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquiparItemResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Definir Formato",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/largar": {
+      "post": {
+        "operationId": "largar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__largar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LargarItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipienteResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Largar Item",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/ofertas": {
+      "post": {
+        "operationId": "ofertar_item_mesas__mesa_id__personagens__personagem_id__inventario__item_id__ofertas_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfertarItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfertaItemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ofertar Item",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/personagens/{personagem_id}/permissoes": {
       "get": {
         "operationId": "ler_permissoes_mesas__mesa_id__personagens__personagem_id__permissoes_get",
@@ -6821,6 +9802,73 @@
           }
         ],
         "summary": "Ler Permissoes",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/recursos/ajustes": {
+      "post": {
+        "description": "O Narrador soma um ajuste com origem e justificativa a PV/PP máximo ou a uma Escala.",
+        "operationId": "ajustar_recurso_mesas__mesa_id__personagens__personagem_id__recursos_ajustes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjustarRecursoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjusteRecursoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ajustar Recurso",
         "tags": [
           "Ficha viva"
         ]
@@ -7426,6 +10474,255 @@
           }
         ],
         "summary": "Criar Token",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/recipientes": {
+      "get": {
+        "description": "Chão e baús da cena ativa, visíveis a todos os participantes.",
+        "operationId": "listar_recipientes_mesas__mesa_id__sala_recipientes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecipienteResumo"
+                  },
+                  "title": "Response Listar Recipientes Mesas  Mesa Id  Sala Recipientes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Recipientes",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "post": {
+        "operationId": "criar_bau_mesas__mesa_id__sala_recipientes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarBauRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipienteResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Bau",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/recipientes/{recipiente_id}/cartas": {
+      "post": {
+        "operationId": "colocar_carta_mesas__mesa_id__sala_recipientes__recipiente_id__cartas_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "recipiente_id",
+            "required": true,
+            "schema": {
+              "title": "Recipiente Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ColocarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipienteResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Colocar Carta",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/recipientes/{recipiente_id}/itens/{retrato_id}/pegar": {
+      "post": {
+        "description": "O primeiro pedido confirmado leva o item; os seguintes recebem 409.",
+        "operationId": "pegar_item_mesas__mesa_id__sala_recipientes__recipiente_id__itens__retrato_id__pegar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "recipiente_id",
+            "required": true,
+            "schema": {
+              "title": "Recipiente Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "retrato_id",
+            "required": true,
+            "schema": {
+              "title": "Retrato Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PegarItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemInventarioResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Pegar Item",
         "tags": [
           "Sala"
         ]

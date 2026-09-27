@@ -20,7 +20,7 @@ describe("catálogo visual isolado de componentes", () => {
   it("mostra a barra de recurso cheia, parcial, vazia e acima do máximo", () => {
     render(<MemoryRouter><ComponentCatalog /></MemoryRouter>);
     expect(screen.getByRole("progressbar", { name: "Pontos de Vida (cheia)" }).getAttribute("aria-valuetext")).toBe("24 de 24");
-    expect(screen.getByRole("progressbar", { name: "Pontos de Poder (parcial)" }).getAttribute("aria-valuetext")).toBe("7 de 12");
+    expect(screen.getByRole("progressbar", { name: "Pontos de Propósito (parcial)" }).getAttribute("aria-valuetext")).toBe("7 de 12");
     expect(screen.getByRole("progressbar", { name: "Foco (vazio)" }).getAttribute("aria-valuetext")).toContain("esgotado");
     expect(screen.getByRole("progressbar", { name: "Pontos de Vida (acima do máximo)" }).getAttribute("aria-valuetext")).toContain("acima do máximo");
   });

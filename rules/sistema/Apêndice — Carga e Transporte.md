@@ -2,78 +2,59 @@
 
 ## A.1. Referência rápida
 
-### Capacidade de Carga
+### Tamanho da grade
 
 ```
-CC = Força × 20 kg × Modificador de Tamanho
+Linhas = 2 + Força atual
+Colunas = conforme o Tamanho
++1 linha vermelha abaixo da grade
 ```
 
-|Tamanho|Modificador|
+|Tamanho|Colunas|
 |---|---|
-|Minúsculo|×0,50|
-|Pequeno|×0,75|
-|Médio|×1,00|
-|Grande|×2,00|
-|Enorme|×3,00|
-|Colossal|×5,00|
+|Minúsculo|2|
+|Pequeno|4|
+|Médio|5|
+|Grande|7|
+|Enorme|9|
+|Colossal|11|
 
-### Faixas de Carga
+### Sobrecarga
 
-|Faixa|Limite|
-|---|---|
-|Carga Normal|Até 100% da CC|
-|Carga Excedente|Acima de 100% até 150%|
-|Excesso Crítico|Acima de 150%|
+Qualquer item na área vermelha:
 
-### Efeitos
-
-|Faixa|Deslocamento|Esquiva|Correr|Altura Segura|
-|---|---|---|---|---|
-|Normal|Normal|Normal|Sim|Sem penalidade|
-|Excedente|-3 m|-2|Não|-1 m|
-|Excesso Crítico|1 m por ação|Não pode|Não|-2 m|
+|Deslocamento|Esquiva|Correr|Saltar, escalar, nadar|Altura Segura|Exaustão|
+|---|---|---|---|---|---|
+|Metade|-4|Não|Não normalmente|-2 m|+1 a cada 10 rodadas agindo ou se movendo, ou 30 minutos viajando|
 
 ---
 
-## A.2. Exemplo — Personagem Médio
+## A.2. Exemplo — Guerreiro Médio
 
-Um personagem Médio possui Força 3.
-
-```
-CC = 3 × 20 × 1CC = 60 kg
-```
-
-Seu limite de Carga Excedente é:
+Um guerreiro Médio possui Força 3.
 
 ```
-60 × 1,5 = 90 kg
+Linhas = 2 + 3 = 5
+Colunas = 5
+Grade = 5 × 5 = 25 células, mais a linha vermelha
 ```
 
-Portanto:
+Ele leva:
 
-- até `60 kg`: Carga Normal;
-- acima de `60 kg` até `90 kg`: Carga Excedente;
-- acima de `90 kg`: Excesso Crítico.
+|Item|Dimensão|Células|
+|---|---|---|
+|Peitoral pesado (equipado)|2 × 3|6|
+|Elmo (equipado)|1 × 1|1|
+|Manoplas (equipadas)|1 × 1|1|
+|Botas (equipadas)|1 × 2|2|
+|Espada longa (empunhada)|1 × 3|3|
+|Escudo (empunhado)|2 × 2|4|
+|Odre|1 × 2|2|
+|Tocha|1 × 2|2|
+|Provisões (3 dias)|2 × 1|2|
+|**Total**||**23**|
 
-O personagem está carregando:
-
-|Item|Peso|
-|---|---|
-|Armadura|15 kg|
-|Arma|4 kg|
-|Escudo|5 kg|
-|Mochila e suprimentos|28 kg|
-|Tesouro|18 kg|
-|**Total**|**70 kg**|
-
-Com `70 kg`, o personagem está em Carga Excedente.
-
-Ele sofre:
-
-- `-3 m` de deslocamento;
-- `-2` em Esquiva;
-- não pode Correr;
-- `-1 m` na Altura Segura.
+Sobram 2 células. Se ele guardar um cofre de 2 × 2 encontrado na masmorra, uma parte dele vai para a linha vermelha e o guerreiro entra em Sobrecarga, a menos que largue algo, equipe uma mochila ou divida a carga com outro personagem.
 
 ---
 
@@ -82,28 +63,10 @@ Ele sofre:
 Um personagem Pequeno possui Força 3.
 
 ```
-CC = 3 × 20 × 0,75CC = 45 kg
+Grade = 4 colunas × 5 linhas = 20 células
 ```
 
-Seu limite de 150% é:
-
-```
-45 × 1,5 = 67,5 kg
-```
-
-Como os limites são arredondados para baixo:
-
-```
-Limite = 67 kg
-```
-
-Portanto:
-
-- até `45 kg`: Carga Normal;
-- de `45,5 kg` até `67 kg`: Carga Excedente;
-- acima de `67 kg`: Excesso Crítico.
-
-Caso carregue `50 kg`, estará em Carga Excedente mesmo que um personagem Médio com a mesma Força pudesse carregar esse peso sem penalidades.
+Com o mesmo equipamento do guerreiro, ele já estaria em Sobrecarga: um personagem Pequeno precisa escolher com mais cuidado o que levar.
 
 ---
 
@@ -112,125 +75,59 @@ Caso carregue `50 kg`, estará em Carga Excedente mesmo que um personagem Médio
 Uma criatura Grande possui Força 6.
 
 ```
-CC = 6 × 20 × 2CC = 240 kg
+Grade = 7 colunas × 8 linhas = 56 células
 ```
 
-Seu limite de 150% é:
-
-```
-240 × 1,5 = 360 kg
-```
-
-Portanto:
-
-- até `240 kg`: Carga Normal;
-- acima de `240 kg` até `360 kg`: Carga Excedente;
-- acima de `360 kg`: Excesso Crítico.
-
-Uma montaria carregando cavaleiro, sela, armadura e equipamentos com peso total de `300 kg` está em Carga Excedente.
+Uma montaria Grande carrega o equipamento do cavaleiro e ainda pode levar um companheiro Médio (4 × 5) sem entrar em Sobrecarga, se o resto couber.
 
 ---
 
 ## A.5. Alterações temporárias de Força
 
-A CC é recalculada imediatamente quando a Força mudar.
+O guerreiro do exemplo A.2 tem 5 linhas.
 
-Um personagem Médio com Força 3 possui:
+Uma condição reduz sua Força para 2. A quinta linha **fica vermelha**: os itens que estavam nela continuam lá, mas ele entra em Sobrecarga.
 
-```
-CC = 60 kg
-```
-
-Ele está carregando `55 kg`, permanecendo em Carga Normal.
-
-Uma condição reduz sua Força para 2:
-
-```
-Nova CC = 2 × 20Nova CC = 40 kg
-```
-
-Com `55 kg`, o personagem passa imediatamente para Carga Excedente.
-
-Caso sua Força seja reduzida para 1:
-
-```
-Nova CC = 20 kgLimite de 150% = 30 kg
-```
-
-Com os mesmos `55 kg`, ele entra em Excesso Crítico.
-
-Quando o efeito terminar, sua CC volta ao valor normal.
+Quando a condição termina, a quinta linha volta a ser normal e a Sobrecarga termina, se nada mais estiver na área vermelha.
 
 ---
 
 ## A.6. Alterações de Tamanho
 
-Mudanças de Tamanho também recalculam imediatamente a CC.
+Um personagem Médio com Força 3 tem 5 colunas.
 
-Um personagem com Força 3 e Tamanho Médio possui:
+Uma transformação o torna Grande: sua grade passa a ter 7 colunas enquanto durar.
 
-```
-CC = 60 kg
-```
+Se outro efeito o tornar Pequeno (4 colunas), a quinta coluna **fica vermelha** e os itens nela causam Sobrecarga até o efeito terminar.
 
-Caso uma transformação aumente seu Tamanho para Grande:
-
-```
-CC = 3 × 20 × 2CC = 120 kg
-```
-
-Caso ele volte ao Tamanho Médio, sua CC retorna para `60 kg`.
-
-Os equipamentos não mudam automaticamente de peso, salvo quando a transformação ou efeito declarar isso.
+Os itens não mudam de dimensão, salvo quando a transformação ou o efeito declarar isso.
 
 ---
 
 ## A.7. Carregar outra criatura
 
-Uma criatura carregada conta como:
+Um companheiro Médio desmaia. O guerreiro do exemplo A.2 decide carregá-lo.
 
 ```
-Peso corporal + Carga Atual da criatura
+Companheiro Médio = 4 × 5 = 20 células
 ```
 
-Uma criatura pesa `70 kg` e possui:
+Para caber, o guerreiro precisa largar quase tudo o que não está equipado ou aceitar a Sobrecarga. O equipamento do companheiro continua com ele e não é somado.
 
-|Equipamento|Peso|
-|---|---|
-|Armadura|10 kg|
-|Armas|4 kg|
-|Mochila|8 kg|
-|**Carga Atual**|**22 kg**|
-
-Seu peso total para quem a carregar será:
+Com a ajuda de um segundo personagem, cada um leva metade da altura, arredondada para cima:
 
 ```
-70 + 22 = 92 kg
+Metade de 5 = 2,5 → 3
+Cada carregador leva 4 × 3 = 12 células
 ```
 
-Se a criatura largar a mochila de `8 kg`:
-
-```
-Peso transportado = 84 kg
-```
-
-Carregar a criatura nos braços, costas ou ombros utiliza as faixas normais de Carga.
-
-Arrastá-la utiliza as regras de Empurrar e Arrastar.
+Um personagem com Força 1 tem apenas 3 linhas e a linha vermelha. O companheiro de 5 linhas não cabe: ele só pode ser arrastado, 1 m por ação inteira, ou carregado com ajuda.
 
 ---
 
-## A.8. Levantar peso acima da CC
+## A.8. Levantar um objeto que não cabe na grade
 
-Um personagem possui CC de `60 kg`.
-
-Ele tenta levantar uma pedra de `100 kg`.
-
-Como o peso está entre sua CC e `2 × CC`:
-
-```
-Limite máximo = 60 × 2Limite máximo = 120 kg
-```
+Um personagem tenta erguer uma estátua que não cabe na grade dele, nem na área vermelha.
 
 Ele pode tentar:
 
@@ -240,9 +137,9 @@ Ele pode tentar:
 
 Em caso de sucesso:
 
-- levanta a pedra;
-- sustenta o peso até o início do próximo turno;
-- move-se no máximo `1 m`;
+- levanta a estátua;
+- sustenta-a até o início do próximo turno;
+- move-se no máximo 1 m;
 - não pode Correr;
 - precisa repetir o teste caso continue sustentando-a.
 
@@ -251,7 +148,7 @@ Em caso de falha:
 - não consegue levantá-la; ou
 - precisa soltá-la caso já estivesse sustentando-a.
 
-Uma pedra de `130 kg` está acima de `2 × CC` e não pode ser levantada sem ajuda, ferramenta, magia ou habilidade.
+O Narrador decide quando um objeto é pesado demais para uma pessoa. Nesse caso, ele não pode ser levantado sem ajuda, ferramenta, magia ou habilidade.
 
 ---
 
@@ -267,22 +164,16 @@ Exemplos:
 - personagem ferido;
 - objeto escorregadio;
 - vento forte;
-- peso se movendo;
+- carga se movendo;
 - necessidade de levantar acima da cabeça.
 
-A dificuldade representa a situação, não apenas o peso.
+A dificuldade representa a situação, não apenas o tamanho do objeto.
 
 ---
 
 ## A.10. Empurrar e arrastar
 
-Um personagem com CC de `60 kg` pode empurrar ou arrastar até:
-
-```
-60 × 5 = 300 kg
-```
-
-Em superfície favorável, ele pode mover o objeto até `1 m` usando sua ação inteira.
+Em superfície favorável, o personagem move o objeto até `1 m` usando sua ação inteira.
 
 O Narrador pode exigir:
 
@@ -306,32 +197,13 @@ Use CD 22 para:
 - terreno extremamente ruim;
 - resistência adicional relevante.
 
-Acima de `300 kg`, o personagem precisa de ajuda, ferramentas ou outra solução.
+Quando o objeto for pesado demais para uma pessoa, é preciso ajuda, ferramentas ou outra solução.
 
 ---
 
 ## A.11. Trabalho em equipe
 
-Três personagens possuem:
-
-|Personagem|CC|
-|---|---|
-|A|60 kg|
-|B|40 kg|
-|C|80 kg|
-|**CC Coletiva**|**180 kg**|
-
-Eles podem tentar levantar brevemente até:
-
-```
-180 × 2 = 360 kg
-```
-
-E podem empurrar ou arrastar até:
-
-```
-180 × 5 = 900 kg
-```
+Três personagens tentam arrastar uma carroça atolada.
 
 Um dos personagens realiza o teste e recebe `+1` por ajudante.
 
@@ -352,13 +224,13 @@ Todos precisam conseguir alcançar o objeto e possuir espaço e apoio para ajuda
 Um personagem está:
 
 - usando uma armadura que concede `-2` em Esquiva;
-- em Carga Excedente, que concede `-2`;
+- em Sobrecarga, que concede `-4`;
 - com uma condição que concede `-1`.
 
 Sua penalidade total será:
 
 ```
--2 -2 -1 = -5 em Esquiva
+-2 -4 -1 = -7 em Esquiva
 ```
 
 Não existe um limite geral para penalidades.
@@ -367,88 +239,80 @@ Entretanto, a mesma fonte não deve ser contada duas vezes, salvo quando sua reg
 
 ---
 
-## A.13. Exaustão por Excesso Crítico
+## A.13. Exaustão por Sobrecarga
 
-Um personagem em Excesso Crítico começa um combate.
+Um personagem em Sobrecarga começa um combate e realiza ações durante dez rodadas consecutivas.
 
-Ele realiza ações durante cinco rodadas consecutivas:
-
-```
-Rodada 1Rodada 2Rodada 3Rodada 4Rodada 5
-```
-
-Ao completar a quinta rodada, recebe:
+Ao completar a décima rodada, recebe:
 
 ```
 +1 de Exaustão
 ```
 
-Caso continue carregando o mesmo peso e realizando ações, recebe outro ponto após mais cinco rodadas.
+Caso continue em Sobrecarga e agindo, recebe outro ponto após mais dez rodadas.
 
-A contagem é interrompida se ele:
+A contagem recomeça do zero quando a área vermelha fica vazia ou quando o personagem para de agir e de se mover.
 
-- apoiar o peso;
-- largar parte da carga;
-- receber ajuda;
-- reduzir sua carga para 150% da CC ou menos;
-- permanecer parado sem sustentar ativamente o peso.
-
-Fora de combate, o mesmo ocorre a cada dez minutos consecutivos de transporte.
+Fora de combate, o mesmo ocorre a cada trinta minutos consecutivos de viagem em Sobrecarga.
 
 ---
 
-# Apêndice B — Carga Aquática
+## A.14. Mochilas
+
+O guerreiro do exemplo A.2 equipa uma Mochila de viagem (2 × 2, +1 linha, Requisito de Força 2).
+
+```
+Grade = 5 colunas × 6 linhas = 30 células
+```
+
+Equipada, a mochila não ocupa célula. Agora ele tem espaço para o cofre sem entrar em Sobrecarga.
+
+Ele encontra uma Bolsa de cintura. Como só uma mochila fica equipada por vez, a bolsa ocupa o próprio tamanho (1 × 1) na grade até ele decidir trocar: ao equipar a bolsa, a mochila de viagem deixa de ampliar a grade e passa a ocupar 2 × 2 como item.
+
+### Fuga largando a mochila
+
+Perseguido, o guerreiro larga a mochila de viagem como interação livre. O cofre e os itens que estavam na linha acrescentada por ela ficam no chão, numa pilha que pode ser recuperada depois. O que estava na grade base continua com ele.
+
+---
+
+## A.15. Moedas
+
+A campanha define 100 moedas por pilha. Um personagem tem 40 de cobre, 95 de prata e 12 de ouro.
+
+```
+147 moedas → 2 pilhas → 2 células
+```
+
+As pilhas podem misturar tipos, e o total de cada tipo continua visível. Se a campanha passar a 50 moedas por pilha, as mesmas moedas precisam de 3 células; o que não couber vai para a área vermelha, sem perda.
+
+---
+
+# Apêndice B — Água Profunda
 
 ## B.1. Referência rápida
 
-```
-Capacidade Aquática = CC ÷ 2
-```
-
-```
-Carga Aquática =Carga Atual+ peso da armadura vestida+ peso do escudo empunhado
-```
-
-|Faixa|Efeito|
+|Situação|Efeito|
 |---|---|
-|Até 50%|Natação normal|
-|Acima de 50% até 100%|Natação prejudicada|
-|Acima de 100% até 150%|Afundando|
-|Acima de 150%|Afundamento Crítico|
+|Sem Sobrecarga e sem arrasto|Natação normal|
+|Peitoral pesado vestido ou escudo empunhado|Natação prejudicada|
+|Em Sobrecarga|Afundando|
+|Em Sobrecarga, com peitoral pesado ou escudo empunhado|Afundamento Crítico|
 
 ---
 
 ## B.2. Exemplo — Natação Normal
 
-Um personagem Médio com Força 3 possui:
+Um personagem veste um gibão de couro (armadura leve), leva a espada guardada e não tem nada na área vermelha.
 
-```
-CC = 60 kgCapacidade Aquática = 30 kg
-```
-
-Ele veste uma armadura de `5 kg` e carrega outros `5 kg`.
-
-```
-Carga Atual = 10 kgCarga Aquática = 10 + 5Carga Aquática = 15 kg
-```
-
-Como `15 kg` corresponde a 50% de sua Capacidade Aquática, ele permanece em Natação Normal.
+Ele nada normalmente.
 
 ---
 
 ## B.3. Exemplo — Natação Prejudicada
 
-O mesmo personagem possui Capacidade Aquática de `30 kg`.
+O mesmo personagem veste um peitoral de placas (categoria Pesada).
 
-Ele veste uma armadura de `8 kg` e carrega outros `6 kg`.
-
-```
-Carga Atual = 14 kgCarga Aquática = 14 + 8Carga Aquática = 22 kg
-```
-
-Como `22 kg` está acima de 50%, mas não ultrapassa `30 kg`, ele está em Natação Prejudicada.
-
-Ele sofre:
+O arrasto da armadura prejudica a natação:
 
 - `-2` nos testes de natação;
 - deslocamento aquático pela metade;
@@ -458,37 +322,9 @@ Ele sofre:
 
 ## B.4. Exemplo — Afundando
 
-O personagem veste:
+Um personagem com gibão de couro está em Sobrecarga por causa de um fardo na área vermelha.
 
-|Equipamento|Peso|
-|---|---|
-|Armadura|12 kg|
-|Escudo empunhado|4 kg|
-|Outros itens|8 kg|
-
-Sua Carga Atual é:
-
-```
-12 + 4 + 8 = 24 kg
-```
-
-Sua Carga Aquática é:
-
-```
-24 + 12 + 4 = 40 kg
-```
-
-Sua Capacidade Aquática é `30 kg`.
-
-O limite de 150% é:
-
-```
-30 × 1,5 = 45 kg
-```
-
-Como sua Carga Aquática é `40 kg`, ele está Afundando.
-
-A cada rodada, realiza:
+Ele está Afundando. A cada rodada, realiza:
 
 ```
 1d20 + Vigor + Esportes contra CD 18
@@ -507,21 +343,9 @@ Em caso de falha:
 
 ## B.5. Exemplo — Afundamento Crítico
 
-Um personagem possui Capacidade Aquática de `30 kg`.
+Um personagem em Sobrecarga veste um peitoral pesado e empunha um escudo.
 
-Ele veste uma armadura de `25 kg`, empunha um escudo de `6 kg` e carrega outros `5 kg`.
-
-```
-Carga Atual = 25 + 6 + 5Carga Atual = 36 kg
-```
-
-```
-Carga Aquática = 36 + 25 + 6Carga Aquática = 67 kg
-```
-
-Como `67 kg` ultrapassa 150% de sua Capacidade Aquática, ele entra em Afundamento Crítico.
-
-A cada rodada:
+Ele entra em Afundamento Crítico. A cada rodada:
 
 - afunda automaticamente `3 m`;
 - não pode Esquivar;
@@ -539,47 +363,19 @@ Em caso de sucesso, afunda apenas `1 m` naquela rodada.
 
 ## B.6. Descartando equipamento na água
 
-O personagem do exemplo anterior possui Carga Aquática de `67 kg`.
+O personagem do exemplo anterior larga o escudo.
 
-Ele larga o escudo de `6 kg`.
+Ele continua em Sobrecarga e ainda veste o peitoral pesado: continua em Afundamento Crítico.
 
-Como o escudo contava uma vez na Carga Atual e uma segunda vez por estar empunhado, sua Carga Aquática diminui em `12 kg`.
+Depois, larga o fardo que estava na área vermelha. A Sobrecarga termina, mas o peitoral pesado ainda causa arrasto: ele passa para Natação Prejudicada.
 
-```
-67 - 12 = 55 kg
-```
-
-Ele ainda permanece em Afundamento Crítico.
-
-Depois, solta uma mochila de `10 kg`.
-
-Como a mochila contava apenas uma vez:
-
-```
-55 - 10 = 45 kg
-```
-
-Com `45 kg`, ele passa para a faixa Afundando, pois não está acima de 150% da Capacidade Aquática.
-
-A Carga Aquática é recalculada imediatamente sempre que um item é removido.
+A situação é reavaliada imediatamente sempre que um item é largado, guardado ou empunhado.
 
 ---
 
 ## B.7. Escudo guardado e escudo empunhado
 
-Um escudo de `5 kg` guardado nas costas entra apenas uma vez na Carga Aquática.
-
-```
-Peso considerado = 5 kg
-```
-
-Quando empunhado, ele entra uma segunda vez por causa do arrasto.
-
-```
-Peso considerado = 10 kg
-```
-
-A mesma lógica se aplica apenas quando o escudo estiver sendo efetivamente empunhado.
+Um escudo guardado na grade não causa arrasto. Empunhado, ele causa arrasto e prejudica a natação.
 
 ---
 
@@ -587,43 +383,29 @@ A mesma lógica se aplica apenas quando o escudo estiver sendo efetivamente empu
 
 Um personagem com água até a cintura ainda consegue apoiar-se no fundo.
 
-Nesse caso, não utiliza as faixas de Carga Aquática.
+Nesse caso, não utiliza as regras de água profunda.
 
 Aplicam-se:
 
-- Carga terrestre;
+- as regras normais de Carga e Sobrecarga;
 - penalidades do terreno;
 - efeitos de correnteza;
 - possíveis dificuldades de movimentação.
 
-As regras aquáticas passam a ser utilizadas quando o personagem não consegue mais permanecer apoiado e precisa nadar.
+As regras de água profunda passam a ser utilizadas quando o personagem não consegue mais permanecer apoiado e precisa nadar.
 
 ---
 
 ## B.9. Equipamentos especiais
 
+### Hidrodinâmico
+
+Não causa arrasto quando vestido ou empunhado.
+
 ### Flutuante
 
-O item não entra na Carga Aquática enquanto mantiver sua flutuação.
-
-### Auxílio de Flutuação
-
-Reduz a Carga Aquática do usuário pelo valor indicado.
-
-Exemplo:
-
-```
-Carga Aquática normal = 35 kgAuxílio de Flutuação = 10 kgCarga Aquática efetiva = 25 kg
-```
-
-### Absorvente
-
-O item ganha peso adicional quando molhado ou submerso.
+Enquanto flutua, não causa Sobrecarga na água, mesmo que esteja na área vermelha.
 
 ### Liberação Rápida
 
 Pode ser removido ou descartado em menos tempo que um equipamento normal.
-
-### Hidrodinâmico
-
-Não é contabilizado uma segunda vez por arrasto quando vestido ou empunhado.

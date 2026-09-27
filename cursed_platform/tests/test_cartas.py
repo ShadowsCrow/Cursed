@@ -23,6 +23,7 @@ from cursed_platform.migracao_ativos import ArmazenamentoLocal
 from cursed_platform.domain.equip_codec import encode_equipment_eq1
 from cursed_platform.domain.efeitos_codec import encode_effect_e1
 from cursed_platform.persistence import (
+    ItemInventarioRegistro,
     AtivoCatalogoRegistro, Base, CartaDefinicaoRegistro, CartaPersonagemRegistro, MembroRegistro, MesaRegistro, OfertaCartasRegistro,
     PersonagemRegistro,
 )
@@ -37,6 +38,7 @@ with patch.dict("os.environ", {"CURSED_PLATFORM_DATABASE_URL": "sqlite:///:memor
 BOLA = {"titulo": "Bola de Fogo", "texto": "Explosão em área.", "escola": "Evocação", "grau": 2,
         "custo_aprendizado": 3, "descansos_minimos": 1, "potencia_uso": 4, "custo_uso": 2}
 ESPADA = {"titulo": "Espada Rúnica", "texto": "Lâmina antiga.", "item_tipo": "arma", "dados": {"dano": "1d8", "peso": 2},
+          "formato": {"subtipo": "uma_mao", "largura": 1, "altura": 3},
           "efeitos": [{"nome": "Runas", "descricao": "+1 em Arcanismo.",
                        "modificadores": [{"alvo": "pericia:arcanismo", "valor": 1}]}]}
 BENCAO = {"titulo": "Bênção", "texto": "+1 em Vontade.", "modificadores": [{"alvo": "pericia:vontade", "valor": 1}],
@@ -200,17 +202,21 @@ class CartasTest(unittest.TestCase):
             self.assertEqual(session.scalar(select(func.count()).select_from(CartaDefinicaoRegistro)), antes)
             self.assertIsNone(session.get(CartaDefinicaoRegistro, definicao["id"]).versao_publicada)
 
+    def catalogo_do_narrador(self) -> list[dict]:
+        """Catálogo sem os corpos padrão, que o sistema cria em toda mesa."""
+        return [d for d in self.client.get("/mesas/mesa/cartas").json() if d["procedencia_rascunho"].get("origem") != "sistema"]
+
     def test_importacao_portatil_com_previa(self):
         codigo = encode_equipment_eq1("armadura", {"nome": "Escudo", "armadura": 1}, [
             {"kind": "externo", "nome": "Bloqueio", "descricao": "+1 Defesa.",
              "modificadores": [{"alvo": "defesa:armadura", "valor": 1}]}])
         previa = self.as_("mestre").post("/mesas/mesa/cartas/importacoes/previa", json={"codigo": codigo}).json()
         self.assertEqual((previa["tipo"], previa["validacao"]["valida"], previa["rascunho"]["titulo"]), ("item", True, "Escudo"))
-        self.assertEqual(self.client.get("/mesas/mesa/cartas").json(), [])
+        self.assertEqual(self.catalogo_do_narrador(), [])
         importada = self.client.post("/mesas/mesa/cartas/importacoes", json={"codigo": codigo}).json()
         self.assertEqual((importada["procedencia_rascunho"]["origem"], importada["publicada"]), ("importacao", None))
         self.assertEqual(self.client.post("/mesas/mesa/cartas/importacoes", json={"codigo": "EQ1:quebrado"}).status_code, 422)
-        self.assertEqual(len(self.client.get("/mesas/mesa/cartas").json()), 1)
+        self.assertEqual(len(self.catalogo_do_narrador()), 1)
 
     def test_e1_eq1_viram_versoes_publicadas_com_procedencia(self):
         codigos = [
@@ -225,8 +231,18 @@ class CartasTest(unittest.TestCase):
                 definicao = importada.json()
                 self.assertEqual(definicao["tipo"], tipo)
                 self.assertEqual(definicao["procedencia_rascunho"]["formato"], formato)
+                if tipo == "item":
+                    # Código antigo não traz dimensão: publicar exige o formato na grade.
+                    sem_formato = self.as_("mestre").post(
+                        f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
+                    self.assertEqual(sem_formato.status_code, 422, sem_formato.text)
+                    conteudo = {**definicao["rascunho"], "formato": {"subtipo": "duas_maos", "largura": 1, "altura": 4}}
+                    salvo = self.as_("mestre").put(f"/mesas/mesa/cartas/{definicao['id']}/rascunho", json={
+                        "rascunho": conteudo, "versao_esperada": definicao["versao"]})
+                    self.assertEqual(salvo.status_code, 200, salvo.text)
+                    definicao = salvo.json()
                 publicada = self.as_("mestre").post(
-                    f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
+                    f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": definicao["versao"]})
                 self.assertEqual(publicada.status_code, 201, publicada.text)
                 self.assertEqual(publicada.json()["numero"], 1)
                 self.assertEqual(publicada.json()["procedencia"]["formato"], formato)
@@ -239,6 +255,43 @@ class CartasTest(unittest.TestCase):
             self.assertEqual(session.scalar(select(func.count()).select_from(CartaDefinicaoRegistro)), antes)
 
     # ------------------------------------------------------------- 9.4
+
+    def test_item_concedido_chega_com_o_formato_da_grade(self):
+        mochila = self.publicar("item", {
+            "titulo": "Mochila de viagem", "texto": "Mais espaço.", "item_tipo": "outro",
+            "formato": {"subtipo": "mochila", "largura": 2, "altura": 2,
+                        "mochila": {"linhas": 1, "requisito_forca": 2}, "icone_grade": "mesas/mesa/mesa/mochila.png"},
+        })
+        self.assertEqual(self.conceder(mochila["id"]).status_code, 201)
+        with Session(self.engine) as session:
+            item = session.scalar(select(ItemInventarioRegistro).where(ItemInventarioRegistro.nome == "Mochila de viagem"))
+            self.assertEqual((item.tipo, item.subtipo, item.largura, item.altura, item.coluna), ("outro", "mochila", 2, 2, None))
+            self.assertEqual(item.dados["ampliacao"], {"linhas": 1, "colunas": 0})
+            self.assertEqual((item.dados["requisito_forca"], item.dados["icone_grade"]), (2, "mesas/mesa/mesa/mochila.png"))
+
+    def test_formato_incoerente_ou_ausente_impede_publicar(self):
+        invalidos = {
+            "mãos em arma": {"subtipo": "uma_mao", "largura": 1, "altura": 3, "maos": 1},
+            "mochila sem ampliação": {"subtipo": "mochila", "largura": 2, "altura": 2},
+            "moedas como item": {"subtipo": "moedas", "largura": 1, "altura": 1},
+            "largura zero": {"subtipo": "outro", "largura": 0, "altura": 1},
+            "ícone fora da mesa": {"subtipo": "uma_mao", "largura": 1, "altura": 3, "icone_grade": "mesas/outra/mesa/x.png"},
+        }
+        for nome, formato in invalidos.items():
+            with self.subTest(nome):
+                definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={
+                    "tipo": "item", "rascunho": {**ESPADA, "formato": formato}}).json()
+                resposta = self.client.post(f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
+                self.assertEqual(resposta.status_code, 422, resposta.text)
+        sem_formato = {k: v for k, v in ESPADA.items() if k != "formato"}
+        definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={"tipo": "item", "rascunho": sem_formato}).json()
+        resposta = self.client.post(f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
+        self.assertEqual(resposta.status_code, 422)
+        self.assertIn("dimensão", resposta.text)
+        armadura_como_arma = {**ESPADA, "item_tipo": "armadura"}
+        definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={"tipo": "item", "rascunho": armadura_como_arma}).json()
+        resposta = self.client.post(f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
+        self.assertEqual(resposta.status_code, 422)
 
     def test_concessao_direta_por_tipo_e_excecao(self):
         bola, espada, bencao = self.publicar("magia", BOLA), self.publicar("item", ESPADA), self.publicar("efeito", BENCAO)

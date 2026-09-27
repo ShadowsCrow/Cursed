@@ -74,10 +74,11 @@ class ApiCharacterPoliciesTest(unittest.TestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["personagem_id"]
 
-    def update(self, character_id, *, name="Lia Nova", level=None, version=0):
-        ficha = {"personagem": {"nome": name}}
-        if level is not None:
-            ficha["personagem"]["nivel"] = level
+    def update(self, character_id, *, name="Lia Nova", age=None, version=0):
+        # O nível (1 na criação) é do Narrador; a ficha inteira é reenviada com ele intacto.
+        ficha = {"personagem": {"nome": name, "nivel": 1}}
+        if age is not None:
+            ficha["personagem"]["idade"] = age
         return self.client.put(
             f"/mesas/mesa-1/personagens/{character_id}/ficha",
             json={
@@ -147,10 +148,10 @@ class ApiCharacterPoliciesTest(unittest.TestCase):
         )
 
     def test_locked_approval_rejection_and_stale_decision(self):
-        self.set_policy(blocked=["personagem.nivel"], approval=["personagem.nome"])
+        self.set_policy(blocked=["personagem.idade"], approval=["personagem.nome"])
         self.actor = "jogador"
         character_id = self.create_character()
-        self.assertEqual(self.update(character_id, level=2).status_code, 403)
+        self.assertEqual(self.update(character_id, age=20).status_code, 403)
         path = f"/mesas/mesa-1/personagens/{character_id}/ficha"
         self.assertEqual(self.client.get(path).json()["versao"], 0)
         pending = self.update(character_id)

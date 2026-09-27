@@ -8,6 +8,7 @@ import { App } from "./app/App";
 import { DevApp } from "./app/DevApp";
 import { ComponentCatalog } from "./app/ComponentCatalog";
 import { PreviewApp } from "./app/PreviewApp";
+import { InventoryPrototype } from "./app/inventory/InventoryPrototype";
 import { ErrorBoundary } from "./app/ErrorBoundary";
 import "./style.css";
 import "./ui/primitives/primitives.css";
@@ -28,6 +29,7 @@ if (window.location.pathname.startsWith("/preview")) {
         <BrowserRouter>
           <Routes>
             <Route path="/preview/componentes" element={<ComponentCatalog />} />
+            <Route path="/preview/inventario" element={<InventoryPrototype />} />
             <Route path="*" element={<PreviewApp />} />
           </Routes>
         </BrowserRouter>

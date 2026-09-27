@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, perfis
+from cursed_platform import auditoria, corpos, perfis
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     AceitarConviteRequest, ConviteCriado, CriarConviteRequest,
@@ -56,6 +56,7 @@ def criar_mesa(
     session.flush()
     session.add(MembroRegistro(mesa_id=mesa_id, usuario_id=ator.usuario_id, papel="narrador"))
     session.flush()
+    corpos.garantir(session, mesa_id)
     auditoria.registrar(
         session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="mesa.criada",
         relevancia="organizacional", resumo=f"Mesa criada: {nome}"[:500], correlacao_id=correlacao,

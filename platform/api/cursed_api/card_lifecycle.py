@@ -72,6 +72,7 @@ def _instancia_resumo(session: Session, instancia: CartaPersonagemRegistro, narr
         origem=instancia.origem, excecao_aprendizado=instancia.excecao_aprendizado, item_id=instancia.item_id,
         efeito_id=instancia.efeito_id, adquirida_em=instancia.adquirida_em, carta=_visivel(versao),
         versao_mais_recente=definicao.versao_publicada if narrador and definicao is not None else None,
+        concedida_por=instancia.concedida_por,
     )
 
 

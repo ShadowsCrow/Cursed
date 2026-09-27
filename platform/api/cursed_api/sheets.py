@@ -5,20 +5,26 @@ from __future__ import annotations
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria
+from cursed_platform import auditoria, catalogos
 from cursed_platform.authorization import Acao, Autorizador
-from cursed_platform.contracts import AtualizarFichaComando, FichaContrato, PedidoAlteracaoResumo
+from cursed_platform.contracts import AtualizarFichaComando, FichaContrato, PedidoAlteracaoResumo, ProblemaValidacao
+from cursed_platform.domain import validacao_ficha
 from cursed_platform.domain.ficha import FichaDraft
 from cursed_platform.persistence import MesaRegistro, MembroRegistro, PedidoAlteracaoRegistro, PersonagemRegistro
-from cursed_platform.policies import avaliar_campos, campos_alterados
+from cursed_platform.policies import (
+    avaliar_campos, campos_alterados, campos_exclusivos_do_narrador, normalizar_confirmacao_de_nivel,
+    normalizar_excecao_de_tamanho,
+)
 from cursed_platform.repositories import FichaRepository
 
 from .auth import Ator, get_actor
+from .catalogo_ficha import atualizar_cartas
 from .dependencies import get_session
+from .validacao import ajustar_recursos_atuais, exigir_ficha_valida
 
 
 router = APIRouter(prefix="/mesas/{mesa_id}/personagens/{personagem_id}", tags=["Fichas"])
@@ -29,6 +35,14 @@ class FichaSnapshot(BaseModel):
     personagem_id: str
     versao: int
     ficha: FichaContrato
+    tipo: str = Field(default="personagem", description="personagem, npc ou monstro: só personagens seguem limites e catálogo.")
+    avisos: list[ProblemaValidacao] = Field(
+        default_factory=list, description="Valores fora das regras ou do catálogo, mantidos até o Narrador corrigir.")
+
+
+def avisos_da_ficha(ficha: dict) -> list[ProblemaValidacao]:
+    return [ProblemaValidacao(campo=a.caminho, mensagem=a.mensagem)
+            for a in validacao_ficha.verificar(ficha, catalogos.obter())]
 
 
 def _consultar_autorizado(
@@ -70,6 +84,8 @@ def ler_ficha(
         personagem_id=personagem_id,
         versao=personagem.versao,
         ficha=FichaContrato.model_validate(personagem.ficha),
+        tipo=personagem.tipo,
+        avisos=avisos_da_ficha(personagem.ficha or {}),
     )
 
 
@@ -97,6 +113,8 @@ def gravar_ficha(
     membro = session.get(MembroRegistro, (mesa_id, ator.usuario_id))
     assert mesa is not None and membro is not None
     anterior = FichaDraft.de_payload(personagem.ficha).para_payload()
+    normalizar_excecao_de_tamanho(anterior, payload)
+    normalizar_confirmacao_de_nivel(anterior, payload)
     alterados = campos_alterados(anterior, payload)
     if not alterados:
         # Confirmação sem diferença não é uma alteração: sem nova versão nem evento.
@@ -104,6 +122,16 @@ def gravar_ficha(
             mesa_id=mesa_id, personagem_id=personagem_id, versao=personagem.versao,
             ficha=FichaContrato.model_validate(anterior),
         )
+    if membro.papel == "jogador":
+        exclusivos = campos_exclusivos_do_narrador(anterior, payload)
+        if exclusivos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Somente o Narrador altera: {', '.join(exclusivos)}.",
+            )
+    exigir_ficha_valida(anterior, payload, tipo=personagem.tipo)
+    # O limite do atual entra na mesma gravação e, portanto, no mesmo evento de auditoria.
+    ajustar_recursos_atuais(payload, novo=False)
     if membro.papel == "jogador":
         politica = avaliar_campos(
             alterados,
@@ -155,10 +183,13 @@ def gravar_ficha(
         resumo=auditoria.resumo_mudancas(auditoria.nome_personagem(personagem), alteracoes),
         mudancas=alteracoes, correlacao_id=comando.id,
     )
+    atualizar_cartas(session, personagem, anterior, payload, ator_id=ator.usuario_id, correlacao_id=comando.id)
     session.commit()
     return FichaSnapshot(
         mesa_id=mesa_id,
         personagem_id=personagem_id,
         versao=comando.versao_esperada + 1,
         ficha=FichaContrato.model_validate(payload),
+        tipo=personagem.tipo,
+        avisos=avisos_da_ficha(payload),
     )

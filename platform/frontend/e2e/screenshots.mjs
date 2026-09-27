@@ -37,20 +37,18 @@ export async function semear() {
   }
   await chamar("narrador", "PUT", `/mesas/${m}/politicas`, {
     permitir_criacao_propria: true, permitir_edicao_propria: true, permitir_exclusao_propria: false,
-    campos_bloqueados: [], campos_exigem_aprovacao: ["personagem.nivel"],
+    campos_bloqueados: [], campos_exigem_aprovacao: ["personagem.idade"],
   });
   const lia = (await chamar("jogador-1", "POST", `/mesas/${m}/personagens`, { ficha: {
-    personagem: { nome: "Lia Andarilha", raca: "Elfa", classe: "Feiticeira", arquetipo: "Arcano", idade: 112, nivel: 3,
+    personagem: { nome: "Lia Andarilha", raca: "Elfo", classe: "Feiticeiro", arquetipo: "Arcano", idade: 112, sexo: "Feminino",
       habilidades: [{ nome: "Rajada de Energia", tipo: "Ativa", dano: "1d10" }] },
     personalidade: { alinhamento: "Caótico | Bom", pecado: "Orgulho", meu_lema: "A magia encontra uma saída." },
     atributos: { valores: { "Força": 1, Destreza: 3, Vigor: 2, Carisma: 2, "Manipulação": 1, Proposito: 3, "Percepção": 2, "Inteligência": 4, "Raciocínio": 3 }, ajustes: { "Inteligência": 1 } },
     pericias: { valores: { Arcanismo: 4, Furtividade: 2, Esquiva: 2, "Investigação": 3, Ocultismo: 3 }, ajustes: { Arcanismo: 1 } },
-    recursos: { pv: { atual: 9, maximo: 14, escala: 8 }, pp: { atual: 3, maximo: 10, escala: 6 } },
     desgaste: { exaustao: 9, estresse: 5 },
   } })).personagem_id;
   const bram = (await chamar("jogador-2", "POST", `/mesas/${m}/personagens`, { ficha: {
-    personagem: { nome: "Bram Ferro-Velho", raca: "Anão", classe: "Sentinela" },
-    recursos: { pv: { atual: 18, maximo: 18, escala: 10 }, pp: { atual: 4, maximo: 6, escala: 4 } },
+    personagem: { nome: "Bram Ferro-Velho", raca: "Anão", classe: "Especialista de Combate" },
   } })).personagem_id;
 
   const magias = [];
@@ -65,7 +63,8 @@ export async function semear() {
       ...(custos[0] === null ? { custo_legado: "2 PP por cena" } : {}) }));
   }
   const espada = await publicar(m, "item", { titulo: "Lâmina Rúnica", texto: "Aço antigo gravado com runas que brilham no escuro.",
-    item_tipo: "arma", dados: { dano: "1d8", peso: 2 }, efeitos: [{ nome: "Runas despertas", descricao: "+1 em Arcanismo enquanto empunhada.",
+    item_tipo: "arma", dados: { dano: "1d8", peso: 2 }, formato: { subtipo: "uma_mao", largura: 1, altura: 3 },
+    efeitos: [{ nome: "Runas despertas", descricao: "+1 em Arcanismo enquanto empunhada.",
       modificadores: [{ alvo: "pericia:arcanismo", valor: 1 }] }] });
   await publicar(m, "efeito", { titulo: "Abençoado", texto: "+1 em testes de Vontade.", duracao_rodadas: 3 });
 
@@ -77,10 +76,17 @@ export async function semear() {
     versao_ids: magias.map((v) => v.id), personagem_ids: [lia, bram], min_escolhas: 2, max_escolhas: 2, expira_em: null });
   await chamar("narrador", "POST", `/mesas/${m}/entidades`, { tipo: "npc", visibilidade: "narrador",
     revelacao: { nome_publico: "Figura encapuzada", imagem: false }, ficha: { personagem: { nome: "Rainha Velada" } } });
+  // O Narrador sobe Lia ao nível 3 e registra o PV gasto; o jogador pede para mudar a idade (exige aprovação).
+  const doNarrador = await chamar("narrador", "GET", `/mesas/${m}/personagens/${lia}/ficha`);
+  await chamar("narrador", "PUT", `/mesas/${m}/personagens/${lia}/ficha`, {
+    id: "cmd-nivel", mesa_id: m, personagem_id: lia, ator_id: "narrador", versao_esperada: doNarrador.versao,
+    ficha: { ...doNarrador.ficha, personagem: { ...doNarrador.ficha.personagem, nivel: 3 },
+      recursos: { ...doNarrador.ficha.recursos, pv: { atual: 9 }, pp: { atual: 3 } } },
+  });
   const ficha = await chamar("jogador-1", "GET", `/mesas/${m}/personagens/${lia}/ficha`);
   await chamar("jogador-1", "PUT", `/mesas/${m}/personagens/${lia}/ficha`, {
-    id: "cmd-nivel", mesa_id: m, personagem_id: lia, ator_id: "jogador-1", versao_esperada: ficha.versao,
-    ficha: { ...ficha.ficha, personagem: { ...ficha.ficha.personagem, nivel: 4 } },
+    id: "cmd-idade", mesa_id: m, personagem_id: lia, ator_id: "jogador-1", versao_esperada: ficha.versao,
+    ficha: { ...ficha.ficha, personagem: { ...ficha.ficha.personagem, idade: 113 } },
   });
   return { m, lia, bram };
 }
@@ -111,6 +117,21 @@ const TELAS = ({ m, lia }) => [
     await p.getByText("Ver detalhes").first().click();
   }],
   ["jogador-1", "17-jogador-efeitos", `/mesas/${m}/personagens/${lia}?secao=efeitos`],
+  ["narrador", "18-ficha-personalidade", `/mesas/${m}/personagens/${lia}?secao=personalidade`],
+  ["narrador", "19-ficha-status", `/mesas/${m}/personagens/${lia}?secao=status`],
+  ["narrador", "20-troca-de-classe", `/mesas/${m}/personagens/${lia}`, async (p) => {
+    // O popover de edição abre por hover ou foco (um clique logo depois do hover o fecha).
+    await p.getByRole("button", { name: "Editar Classe" }).focus();
+    await p.getByRole("group", { name: "Editar Classe" }).getByRole("combobox").selectOption("Druida");
+  }],
+  ["jogador-1", "21-jogador-aplicar-condicao", `/mesas/${m}/personagens/${lia}?secao=efeitos`, async (p) => {
+    await p.getByRole("button", { name: /Aplicar condição/ }).click();
+    await p.getByRole("radio", { name: /Cego/ }).check();
+  }],
+  ["jogador-1", "22-jogador-informacoes", `/mesas/${m}/personagens/${lia}`],
+  ["narrador", "23-ajuste-pv", `/mesas/${m}/personagens/${lia}`, async (p) => {
+    await p.getByRole("button", { name: "Ajustar PV/PP" }).click();
+  }],
 ];
 
 const VIEWPORTS = { desktop: { width: 1440, height: 900 }, celular: { width: 390, height: 844 } };

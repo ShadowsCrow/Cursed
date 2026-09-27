@@ -2,11 +2,12 @@
 
 Módulo isolado porque a revisão de Descanso continua aberta: uma mudança de
 regra altera apenas este arquivo e seus testes. O cálculo é puro — recebe a ficha
-e devolve o resultado previsto — e nunca inventa valores ausentes: sem Escala de
-PV/PP registrada, o recurso não é recuperado e a ausência é informada.
+e devolve o resultado previsto — e nunca inventa valores ausentes: com Escala de
+PV/PP não calculável, o recurso não é recuperado e o motivo é informado.
 
-A ficha usa `recursos.pv|pp = {atual, maximo, escala}` e
-`desgaste = {exaustao, estresse}`.
+A ficha guarda só o atual (`recursos.pv|pp = {atual}`) e `desgaste = {exaustao, estresse}`.
+Máximos e Escalas vêm do cálculo de `domain.recursos` (classe, atributos e nível); valores
+`maximo`/`escala` antigos gravados na ficha são ignorados.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import math
 from typing import Any, Mapping
 
 from cursed_platform.domain.desgaste import MAXIMOS, normalizar_desgaste, obter_faixa
+from cursed_platform.domain.recursos import Recursos
 
 
 # Conforto → (fração da Escala de PV, fração da Escala de PP, Estresse reduzido, Exaustão reduzida)
@@ -116,10 +118,14 @@ def calcular(
     ficha: Mapping[str, Any],
     parametros: ParametrosDescanso,
     *,
+    calculado: Recursos,
     foco: str | None = None,
     ajustes: Mapping[str, int] | None = None,
 ) -> ResultadoDescanso:
-    """Resultado previsto para um personagem. `ajustes` substitui a quantidade calculada."""
+    """Resultado previsto para um personagem. `ajustes` substitui a quantidade calculada.
+
+    `calculado` traz os máximos e as Escalas da ficha (ver `domain.recursos.calcular`).
+    """
     parametros.validar()
     if foco is not None:
         if foco not in FOCOS:
@@ -136,21 +142,29 @@ def calcular(
     recursos = []
     for recurso in RECURSOS:
         dados = recursos_ficha.get(recurso) if isinstance(recursos_ficha.get(recurso), Mapping) else {}
-        atual, maximo, escala = (_inteiro(dados.get(chave)) for chave in ("atual", "maximo", "escala"))
+        atual = _inteiro(dados.get("atual"))
+        maximo, escala = calculado.maximo(recurso), calculado.escala(recurso)
         rotulo = recurso.upper()
-        calculado = _recuperacao_regra(parametros, escala, recurso, foco) if escala and escala > 0 else None
-        pedido = ajustes.get(recurso, calculado)
-        if atual is None or maximo is None:
-            aviso = f"{rotulo} atual ou máximo não registrado; nada foi recuperado."
-            recursos.append(ResultadoRecurso(recurso, atual, maximo, calculado, 0, atual, aviso))
+        recuperacao = _recuperacao_regra(parametros, escala, recurso, foco) if escala and escala > 0 else None
+        pedido = ajustes.get(recurso, recuperacao)
+        if maximo is None:
+            motivo = calculado[f"{recurso}_maximo"].motivo
+            aviso = f"{rotulo} máximo não calculável ({motivo}); nada foi recuperado automaticamente."
+            recursos.append(ResultadoRecurso(recurso, atual, None, recuperacao, 0, atual, aviso))
+            avisos.append(aviso)
+            continue
+        if atual is None:
+            aviso = f"{rotulo} atual não registrado; nada foi recuperado."
+            recursos.append(ResultadoRecurso(recurso, None, maximo, recuperacao, 0, None, aviso))
             avisos.append(aviso)
             continue
         aviso = None
-        if calculado is None and recurso not in ajustes:
-            aviso = f"Escala de {rotulo} não registrada; informe a recuperação manualmente se couber."
+        if recuperacao is None and recurso not in ajustes:
+            motivo = calculado[f"escala_{recurso}"].motivo or "Escala não positiva"
+            aviso = f"Escala de {rotulo} não calculável ({motivo}); informe a recuperação manualmente se couber."
             avisos.append(aviso)
         aplicado = max(0, min(pedido or 0, maximo - atual))
-        recursos.append(ResultadoRecurso(recurso, atual, maximo, calculado, aplicado, atual + aplicado, aviso))
+        recursos.append(ResultadoRecurso(recurso, atual, maximo, recuperacao, aplicado, atual + aplicado, aviso))
 
     desgaste = normalizar_desgaste(ficha.get("desgaste"))
     trilhas = []

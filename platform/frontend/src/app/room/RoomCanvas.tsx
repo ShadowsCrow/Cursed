@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Application, Container, Graphics, Rectangle, Text } from "pixi.js";
+import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture } from "pixi.js";
 import type { components } from "../../api/generated/schema";
 import { pontoFixoNoZoom, proximoZoom } from "./viewport";
 
@@ -8,12 +8,19 @@ type Sinal = { x: number; y: number };
 type ArrasteRemoto = Sinal & { tokenId: string };
 const CELULA = 48;
 
-function desenharCena(mundo: Container, cena: Cena, selecionar: (id: string) => void) {
+function desenharCena(mundo: Container, cena: Cena, selecionar: (id: string) => void, mapa: Texture | null) {
   const pecas = new Map<string, Container>();
   for (const filho of mundo.removeChildren()) filho.destroy({ children: true });
   const largura = cena.colunas * CELULA;
   const altura = cena.linhas * CELULA;
   mundo.addChild(new Graphics().rect(0, 0, largura, altura).fill(0x20202d));
+  if (mapa) {
+    // O mapa enviado pelo Narrador cobre a área da grade; as linhas continuam por cima.
+    const fundo = new Sprite(mapa);
+    fundo.width = largura;
+    fundo.height = altura;
+    mundo.addChild(fundo);
+  }
   const grade = new Graphics();
   for (let coluna = 0; coluna <= cena.colunas; coluna += 1) {
     grade.moveTo(coluna * CELULA, 0).lineTo(coluna * CELULA, altura);
@@ -69,8 +76,10 @@ function desenharSinais(marcadores: Container, cursores: Sinal[], pings: Sinal[]
 
 /** Canvas visual da cena. A lista de tokens no DOM oferece seleção por teclado e toque. */
 export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel,
-  cursores = [], pings = [], arrastes = [] }: {
+  cursores = [], pings = [], arrastes = [], mapaUrl }: {
   cena: Cena;
+  /** Imagem do mapa da cena (URL de dados), quando houver. */
+  mapaUrl?: string;
   onSelectToken: (id: string) => void;
   onCursor?: (x: number, y: number) => void;
   onPing?: (x: number, y: number) => void;
@@ -88,6 +97,18 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   const sinais = useRef<Container | null>(null);
   const [pronto, setPronto] = useState(false);
   const [escala, setEscala] = useState(1);
+  // Textura do mapa guardada junto da URL de origem: trocar ou remover o mapa invalida a anterior.
+  const [carregado, setCarregado] = useState<{ url: string; textura: Texture } | null>(null);
+  const mapa = mapaUrl && carregado?.url === mapaUrl ? carregado.textura : null;
+
+  useEffect(() => {
+    if (!mapaUrl) return undefined;
+    let cancelado = false;
+    const imagem = new Image();
+    imagem.onload = () => { if (!cancelado) setCarregado({ url: mapaUrl, textura: Texture.from(imagem) }); };
+    imagem.src = mapaUrl;
+    return () => { cancelado = true; };
+  }, [mapaUrl]);
 
   useEffect(() => {
     const elemento = mount.current;
@@ -117,11 +138,11 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
 
   useEffect(() => {
     if (pronto && mundo.current) {
-      const desenhada = desenharCena(mundo.current, cena, onSelectToken);
+      const desenhada = desenharCena(mundo.current, cena, onSelectToken, mapa);
       pecas.current = desenhada.pecas;
       sinais.current = desenhada.sinais;
     }
-  }, [pronto, cena, onSelectToken]);
+  }, [pronto, cena, onSelectToken, mapa]);
 
   useEffect(() => {
     if (pronto && sinais.current) desenharSinais(sinais.current, cursores, pings, arrastes);

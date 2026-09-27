@@ -1,0 +1,281 @@
+/* Grade de carga (mudança carga-por-espacos). Célula cabe 8 colunas num celular de 400 px. */
+.grade-inventario {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.grade-inventario__resumo {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--muted);
+}
+
+.grade-inventario__resumo strong { color: var(--text); }
+.grade-inventario__ampliacoes { color: var(--violet); font-size: .85rem; }
+
+.grade-inventario__estado {
+  border: 1px solid var(--teal);
+  border-radius: 999px;
+  color: var(--teal);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: .1rem .6rem;
+  text-transform: uppercase;
+}
+
+.grade-inventario__estado--sobrecarga { border-color: var(--red); color: var(--red); }
+
+.grade-inventario__regra-botao {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font: italic 700 .8rem/1 Georgia, serif;
+  cursor: help;
+}
+
+.grade-inventario__regra-botao:hover,
+.grade-inventario__regra-botao:focus-visible { border-color: var(--gold); color: var(--gold); }
+
+/* A dica se ancora no cabeçalho (não no botão) para nunca sair da tela, e abre para baixo. */
+.grade-inventario__regra,
+.grade-inventario__regra .tooltip-wrapper { position: static; }
+.grade-inventario__regra .tooltip-surface {
+  bottom: auto;
+  top: calc(100% + .5rem);
+  left: 0;
+  transform: none;
+  max-width: min(22rem, 100%);
+  white-space: pre-line;
+  line-height: 1.45;
+}
+
+.grade-inventario__area {
+  --celula: clamp(2.3rem, calc((100vw - 3rem) / var(--colunas)), 3.75rem);
+  position: relative;
+  width: calc(var(--colunas) * var(--celula));
+  height: calc(var(--linhas) * var(--celula));
+  touch-action: none;
+  user-select: none;
+}
+
+.grade-inventario__celulas {
+  display: grid;
+  grid-template-columns: repeat(var(--colunas), var(--celula));
+  grid-auto-rows: var(--celula);
+  position: absolute;
+  inset: 0;
+}
+
+.grade-inventario__celula {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.grade-inventario__celula--vermelha {
+  background: repeating-linear-gradient(135deg, var(--red-soft) 0 6px, #3b2328 6px 12px);
+  border-color: #6b3a40;
+}
+
+.grade-inventario__item,
+.grade-inventario__previa {
+  position: absolute;
+  left: calc(var(--c) * var(--celula));
+  top: calc(var(--l) * var(--celula));
+  width: calc(var(--w) * var(--celula));
+  height: calc(var(--h) * var(--celula));
+}
+
+.grade-inventario__item {
+  align-items: center;
+  background: linear-gradient(160deg, var(--surface-raised), var(--surface-soft));
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 2px;
+  transition: box-shadow var(--motion-fast), transform var(--motion-fast);
+  touch-action: none;
+}
+
+.grade-inventario__item:hover { box-shadow: 0 0 0 1px var(--gold-soft); }
+.grade-inventario__item--equipado { border-color: var(--gold); box-shadow: inset 0 0 0 1px #e4bd7855, 0 0 10px #e4bd7833; }
+.grade-inventario__item--sobrecarga { outline: 2px dashed var(--red); outline-offset: -5px; }
+.grade-inventario__item--selecionado { box-shadow: var(--focus-ring); }
+.grade-inventario__item--movendo { opacity: .45; }
+
+.grade-inventario__nome {
+  font-size: .72rem;
+  font-weight: 600;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.grade-inventario__icone {
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  width: 100%;
+}
+
+.grade-inventario__icone--girado {
+  height: calc(var(--h0) * var(--celula) - 8px);
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  width: calc(var(--w0) * var(--celula) - 8px);
+}
+
+.grade-inventario__marca {
+  background: var(--gold);
+  border-radius: 999px;
+  color: #1a1408;
+  font-size: .6rem;
+  font-weight: 800;
+  height: 1rem;
+  line-height: 1rem;
+  position: absolute;
+  right: 3px;
+  text-align: center;
+  top: 3px;
+  width: 1rem;
+}
+
+.grade-inventario__previa {
+  border: 2px dashed var(--teal);
+  border-radius: var(--radius-sm);
+  background: #80c8b822;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.grade-inventario__previa--invalida { border-color: var(--red); background: #df887d22; }
+
+.grade-inventario__anuncio { color: var(--muted); margin: 0; min-height: 1.4em; }
+
+.grade-inventario__acoes {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.grade-inventario__detalhe, .grade-inventario__dica { color: var(--muted); }
+.grade-inventario__dica { flex-basis: 100%; font-size: .8rem; margin: 0; }
+
+.grade-inventario__bandeja h3 { font-size: .9rem; margin: 0 0 var(--space-2); }
+.grade-inventario__bandeja ul { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .grade-inventario__item { transition: none; }
+}
+
+/* Protótipo de calibração */
+.prototipo-inventario { margin: 0 auto; max-width: 80rem; padding: var(--space-6) var(--space-4) var(--space-12); }
+.prototipo-inventario .page-intro { display: grid; gap: var(--space-2); margin-bottom: var(--space-6); }
+.prototipo-inventario .page-intro h1 { margin: 0; }
+.prototipo-inventario__layout { display: grid; gap: var(--space-6); grid-template-columns: minmax(16rem, 22rem) 1fr; align-items: start; }
+.prototipo-inventario__controles { display: grid; gap: var(--space-4); }
+.prototipo-inventario__controles fieldset { border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: var(--space-3); margin: 0; padding: var(--space-3) var(--space-4) var(--space-4); }
+.prototipo-inventario__controles legend { color: var(--gold); font-size: .75rem; font-weight: 800; letter-spacing: .12em; padding: 0 var(--space-2); text-transform: uppercase; }
+.prototipo-inventario__controles label { color: var(--muted); display: grid; font-size: .85rem; gap: var(--space-1); }
+.prototipo-inventario__controles input, .prototipo-inventario__controles select { background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); min-height: 2.5rem; padding: .35rem .55rem; }
+.prototipo-inventario__check { align-items: center; display: flex !important; gap: var(--space-2) !important; }
+.prototipo-inventario__check input { min-height: auto; }
+.prototipo-inventario__linha { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); }
+.prototipo-inventario__botoes { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.prototipo-inventario__numeros { background: var(--surface-raised); border-radius: var(--radius-sm); font-size: .8rem; overflow-x: auto; padding: var(--space-3); }
+.prototipo-inventario__aviso { color: var(--red); margin: 0 0 var(--space-3); }
+.prototipo-inventario__grade { min-width: 0; }
+@media (max-width: 760px) {
+  .prototipo-inventario__layout { grid-template-columns: 1fr; }
+  .prototipo-inventario__grade { order: -1; }
+}
+
+/* Grade na ficha */
+.grade-ficha { display: grid; gap: var(--space-4); }
+.grade-ficha__aviso { color: var(--red); margin: 0; }
+.grade-ficha__estado { color: var(--muted); margin: 0; }
+.grade-ficha__sem-dimensao { border: 1px dashed var(--border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+.grade-ficha__sem-dimensao h3 { font-size: .95rem; margin: 0 0 var(--space-2); }
+.grade-ficha__sem-dimensao p { color: var(--muted); margin: 0 0 var(--space-2); }
+.grade-ficha__sem-dimensao ul { margin: 0; padding-left: 1.2rem; }
+.grade-ficha__peso { color: var(--quiet); }
+
+/* Editor de formato do item */
+.formato-item { border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: var(--space-2); margin: 0; padding: var(--space-3) var(--space-4); }
+.formato-item legend { color: var(--gold); font-size: .75rem; font-weight: 800; letter-spacing: .12em; padding: 0 var(--space-2); text-transform: uppercase; }
+.formato-item__linha { align-items: end; display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.formato-item__linha label { display: grid; gap: var(--space-1); }
+.formato-item__dica, .formato-item__falha { color: var(--muted); font-size: .85rem; margin: 0; }
+.formato-item__aviso { color: var(--gold); font-size: .85rem; margin: 0; }
+.formato-item__previa { display: grid; gap: var(--space-2); justify-items: start; margin: var(--space-2) 0 0; }
+.formato-item__previa figcaption { color: var(--muted); font-size: .8rem; }
+.formato-item__pegada {
+  --celula: 2.5rem;
+  align-items: center;
+  background-image: linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+  background-size: var(--celula) var(--celula);
+  border: 2px solid var(--gold-soft);
+  border-radius: var(--radius-sm);
+  display: flex;
+  height: calc(var(--h) * var(--celula));
+  justify-content: center;
+  overflow: hidden;
+  width: calc(var(--w) * var(--celula));
+}
+.formato-item__icone { height: 100%; object-fit: contain; width: 100%; }
+.formato-item__silhueta { color: var(--quiet); font-size: .75rem; font-weight: 600; padding: 2px; text-align: center; }
+
+/* Chão e baús da cena */
+.recipientes { display: grid; gap: var(--space-3); }
+.recipientes__lista { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.recipiente { display: grid; gap: var(--space-2); max-width: 100%; }
+.recipiente h4 { margin: 0; }
+.recipiente small { color: var(--muted); font-weight: 400; }
+.recipiente__area { max-width: min(100%, calc(var(--colunas) * 3rem)); }
+.recipiente__soltos { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+.recipientes__destino, .recipientes__narrador { display: grid; gap: var(--space-3); }
+.recipientes__acoes { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* Trocas entre personagens */
+.trocas { display: grid; gap: var(--space-3); }
+.trocas__lista { display: grid; gap: var(--space-3); list-style: none; margin: 0; padding: 0; }
+.trocas__lista li { display: grid; gap: var(--space-2); }
+.trocas__acoes { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* Moedas */
+.moedas { display: grid; gap: var(--space-3); }
+.moedas__totais { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); margin: 0; }
+.moedas__totais div { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); }
+.moedas__totais dt { color: var(--muted); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+.moedas__totais dd { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.moedas__pilhas { display: grid; gap: var(--space-2); margin: 0; padding-left: 1.2rem; }
+.moedas__pilhas li span { margin-right: var(--space-2); }
+.moedas__pilhas small { color: var(--muted); }
+.moedas__form { border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: var(--space-2); margin: 0; padding: var(--space-3) var(--space-4); }
+.moedas__campos { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.moedas__campos label { display: grid; gap: var(--space-1); }
+.moedas__campos input { width: 6rem; }
+.moedas__acoes { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.grade-inventario__recusa { color: var(--red); flex-basis: 100%; font-weight: 600; margin: 0; }

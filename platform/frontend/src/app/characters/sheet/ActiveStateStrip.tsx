@@ -1,5 +1,5 @@
 import { Popover } from "../../../ui/primitives";
-import type { EfeitoResumo } from "../types";
+import type { ApiClient, EfeitoResumo } from "../types";
 import { EffectDetailIcon } from "./EffectsPanel";
 import type { TrilhaDesgaste } from "./sheetApi";
 
@@ -37,7 +37,9 @@ function Trilha({ trilha }: { trilha: TrilhaDesgaste }) {
  * qualquer seção da ficha, porque são a informação mais urgente durante o jogo.
  * Estados usam texto além da cor; detalhes completos ficam no popover.
  */
-export function ActiveStateStrip({ desgaste, efeitos }: { desgaste: TrilhaDesgaste[] | undefined; efeitos: EfeitoResumo[] | undefined }) {
+export function ActiveStateStrip({ desgaste, efeitos, api, mesaId }: {
+  desgaste: TrilhaDesgaste[] | undefined; efeitos: EfeitoResumo[] | undefined; api?: ApiClient; mesaId?: string;
+}) {
   const ativos = (efeitos ?? []).filter((efeito) => efeito.estado === "ativo");
   const suspensos = (efeitos ?? []).filter((efeito) => efeito.estado === "suspenso").length;
   return (
@@ -51,9 +53,9 @@ export function ActiveStateStrip({ desgaste, efeitos }: { desgaste: TrilhaDesgas
           <span className="active-state__empty">Nenhum</span>
         ) : (
           <ul className="effect-strip">
-            {ativos.map((efeito, indice) => (
+            {ativos.map((efeito) => (
               <li key={efeito.id} className="effect-chip">
-                <EffectDetailIcon efeito={efeito} index={indice} />
+                <EffectDetailIcon efeito={efeito} api={api} mesaId={mesaId} />
                 <span aria-hidden="true">{efeito.nome}</span>
               </li>
             ))}
