@@ -48,7 +48,7 @@
 
 ## 8. Verificação
 
-- [ ] 8.1 Rodar as suítes Python e frontend, lint, typecheck, build, `check:client`, Playwright e o CI, e verificar tudo verde
+- [x] 8.1 Rodar as suítes Python e frontend, lint, typecheck, build, `check:client`, Playwright e o CI, e verificar tudo verde
 - [x] 8.2 Fazer uma passada visual com capturas da grade em desktop e celular (vazia, cheia, em sobrecarga, carregando alguém) e registrar ajustes
 - [x] 8.3 Aplicar a migração no Supabase de testes e verificar RLS e ausência de exposição das tabelas novas
 

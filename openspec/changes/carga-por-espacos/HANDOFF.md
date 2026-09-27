@@ -1,6 +1,6 @@
 # Passagem de trabalho — carga-por-espacos
 
-Estado em 2026-09-27. Progresso no `tasks.md`: 27/30. **Nada foi commitado** (inclui `calcular-valores-da-ficha`, só com planejamento, e o arquivamento de `migrar-para-plataforma-rpg-colaborativa`). Primeiro passo ao retomar: conferir `git status` e commitar.
+Estado em 2026-09-27. Progresso no `tasks.md`: 29/30 (atualizado em 2026-09-27). Commitado e enviado em `feature/retrato-refinamento`, junto com `calcular-valores-da-ficha` e o arquivamento de `migrar-para-plataforma-rpg-colaborativa`. Falta só a validação de mesa (9.2).
 
 ## Pronto e verificado
 
@@ -26,7 +26,7 @@ Estado em 2026-09-27. Progresso no `tasks.md`: 27/30. **Nada foi commitado** (in
 ## Pendências e decisões do usuário
 
 - **4.6 (concluída em 2026-09-27 com `calcular-valores-da-ficha`):** a grade lê o Tamanho do catálogo de raças da plataforma; a exceção do Narrador registra a raça em `personagem.tamanho_raca`, a troca de raça exige limpar ou reconfirmar (422 na troca silenciosa) e a migração `completar_fichas` limpa Tamanho igual ao da raça e sinaliza o divergente. Testes: `test_api_validacao_ficha` (grade e troca de raça) e `test_completar_fichas`.
-- **8.1:** suítes locais verdes; o CI roda quando a mudança terminar e for enviada (decisão do usuário: commit e push ao fim da mudança).
+- **8.1:** concluída; enviado em `feature/retrato-refinamento` junto com `calcular-valores-da-ficha`, CI verde na execução 36305495934 (2026-09-27).
 - **9.2:** validação de mesa.
 
 ## Cuidados

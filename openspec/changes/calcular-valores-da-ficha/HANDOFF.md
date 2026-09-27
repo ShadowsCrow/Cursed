@@ -1,10 +1,10 @@
 # Passagem de trabalho — calcular-valores-da-ficha
 
-Estado em 2026-09-27. Progresso no `tasks.md`: **36/40**. **Nada foi commitado** (decisão do usuário: commit e push ao fim da mudança). As mudanças de `carga-por-espacos` estão no mesmo checkout, também sem commit.
+Estado em 2026-09-27. Progresso no `tasks.md`: **38/40**. Commitado e enviado em `feature/retrato-refinamento` (commits `a69bce2` e seguinte), junto com `carga-por-espacos`; CI verde na execução 36305495934.
 
 ## Pendências (dependem de ação externa)
 
-- **3.2 e 9.1:** falta só a execução verde no GitHub Actions, que roda no push. Local: `pip install -r` limpo com `python-multipart`, 366 testes Python com PostgreSQL, 344 no Vitest, 6 no Playwright, typecheck, lint, build, `check:client` e `export_openapi --check`, tudo verde.
+- **3.2 e 9.1:** concluídas; CI verde em 2026-09-27. O primeiro push falhou porque o hash de procedência dos catálogos dependia do fim de linha (CRLF no Windows, LF no CI); agora `catalogos.hash_de_texto` ignora essa diferença.
 - **9.3:** aplicar a `0017` no projeto Supabase de testes e conferir RLS e `REVOKE` em `effect_icons`. Precisa de autorização do usuário.
 - **10.2:** sessão de mesa com o roteiro `docs/validation/roteiro-mesa-ficha-completa.md`.
 

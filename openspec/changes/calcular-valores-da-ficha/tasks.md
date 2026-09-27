@@ -15,7 +15,7 @@
 ## 3. Banco de dados
 
 - [x] 3.1 Criar a migração Alembic `0017_ficha_completa` (a 0016 ficou com `carga-por-espacos`) (`card_definitions.origem_sistema` com índice único por mesa, `character_cards.concedida_por`, tabela `effect_icons` com RLS e REVOKE no PostgreSQL) e verificar upgrade e downgrade em SQLite e no PostgreSQL descartável, incluindo o teste de políticas privadas
-- [ ] 3.2 Declarar `python-multipart` em `cursed_platform/requirements.txt` e verificar que `pip install -r` num ambiente limpo e o CI passam
+- [x] 3.2 Declarar `python-multipart` em `cursed_platform/requirements.txt` e verificar que `pip install -r` num ambiente limpo e o CI passam
 
 ## 4. Domínio: cálculo e validação
 
@@ -61,7 +61,7 @@
 
 ## 9. Verificação
 
-- [ ] 9.1 Rodar a suíte Python, os testes do frontend, lint, typecheck, build, `check:client` e Playwright, e verificar a execução verde no GitHub Actions
+- [x] 9.1 Rodar a suíte Python, os testes do frontend, lint, typecheck, build, `check:client` e Playwright, e verificar a execução verde no GitHub Actions
 - [x] 9.2 Fazer uma passada visual com capturas (`npm run capturas`) em desktop e celular das abas Informações, Personalidade, Atributos, Efeitos e do envio de imagem, e registrar problemas encontrados
 - [ ] 9.3 Aplicar a `0017` no projeto Supabase de testes e verificar RLS e ausência de exposição das tabelas novas
 
