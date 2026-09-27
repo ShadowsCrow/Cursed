@@ -63,7 +63,7 @@
 
 - [x] 9.1 Rodar a suíte Python, os testes do frontend, lint, typecheck, build, `check:client` e Playwright, e verificar a execução verde no GitHub Actions
 - [x] 9.2 Fazer uma passada visual com capturas (`npm run capturas`) em desktop e celular das abas Informações, Personalidade, Atributos, Efeitos e do envio de imagem, e registrar problemas encontrados
-- [ ] 9.3 Aplicar a `0017` no projeto Supabase de testes e verificar RLS e ausência de exposição das tabelas novas
+- [x] 9.3 Aplicar a `0017` no projeto Supabase de testes e verificar RLS e ausência de exposição das tabelas novas
 
 ## 10. Validação de mesa
 

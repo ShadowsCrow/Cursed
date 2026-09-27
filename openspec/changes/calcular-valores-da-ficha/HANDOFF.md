@@ -1,11 +1,11 @@
 # Passagem de trabalho — calcular-valores-da-ficha
 
-Estado em 2026-09-27. Progresso no `tasks.md`: **38/40**. Commitado e enviado em `feature/retrato-refinamento` (commits `a69bce2` e seguinte), junto com `carga-por-espacos`; CI verde na execução 36305495934.
+Estado em 2026-09-27. Progresso no `tasks.md`: **39/40**. Commitado e enviado em `feature/retrato-refinamento` (commits `a69bce2` e seguinte), junto com `carga-por-espacos`; CI verde na execução 36305495934.
 
 ## Pendências (dependem de ação externa)
 
 - **3.2 e 9.1:** concluídas; CI verde em 2026-09-27. O primeiro push falhou porque o hash de procedência dos catálogos dependia do fim de linha (CRLF no Windows, LF no CI); agora `catalogos.hash_de_texto` ignora essa diferença.
-- **9.3:** aplicar a `0017` no projeto Supabase de testes e conferir RLS e `REVOKE` em `effect_icons`. Precisa de autorização do usuário.
+- **9.3:** concluída em 2026-09-27. A `0017` foi aplicada no Supabase de testes (`0016` → `0017_ficha_completa`). `effect_icons` tem RLS, nenhuma política e nenhum privilégio para `anon`/`authenticated`; colunas `origem_sistema` e `concedida_por` e índice único criados; leitura como `anon` e `authenticated` negada em `effect_icons`, `card_definitions` e `character_cards`.
 - **10.2:** sessão de mesa com o roteiro `docs/validation/roteiro-mesa-ficha-completa.md`.
 
 ## Decisões de 2026-09-27 (refletidas em proposal, design e specs)
