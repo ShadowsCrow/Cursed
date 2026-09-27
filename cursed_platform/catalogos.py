@@ -413,6 +413,11 @@ class Procedencia:
     copia_alterada: bool
 
 
+def hash_de_texto(conteudo: bytes) -> str:
+    """SHA-256 independente do fim de linha: o mesmo arquivo tem CRLF no Windows e LF no Linux."""
+    return hashlib.sha256(conteudo.replace(b"\r\n", b"\n")).hexdigest()
+
+
 def relatorio_procedencia(diretorio: Path = DIRETORIO, raiz: Path = RAIZ_PROJETO) -> list[Procedencia]:
     """Informa se a origem mudou desde a cópia e se a cópia foi editada. Nunca bloqueia."""
     manifesto = json.loads((diretorio / "manifesto.json").read_text(encoding="utf-8"))
@@ -423,10 +428,10 @@ def relatorio_procedencia(diretorio: Path = DIRETORIO, raiz: Path = RAIZ_PROJETO
         origem_alterada = False
         for caminho, esperado in origens.items():
             atual = raiz / caminho
-            origem_alterada |= not atual.exists() or hashlib.sha256(atual.read_bytes()).hexdigest() != esperado
+            origem_alterada |= not atual.exists() or hash_de_texto(atual.read_bytes()) != esperado
         copia_alterada = False
         if not isinstance(registrado, dict) and not info.get("transformacoes"):
-            copia_alterada = hashlib.sha256((diretorio / arquivo).read_bytes()).hexdigest() != registrado
+            copia_alterada = hash_de_texto((diretorio / arquivo).read_bytes()) != registrado
         relatorio.append(Procedencia(arquivo, info["origem"], origem_alterada, copia_alterada))
     return relatorio
 

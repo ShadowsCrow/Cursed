@@ -1,15 +1,15 @@
 {
-  "descricao": "Procedência dos catálogos do sistema. A partir da cópia, os arquivos deste diretório são a fonte de trabalho; a divergência com a origem é esperada e só aparece no relatório de procedência.",
+  "descricao": "Procedência dos catálogos do sistema. A partir da cópia, os arquivos deste diretório são a fonte de trabalho; a divergência com a origem é esperada e só aparece no relatório de procedência. Os hashes ignoram a diferença entre CRLF e LF.",
   "arquivos": {
     "classes.json": {
       "origem": "app_streamlit/data/catalogs/classes.json",
-      "sha256_origem": "ed3622912cd9fe871f3634b314f64934d9e61a36a2a035ab006804b8417cf6a8",
+      "sha256_origem": "2af56f03af6323c7e8e17180021c40346dd741475eaa6cf1f4fc0c01d5c6cbec",
       "copiado_em": "2026-09-27",
       "transformacoes": []
     },
     "racas.json": {
       "origem": "app_streamlit/data/catalogs/racas.json",
-      "sha256_origem": "910e3bc66786dfd05e578e32d47c34d0a9c1c6a1d94db0edb243f10d806dc299",
+      "sha256_origem": "c107f995b1e06182e240e47075d1c02f0d5fef501d517d6f4cf783c819654c89",
       "copiado_em": "2026-09-27",
       "transformacoes": []
     },
@@ -25,8 +25,8 @@
     "listas_ficha.json": {
       "origem": "app_streamlit/app/sections/info_basica.py e app_streamlit/app/sections/personalidade.py",
       "sha256_origem": {
-        "app_streamlit/app/sections/info_basica.py": "de27e39f723c5ca7cfa9b143346ae5aea53920dd2da79d5804b9da7a67961a30",
-        "app_streamlit/app/sections/personalidade.py": "48c7c6a511dbb0fca5bab522729adf43f9e992787586d78a0f5efa287316fd22"
+        "app_streamlit/app/sections/info_basica.py": "f77e0d67a21f8a07230c388d8b6964401ed42bc93c3644af072916726550718e",
+        "app_streamlit/app/sections/personalidade.py": "fd2e8c4d909aa1282e9470811dd37e5d43f61a35d7cfb6d825502b01eff922a7"
       },
       "copiado_em": "2026-09-27",
       "transformacoes": [

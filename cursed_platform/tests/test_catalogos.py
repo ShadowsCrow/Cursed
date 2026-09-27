@@ -19,7 +19,7 @@ GRUPOS_DAS_REGRAS = {
 
 
 def _sha(caminho: Path) -> str:
-    return hashlib.sha256(caminho.read_bytes()).hexdigest()
+    return catalogos.hash_de_texto(caminho.read_bytes())
 
 
 class ManifestoTest(unittest.TestCase):
