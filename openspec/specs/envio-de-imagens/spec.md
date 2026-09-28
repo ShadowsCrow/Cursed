@@ -9,6 +9,7 @@ Permitir enviar e trocar as imagens da mesa (retrato, itens, efeitos, arte de ca
 ### Requirement: Pontos de envio
 O sistema SHALL permitir enviar ou trocar imagem em:
 - retrato do personagem;
+- ilustração do personagem (imagem de corpo inteiro mostrada no Resumo da ficha), independente do retrato;
 - arte de item do inventário;
 - ícone de grade de item do inventário ou de carta de item, independente da arte;
 - efeito personalizado do personagem;
@@ -25,16 +26,24 @@ Enviar uma nova imagem SHALL substituir a anterior daquele ponto. O sistema SHAL
 - **WHEN** o jogador envia um PNG como retrato do próprio personagem
 - **THEN** o retrato aparece no cabeçalho da ficha para quem pode ler a ficha
 
+#### Scenario: Troca isolada da ilustração
+- **WHEN** o jogador envia uma ilustração para um personagem que já tem retrato
+- **THEN** apenas a ilustração é gravada, e o retrato continua o mesmo
+
 #### Scenario: Narrador envia o mapa da cena
 - **WHEN** o Narrador envia uma imagem como mapa de uma cena
 - **THEN** a sala passa a mostrar o mapa como fundo da grade para os participantes que veem a cena
 
 ### Requirement: Validação no servidor
-O servidor SHALL aceitar somente PNG, JPEG e WEBP cujo conteúdo corresponda ao formato declarado, dentro de um tamanho máximo por tipo de ponto (retrato, arte de item do inventário, ícone de grade de item ou carta, efeito e ícone de efeito: `5 MB`; arte de carta, inclusive carta de item: `8 MB`; mapa: `15 MB`). Imagens recusadas SHALL gerar uma mensagem que diga o motivo, e nada SHALL ser gravado.
+O servidor SHALL aceitar somente PNG, JPEG e WEBP cujo conteúdo corresponda ao formato declarado, dentro de um tamanho máximo por tipo de ponto (retrato, arte de item do inventário, ícone de grade de item ou carta, efeito e ícone de efeito: `5 MB`; ilustração do personagem e arte de carta, inclusive carta de item: `8 MB`; mapa: `15 MB`). Imagens recusadas SHALL gerar uma mensagem que diga o motivo, e nada SHALL ser gravado.
 
 #### Scenario: Arquivo grande demais
 - **WHEN** o jogador envia um retrato de `12 MB`
 - **THEN** o sistema recusa e informa que o limite do retrato é `5 MB`
+
+#### Scenario: Ilustração grande demais
+- **WHEN** o jogador envia uma ilustração de `9 MB`
+- **THEN** o sistema recusa e informa que o limite da ilustração é `8 MB`
 
 #### Scenario: Extensão falsa
 - **WHEN** alguém envia um arquivo `.png` cujo conteúdo não é uma imagem PNG
@@ -48,11 +57,15 @@ As imagens SHALL ser guardadas no armazenamento privado, no espaço de visibilid
 - **THEN** o sistema responde como se a imagem não existisse
 
 ### Requirement: Permissões de envio
-O jogador SHALL enviar imagens do próprio personagem (retrato, arte e ícone de grade de seus itens e efeitos personalizados) somente quando a política da mesa permitir que ele edite a ficha. Arte e ícone de grade de cartas, mapa de cena e demais conteúdos do Narrador SHALL ser enviados somente pelo Narrador.
+O jogador SHALL enviar imagens do próprio personagem (retrato, ilustração, arte e ícone de grade de seus itens e efeitos personalizados) somente quando a política da mesa permitir que ele edite a ficha. Arte e ícone de grade de cartas, mapa de cena e demais conteúdos do Narrador SHALL ser enviados somente pelo Narrador.
 
 #### Scenario: Mesa bloqueia edição do jogador
 - **WHEN** a mesa não permite que jogadores editem a própria ficha e o jogador tenta trocar o retrato
 - **THEN** o sistema recusa o envio
+
+#### Scenario: Ilustração com campo bloqueado
+- **WHEN** o Narrador bloqueou a ilustração do personagem e o jogador tenta trocá-la
+- **THEN** o sistema recusa o envio e informa que a alteração foi bloqueada pelo Narrador
 
 #### Scenario: Jogador tenta enviar mapa
 - **WHEN** um jogador tenta enviar o mapa de uma cena
@@ -66,8 +79,12 @@ Toda troca ou remoção de imagem SHALL ser registrada no histórico da mesa, in
 - **THEN** o histórico mostra "retrato alterado" com autor e horário, sem a imagem
 
 ### Requirement: Imagens em tamanho de exibição
-Retratos, imagens de itens e ícones SHALL ser entregues em tamanho adequado à exibição, para carregar rápido no celular. A imagem original SHALL ser preservada.
+Retratos, ilustrações, imagens de itens e ícones SHALL ser entregues em tamanho adequado à exibição, para carregar rápido no celular. A ilustração SHALL ter uma versão de exibição grande o bastante para ocupar o centro do Resumo sem perder nitidez em telas de computador. A imagem original SHALL ser preservada.
 
 #### Scenario: Ícone grande enviado
 - **WHEN** o Narrador envia um ícone de `1254 x 1254` pixels
 - **THEN** a ficha mostra o ícone numa versão reduzida, e a original continua guardada
+
+#### Scenario: Ilustração de corpo inteiro enviada
+- **WHEN** o jogador envia uma ilustração de `2048 x 3072` pixels
+- **THEN** o Resumo mostra uma versão reduzida com `1536` pixels no lado maior, e a original continua guardada

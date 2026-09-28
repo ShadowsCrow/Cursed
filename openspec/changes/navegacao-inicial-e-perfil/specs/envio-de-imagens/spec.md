@@ -5,6 +5,7 @@
 ### Requirement: Pontos de envio
 O sistema SHALL permitir enviar ou trocar imagem em:
 - retrato do personagem;
+- ilustração do personagem (imagem de corpo inteiro mostrada no Resumo da ficha), independente do retrato;
 - arte de item do inventário;
 - ícone de grade de item do inventário ou de carta de item, independente da arte;
 - efeito personalizado do personagem;
@@ -23,6 +24,10 @@ Enviar uma nova imagem SHALL substituir a anterior daquele ponto. O sistema SHAL
 - **WHEN** o jogador envia um PNG como retrato do próprio personagem
 - **THEN** o retrato aparece no cabeçalho da ficha para quem pode ler a ficha
 
+#### Scenario: Troca isolada da ilustração
+- **WHEN** o jogador envia uma ilustração para um personagem que já tem retrato
+- **THEN** apenas a ilustração é gravada, e o retrato continua o mesmo
+
 #### Scenario: Narrador envia o mapa da cena
 - **WHEN** o Narrador envia uma imagem como mapa de uma cena
 - **THEN** a sala passa a mostrar o mapa como fundo da grade para os participantes que veem a cena
@@ -32,11 +37,15 @@ Enviar uma nova imagem SHALL substituir a anterior daquele ponto. O sistema SHAL
 - **THEN** a capa aparece na lista de campanhas e na abertura da campanha para todos os participantes
 
 ### Requirement: Validação no servidor
-O servidor SHALL aceitar somente PNG, JPEG e WEBP cujo conteúdo corresponda ao formato declarado, dentro de um tamanho máximo por tipo de ponto (retrato, arte de item do inventário, ícone de grade de item ou carta, efeito, ícone de efeito e foto do perfil: `5 MB`; arte de carta, inclusive carta de item, e capa da campanha: `8 MB`; mapa: `15 MB`). Imagens recusadas SHALL gerar uma mensagem que diga o motivo, e nada SHALL ser gravado.
+O servidor SHALL aceitar somente PNG, JPEG e WEBP cujo conteúdo corresponda ao formato declarado, dentro de um tamanho máximo por tipo de ponto (retrato, arte de item do inventário, ícone de grade de item ou carta, efeito, ícone de efeito e foto do perfil: `5 MB`; ilustração do personagem, arte de carta, inclusive carta de item, e capa da campanha: `8 MB`; mapa: `15 MB`). Imagens recusadas SHALL gerar uma mensagem que diga o motivo, e nada SHALL ser gravado.
 
 #### Scenario: Arquivo grande demais
 - **WHEN** o jogador envia um retrato de `12 MB`
 - **THEN** o sistema recusa e informa que o limite do retrato é `5 MB`
+
+#### Scenario: Ilustração grande demais
+- **WHEN** o jogador envia uma ilustração de `9 MB`
+- **THEN** o sistema recusa e informa que o limite da ilustração é `8 MB`
 
 #### Scenario: Extensão falsa
 - **WHEN** alguém envia um arquivo `.png` cujo conteúdo não é uma imagem PNG
