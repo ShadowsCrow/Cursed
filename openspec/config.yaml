@@ -76,7 +76,7 @@ rules:
     - Registre interações com outras mecânicas e os arquivos ou dados que precisarão de migração.
   tasks:
     - Separe atualizações de regras, dados, interface, migração e verificação.
-    - Inclua validação de mesa para qualquer mudança mecânica relevante.
+    - Não inclua tarefas de validação em mesa, teste com jogadores ou uso numa sessão de jogo real (proibido pelo usuário em 2026-09-28, para todo o projeto); feche a verificação com testes automatizados e, quando for visual ou de regra, com a aprovação do usuário.
 
 # Per-operation guidance (optional)
 # Add advisory guidance for how apply and archive work should be conducted.
