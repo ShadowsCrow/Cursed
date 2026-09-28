@@ -88,6 +88,33 @@ class ApiValidacaoFichaTest(_ApiFicha):
         self.assertEqual(resposta.status_code, 200, resposta.text)
         self.assertEqual(self.ficha("velha")["atributos"]["valores"]["Força"], 0)
 
+    def test_historia_acima_do_limite_e_recusada_e_no_limite_e_gravada(self):
+        resposta = self.gravar("lia", lambda f: f["personalidade"].update(historia="a" * 4001))
+        self.assertEqual(resposta.status_code, 422)
+        [problema] = resposta.json()["detail"]["problemas"]
+        self.assertEqual(problema["campo"], "personalidade.historia")
+        self.assertIn("4.000 caracteres", problema["mensagem"])
+        resposta = self.gravar("lia", lambda f: f["personalidade"].update(historia="Primeiro.\n\nSegundo."))
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        self.assertEqual(self.ficha("lia")["personalidade"]["historia"], "Primeiro.\n\nSegundo.")
+
+    def test_historia_segue_aprovacao_e_bloqueio_da_mesa(self):
+        with Session(self.engine) as session:
+            session.get(MesaRegistro, "mesa").campos_exigem_aprovacao = ["personalidade.historia"]
+            session.commit()
+        resposta = self.gravar("lia", lambda f: f["personalidade"].update(historia="Uma vida inteira."))
+        self.assertEqual(resposta.status_code, 202, resposta.text)
+        self.assertEqual(resposta.json()["estado"], "pendente")
+        with Session(self.engine) as session:
+            pedido = session.query(PedidoAlteracaoRegistro).one()
+            self.assertEqual(pedido.campos_alterados, ["personalidade.historia"])
+            mesa = session.get(MesaRegistro, "mesa")
+            mesa.campos_exigem_aprovacao, mesa.campos_bloqueados = [], ["personalidade.historia"]
+            session.query(PedidoAlteracaoRegistro).delete()
+            session.commit()
+        self.assertEqual(self.gravar("lia", lambda f: f["personalidade"].update(historia="Outra.")).status_code, 403)
+        self.assertNotIn("historia", self.ficha("lia")["personalidade"])
+
     def test_pedido_do_jogador_com_valor_invalido_nem_chega_a_ser_criado(self):
         resposta = self.gravar("lia", lambda f: f["atributos"]["valores"].update(Destreza=9))
         self.assertEqual(resposta.status_code, 422)

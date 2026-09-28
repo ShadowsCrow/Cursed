@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 
 import { ContentCard, EffectIcon, EquipmentSlot, Glyph, Portrait, ResourceBar, type GlyphName } from "../ui/Display";
+import { Marca } from "../ui/Tema";
 import { tableNavigation, type TableRole } from "./tableNavigation";
 
 type Role = TableRole;
@@ -20,7 +21,7 @@ function SectionHeading({ eyebrow, title, description, action }: { eyebrow: stri
 function Sidebar({ role, view, navigate }: { role: Role; view: View; navigate: (view: View) => void }) {
   const items = tableNavigation[role];
   return <aside className="sidebar">
-    <div className="brand"><span className="brand__mark"><Glyph name="spark" size={24} /></span><div><strong>CURSED</strong><small>PLATAFORMA RPG</small></div></div>
+    <div className="brand"><Marca tamanho={44} /></div>
     <div className="sidebar__campaign"><span className="eyebrow">CAMPANHA ATUAL</span><strong>O Véu de Aram</strong><small><span className="live-dot" /> Sessão 12 · em preparação</small></div>
     <div className="sidebar__label">MESA</div>
     <nav aria-label="Navegação da mesa" className="sidebar__nav">{items.map((item) => <button key={item.id} type="button" className={`nav-item ${view === item.id ? "nav-item--active" : ""}`} aria-current={view === item.id ? "page" : undefined} onClick={() => navigate(item.id)}><Glyph name={item.icon} size={19} /><span>{item.label}</span>{view === item.id && <span className="nav-item__accent" />}</button>)}</nav>

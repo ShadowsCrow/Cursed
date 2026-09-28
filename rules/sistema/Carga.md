@@ -26,7 +26,7 @@ Abaixo da grade existe sempre **uma linha vermelha extra**.
 
 Exemplo: um personagem Médio com Força 3 tem uma grade de 5 colunas por 5 linhas, mais a linha vermelha.
 
-Use o Tamanho da raça do personagem. Quando um efeito muda o Tamanho, vale o Tamanho atual enquanto o efeito durar.
+Use o Tamanho do personagem: o da raça ou, se ele for fora da média, o Tamanho vizinho escolhido na criação (ver [Criação de Personagem](Cria%C3%A7%C3%A3o%20de%20Personagem.md)). Quando um efeito muda o Tamanho, vale o Tamanho atual enquanto o efeito durar.
 
 ### Força ou Tamanho reduzidos
 

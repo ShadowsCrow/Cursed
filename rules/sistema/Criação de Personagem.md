@@ -81,6 +81,39 @@ O Deslocamento racial substitui o valor geral de `9 metros`. O Tamanho define qu
 
 Uma habilidade racial marcada como placeholder ou sem funcionamento mecânico concluído não concede efeitos até ser escrita.
 
+### Altura e Tamanho fora da média
+
+Escolha a altura do personagem. Um personagem **na média** da raça tem o Tamanho da raça e uma altura dentro do intervalo típico dela:
+
+|Raça|Tamanho|Altura típica|
+|---|---|---:|
+|Humano|Médio|`1,55 m` a `1,90 m`|
+|Elfo|Médio|`1,60 m` a `1,95 m`|
+|Drow|Médio|`1,55 m` a `1,85 m`|
+|Troll|Médio|`1,80 m` a `2,10 m`|
+|Anão|Pequeno|`1,10 m` a `1,40 m`|
+|Gnomo|Pequeno|`0,90 m` a `1,20 m`|
+|Goblin|Pequeno|`0,80 m` a `1,20 m`|
+|Orc|Grande|`2,10 m` a `2,50 m`|
+|Golias|Enorme|`3,00 m` a `3,80 m`|
+
+Um personagem pode ser **fora da média** da raça, mais alto ou mais baixo. Nesse caso, seu Tamanho passa ao Tamanho vizinho, **um passo** acima ou abaixo do Tamanho da raça, e sua altura fica dentro da faixa desse novo Tamanho:
+
+|Tamanho|Faixa de altura|
+|---|---:|
+|Minúsculo|`0,10 m` a `0,60 m`|
+|Pequeno|`0,60 m` a `1,40 m`|
+|Médio|`1,40 m` a `2,10 m`|
+|Grande|`2,10 m` a `3,00 m`|
+|Enorme|`3,00 m` a `5,00 m`|
+|Colossal|acima de `5,00 m`, sem limite|
+
+Não existe Tamanho abaixo de Minúsculo nem acima de Colossal: uma raça Minúscula não pode ser fora da média para baixo, e uma raça Colossal não pode ser fora da média para cima. O personagem fora da média mantém o Deslocamento da raça; o novo Tamanho vale para todas as regras que usam Tamanho, como a grade de carga.
+
+Exemplo: um Humano mais alto que a média passa a Grande e escolhe uma altura entre `2,10 m` e `3,00 m`; um Golias mais alto que a média passa a Colossal e pode ter qualquer altura acima de `5,00 m`.
+
+A escolha de ficar fora da média é feita na criação. Depois dela, o Tamanho só muda por regras específicas ou por decisão do Narrador.
+
 ## 4. Classe e arquétipo
 
 Escolha uma classe e um de seus arquétipos. A classe determina:

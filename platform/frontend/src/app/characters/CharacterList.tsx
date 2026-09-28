@@ -1,13 +1,12 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { Glyph, Portrait } from "../../ui/Display";
-import { Confirmation, Dialog, Menu, type MenuItem } from "../../ui/primitives";
+import { Confirmation, Menu, type MenuItem } from "../../ui/primitives";
 import { CreateEntityDialog, type NovaEntidade } from "./CreateEntityDialog";
 import { VisibilityDialog } from "./VisibilityDialog";
 import {
   useAlterarVisibilidade,
   useCriarEntidade,
-  useCriarPersonagem,
   useExcluirPersonagem,
   usePersonagens,
   usePoliticaMesa,
@@ -16,6 +15,7 @@ import {
   useTransferirPersonagem,
 } from "./api";
 import type { ApiClient, ParticipanteResumo, PersonagemResumo } from "./types";
+import { armazenamentoLocal, lerRascunho } from "./creation/rascunho";
 
 export interface CharacterListProps {
   api: ApiClient;
@@ -23,6 +23,8 @@ export interface CharacterListProps {
   userId: string;
   role: "narrador" | "jogador";
   onOpen: (personagemId: string) => void;
+  /** Jogador: abre o assistente de criação; `retomar` continua o rascunho guardado no navegador. */
+  onCriarPersonagem?: (opcoes: { retomar: boolean }) => void;
 }
 
 const tipoLabel: Record<PersonagemResumo["tipo"], string> = {
@@ -38,56 +40,6 @@ function formatarPrazo(iso: string | null | undefined): string | null {
   } catch {
     return iso;
   }
-}
-
-function CreateCharacterDialog({
-  open,
-  onClose,
-  onCreate,
-  pending,
-  error,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCreate: (nome: string) => void;
-  pending: boolean;
-  error: string | null;
-}) {
-  const [nome, setNome] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title="Criar personagem"
-      description="Escolha um nome para começar. Os demais campos podem ser preenchidos depois, na ficha."
-      initialFocusRef={inputRef}
-    >
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (nome.trim()) onCreate(nome.trim());
-        }}
-      >
-        <label htmlFor="novo-personagem-nome">Nome</label>
-        <input
-          id="novo-personagem-nome"
-          ref={inputRef}
-          required
-          value={nome}
-          onChange={(event) => setNome(event.target.value)}
-        />
-        {error && <p role="alert">{error}</p>}
-        <div className="confirmation__actions">
-          <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="button button--primary" disabled={pending}>
-            {pending ? "Criando…" : "Criar personagem"}
-          </button>
-        </div>
-      </form>
-    </Dialog>
-  );
 }
 
 function TransferMenu({
@@ -116,7 +68,7 @@ function TransferMenu({
   return <Menu label={`Transferir ${personagem.nome}`} triggerContent="Transferir" triggerClassName="button button--ghost" items={items} />;
 }
 
-export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterListProps) {
+export function CharacterList({ api, mesaId, userId, role, onOpen, onCriarPersonagem }: CharacterListProps) {
   const [tab, setTab] = useState<"ativos" | "lixeira">("ativos");
   const [createOpen, setCreateOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PersonagemResumo | null>(null);
@@ -127,7 +79,6 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
   const politica = usePoliticaMesa(api, mesaId);
   const participantes = useParticipantes(api, mesaId, { enabled: role === "narrador" });
 
-  const criar = useCriarPersonagem(api, mesaId);
   const criarEntidade = useCriarEntidade(api, mesaId);
   const excluir = useExcluirPersonagem(api, mesaId);
   const transferir = useTransferirPersonagem(api, mesaId);
@@ -140,19 +91,6 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
       if (message) next[id] = message; else delete next[id];
       return next;
     });
-  }
-
-  function handleCreate(nome: string) {
-    criar.mutate(
-      { nome },
-      {
-        onSuccess: (data) => {
-          setCreateOpen(false);
-          criar.reset();
-          if (data) onOpen(data.personagem_id);
-        },
-      },
-    );
   }
 
   function handleCreateEntity(entidade: NovaEntidade) {
@@ -209,6 +147,7 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
   }
 
   const podeCriar = role === "narrador" || politica.data?.permitir_criacao_propria === true;
+  const rascunho = role === "jogador" ? lerRascunho(armazenamentoLocal(), mesaId, userId) : null;
   const podeExcluirProprio = role === "narrador" || politica.data?.permitir_exclusao_propria === true;
 
   return (
@@ -218,11 +157,24 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
           <span className="eyebrow">{role === "narrador" ? "PERSONAGENS" : "MINHA FICHA"}</span>
           <h2>{role === "narrador" ? "Personagens e entidades" : "Suas fichas"}</h2>
         </div>
-        {podeCriar ? (
+        {podeCriar && role === "narrador" && (
           <button type="button" className="button button--primary" onClick={() => setCreateOpen(true)}>
-            <Glyph name="spark" size={16} /> {role === "narrador" ? "Nova entidade" : "Criar personagem"}
+            <Glyph name="spark" size={16} /> Nova entidade
           </button>
-        ) : (
+        )}
+        {podeCriar && role === "jogador" && (
+          <div className="section-heading__actions">
+            {rascunho && (
+              <button type="button" className="button button--secondary" onClick={() => onCriarPersonagem?.({ retomar: true })}>
+                Continuar rascunho{rascunho.ficha.personagem.nome.trim() ? ` (${rascunho.ficha.personagem.nome.trim()})` : ""}
+              </button>
+            )}
+            <button type="button" className="button button--primary" onClick={() => onCriarPersonagem?.({ retomar: false })}>
+              <Glyph name="spark" size={16} /> Criar personagem
+            </button>
+          </div>
+        )}
+        {!podeCriar && (
           politica.isSuccess && <p className="preview-note">Criação de personagem não permitida nesta mesa.</p>
         )}
       </div>
@@ -297,7 +249,7 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
         </ul>
       )}
 
-      {role === "narrador" ? (
+      {role === "narrador" && (
         <CreateEntityDialog
           open={createOpen}
           onClose={() => { setCreateOpen(false); criarEntidade.reset(); }}
@@ -305,14 +257,6 @@ export function CharacterList({ api, mesaId, userId, role, onOpen }: CharacterLi
           pending={criarEntidade.isPending}
           error={criarEntidade.isError ? criarEntidade.error.message : null}
           participantes={participantes.data ?? []}
-        />
-      ) : (
-        <CreateCharacterDialog
-          open={createOpen}
-          onClose={() => { setCreateOpen(false); criar.reset(); }}
-          onCreate={handleCreate}
-          pending={criar.isPending}
-          error={criar.isError ? criar.error.message : null}
         />
       )}
 

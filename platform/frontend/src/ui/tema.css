@@ -1,0 +1,153 @@
+/* Componentes de tema: moldura, pergaminho, título ornado, selo e marca (design D8). */
+
+/* ---------- Moldura ---------- */
+.moldura {
+  position: relative;
+  border: var(--frame-border-width) solid color-mix(in srgb, var(--border-ornate) 70%, transparent);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--surface-app) 70%, transparent), inset 0 0 0 4px color-mix(in srgb, var(--border-ornate) 22%, transparent), var(--shadow-card);
+}
+.moldura--noite { background: linear-gradient(170deg, var(--noite-800), var(--noite-850)); }
+.moldura--pergaminho { background: transparent; box-shadow: 0 0 0 1px color-mix(in srgb, var(--noite-950) 80%, transparent), var(--shadow-card); }
+.moldura__canto {
+  position: absolute;
+  width: var(--frame-corner-size);
+  height: var(--frame-corner-size);
+  color: var(--border-ornate);
+  pointer-events: none;
+  z-index: 2;
+}
+.moldura__canto--se { top: -3px; left: -3px; }
+.moldura__canto--sd { top: -3px; right: -3px; transform: scaleX(-1); }
+.moldura__canto--ie { bottom: -3px; left: -3px; transform: scaleY(-1); }
+.moldura__canto--id { bottom: -3px; right: -3px; transform: scale(-1, -1); }
+
+/* ---------- Pergaminho ---------- */
+.pergaminho {
+  position: relative;
+  color: var(--text);
+  background-color: var(--pergaminho-100);
+  background-image:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, color-mix(in srgb, var(--pergaminho-300) 45%, transparent) 100%),
+    url("/arte/pergaminho.webp"),
+    linear-gradient(160deg, var(--pergaminho-50), var(--pergaminho-100) 45%, var(--pergaminho-200));
+  background-size: cover, 512px 512px, cover;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Título ornado ---------- */
+.titulo-ornado { display: grid; justify-items: start; gap: .25rem; }
+.titulo-ornado__sobretitulo { color: var(--accent); font-size: .75rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.titulo-ornado__texto { margin: 0; font-family: var(--font-display); font-weight: 600; line-height: 1.05; color: var(--text); letter-spacing: .005em; }
+.titulo-ornado--1 .titulo-ornado__texto { font-size: clamp(2.1rem, 4.4vw, 3.4rem); }
+.titulo-ornado--2 .titulo-ornado__texto { font-size: clamp(1.6rem, 2.8vw, 2.2rem); }
+.titulo-ornado--3 .titulo-ornado__texto { font-size: 1.35rem; }
+.titulo-ornado__texto:focus { outline: none; }
+.titulo-ornado__texto:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
+.titulo-ornado__divisor { width: min(240px, 100%); height: 14px; color: var(--border-ornate); pointer-events: none; }
+.tema-pergaminho .titulo-ornado__divisor { color: var(--ouro-700); }
+
+/* ---------- Selo ---------- */
+.selo {
+  --selo-fundo: var(--accent-soft);
+  --selo-texto: var(--accent-strong);
+  --selo-borda: var(--border-ornate);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .28rem .9rem;
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--selo-texto);
+  background: var(--selo-fundo);
+  border-block: 1px solid var(--selo-borda);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%, 8px 50%);
+}
+.selo--sangue { --selo-fundo: var(--sangue-500); --selo-texto: var(--osso-100); --selo-borda: var(--sangue-300); }
+.selo--noite { --selo-fundo: var(--noite-700); --selo-texto: var(--osso-100); --selo-borda: var(--noite-400); }
+.tema-pergaminho .selo--ouro { --selo-fundo: var(--pergaminho-200); --selo-texto: var(--tinta-900); --selo-borda: var(--ouro-700); }
+
+/* ---------- Marca ---------- */
+.marca { display: inline-flex; align-items: center; gap: .8rem; }
+.marca__emblema { display: grid; place-items: center; flex: none; color: var(--accent); }
+.marca__emblema img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.marca__texto strong { display: block; font: 700 1.2rem/1 var(--font-display); letter-spacing: .3em; color: var(--text); }
+.marca__texto small { display: block; margin-top: .2rem; color: var(--text-quiet); font-size: .7rem; font-weight: 700; letter-spacing: .2em; }
+
+/* Telas pequenas: ornamentos menores e sem floreios, para não disputar espaço com o conteúdo. */
+@media (max-width: 480px) {
+  :root { --frame-corner-size: 14px; }
+  .moldura__canto path:nth-child(2) { display: none; }
+  .titulo-ornado__floreio { display: none; }
+  .titulo-ornado__divisor { width: 140px; }
+}
+
+/* ---------- Mensagens de campo (texto sempre presente, a cor só complementa) ---------- */
+.campo-erro { margin: .25rem 0 0; color: var(--danger); font-size: .82rem; font-weight: 700; }
+.campo-aviso { margin: .25rem 0 0; color: var(--text-muted); font-size: .82rem; }
+
+/* ---------- Estados de página (carregamento, erro) ---------- */
+.estado-pagina { min-height: 60vh; display: grid; place-content: center; justify-items: center; gap: 1.2rem; text-align: center; }
+.estado-pagina__conteudo { display: grid; gap: .6rem; justify-items: center; color: var(--text-muted); }
+.estado-pagina__conteudo h1 { margin: 0; font: 600 2rem/1.1 var(--font-display); color: var(--text); }
+
+/* ---------- Tela de entrada ---------- */
+.entrada { display: grid; gap: .8rem; justify-items: start; }
+.topbar .marca__texto strong { font-size: 1rem; }
+
+/*
+ * ---------- Arte ----------
+ * As camadas de escurecimento abaixo são reproduzidas em cursed_platform/tests/test_preparar_arte.py
+ * (contraste do texto sobre a arte): mudar uma exige mudar a outra.
+ */
+.ilustracao { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+.cabecalho-ilustrado {
+  position: relative;
+  overflow: hidden;
+  min-height: 240px;
+  display: grid;
+  align-items: center;
+  border-radius: var(--radius-md);
+  background: radial-gradient(ellipse at 78% 30%, color-mix(in srgb, var(--noite-500) 55%, transparent), transparent 55%), linear-gradient(120deg, var(--noite-950), var(--noite-800));
+}
+.cabecalho-ilustrado__arte { position: absolute; inset: 0; }
+.cabecalho-ilustrado__arte .ilustracao { object-position: 70% 40%; }
+.cabecalho-ilustrado__arte::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(7 11 16 / .9) 0%, rgb(7 11 16 / .78) 40%, rgb(7 11 16 / .2) 72%, rgb(7 11 16 / 0) 100%);
+}
+.cabecalho-ilustrado__texto { position: relative; z-index: 1; max-width: min(560px, 48%); padding: clamp(1.2rem, 3vw, 2.4rem); color: var(--osso-100); }
+.cabecalho-ilustrado__texto p { color: var(--osso-100); }
+
+.ilustracao-etapa {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: radial-gradient(ellipse at 60% 30%, color-mix(in srgb, var(--ouro-700) 45%, transparent), transparent 60%), linear-gradient(160deg, var(--noite-700), var(--noite-950));
+}
+.ilustracao-etapa__arte { position: relative; aspect-ratio: 3 / 1; }
+.ilustracao-etapa__arte .ilustracao { position: absolute; inset: 0; object-position: 50% 45%; }
+.ilustracao-etapa__arte::before, .ilustracao-etapa__arte::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+/* Camada fria: uniformiza as etapas mais âmbar com a âncora azul. */
+.ilustracao-etapa__arte::before { background: rgb(18 38 64 / .38); }
+.ilustracao-etapa__arte::after {
+  background:
+    linear-gradient(0deg, rgb(7 11 16 / .92) 0%, rgb(7 11 16 / .7) 38%, rgb(7 11 16 / 0) 75%),
+    radial-gradient(ellipse at 50% 45%, rgb(7 11 16 / 0) 40%, rgb(7 11 16 / .7) 100%);
+}
+.ilustracao-etapa__texto { position: absolute; inset: auto 0 0 0; z-index: 1; max-width: 75%; padding: .9rem 1.4rem; color: var(--osso-100); }
+
+@media (max-width: 640px) {
+  .cabecalho-ilustrado { display: block; min-height: 0; }
+  .cabecalho-ilustrado__arte { position: relative; aspect-ratio: 2 / 1; }
+  .cabecalho-ilustrado__arte::after { background: linear-gradient(0deg, var(--noite-900) 0%, rgb(7 11 16 / 0) 45%); }
+  .cabecalho-ilustrado__texto { max-width: none; }
+  .ilustracao-etapa__texto { position: static; max-width: none; background: var(--noite-900); }
+}

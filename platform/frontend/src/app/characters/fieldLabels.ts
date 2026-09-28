@@ -6,9 +6,12 @@ const DIRETOS: Record<string, string> = {
   "personagem.arquetipo": "Arquétipo",
   "personagem.nivel": "Nível",
   "personagem.idade": "Idade",
+  "personagem.altura": "Altura",
   "personalidade.alinhamento": "Alinhamento",
   "personalidade.pecado": "Pecado",
   "personalidade.meu_lema": "Lema",
+  "personalidade.historia": "História",
+  "personagem.ilustracao_ativo": "Ilustração",
 };
 
 const SECOES: Record<string, string> = { atributos: "Atributo", pericias: "Perícia" };

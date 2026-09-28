@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
+import { EstadoDePagina } from "../ui/Tema";
+
 interface Props {
   children: ReactNode;
 }
@@ -22,11 +24,11 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.error) {
       return (
-        <main role="alert" className="page">
+        <EstadoDePagina alerta>
           <h1>Algo deu errado</h1>
           <p>Seu estado confirmado não foi alterado. Recarregue a página para tentar novamente.</p>
-          <button type="button" onClick={() => window.location.reload()}>Recarregar</button>
-        </main>
+          <button type="button" className="button" onClick={() => window.location.reload()}>Recarregar</button>
+        </EstadoDePagina>
       );
     }
     return this.props.children;

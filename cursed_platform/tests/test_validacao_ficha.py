@@ -65,6 +65,18 @@ class ValidacaoTest(unittest.TestCase):
         self.assertEqual(self.alterar("personalidade.meu_lema", "Nunca recuar", antiga), {})
         self.assertIn("atributos.valores.Força", {a.caminho for a in verificar(antiga, CATALOGO)})
 
+    def test_historia_com_limite_do_json(self):
+        self.assertEqual(self.alterar("personalidade.historia", "a" * 4000), {})
+        self.assertEqual(self.alterar("personalidade.historia", "Primeiro.\n\nSegundo."), {})
+        erro = self.alterar("personalidade.historia", "a" * 4001)["personalidade.historia"]
+        self.assertIn("História passa do limite de 4.000 caracteres.", erro)
+
+    def test_ficha_antiga_sem_historia_e_historia_longa_legada(self):
+        self.assertEqual(self.alterar("personalidade.meu_lema", "Sempre adiante"), {})
+        longa = _com(_ficha(), "personalidade.historia", "a" * 5000)
+        self.assertEqual(self.alterar("personalidade.meu_lema", "Nunca recuar", longa), {})
+        self.assertIn("personalidade.historia", {a.caminho for a in verificar(longa, CATALOGO)})
+
     def test_nivel(self):
         for nivel in (0, 21, "5"):
             with self.subTest(nivel=nivel):

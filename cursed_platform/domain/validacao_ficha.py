@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from cursed_platform.catalogos import Catalogos
 
 ATRIBUTO_MIN, ATRIBUTO_MAX = 1, 5
+TAMANHOS_EXIBICAO = ("Minúsculo", "Pequeno", "Médio", "Grande", "Enorme", "Colossal")
 PERICIA_MIN, PERICIA_MAX = 0, 5
 
 
@@ -81,6 +82,15 @@ def _nivel(valor: Any) -> str | None:
     return None
 
 
+def _texto_limitado(rotulo: str, limite: int) -> Callable[[Any], str | None]:
+    """Texto narrativo com máximo de caracteres (ex.: História); o limite vem do JSON de listas."""
+    def verificar(valor: Any) -> str | None:
+        if isinstance(valor, str) and len(valor) > limite:
+            return f"{rotulo} passa do limite de {limite:,} caracteres.".replace(",", ".")
+        return None
+    return verificar
+
+
 def _idade(valor: Any) -> str | None:
     if _vazio(valor):
         return None
@@ -110,6 +120,50 @@ def _tamanho(valor: Any) -> str | None:
     if _vazio(valor) or chave(valor) in TAMANHOS:
         return None
     return "Tamanho desconhecido. Opções: Minúsculo, Pequeno, Médio, Grande, Enorme, Colossal."
+
+
+def _tamanho_de(nome: Any) -> int | None:
+    return TAMANHOS.index(chave(nome)) if chave(nome) in TAMANHOS else None
+
+
+def _altura(personagem: Mapping[str, Any], catalogo: "Catalogos") -> str | None:
+    """Altura em metros dentro do intervalo típico da raça (na média) ou da faixa do Tamanho atual
+    (fora da média). Criação de Personagem.md, "Altura e Tamanho fora da média"."""
+    valor = personagem.get("altura")
+    if _vazio(valor):
+        return None
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)) or valor <= 0:
+        return "A altura precisa ser um número em metros maior que zero."
+    raca = catalogo.raca(personagem.get("raca")) if not _vazio(personagem.get("raca")) else None
+    tamanho = personagem.get("tamanho") if not _vazio(personagem.get("tamanho")) else (raca.tamanho if raca else None)
+    if raca and raca.altura and raca.tamanho and chave(tamanho) == chave(raca.tamanho):
+        if not raca.altura.contem(float(valor)):
+            return (f"Na média, a altura de um {raca.nome} vai {raca.altura.texto()}; "
+                    "para ir além, o personagem precisa ser fora da média (mais alto ou mais baixo).")
+        return None
+    faixa = catalogo.listas.faixa(tamanho) if tamanho else None
+    if faixa and not faixa.intervalo.contem(float(valor)):
+        return f"A altura de um personagem {faixa.tamanho} vai {faixa.intervalo.texto()}."
+    return None
+
+
+def problemas_de_criacao(ficha: Mapping[str, Any], catalogo: "Catalogos") -> list[ErroCampo]:
+    """Regras que só valem quando o jogador cria o personagem: fora da média, o Tamanho fica um
+    passo acima ou abaixo do Tamanho da raça. Depois da criação, o Tamanho é do Narrador."""
+    personagem = _secao(ficha, "personagem")
+    tamanho = personagem.get("tamanho")
+    if _vazio(tamanho):
+        return []
+    raca = catalogo.raca(personagem.get("raca")) if not _vazio(personagem.get("raca")) else None
+    if raca is None or _tamanho_de(raca.tamanho) is None:
+        return [ErroCampo("personagem.tamanho", "Escolha uma raça do catálogo antes de ficar fora da média.")]
+    base, escolhido = _tamanho_de(raca.tamanho), _tamanho_de(tamanho)
+    if escolhido is not None and abs(escolhido - base) <= 1:
+        return []
+    vizinhos = [nome for nome in (TAMANHOS_EXIBICAO[i] for i in (base - 1, base + 1) if 0 <= i < len(TAMANHOS))]
+    return [ErroCampo("personagem.tamanho",
+                      f"Fora da média, o Tamanho fica um passo acima ou abaixo do Tamanho da raça ({raca.tamanho}): "
+                      f"{' ou '.join(vizinhos)}.")]
 
 
 def _ajustes(valor: Any) -> list[str]:
@@ -156,10 +210,14 @@ def _campos(ficha: Mapping[str, Any], catalogo: "Catalogos") -> dict[str, list[s
     registrar("personagem.idade", _idade(personagem.get("idade")))
     registrar("personagem.sexo", _lista("Sexo", listas.sexos)(personagem.get("sexo")))
     registrar("personagem.tamanho", _tamanho(personagem.get("tamanho")))
+    registrar("personagem.altura", _altura(personagem, catalogo))
     registrar("personalidade.alinhamento", _lista("Alinhamento", listas.alinhamentos)(personalidade.get("alinhamento")))
     registrar("personalidade.pecado", _lista(
         "Pecado Capital", [p.nome for p in listas.pecados], lambda t: listas.pecado(t) is not None,
     )(personalidade.get("pecado")))
+    for campo in listas.campos_personalidade:
+        if campo.limite is not None:
+            registrar(f"personalidade.{campo.chave}", _texto_limitado(campo.rotulo, campo.limite)(personalidade.get(campo.chave)))
 
     classe_nome = personagem.get("classe")
     classe = None if _vazio(classe_nome) else catalogo.classe(classe_nome)

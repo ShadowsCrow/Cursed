@@ -25,8 +25,9 @@ const LISTAS: ListasFicha = {
   pecados: [{ nome: "Ira", icone: "😡", equivalentes: [] }, { nome: "Ganância", icone: "💰", equivalentes: ["Ganancia"] },
     { nome: "Orgulho", icone: "👑", equivalentes: [] }],
   campos_personalidade: [
-    { chave: "vivo_para", rotulo: "Vivo para", dica: "Ex: proteger os inocentes" },
-    { chave: "medo", rotulo: "Medo ou fobia", dica: "Ex: aranhas gigantes" },
+    { chave: "vivo_para", rotulo: "Vivo para", dica: "Ex: proteger os inocentes", longo: false },
+    { chave: "medo", rotulo: "Medo ou fobia", dica: "Ex: aranhas gigantes", longo: false },
+    { chave: "historia", rotulo: "História", dica: "Ex: de onde veio", longo: true, limite: 4000 },
   ],
 };
 const JOGADOR: PermissoesFicha = {
@@ -54,6 +55,22 @@ describe("Aba Informações", () => {
     expect(screen.getByText("Corpos propícios a mutações.")).toBeTruthy();
     expect(screen.getByText("Da raça Elfo")).toBeTruthy();
     expect(screen.getByText("Médio")).toBeTruthy();
+  });
+
+  it("mostra a altura e salva em metros aceitando vírgula; aviso do servidor aparece junto", async () => {
+    const onSave = montar(ficha({ raca: "Elfo", altura: 1.75 }), JOGADOR, { "personagem.altura": "Na média, a altura de um Elfo vai de 1,60 m a 1,95 m." });
+    expect(screen.getByText("1,75")).toBeTruthy();
+    expect(screen.getByText(/Na média, a altura de um Elfo/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Editar Altura (m)" }));
+    fireEvent.change(screen.getByLabelText("Altura (m)", { selector: "input" }), { target: { value: "1,82" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Salvar" })[0]!);
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith([{ path: "personagem.altura", value: 1.82 }]));
+  });
+
+  it("ficha sem altura mostra não informado", () => {
+    montar(ficha({ raca: "Elfo" }));
+    const campo = screen.getByText("Altura (m)").closest(".editable-field")!;
+    expect(campo.textContent).toContain("Não informado");
   });
 
   it("arquétipos mostram só os da classe escolhida", () => {
@@ -153,6 +170,26 @@ describe("Aba Personalidade", () => {
     expect(screen.getByRole("option", { name: "👑 Orgulho" })).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "Salvar" })[0]!);
     await waitFor(() => expect(onSave).toHaveBeenCalledWith([{ path: "personalidade.pecado", value: "Orgulho" }]));
+  });
+
+  it("História: texto longo com parágrafos, contador e limite do JSON", async () => {
+    const onSave = personalidade({ historia: "Primeiro parágrafo.\n\nSegundo parágrafo." });
+    const leitura = screen.getByText(/Primeiro parágrafo\./);
+    expect(leitura.textContent).toBe("Primeiro parágrafo.\n\nSegundo parágrafo.");
+    expect(leitura.closest(".editable-field--longo")).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar História" }));
+    const campo = screen.getByLabelText("História", { selector: "textarea" }) as HTMLTextAreaElement;
+    expect(campo.rows).toBe(10);
+    expect(screen.getByText("39 de 4.000 caracteres")).toBeTruthy();
+    fireEvent.change(campo, { target: { value: "a".repeat(4001) } });
+    expect(screen.getByText(/4\.001 de 4\.000 caracteres — encurte o texto/)).toBeTruthy();
+    expect(campo.getAttribute("aria-invalid")).toBe("true");
+    expect((screen.getAllByRole("button", { name: "Salvar" }).at(-1) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(campo, { target: { value: "Veio do norte.\n\nPerdeu tudo." } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Salvar" }).at(-1)!);
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith([{ path: "personalidade.historia", value: "Veio do norte.\n\nPerdeu tudo." }]));
   });
 
   it("não apresenta violações de acessibilidade detectáveis", async () => {

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { asNumber, asRecord, asString, type FichaContrato, type PermissoesFicha } from "../types";
 import { acharPorNome, type ClasseCatalogo, type ListasFicha, type RacaCatalogo } from "./catalogoApi";
+import { lerAltura } from "../creation/altura";
 import { EditableField } from "./EditableField";
 import { SelectField, type AlteracaoCampo, type Consequencias } from "./SelectField";
 
@@ -122,6 +123,13 @@ export function IdentityPanel({ ficha, permissoes, classes, racas, listas, aviso
         <EditableField label="Idade" path="personagem.idade" kind="number" min={0}
           value={asNumber(p.idade) !== undefined ? String(asNumber(p.idade)) : ""} permissoes={permissoes}
           onSave={(path, value) => onSave([{ path, value: value === "" ? null : value }])} />
+        <EditableField label="Altura (m)" path="personagem.altura" placeholder="ex.: 1,75" aviso={avisos["personagem.altura"]}
+          value={asNumber(p.altura) !== undefined ? String(asNumber(p.altura)).replace(".", ",") : ""} permissoes={permissoes}
+          onSave={(path, value) => {
+            // Vírgula ou ponto; texto que não é altura vai como está, e o servidor explica o problema.
+            const lida = lerAltura(String(value));
+            return onSave([{ path, value: lida.vazia ? null : lida.valor ?? String(value) }]);
+          }} />
         <SelectField label="Sexo" path="personagem.sexo" value={asString(p.sexo) ?? ""}
           options={(listas?.sexos ?? []).map((s) => ({ valor: s, rotulo: s }))} vazio="Não informado"
           permissoes={permissoes} onSave={onSave} aviso={avisos["personagem.sexo"]} />

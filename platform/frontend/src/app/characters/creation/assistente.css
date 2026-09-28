@@ -1,0 +1,194 @@
+/* Assistente de criação: lista de etapas na moldura noturna, conteúdo em pergaminho (tarefa 5.3). */
+
+.assistente { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 1.5rem; align-items: start; margin-top: 1.5rem; }
+.assistente--retomada { grid-template-columns: minmax(0, 640px); justify-content: center; }
+
+/* ---------- Lista de etapas (noite) ---------- */
+.assistente__etapas {
+  position: sticky;
+  top: 1rem;
+  padding: 1.1rem .8rem;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 55%, transparent);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(170deg, var(--noite-800), var(--noite-850));
+}
+.assistente__etapas ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; }
+.assistente__etapa button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  min-height: 44px;
+  padding: .45rem .6rem;
+  border: 1px solid transparent;
+  border-radius: .45rem;
+  background: none;
+  color: var(--text-muted);
+  font-size: .95rem;
+  text-align: left;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+.assistente__etapa button:hover:not([aria-disabled="true"]) { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--text); }
+.assistente__etapa button[aria-disabled="true"] { color: var(--text-quiet); cursor: not-allowed; }
+.assistente__etapa button[aria-current="step"] { color: var(--accent-strong); font-weight: 700; border-color: color-mix(in srgb, var(--border-ornate) 60%, transparent); background: color-mix(in srgb, var(--sangue-500) 28%, transparent); }
+.assistente__numero {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-control);
+  font-size: .8rem;
+  font-weight: 700;
+}
+.assistente__etapa--feita .assistente__numero { border-color: var(--border-ornate); color: var(--accent); }
+.assistente__etapa button[aria-current="step"] .assistente__numero { background: var(--sangue-500); border-color: var(--ouro-500); color: var(--osso-100); }
+.assistente__progresso, .assistente__barra { display: none; }
+
+/* ---------- Folha (pergaminho) ---------- */
+.assistente__folha { min-width: 0; }
+.assistente__sobre-arte { color: var(--ouro-200); font-size: .8rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.assistente__folha-conteudo {
+  display: grid;
+  gap: 1.1rem;
+  padding: clamp(1rem, 3vw, 2.2rem);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  animation: assistente-entrar var(--motion-normal) ease-out;
+}
+.assistente--retomada .assistente__folha-conteudo { border-radius: var(--radius-sm); }
+@keyframes assistente-entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.assistente__orientacao { display: grid; gap: .55rem; max-width: 70ch; font-size: 1.02rem; line-height: 1.6; }
+.assistente__orientacao p { margin: 0; }
+.assistente__fonte { color: var(--text-muted); font-size: .88rem; font-style: italic; }
+.assistente__subtitulo { margin: 0 0 .4rem; font: 600 1.3rem/1.2 var(--font-display); color: var(--text); }
+.assistente__lista { margin: 0; padding-left: 1.3rem; display: grid; gap: .3rem; }
+.assistente__nota { margin: 0; padding: .8rem 1rem; border-left: 3px solid var(--border-ornate); background: color-mix(in srgb, var(--pergaminho-200) 60%, transparent); }
+
+/* Campos sobre pergaminho: tamanho de leitura e cores do escopo `.tema-pergaminho`. */
+.assistente__campos { display: grid; gap: .5rem; min-width: 0; }
+.assistente__campos > label, .assistente__campo > label { margin: .4rem 0 0; font-size: .9rem; color: var(--text-muted); font-weight: 700; }
+.assistente__campo { display: grid; gap: .3rem; }
+.assistente__campo--longo { grid-column: 1 / -1; }
+.assistente__dados dd { white-space: pre-line; }
+.assistente .tema-pergaminho input:not([type="radio"]):not([type="checkbox"]),
+.assistente .tema-pergaminho select,
+.assistente .tema-pergaminho textarea {
+  font-size: 1rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-control);
+  color: var(--text);
+}
+.assistente .tema-pergaminho [aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
+.assistente .tema-pergaminho textarea::placeholder, .assistente .tema-pergaminho input::placeholder { color: var(--text-quiet); }
+
+/* Opções em cartão (raça, classe, arquétipo) */
+.opcoes { margin: 0; padding: 0; border: 0; min-width: 0; }
+.opcoes > legend { padding: 0; margin-bottom: .5rem; font: 600 1.15rem var(--font-display); color: var(--text); }
+.opcoes__grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .6rem; }
+.opcoes__lista { display: grid; gap: .6rem; }
+.opcao-cartao {
+  position: relative;
+  display: grid;
+  gap: .2rem;
+  margin: 0;
+  padding: .7rem .8rem .7rem 2.3rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: color-mix(in srgb, var(--surface-raised) 70%, transparent);
+  color: var(--text);
+  font-size: .95rem;
+  cursor: pointer;
+}
+.opcao-cartao input { position: absolute; left: .8rem; top: .9rem; width: 1.05rem; height: 1.05rem; accent-color: var(--sangue-600); }
+.opcao-cartao small { color: var(--text-muted); font-size: .85rem; font-weight: 400; }
+.opcao-cartao__nome { display: flex; align-items: center; gap: .4rem; font-weight: 700; }
+.opcao-cartao__cor { width: .6rem; height: .6rem; border-radius: 50%; border: 1px solid var(--tinta-900); }
+.opcao-cartao:has(input:checked) { border-color: var(--sangue-600); border-width: 2px; background: var(--surface-raised); }
+.opcao-cartao:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+
+.assistente__detalhe { display: grid; gap: .6rem; padding: .9rem 1rem; border: 1px solid var(--border); border-radius: .5rem; background: color-mix(in srgb, var(--surface-raised) 55%, transparent); }
+.assistente__dados { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .5rem 1rem; margin: 0; }
+.assistente__dados dt { color: var(--text-muted); font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.assistente__dados dd { margin: .1rem 0 0; font-size: 1.05rem; }
+.assistente__habilidades h3 { margin: 0 0 .3rem; font-size: .95rem; }
+.assistente__habilidades ul { margin: 0; padding-left: 1.2rem; }
+.assistente__habilidades p { margin: 0; color: var(--text-muted); }
+
+/* Contadores e distribuição */
+.contadores { display: flex; flex-wrap: wrap; gap: .5rem; }
+.contador { display: grid; padding: .45rem .8rem; border: 1px solid var(--border-control); border-radius: .5rem; background: var(--surface-raised); }
+.contador strong { font-size: .95rem; }
+.contador small { color: var(--text-muted); font-size: .8rem; }
+.contador--completo { border-color: var(--success); }
+.contador--completo strong::before { content: "✓ "; color: var(--success); }
+
+.distribuicao { margin: .4rem 0 0; padding: 0; border: 0; min-width: 0; }
+.distribuicao > legend { padding: 0; margin-bottom: .3rem; font: 600 1.15rem var(--font-display); color: var(--text); }
+.distribuicao__linha { padding: .3rem 0; border-bottom: 1px solid var(--border-subtle); }
+.valores { display: flow-root; margin: 0; padding: 0; border: 0; min-width: 0; }
+.valores > legend { float: left; padding: .45rem 0 0; }
+.distribuicao__nome { font-size: 1rem; font-weight: 600; color: var(--text); }
+.distribuicao__linha > label.distribuicao__nome { margin: 0; }
+.distribuicao__linha:has(> input) { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.distribuicao__numero { width: 5rem !important; }
+.valores__opcoes { float: right; display: flex; gap: .35rem; }
+.valor { position: relative; margin: 0; }
+.valor input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.valor span {
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 1px solid var(--border-control);
+  border-radius: .4rem;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-weight: 700;
+}
+.valor input:checked + span { background: var(--sangue-500); border-color: var(--ouro-700); color: var(--osso-100); }
+.valor input:focus-visible + span { box-shadow: var(--focus-ring); }
+.distribuicao__linha .campo-erro { clear: both; }
+
+.assistente__saida { display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem; border: 1px dashed var(--border-control); border-radius: .5rem; }
+.assistente__saida input { width: 1.15rem; height: 1.15rem; accent-color: var(--sangue-600); }
+.assistente__saida label { margin: 0; font-size: .95rem; color: var(--text); font-weight: 600; }
+
+/* Conferência */
+.previa__valores { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; margin: 0; }
+.previa__valor { display: grid; gap: .2rem; padding: .7rem .8rem; border: 1px solid var(--border-ornate); border-radius: .5rem; background: var(--surface-raised); }
+.previa__valor dt { color: var(--text-muted); font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.previa__valor dd { margin: 0; display: grid; gap: .15rem; }
+.previa__valor strong { font: 600 1.8rem/1 var(--font-display); }
+.previa__valor small { color: var(--text-muted); font-size: .82rem; }
+.avisos ul { margin: 0; padding-left: 1.2rem; display: grid; gap: .25rem; }
+.resumo { display: grid; gap: .4rem; padding-top: .8rem; border-top: 1px solid var(--border); }
+.resumo__cabeca { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.resumo__cabeca h3 { margin: 0; font: 600 1.2rem var(--font-display); }
+.resumo p { margin: 0; }
+.resumo__problemas { margin: 0; padding-left: 1.2rem; }
+
+.assistente__acoes { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; padding-top: .6rem; border-top: 1px solid var(--border); }
+.assistente__sair { margin-left: auto; }
+.assistente__bloqueio { margin: 0; }
+
+/* Telas estreitas: a lista vira "Etapa N de 8" com barra de progresso. */
+@media (max-width: 760px) {
+  .assistente { grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+  .assistente__etapas { position: static; padding: .8rem 1rem; }
+  .assistente__etapas ol { display: none; }
+  .assistente__progresso { display: block; margin: 0 0 .45rem; color: var(--accent-strong); font-weight: 700; }
+  .assistente__barra { display: block; height: 6px; border-radius: 3px; background: var(--noite-600); overflow: hidden; }
+  .assistente__barra span { display: block; height: 100%; background: linear-gradient(90deg, var(--sangue-500), var(--ouro-300)); }
+  .previa__valores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .assistente__sair { margin-left: 0; }
+}
+
+/* Legendas do assistente em caixa normal (o estilo global de fieldset usa versalete pequeno). */
+.assistente fieldset legend { text-transform: none; letter-spacing: 0; }
+.assistente .opcoes > legend, .assistente .distribuicao > legend { color: var(--text); font-size: 1.2rem; font-weight: 600; }
+.assistente .valores > legend { color: var(--text); font-size: 1rem; font-weight: 600; }
+.valor span { font-size: 1rem; }
+/* Perícia em 0 é o padrão: marcada, mas sem o destaque dos valores distribuídos. */
+.valor input[value="0"]:checked + span { background: var(--surface-soft); border-color: var(--tinta-700); color: var(--text); }

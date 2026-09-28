@@ -97,27 +97,6 @@ export function useParticipantes(
   });
 }
 
-export interface CriarPersonagemVariables {
-  nome: string;
-}
-
-export function useCriarPersonagem(api: ApiClient, mesaId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ nome }: CriarPersonagemVariables) => {
-      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens", {
-        params: { path: { mesa_id: mesaId } },
-        body: { ficha: { personagem: { nome } } },
-      });
-      if (error) throw new Error(extractErrorMessage(error, "Não foi possível criar o personagem."));
-      return data;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["personagens", mesaId] });
-    },
-  });
-}
-
 export interface ExcluirPersonagemVariables {
   personagemId: string;
   versaoEsperada: number;

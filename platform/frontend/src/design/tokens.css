@@ -1,25 +1,100 @@
+/*
+ * Tema da plataforma em três camadas (design D7 de criacao-guiada-e-nova-estetica).
+ *
+ * 1. Primitivos: paleta bruta, tirada da arte (noite azulada, dourado envelhecido, sangue,
+ *    pergaminho e tinta). Nenhuma regra de tela usa primitivos diretamente.
+ * 2. Semânticos: papel de cada cor (superfície, texto, destaque, ação, borda, foco). É o que o
+ *    CSS das telas usa. `.tema-pergaminho` redefine os semânticos para superfícies de leitura.
+ * 3. Componentes, só quando necessário (molduras).
+ *
+ * Os nomes antigos (`--bg`, `--gold`, `--violet`…) continuam como aliases dos semânticos para as
+ * telas ainda não migradas. Os pares de contraste são verificados em `tokens.test.ts`.
+ */
+
 :root {
+  /* ---------- 1. Primitivos ---------- */
+  --noite-950: #070b10;
+  --noite-900: #0b1118;
+  --noite-850: #0f1720;
+  --noite-800: #141e29;
+  --noite-700: #1b2734;
+  --noite-600: #243241;
+  --noite-500: #3a4b5c;
+  --noite-400: #7d91a4;
+
+  --osso-100: #f1e9da;
+  --osso-300: #c3bba9;
+  --osso-400: #a9a192;
+
+  --ouro-100: #f6e6bf;
+  --ouro-200: #efd59c;
+  --ouro-300: #ddb872;
+  --ouro-500: #b08a45;
+  --ouro-700: #7a5a26;
+  --ouro-800: #6a4a15;
+  --ouro-900: #3b2b13;
+
+  --sangue-300: #ec9c90;
+  --sangue-500: #9b2a28;
+  --sangue-600: #7f1f1d;
+  --sangue-700: #8a1f1b;
+  --sangue-900: #3d1614;
+
+  --pergaminho-50: #f9eed6;
+  --pergaminho-100: #f3deba;
+  --pergaminho-200: #e9cfa0;
+  --pergaminho-300: #dbbd85;
+  --pergaminho-600: #8c6b3e;
+
+  --tinta-900: #2b1d10;
+  --tinta-700: #4a3522;
+  --tinta-600: #5a4330;
+
+  --arcano-300: #b3a4ee;
+  --arcano-800: #302c4a;
+  --musgo-300: #86cbbb;
+  --musgo-700: #2d5a4e;
+  --musgo-800: #1f3a36;
+
+  /* ---------- 2. Semânticos: paleta noturna (moldura da aplicação) ---------- */
   color-scheme: dark;
-  --bg: #0c0d12;
-  --bg-glow: #181922;
-  --surface: #181922;
-  --surface-raised: #20212b;
-  --surface-soft: #252630;
-  --border: #353640;
-  --border-subtle: #2a2b35;
-  --text: #f3efe8;
-  --muted: #a5a5b3;
-  --quiet: #9496a8;
-  --gold: #e4bd78;
-  --gold-soft: #4f3d2d;
-  --violet: #a997e8;
-  --violet-soft: #34304d;
-  --teal: #80c8b8;
-  --teal-soft: #233f3d;
-  --red: #df887d;
-  --red-soft: #493035;
-  --font-body: "Inter", "Segoe UI", Arial, sans-serif;
-  --font-display: "Cormorant Garamond", Georgia, serif;
+  --surface-app: var(--noite-900);
+  --surface-app-glow: var(--noite-800);
+  --surface: var(--noite-800);
+  --surface-raised: var(--noite-700);
+  --surface-soft: var(--noite-600);
+  --surface-parchment: var(--pergaminho-100);
+
+  --text: var(--osso-100);
+  --text-muted: var(--osso-300);
+  --text-quiet: var(--osso-400);
+  --text-on-parchment: var(--tinta-900);
+  --text-on-parchment-muted: var(--tinta-600);
+  --text-disabled: var(--osso-400);
+
+  --accent: var(--ouro-300);
+  --accent-strong: var(--ouro-200);
+  --accent-soft: var(--ouro-900);
+  --action: var(--sangue-500);
+  --action-hover: var(--sangue-600);
+  --action-text: var(--osso-100);
+  --danger: var(--sangue-300);
+  --danger-soft: var(--sangue-900);
+  --success: var(--musgo-300);
+  --success-soft: var(--musgo-800);
+  --arcane: var(--arcano-300);
+  --arcane-soft: var(--arcano-800);
+
+  --border: var(--noite-500);
+  --border-subtle: var(--noite-600);
+  --border-control: var(--noite-400);
+  --border-ornate: var(--ouro-500);
+  --focus-color: var(--ouro-200);
+  --focus-ring: 0 0 0 3px var(--focus-color);
+
+  /* ---------- Tipografia, espaço, forma e movimento ---------- */
+  --font-body: "Alegreya Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --space-1: .25rem;
   --space-2: .5rem;
   --space-3: .75rem;
@@ -30,11 +105,57 @@
   --radius-sm: .5rem;
   --radius-md: .9rem;
   --radius-lg: 1.3rem;
-  --shadow-card: 0 14px 38px #0004;
-  --shadow-float: 0 24px 60px #0008;
+  --shadow-card: 0 14px 38px #0006;
+  --shadow-float: 0 24px 60px #000a;
   --motion-fast: 140ms;
   --motion-normal: 260ms;
-  --focus-ring: 0 0 0 3px #e4bd7880;
+
+  /* ---------- 3. Componentes ---------- */
+  --frame-corner-size: 22px;
+  --frame-border-width: 1px;
+}
+
+/* Superfície de leitura: o mesmo vocabulário semântico, agora com texto escuro sobre pergaminho. */
+.tema-pergaminho {
+  color-scheme: light;
+  --surface: var(--pergaminho-100);
+  --surface-raised: var(--pergaminho-50);
+  --surface-soft: var(--pergaminho-200);
+  --text: var(--tinta-900);
+  --text-muted: var(--tinta-700);
+  --text-quiet: var(--tinta-600);
+  --text-disabled: var(--tinta-600);
+  --accent: var(--ouro-800);
+  --accent-strong: var(--tinta-900);
+  --accent-soft: var(--pergaminho-200);
+  --danger: var(--sangue-700);
+  --danger-soft: #f0c9b8;
+  --success: var(--musgo-700);
+  --success-soft: #d8e0c4;
+  --arcane: #4f3f94;
+  --arcane-soft: #e3d6ee;
+  --border: var(--pergaminho-300);
+  --border-subtle: var(--pergaminho-200);
+  --border-control: var(--pergaminho-600);
+  --focus-color: var(--sangue-600);
+  color: var(--text);
+}
+
+/* Aliases dos tokens antigos, redeclarados no pergaminho para acompanharem os semânticos de lá. */
+:root, .tema-pergaminho {
+  --bg: var(--surface-app);
+  --bg-glow: var(--surface-app-glow);
+  --muted: var(--text-muted);
+  --quiet: var(--text-quiet);
+  --gold: var(--accent);
+  --gold-soft: var(--accent-soft);
+  --violet: var(--arcane);
+  --violet-soft: var(--arcane-soft);
+  --teal: var(--success);
+  --teal-soft: var(--success-soft);
+  --red: var(--danger);
+  --red-soft: var(--danger-soft);
+  --focus-ring: 0 0 0 3px var(--focus-color);
 }
 
 @media (prefers-reduced-motion: reduce) {

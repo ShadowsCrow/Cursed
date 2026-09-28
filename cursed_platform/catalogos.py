@@ -83,11 +83,34 @@ class Classe:
 
 
 @dataclass(frozen=True)
+class IntervaloAltura:
+    """Altura em metros; ``maxima=None`` é sem limite superior (faixa do Colossal)."""
+
+    minima: float
+    maxima: float | None
+
+    def contem(self, altura: float) -> bool:
+        return altura >= self.minima and (self.maxima is None or altura <= self.maxima)
+
+    def texto(self) -> str:
+        metros = lambda v: f"{v:.2f}".replace(".", ",") + " m"  # noqa: E731
+        return f"acima de {metros(self.minima)}" if self.maxima is None else f"de {metros(self.minima)} a {metros(self.maxima)}"
+
+
+@dataclass(frozen=True)
+class FaixaAltura:
+    tamanho: str
+    intervalo: IntervaloAltura
+
+
+@dataclass(frozen=True)
 class Raca:
     nome: str
     deslocamento: int | None
     tamanho: str | None
     habilidades: tuple[Habilidade, ...]
+    # Intervalo típico de altura da raça (Criação de Personagem.md, Altura e Tamanho fora da média).
+    altura: IntervaloAltura | None = None
 
 
 @dataclass(frozen=True)
@@ -102,6 +125,10 @@ class CampoPersonalidade:
     chave: str
     rotulo: str
     dica: str
+    # Texto longo (ex.: História), com área de texto maior na ficha.
+    longo: bool = False
+    # Máximo de caracteres aceito pelo servidor; None = sem limite.
+    limite: int | None = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +137,13 @@ class Listas:
     alinhamentos: tuple[str, ...]
     pecados: tuple[Pecado, ...]
     campos_personalidade: tuple[CampoPersonalidade, ...]
+    # Faixa de altura de cada Tamanho, do menor ao maior.
+    faixas_de_altura: tuple[FaixaAltura, ...] = ()
+    # Ícone do Resumo da ficha por nome de atributo, perícia ou grupo (aba-resumo-da-ficha, D5).
+    icones_ficha: tuple[tuple[str, str], ...] = ()
+
+    def faixa(self, tamanho: Any) -> FaixaAltura | None:
+        return next((f for f in self.faixas_de_altura if chave(f.tamanho) == chave(tamanho)), None)
 
     def pecado(self, valor: Any) -> Pecado | None:
         """Pecado pelo nome ou por uma grafia equivalente (ex.: ``Ganancia``)."""
@@ -236,6 +270,56 @@ def converter_classes(dados: Any, arquivo: str = "classes.json") -> tuple[Classe
     return tuple(classes)
 
 
+def _metros(valor: Any) -> float | None:
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)) or valor <= 0:
+        return None
+    return float(valor)
+
+
+def _intervalo(bruto: Any, *, arquivo: str, onde: str, sem_teto: bool) -> IntervaloAltura:
+    if not isinstance(bruto, Mapping):
+        raise CatalogoInvalido(arquivo, f"{onde}: precisa ser um objeto com 'minima' e 'maxima'.")
+    minima, maxima_bruta = _metros(bruto.get("minima")), bruto.get("maxima")
+    maxima = None if maxima_bruta is None and sem_teto else _metros(maxima_bruta)
+    if minima is None or (maxima is None and not (sem_teto and maxima_bruta is None)):
+        raise CatalogoInvalido(arquivo, f"{onde}: 'minima' e 'maxima' precisam ser alturas em metros maiores que zero.")
+    if maxima is not None and maxima <= minima:
+        raise CatalogoInvalido(arquivo, f"{onde}: a altura máxima precisa ser maior que a mínima.")
+    return IntervaloAltura(minima, maxima)
+
+
+def converter_faixas(brutas: list[Any], arquivo: str = "listas_ficha.json") -> tuple[FaixaAltura, ...]:
+    """Faixas de altura por Tamanho: todos os Tamanhos, em ordem, contíguas; só o maior sem teto."""
+    from cursed_platform.domain.grade import TAMANHOS
+
+    if not brutas:
+        return ()
+    faixas: list[FaixaAltura] = []
+    for indice, bruta in enumerate(brutas):
+        onde = f"faixa de altura {indice + 1}"
+        if not isinstance(bruta, Mapping):
+            raise CatalogoInvalido(arquivo, f"{onde}: precisa ser um objeto.")
+        faixas.append(FaixaAltura(_texto(bruta, "tamanho", arquivo=arquivo, onde=onde),
+                                  _intervalo(bruta, arquivo=arquivo, onde=onde, sem_teto=indice == len(brutas) - 1)))
+    if [chave(f.tamanho) for f in faixas] != list(TAMANHOS):
+        raise CatalogoInvalido(arquivo, "'faixas_de_altura' precisa ter todos os Tamanhos, do Minúsculo ao Colossal, nessa ordem.")
+    for anterior, seguinte in zip(faixas, faixas[1:]):
+        if anterior.intervalo.maxima != seguinte.intervalo.minima:
+            raise CatalogoInvalido(arquivo, f"'faixas_de_altura': a faixa de {seguinte.tamanho} precisa começar onde termina a de {anterior.tamanho}.")
+    return tuple(faixas)
+
+
+def validar_alturas(racas: tuple[Raca, ...], listas: Listas, arquivo: str = "racas.json") -> None:
+    """A altura típica de cada raça cabe na faixa do Tamanho dela."""
+    for raca in racas:
+        faixa = listas.faixa(raca.tamanho) if raca.altura and raca.tamanho else None
+        if raca.altura and faixa:
+            dentro = raca.altura.minima >= faixa.intervalo.minima and (
+                faixa.intervalo.maxima is None or (raca.altura.maxima or 0) <= faixa.intervalo.maxima)
+            if not dentro:
+                raise CatalogoInvalido(arquivo, f"{raca.nome}: a altura típica precisa caber na faixa do Tamanho {faixa.tamanho} ({faixa.intervalo.texto()}).")
+
+
 def converter_racas(dados: Any, arquivo: str = "racas.json") -> tuple[Raca, ...]:
     if not isinstance(dados, list):
         raise CatalogoInvalido(arquivo, "o catálogo de raças precisa ser uma lista.")
@@ -248,11 +332,13 @@ def converter_racas(dados: Any, arquivo: str = "racas.json") -> tuple[Raca, ...]
         if deslocamento is not None and (isinstance(deslocamento, bool) or not isinstance(deslocamento, int)):
             raise CatalogoInvalido(arquivo, f"{nome}: o deslocamento precisa ser um número inteiro.")
         tamanho = bruta.get("tamanho")
+        altura = bruta.get("altura")
         racas.append(Raca(
             nome=nome,
             deslocamento=deslocamento,
             tamanho=tamanho.strip() if isinstance(tamanho, str) and tamanho.strip() else None,
             habilidades=_habilidades(_lista(bruta, "habilidades", arquivo=arquivo, onde=nome), arquivo=arquivo, onde=nome),
+            altura=None if altura is None else _intervalo(altura, arquivo=arquivo, onde=f"{nome}, altura", sem_teto=False),
         ))
     _unicos([r.nome for r in racas], arquivo=arquivo, tipo="Raça")
     return tuple(racas)
@@ -306,13 +392,41 @@ def converter_listas(dados: Any, arquivo: str = "listas_ficha.json") -> Listas:
         if not isinstance(bruto, Mapping):
             raise CatalogoInvalido(arquivo, f"campo de personalidade {indice + 1}: precisa ser um objeto.")
         onde = f"campo de personalidade {indice + 1}"
+        longo = bruto.get("longo", False)
+        if not isinstance(longo, bool):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'longo' precisa ser verdadeiro ou falso.")
+        limite = bruto.get("limite")
+        if limite is not None and (isinstance(limite, bool) or not isinstance(limite, int) or limite < 1):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'limite' precisa ser um inteiro maior que zero.")
         campos.append(CampoPersonalidade(
             _texto(bruto, "chave", arquivo=arquivo, onde=onde),
             _texto(bruto, "rotulo", arquivo=arquivo, onde=onde),
             _texto(bruto, "dica", arquivo=arquivo, onde=onde, obrigatorio=False),
+            longo,
+            limite,
         ))
     _unicos([c.chave for c in campos], arquivo=arquivo, tipo="campos_personalidade: chave")
-    return Listas(textos("sexos"), textos("alinhamentos"), tuple(pecados), tuple(campos))
+    faixas = converter_faixas(_lista(dados, "faixas_de_altura", arquivo=arquivo, onde="listas"), arquivo)
+    return Listas(textos("sexos"), textos("alinhamentos"), tuple(pecados), tuple(campos), faixas,
+                  converter_icones_ficha(dados.get("icones_ficha", {}), arquivo))
+
+
+_NOME_DE_ICONE = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+def converter_icones_ficha(bruto: Any, arquivo: str = "listas_ficha.json") -> tuple[tuple[str, str], ...]:
+    """`{nome: ícone}`; o nome é o gravado na ficha (ex.: `Proposito`) e o ícone, um identificador."""
+    if not isinstance(bruto, Mapping):
+        raise CatalogoInvalido(arquivo, "'icones_ficha' precisa ser um objeto de nome para ícone.")
+    pares: list[tuple[str, str]] = []
+    for nome, icone in bruto.items():
+        if not isinstance(nome, str) or not nome.strip():
+            raise CatalogoInvalido(arquivo, "icones_ficha: o nome não pode ficar vazio.")
+        if not isinstance(icone, str) or not _NOME_DE_ICONE.match(icone):
+            raise CatalogoInvalido(arquivo, f"icones_ficha: o ícone de '{nome}' precisa ser um identificador em minúsculas (ex.: forca).")
+        pares.append((nome.strip(), icone))
+    _unicos([n for n, _ in pares], arquivo=arquivo, tipo="icones_ficha: nome")
+    return tuple(pares)
 
 
 def ler(diretorio: Path = DIRETORIO) -> Catalogos:
@@ -329,12 +443,15 @@ def ler(diretorio: Path = DIRETORIO) -> Catalogos:
         except (UnicodeDecodeError, json.JSONDecodeError) as erro:
             raise CatalogoInvalido(nome, f"JSON inválido ({erro}).") from erro
     resumo = hashlib.sha256(b"".join(hashlib.sha256(brutos[n]).digest() for n in ARQUIVOS)).hexdigest()
+    racas = converter_racas(dados["racas.json"])
+    listas = converter_listas(dados["listas_ficha.json"])
+    validar_alturas(racas, listas)
     return Catalogos(
         versao=resumo[:16],
         classes=converter_classes(dados["classes.json"]),
-        racas=converter_racas(dados["racas.json"]),
+        racas=racas,
         efeitos_default=converter_efeitos(dados["efeitos_default.json"]),
-        listas=converter_listas(dados["listas_ficha.json"]),
+        listas=listas,
     )
 
 

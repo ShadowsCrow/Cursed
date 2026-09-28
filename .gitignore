@@ -222,3 +222,6 @@ platform/api/.dev/
 # Capturas de tela geradas localmente
 platform/frontend/.screenshots/
 platform/frontend/test-results/
+
+# Arte original (matrizes grandes) da nova estética; só as versões otimizadas em public/arte/ são versionadas
+platform/frontend/arte-original/

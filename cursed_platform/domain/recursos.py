@@ -169,7 +169,7 @@ def calcular(ficha: Mapping[str, Any], catalogo: "Catalogos") -> Recursos:
             if permanente is None:
                 return _nao_calculavel(nome, motivo_atributo or "")
             fontes = [
-                FonteRecurso("classe", f"{rotulo_base.capitalize()} do {classe.nome}", base.valor),
+                FonteRecurso("classe", f"{rotulo_base[:1].upper()}{rotulo_base[1:]} do {classe.nome}", base.valor),
                 FonteRecurso("atributo", rotulo_atributo, permanente),
             ]
             return ValorRecurso(f"recurso:{nome}", ROTULOS[nome], True, tuple(fontes))

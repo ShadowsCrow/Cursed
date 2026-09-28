@@ -11,7 +11,9 @@
       "origem": "app_streamlit/data/catalogs/racas.json",
       "sha256_origem": "c107f995b1e06182e240e47075d1c02f0d5fef501d517d6f4cf783c819654c89",
       "copiado_em": "2026-09-27",
-      "transformacoes": []
+      "transformacoes": [
+        "Campo altura (minima e maxima, em metros) em cada raça: intervalo típico aprovado pelo usuário em 2026-09-28 (Criação de Personagem.md, Altura e Tamanho fora da média)."
+      ]
     },
     "efeitos_default.json": {
       "origem": "app_streamlit/data/catalogs/efeitos_default.json",
@@ -31,7 +33,9 @@
       "copiado_em": "2026-09-27",
       "transformacoes": [
         "Listas e dicas extraídas do código do Streamlit.",
-        "Pecado gravado como Ganancia passa a Ganância, com Ganancia como grafia equivalente."
+        "Pecado gravado como Ganancia passa a Ganância, com Ganancia como grafia equivalente.",
+        "Lista faixas_de_altura por Tamanho, aprovada pelo usuário em 2026-09-28 (Criação de Personagem.md, Altura e Tamanho fora da média).",
+        "Campo de personalidade História (longo, até 4000 caracteres) e mapa icones_ficha do Resumo da ficha, aprovados pelo usuário em 2026-09-28 (aba-resumo-da-ficha)."
       ]
     }
   }

@@ -1,11 +1,11 @@
-:root { font-family: system-ui, sans-serif; color: #f2efe9; background: #151419; }
+:root { font-family: var(--font-body); color: var(--text); background: var(--bg); }
 * { box-sizing: border-box; }
 body { margin: 0; }
-a { color: #d6b985; }
+a { color: var(--accent); }
 button, input { font: inherit; }
 button { cursor: pointer; padding: .55rem .85rem; }
 .page { max-width: 70rem; margin: 0 auto; padding: 2rem; }
 .page form { display: grid; gap: 1rem; max-width: 24rem; }
 .page label { display: grid; gap: .35rem; }
 .page input { padding: .55rem; }
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid #48434c; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border); }

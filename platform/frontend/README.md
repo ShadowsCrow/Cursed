@@ -50,3 +50,33 @@ Requer uma API em modo de desenvolvimento em `API_URL` (padrão
 `http://127.0.0.1:8001`, com `CURSED_DEV_AUTH=1` e um banco descartável) e um
 Vite em `APP_URL` (padrão `http://localhost:5174`) apontando para ela. Use
 `SOMENTE=02-visao-geral,06-ficha-informacoes` para capturar só algumas telas.
+
+## Arte e fontes do tema
+
+As ilustrações do tema (castelo do cabeçalho, texturas de noite e pergaminho, emblema, retrato de
+reserva e uma ilustração por etapa do assistente de criação) são geradas fora do repositório. As
+matrizes em PNG (≈ 32 MB) ficam em `platform/frontend/arte-original/`, **ignorada pelo Git**; só as
+versões otimizadas em `public/arte/` (WebP, ≈ 2 MB) e os ícones da aba (`public/favicon-16.png`,
+`public/favicon-32.png`) são versionados.
+
+Para gerar de novo as versões otimizadas, com as matrizes no lugar, rode na raiz do repositório:
+
+```bash
+.venv/Scripts/python.exe platform/frontend/scripts/preparar_arte.py
+```
+
+O script usa só o Pillow da plataforma. Ele recorta a âncora em 2:1 a partir do topo (1536 e 768 px),
+corrige a emenda das texturas e as reduz a 512×512, limpa o halo avermelhado do emblema (256 e
+1024 px, sem perda), recorta o retrato em 3:4 e reduz as etapas a 1200×800. O teste
+`cursed_platform/tests/test_preparar_arte.py` confere dimensões, tamanho total, emenda, halo e o
+contraste do texto sobre a arte já escurecida pelas camadas de `src/ui/tema.css` (é pulado sem as
+matrizes).
+
+Para trocar ou regenerar uma imagem, siga o guia e os prompts de
+`openspec/changes/criacao-guiada-e-nova-estetica/arte/prompts.md` (depois do arquivamento da mudança,
+em `openspec/changes/archive/`), salve o PNG em `arte-original/` com o mesmo nome e rode o script.
+Nenhuma imagem pode conter texto: o nome "CURSED" e os rótulos são texto da interface.
+
+As fontes (Cormorant Garamond para títulos e Alegreya Sans para leitura, licença SIL OFL 1.1) ficam
+em `public/fonts` e são declaradas em `src/design/fonts.css` com `font-display: swap`: se não
+carregarem, o texto aparece nas alternativas do sistema declaradas em `src/design/tokens.css`.

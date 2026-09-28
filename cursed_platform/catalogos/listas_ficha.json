@@ -93,6 +93,78 @@
       "chave": "religiao",
       "rotulo": "Religião ou crença",
       "dica": "Ex: Deusa da Lua"
+    },
+    {
+      "chave": "historia",
+      "rotulo": "História",
+      "dica": "Ex: de onde veio, o que perdeu e o que o fez partir",
+      "longo": true,
+      "limite": 4000
     }
-  ]
+  ],
+  "faixas_de_altura": [
+    {
+      "tamanho": "Minúsculo",
+      "minima": 0.1,
+      "maxima": 0.6
+    },
+    {
+      "tamanho": "Pequeno",
+      "minima": 0.6,
+      "maxima": 1.4
+    },
+    {
+      "tamanho": "Médio",
+      "minima": 1.4,
+      "maxima": 2.1
+    },
+    {
+      "tamanho": "Grande",
+      "minima": 2.1,
+      "maxima": 3.0
+    },
+    {
+      "tamanho": "Enorme",
+      "minima": 3.0,
+      "maxima": 5.0
+    },
+    {
+      "tamanho": "Colossal",
+      "minima": 5.0,
+      "maxima": null
+    }
+  ],
+  "icones_ficha": {
+    "Força": "forca",
+    "Destreza": "destreza",
+    "Vigor": "vigor",
+    "Carisma": "carisma",
+    "Manipulação": "manipulacao",
+    "Proposito": "proposito",
+    "Percepção": "percepcao",
+    "Inteligência": "inteligencia",
+    "Raciocínio": "raciocinio",
+    "Talentos": "talentos",
+    "Técnicas": "tecnicas",
+    "Conhecimentos": "conhecimentos",
+    "Prontidão": "percepcao",
+    "Briga": "forca",
+    "Empatia": "vigor",
+    "Expressão": "lingua",
+    "Intimidação": "forca",
+    "Liderança": "carisma",
+    "Lábia": "lingua",
+    "Lidar com animais": "sobrevivencia",
+    "Etiqueta": "manipulacao",
+    "Longo alcance": "alvo",
+    "Performance": "manipulacao",
+    "Furtividade": "furtividade",
+    "Sobrevivência": "sobrevivencia",
+    "Acadêmicos": "inteligencia",
+    "Arcanismo": "arcanismo",
+    "Investigação": "percepcao",
+    "Linguistica": "lingua",
+    "Medicina": "vigor",
+    "Natureza": "sobrevivencia"
+  }
 }

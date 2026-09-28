@@ -10,13 +10,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, inventario_grade
+from cursed_platform import auditoria, catalogos, inventario_grade
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CriarPersonagemRequest, DecidirPedidoRequest, FichaContrato,
-    PedidoAlteracaoResumo, PersonagemResumo, PoliticaMesaContrato, RevelacaoContrato,
-    TransferirPersonagemRequest,
+    PedidoAlteracaoResumo, PersonagemResumo, PoliticaMesaContrato, PreviaCriacaoResposta,
+    ProblemaValidacao, RevelacaoContrato, TransferirPersonagemRequest,
 )
+from cursed_platform.domain import previa_criacao
 from cursed_platform.domain.ficha import FichaDraft
 from cursed_platform.persistence import MesaRegistro, PedidoAlteracaoRegistro, PersonagemRegistro
 from cursed_platform.repositories import FichaRepository, MesaRepository
@@ -24,6 +25,7 @@ from cursed_platform.repositories import FichaRepository, MesaRepository
 from .auth import Ator, get_actor
 from .catalogo_ficha import atualizar_cartas
 from .dependencies import get_correlacao, get_session
+from .live_sheet import resumo_recursos
 from .sheets import FichaSnapshot
 from .validacao import ajustar_recursos_atuais, exigir_ficha_valida, preparar_ficha_nova
 
@@ -110,6 +112,7 @@ def _personagem_resumo(
     personagem: PersonagemRegistro, fichas: FichaRepository | None = None,
 ) -> PersonagemResumo:
     nome = (personagem.ficha or {}).get("personagem", {}).get("nome")
+    retrato = (personagem.ficha or {}).get("personagem", {}).get("imagem_ativo")
     return PersonagemResumo(
         id=personagem.id, mesa_id=personagem.mesa_id,
         nome=nome if isinstance(nome, str) and nome.strip() else "Sem nome",
@@ -118,6 +121,7 @@ def _personagem_resumo(
         excluido_em=personagem.excluido_em,
         restauravel_ate=fichas.prazo_restauracao(personagem) if fichas else None,
         revelacao=RevelacaoContrato(**personagem.revelacao) if personagem.revelacao else None,
+        retrato_objeto=retrato if isinstance(retrato, str) and retrato else None,
     )
 
 
@@ -222,6 +226,22 @@ def restaurar_personagem(
     return _personagem_resumo(personagem)
 
 
+@router.post("/mesas/{mesa_id}/personagens/previa", response_model=PreviaCriacaoResposta)
+def previsualizar_personagem(
+    mesa_id: str, pedido: CriarPersonagemRequest,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+) -> PreviaCriacaoResposta:
+    """Valores e problemas da ficha como seria criada, sem gravar, auditar nem conceder cartas."""
+    _exigir(session, Acao.CRIAR_PERSONAGEM, mesa_id, ator)
+    payload = FichaDraft.de_payload(pedido.ficha.model_dump(mode="json")).para_payload()
+    preparar_ficha_nova(payload, tipo="personagem", pelo_narrador=False)
+    previa = previa_criacao.previa(payload, catalogos.obter())
+    return PreviaCriacaoResposta(
+        valores=resumo_recursos(previa.valores),
+        problemas=[ProblemaValidacao(campo=p.caminho, mensagem=p.mensagem) for p in previa.problemas],
+    )
+
+
 @router.post(
     "/mesas/{mesa_id}/personagens", response_model=FichaSnapshot,
     status_code=status.HTTP_201_CREATED,
@@ -237,7 +257,7 @@ def criar_personagem(
     if not isinstance(nome, str) or not nome.strip():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Nome do personagem obrigatório.")
     preparar_ficha_nova(payload, tipo="personagem", pelo_narrador=False)
-    exigir_ficha_valida(None, payload, tipo="personagem")
+    exigir_ficha_valida(None, payload, tipo="personagem", criacao_pelo_jogador=True)
     personagem_id = uuid4().hex
     personagem = PersonagemRegistro(
         id=personagem_id, mesa_id=mesa_id, proprietario_id=ator.usuario_id,
