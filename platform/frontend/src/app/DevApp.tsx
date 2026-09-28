@@ -1,19 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { useLocation, useNavigate } from "react-router";
 
 import { createAuthenticatedApiClient } from "../api/client";
 import { AppRoutes } from "./App";
-import { routes } from "./routes";
+import { Entrada, type ModoEntrada } from "./plataforma/entrada/Entrada";
+import { routePatterns, routes } from "./routes";
 
 const CHAVE = "cursed-dev-identidade";
-// Contas de teste, não papéis: narrar ou jogar vem de cada campanha. Os ids seguem os dados de exemplo.
-const SUGESTOES = [
-  { id: "narrador", rotulo: "Conta de teste 1" },
-  { id: "jogador-1", rotulo: "Conta de teste 2" },
-  { id: "jogador-2", rotulo: "Conta de teste 3" },
-  { id: "jogador-3", rotulo: "Conta de teste 4" },
-];
 const VALIDA = /^[a-z0-9][a-z0-9_-]{0,49}$/;
 
 function lerIdentidade(): string | null {
@@ -34,16 +29,27 @@ function salvarIdentidade(id: string | null) {
   }
 }
 
+/** "Rique.Souza@exemplo.com" -> "rique-souza": a identidade de teste vem da parte antes do @. */
+function identidadeDoEmail(email: string): string | null {
+  const local = email.trim().toLowerCase().split("@")[0] ?? "";
+  const id = local.normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^[^a-z0-9]+/, "").replace(/-+$/, "").slice(0, 50);
+  return VALIDA.test(id) ? id : null;
+}
+
+const MODOS: Record<string, ModoEntrada> = { [routePatterns.cadastro]: "cadastro", [routePatterns.recuperarSenha]: "recuperar" };
+
 /**
- * Entrada de desenvolvimento local (VITE_DEV_AUTH=1): escolhe uma identidade sem senha
- * e a envia como `dev:<id>`. A API só aceita esse formato com CURSED_DEV_AUTH ligado
- * fora de produção.
+ * Entrada de desenvolvimento local (VITE_DEV_AUTH=1): a mesma tela de entrar e criar conta do site,
+ * mas qualquer e-mail entra e a senha não é conferida. A identidade vai para a API como `dev:<id>`,
+ * aceito só com CURSED_DEV_AUTH fora de produção. Ninguém escolhe papel: quem cria uma campanha a
+ * narra, quem entra por convite joga.
  */
 export function DevApp({ apiUrl }: { apiUrl: string }) {
   const [identidade, setIdentidade] = useState<string | null>(lerIdentidade);
-  const [personalizada, setPersonalizada] = useState("");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const local = useLocation();
   const api = useMemo(
     () => createAuthenticatedApiClient(apiUrl, async () => (identidade ? `dev:${identidade}` : null)),
     [apiUrl, identidade],
@@ -60,27 +66,28 @@ export function DevApp({ apiUrl }: { apiUrl: string }) {
     salvarIdentidade(null);
     queryClient.clear();
     setIdentidade(null);
+    navigate(routes.entrar(), { replace: true });
   }
 
+  const auth = useMemo(() => {
+    const comEmail = async ({ email }: { email: string }) => {
+      const id = identidadeDoEmail(email);
+      if (!id) return { data: {}, error: { message: "Invalid login credentials" } };
+      entrar(id);
+      return { data: {}, error: null };
+    };
+    const aceitar = async () => ({ data: {}, error: null });
+    return { auth: { signInWithPassword: comEmail, signUp: comEmail, resetPasswordForEmail: aceitar,
+      updateUser: aceitar, signInWithOAuth: aceitar } } as unknown as SupabaseClient;
+    // `entrar` só usa setters estáveis e o navegador de rotas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!identidade) {
+    const modo = MODOS[local.pathname] ?? "entrar";
     return (
-      <main className="page dev-login">
-        <h1>Cursed · modo de desenvolvimento</h1>
-        <p>Escolha uma conta de teste para esta aba. Não há senha: este modo existe só na sua máquina e substitui o login por e-mail.</p>
-        <p>Isto não é escolher entre narrar e jogar: o papel vem de cada campanha (quem cria narra, quem entra por convite joga).</p>
-        <div className="dev-login__choices">
-          {SUGESTOES.map((s) => (
-            <button key={s.id} type="button" className="button" onClick={() => entrar(s.id)}>{s.rotulo}</button>
-          ))}
-        </div>
-        <form onSubmit={(event) => { event.preventDefault(); if (VALIDA.test(personalizada)) entrar(personalizada); }}>
-          <label>Outra identidade (minúsculas, números, - ou _)
-            <input value={personalizada} onChange={(event) => setPersonalizada(event.target.value.trim().toLowerCase())} />
-          </label>
-          <button type="submit" className="button button--secondary" disabled={!VALIDA.test(personalizada)}>Entrar</button>
-        </form>
-        <p>Dica: abra outra janela anônima para usar outra conta ao mesmo tempo (por exemplo, quem narra e quem joga).</p>
-      </main>
+      <Entrada key={modo} auth={auth} modo={modo} loginGoogle={false}
+        observacao={<>Modo de desenvolvimento: qualquer e-mail entra e a senha não é conferida. Para testar duas pessoas, use outra janela anônima com outro e-mail.</>} />
     );
   }
 
@@ -88,7 +95,7 @@ export function DevApp({ apiUrl }: { apiUrl: string }) {
     <>
       <div className="dev-banner" role="status">
         Modo dev · você é <strong>{identidade}</strong>
-        <button type="button" className="button button--ghost" onClick={sair}>Trocar identidade</button>
+        <button type="button" className="button button--ghost" onClick={sair}>Sair</button>
       </div>
       <AppRoutes api={api} userId={identidade} onSignOut={sair} />
     </>

@@ -486,7 +486,8 @@ test("navegação: primeiro acesso, campanha, convite, sinopse, participantes e 
     // Sair devolve à entrada.
     await narradora.pagina.getByRole("button", { name: /Conta de Inês/ }).click();
     await narradora.pagina.getByRole("menuitem", { name: "Sair" }).click();
-    await expect(narradora.pagina.getByText(/modo de desenvolvimento/)).toBeVisible();
+    await expect(narradora.pagina.getByText(/modo de desenvolvimento/i)).toBeVisible();
+    await expect(narradora.pagina.getByRole("heading", { level: 1, name: "Entrar" })).toBeVisible();
   } finally {
     await narradora.contexto.close();
     await jogador.contexto.close();

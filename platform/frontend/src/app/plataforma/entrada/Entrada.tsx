@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Link } from "react-router";
 
@@ -42,8 +42,10 @@ function mensagemDeSenha(causa: unknown): string {
  * Telas antes de entrar: entrar, criar conta, recuperar e redefinir a senha. As mensagens de cadastro
  * e de recuperação são as mesmas para e-mails com ou sem conta.
  */
-export function Entrada({ auth, modo, loginGoogle = LOGIN_GOOGLE, onSenhaRedefinida }: {
+export function Entrada({ auth, modo, loginGoogle = LOGIN_GOOGLE, onSenhaRedefinida, observacao }: {
   auth: SupabaseClient; modo: ModoEntrada; loginGoogle?: boolean; onSenhaRedefinida?: () => void;
+  /** Aviso sob o título (ex.: modo de desenvolvimento). */
+  observacao?: ReactNode;
 }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -101,6 +103,7 @@ export function Entrada({ auth, modo, loginGoogle = LOGIN_GOOGLE, onSenhaRedefin
       <MolduraOrnamentada tipo="painel" className="entrada__cartao">
         <Marca tamanho={64} subtitulo={null} />
         <h1>{TITULOS[modo]}</h1>
+        {observacao && <p className="entrada__mensagem">{observacao}</p>}
         {aviso && <p role="status" className="entrada__mensagem">{aviso}</p>}
         {!(aviso && (modo === "cadastro" || modo === "recuperar")) && (
           <form onSubmit={enviar}>
