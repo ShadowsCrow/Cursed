@@ -14,8 +14,8 @@ from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.catalogos import Base, Habilidade
 from cursed_platform.contracts import (
     ArquetipoResumo, BaseClasseResumo, CampoPersonalidadeResumo, ClasseCatalogoResumo, EfeitoDefaultResumo,
-    ErroCatalogoResumo, EstadoCatalogoResumo, HabilidadeCatalogoResumo, IconeResumo, ListasFichaResumo,
-    ModificadorCatalogoResumo, PecadoResumo, RacaCatalogoResumo,
+    ErroCatalogoResumo, EstadoCatalogoResumo, FaixaAlturaResumo, HabilidadeCatalogoResumo, IconeResumo,
+    IntervaloAlturaResumo, ListasFichaResumo, ModificadorCatalogoResumo, PecadoResumo, RacaCatalogoResumo,
 )
 from cursed_platform.domain.efeitos import indexar_catalogo
 
@@ -62,7 +62,8 @@ def listar_racas(mesa_id: str, ator: Ator = Depends(get_actor),
                  session: Session = Depends(get_session)) -> list[RacaCatalogoResumo]:
     _exigir(session, mesa_id, ator)
     return [RacaCatalogoResumo(nome=r.nome, deslocamento=r.deslocamento, tamanho=r.tamanho,
-                               habilidades=_habilidades(r.habilidades))
+                               habilidades=_habilidades(r.habilidades),
+                               altura=IntervaloAlturaResumo(minima=r.altura.minima, maxima=r.altura.maxima) if r.altura else None)
             for r in catalogos.obter().racas]
 
 
@@ -74,8 +75,11 @@ def listar_listas(mesa_id: str, ator: Ator = Depends(get_actor),
     return ListasFichaResumo(
         sexos=list(listas.sexos), alinhamentos=list(listas.alinhamentos),
         pecados=[PecadoResumo(nome=p.nome, icone=p.icone, equivalentes=list(p.equivalentes)) for p in listas.pecados],
-        campos_personalidade=[CampoPersonalidadeResumo(chave=c.chave, rotulo=c.rotulo, dica=c.dica)
+        campos_personalidade=[CampoPersonalidadeResumo(chave=c.chave, rotulo=c.rotulo, dica=c.dica, longo=c.longo, limite=c.limite)
                               for c in listas.campos_personalidade],
+        faixas_de_altura=[FaixaAlturaResumo(tamanho=f.tamanho, minima=f.intervalo.minima, maxima=f.intervalo.maxima)
+                          for f in listas.faixas_de_altura],
+        icones_ficha=dict(listas.icones_ficha),
     )
 
 

@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import axe from "axe-core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CharacterSheetPage } from "./CharacterSheetPage";
@@ -61,6 +61,8 @@ function createFakeApi() {
     if (path.endsWith("/efeitos")) return { data: [efeito()], error: undefined };
     if (path.endsWith("/valores-derivados")) return { data: [valorDefesa()], error: undefined };
     if (path.endsWith("/desgaste")) return { data: [], error: undefined };
+    if (path.endsWith("/consequencias")) return { data: [], error: undefined };
+    if (path.endsWith("/cartas")) return { data: [], error: undefined };
     throw new Error(`GET não simulado: ${path}`);
   });
 
@@ -87,12 +89,18 @@ function createFakeApi() {
   return { api: { GET, POST, PUT } as unknown as ApiClient, GET, POST, PUT };
 }
 
-function renderPage(api: ApiClient, initialEntry = "/ficha") {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+function Endereco() {
+  const local = useLocation();
+  return <output data-testid="endereco">{local.search}</output>;
+}
+
+function renderPage(api: ApiClient, initialEntry = "/ficha", staleTime = 0) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
         <CharacterSheetPage api={api} mesaId="mesa-1" personagemId="pj-1" userId="usuario-1" onBack={vi.fn()} />
+        <Endereco />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -101,11 +109,21 @@ function renderPage(api: ApiClient, initialEntry = "/ficha") {
 describe("CharacterSheetPage — 6.3 navegação modular preservando contexto", () => {
   afterEach(() => cleanup());
 
+  it("ficha recém-criada pelo assistente oferece o envio do retrato, que pode ser dispensado", async () => {
+    const { api } = createFakeApi();
+    renderPage(api, "/ficha?novo=1");
+    const aviso = await screen.findByText(/foi criado no nível 1/);
+    expect(aviso.closest("[role=status]")?.textContent).toMatch(/ilustração|Narrador/);
+    fireEvent.click(screen.getByRole("button", { name: "Dispensar" }));
+    expect(screen.queryByText(/foi criado no nível 1/)).toBeNull();
+  });
+
   it("a seção ativa é refletida na URL e a troca não busca os dados de novo", async () => {
     const { api, GET } = createFakeApi();
     renderPage(api);
 
-    expect(await screen.findByRole("tab", { name: "Informações básicas", selected: true })).toBeTruthy();
+    expect(await screen.findByRole("tab", { name: "Resumo", selected: true })).toBeTruthy();
+    await screen.findByRole("heading", { level: 1, name: "Nara Exemplo" });
     const callsAfterLoad = GET.mock.calls.length;
 
     fireEvent.click(screen.getByRole("tab", { name: "Atributos" }));
@@ -117,7 +135,8 @@ describe("CharacterSheetPage — 6.3 navegação modular preservando contexto", 
     const { api } = createFakeApi();
     renderPage(api);
 
-    await screen.findByRole("tab", { name: "Informações básicas", selected: true });
+    await screen.findByRole("tab", { name: "Resumo", selected: true });
+    fireEvent.click(screen.getByRole("tab", { name: "Informações básicas" }));
     fireEvent.click(screen.getByRole("button", { name: "Editar Nome" }));
     const input = screen.getByLabelText("Nome") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "Rascunho não salvo" } });
@@ -136,6 +155,65 @@ describe("CharacterSheetPage — 6.3 navegação modular preservando contexto", 
   });
 });
 
+describe("CharacterSheetPage — aba Resumo", () => {
+  afterEach(() => cleanup());
+
+  it("abre no Resumo sem seção no endereço, com o nome como título e sem o cabeçalho duplicado", async () => {
+    const { api } = createFakeApi();
+    renderPage(api);
+    expect(await screen.findByRole("tab", { name: "Resumo", selected: true })).toBeTruthy();
+    expect(screen.getAllByRole("tab")[0]).toHaveProperty("textContent", "Resumo");
+    expect(await screen.findAllByRole("heading", { level: 1, name: "Nara Exemplo" })).toHaveLength(1);
+    expect(document.querySelector(".character-hero")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Atributos" }));
+    expect(screen.getAllByRole("heading", { level: 1, name: "Nara Exemplo" })).toHaveLength(1);
+    expect(document.querySelector(".character-hero")).not.toBeNull();
+  });
+
+  it("endereços com seção continuam abrindo a seção pedida, inclusive nomes antigos", async () => {
+    renderPage(createFakeApi().api, "/ficha?secao=pericias");
+    expect(await screen.findByRole("tab", { name: "Perícias", selected: true })).toBeTruthy();
+    cleanup();
+    renderPage(createFakeApi().api, "/ficha?secao=habilidades");
+    expect(await screen.findByRole("tab", { name: "Habilidades e cartas", selected: true })).toBeTruthy();
+  });
+
+  it("atalho de um quadro abre a aba dele e muda o endereço, sem buscar os dados de novo", async () => {
+    const { api, GET } = createFakeApi();
+    renderPage(api);
+    const atalho = await screen.findByRole("button", { name: "Abrir Perícias" });
+    const chamadas = GET.mock.calls.length;
+    fireEvent.click(atalho);
+    expect(screen.getByRole("tab", { name: "Perícias", selected: true })).toBeTruthy();
+    expect(screen.getByTestId("endereco").textContent).toBe("?secao=pericias");
+    expect(GET.mock.calls.length).toBe(chamadas);
+  });
+
+  it("as cartas são buscadas uma vez, e o Resumo e o painel de cartas dividem a consulta", async () => {
+    const { api, GET } = createFakeApi();
+    // Mesma validade de cache do app (main.tsx): o painel que monta depois reaproveita a consulta.
+    renderPage(api, "/ficha", 30_000);
+    await screen.findByRole("heading", { level: 1, name: "Nara Exemplo" });
+    fireEvent.click(screen.getByRole("tab", { name: "Habilidades e cartas" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Resumo" }));
+    await waitFor(() => expect(GET.mock.calls.filter(([caminho]) => String(caminho).endsWith("/cartas"))).toHaveLength(1));
+  });
+
+  it("quem pode editar vê a ação de enviar a ilustração; quem só lê, não", async () => {
+    renderPage(createFakeApi().api);
+    expect(await screen.findByRole("button", { name: "Enviar ilustração" })).toBeTruthy();
+    cleanup();
+    const leitura = createFakeApi();
+    const original = leitura.GET.getMockImplementation()!;
+    leitura.GET.mockImplementation(async (caminho: string) =>
+      caminho.endsWith("/permissoes") ? { data: { ...permissoesFicha, editar: false }, error: undefined } : original(caminho));
+    renderPage(leitura.api);
+    await screen.findByText(/modo de leitura/);
+    expect(screen.queryByRole("button", { name: /ilustração/ })).toBeNull();
+    expect(screen.getByText("História não escrita.")).toBeTruthy();
+  });
+});
+
 describe("CharacterSheetPage — 6.6/6.7 equipar atualiza efeitos e valores derivados", () => {
   afterEach(() => cleanup());
 
@@ -143,7 +221,9 @@ describe("CharacterSheetPage — 6.6/6.7 equipar atualiza efeitos e valores deri
     const { api, PUT } = createFakeApi();
     renderPage(api);
 
-    await screen.findByRole("tab", { name: "Informações básicas", selected: true });
+    await screen.findByRole("tab", { name: "Resumo", selected: true });
+    const resumo = within(screen.getByRole("tabpanel", { name: "Resumo" }));
+    expect(await resumo.findByText("Nada equipado no momento.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "Status" }));
     expect(await screen.findByRole("button", { name: "Fontes de Defesa (Armadura)" })).toHaveProperty("textContent", "+3");
@@ -171,6 +251,12 @@ describe("CharacterSheetPage — 6.6/6.7 equipar atualiza efeitos e valores deri
 
     fireEvent.click(screen.getByRole("tab", { name: "Status" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Fontes de Defesa (Armadura)" })).toHaveProperty("textContent", "+5"));
+
+    // O Resumo acompanha a ficha sem recarregar: o item equipado e a Defesa recalculada aparecem.
+    fireEvent.click(screen.getByRole("tab", { name: "Resumo" }));
+    const painelResumo = within(screen.getByRole("tabpanel", { name: "Resumo" }));
+    expect(within(painelResumo.getByRole("region", { name: "Equipamentos" })).getByText("Cota de malha")).toBeTruthy();
+    expect(painelResumo.getByText("Defesa (Armadura)").closest("div")?.textContent).toContain("5");
   });
 });
 
@@ -180,7 +266,7 @@ describe("CharacterSheetPage — acessibilidade", () => {
   it("não apresenta violações de acessibilidade detectáveis automaticamente na seção inicial", async () => {
     const { api } = createFakeApi();
     renderPage(api);
-    await screen.findByRole("tab", { name: "Informações básicas", selected: true });
+    await screen.findByRole("heading", { level: 1, name: "Nara Exemplo" });
     const results = await axe.run(document.body, { rules: { region: { enabled: false } } });
     expect(results.violations).toEqual([]);
   });

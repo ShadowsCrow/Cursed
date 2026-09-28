@@ -1,0 +1,529 @@
+/*
+ * Resumo da ficha (aba-resumo-da-ficha, design D4). Pergaminho com moldura dourada, figura ao
+ * centro e quadros nas laterais. Grade com áreas nomeadas: três colunas (≥ 1100 px), duas
+ * (768–1099 px) e uma (celular). Ornamentos são SVG decorativos; o texto usa a tinta escura
+ * aprovada para o pergaminho (contraste ≥ 7:1) e o dourado fica nos ornamentos e títulos.
+ */
+
+.resumo-ficha-conteiner { container: resumo / inline-size; }
+
+.resumo-ficha {
+  --resumo-pergaminho: var(--pergaminho-100);
+  --resumo-ouro: var(--ouro-700);
+  --resumo-ouro-claro: var(--ouro-500);
+  --resumo-classe: var(--noite-700);
+  --resumo-quadro-fundo: color-mix(in srgb, var(--pergaminho-50) 90%, transparent);
+  position: relative;
+  isolation: isolate;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding: 1.2rem clamp(1rem, 5vw, 5.4rem) 1.4rem;
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tinta-900) 55%, transparent),
+    inset 0 0 38px color-mix(in srgb, #5c3410 55%, transparent),
+    inset 0 0 110px color-mix(in srgb, #7a4a1a 28%, transparent),
+    0 22px 60px #000a;
+}
+
+/* Moldura dupla da folha, com cantos maiores. */
+.resumo-ficha__moldura {
+  position: absolute;
+  inset: 12px;
+  z-index: 0;
+  pointer-events: none;
+  border: 1.5px solid var(--resumo-ouro);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--pergaminho-50) 60%, transparent), inset 0 0 0 5px color-mix(in srgb, var(--resumo-ouro-claro) 55%, transparent);
+}
+.resumo-canto-folha { position: absolute; width: 96px; height: 96px; color: var(--resumo-ouro); }
+.resumo-canto-folha--se { top: -8px; left: -8px; }
+.resumo-canto-folha--sd { top: -8px; right: -8px; transform: scaleX(-1); }
+.resumo-canto-folha--ie { bottom: -8px; left: -8px; transform: scaleY(-1); }
+.resumo-canto-folha--id { bottom: -8px; right: -8px; transform: scale(-1, -1); }
+.resumo-flor { position: absolute; top: 50%; width: 22px; height: 110px; margin-top: -55px; color: var(--resumo-ouro); }
+.resumo-flor--esquerda { left: -12px; }
+.resumo-flor--direita { right: -12px; }
+
+/* ---------- Estandartes ---------- */
+.resumo-estandarte {
+  position: absolute;
+  top: 10px;
+  z-index: 1;
+  width: 58px;
+  height: auto;
+  color: var(--ouro-300);
+  filter: drop-shadow(0 6px 8px #0006);
+  pointer-events: none;
+}
+.resumo-estandarte--esquerda { left: clamp(.6rem, 1.6vw, 1.5rem); }
+.resumo-estandarte--direita { right: clamp(.6rem, 1.6vw, 1.5rem); }
+.resumo-estandarte__tecido {
+  fill: var(--estandarte-cor, var(--resumo-classe));
+  stroke: var(--ouro-500);
+  stroke-width: 1.5;
+}
+
+/* ---------- Placa do título ---------- */
+.resumo-ficha__placa {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  margin: 0 auto 1rem;
+  color: var(--resumo-ouro);
+}
+.resumo-ficha__placa-texto {
+  padding: .35rem 1.8rem .45rem;
+  font: 700 clamp(1.5rem, 3.2vw, 2.4rem)/1 var(--font-display);
+  font-variant: small-caps;
+  letter-spacing: .06em;
+  color: var(--tinta-900);
+  background: linear-gradient(180deg, var(--pergaminho-50), var(--pergaminho-200));
+  border-block: 3px double var(--resumo-ouro);
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--tinta-900) 25%, transparent);
+}
+.resumo-voluta { width: clamp(52px, 8vw, 110px); height: auto; flex: none; }
+.resumo-voluta--direita { transform: scaleX(-1); }
+
+/* ---------- Corpo em grade ---------- */
+.resumo-ficha__corpo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(300px, 1.22fr) minmax(250px, 1fr);
+  grid-template-areas: "esquerdo figura direito";
+  gap: 1rem 1.1rem;
+  align-items: stretch;
+}
+/* Cada lateral é uma coluna própria; o último quadro estica para as duas terminarem juntas. */
+.resumo-ficha__lado { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.resumo-ficha__lado--esquerdo { grid-area: esquerdo; }
+.resumo-ficha__lado--direito { grid-area: direito; }
+.resumo-ficha__lado > :last-child { flex: 1; }
+.resumo-quadro--identidade { grid-area: identidade; }
+.resumo-quadro--recursos { grid-area: recursos; }
+.resumo-quadro--atributos { grid-area: atributos; }
+.resumo-quadro--pericias { grid-area: pericias; }
+.resumo-quadro--equipamentos { grid-area: equipamentos; }
+.resumo-quadro--habilidades { grid-area: habilidades; }
+
+/* Cena pintada atrás de toda a área central; sem ela, um céu de crepúsculo em gradiente. */
+.resumo-ficha__cena {
+  position: absolute;
+  inset: -1.5rem 12% 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 34% 58% at 50% 42%, color-mix(in srgb, var(--noite-500) 55%, transparent), transparent 72%),
+    radial-gradient(ellipse 60% 45% at 50% 30%, color-mix(in srgb, #6d8fb8 30%, transparent), transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 50% 58% at 50% 42%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 58% at 50% 42%, #000 40%, transparent 100%);
+}
+.resumo-ficha__cena img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: .92; }
+/* Sem cena pintada: a imagem central, desfocada e desbotada, estende o cenário atrás dos quadros. */
+.resumo-ficha__cena--reserva img { filter: blur(14px) saturate(.75) brightness(1.05); opacity: .6; transform: scale(1.08); }
+
+/* ---------- Figura ---------- */
+.resumo-ficha__figura {
+  grid-area: figura;
+  position: relative;
+  align-self: stretch;
+  margin: 0;
+  min-height: 560px;
+}
+.resumo-ficha__figura-imagem {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 7%, #000 78%, transparent), linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, transparent, #000 7%, #000 78%, transparent), linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  mask-composite: intersect;
+}
+.resumo-ficha__figura--padrao .resumo-ficha__figura-imagem { filter: saturate(.85); }
+.resumo-ficha__acao-imagem {
+  position: absolute;
+  z-index: 3;
+  inset: auto 0 1.2rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Envio da ilustração sobre a imagem: placa de pergaminho legível sobre qualquer arte. */
+.resumo-ficha__acao-imagem .image-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem .9rem;
+  max-width: calc(100% - 1.5rem);
+  padding: .35rem 1rem;
+  color: var(--tinta-900);
+  background: color-mix(in srgb, var(--pergaminho-50) 94%, transparent);
+  border: 1px solid var(--ouro-800);
+  border-radius: 999px / 70%;
+  box-shadow: inset 0 0 0 3px var(--pergaminho-50), inset 0 0 0 4px var(--resumo-ouro-claro), 0 4px 10px #0006;
+}
+.resumo-ficha__acao-imagem .image-upload .text-action { color: var(--tinta-900); font-weight: 700; }
+.resumo-ficha__acao-imagem .image-upload__hint { color: var(--tinta-600); }
+.resumo-ficha__acao-imagem .field-error, .resumo-ficha__acao-imagem .preview-note { flex-basis: 100%; margin: 0; text-align: center; color: var(--tinta-900); }
+
+/* ---------- Quadros ---------- */
+/*
+ * Moldura recortada em 9 fatias (border-image com fill): o SVG traz chanfros com mordida,
+ * linhas duplas e volutas nos cantos, e a silhueta do quadro segue o recorte. A sombra usa
+ * drop-shadow para acompanhar o contorno, e o ornamento dos cantos passa para fora da caixa.
+ */
+.resumo-quadro {
+  position: relative;
+  padding: .55rem .7rem .5rem;
+  border: 18px solid transparent;
+  border-image: url("./molduras/quadro.svg") 36 fill / 36px / 8px stretch;
+  filter: drop-shadow(0 6px 10px color-mix(in srgb, #3b2410 30%, transparent));
+}
+.resumo-quadro--destaque {
+  padding: .5rem .65rem .45rem;
+  border-width: 24px;
+  border-image: url("./molduras/quadro-destaque.svg") 60 fill / 60px / 14px stretch;
+}
+
+/* Remate em flor sobre a borda de cima. */
+.resumo-remate {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  width: 60px;
+  height: 22px;
+  transform: translateX(-50%);
+  color: var(--resumo-ouro);
+  pointer-events: none;
+}
+
+/* Crista em arco sobre Recursos. */
+.resumo-crista {
+  position: absolute;
+  top: -58px;
+  left: 50%;
+  width: 150px;
+  height: 44px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.resumo-quadro--recursos { margin-top: 20px; }
+
+/* Selo da rosa dos ventos, saindo pelo canto da identidade. */
+.resumo-selo-rosa {
+  position: absolute;
+  right: -34px;
+  bottom: -34px;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  color: var(--resumo-ouro);
+  background: radial-gradient(circle at 40% 35%, var(--pergaminho-50), var(--pergaminho-200));
+  border: 2px solid var(--ouro-800);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--pergaminho-50), inset 0 0 0 4px var(--resumo-ouro-claro), 0 4px 8px #0005;
+}
+
+/* O atalho fica no canto: o título reserva o espaço dos dois lados para continuar centrado. */
+.resumo-quadro__cabeca { position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: .55rem; padding-inline: 1.9rem; }
+.resumo-quadro__titulo {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+  margin: 0;
+  font: 700 1.28rem/1.1 var(--font-display);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--tinta-900);
+}
+.resumo-quadro__titulo::before,
+.resumo-quadro__titulo::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--resumo-ouro));
+}
+.resumo-quadro__titulo::after { background: linear-gradient(270deg, transparent, var(--resumo-ouro)); }
+.resumo-quadro .resumo-quadro__titulo { gap: .3rem; }
+.resumo-voluta-titulo { flex: none; width: 34px; height: 13px; color: var(--resumo-ouro); }
+.resumo-voluta-titulo--espelhada { transform: scaleX(-1); }
+
+.resumo-atalho {
+  position: absolute;
+  top: -.5rem;
+  right: -.55rem;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--tinta-700);
+  background: var(--pergaminho-50);
+  border: 1px solid var(--resumo-ouro);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+.resumo-atalho:hover { color: var(--tinta-900); background: var(--pergaminho-200); }
+.resumo-atalho:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ---------- Identidade ---------- */
+.resumo-quadro__cabeca--identidade { justify-content: flex-start; padding-left: 0; padding-right: 2rem; }
+.resumo-identidade__nome { margin: 0; font: 700 clamp(1.5rem, 2.3cqi, 2rem)/1.05 var(--font-display); color: var(--tinta-900); overflow-wrap: anywhere; }
+.resumo-identidade { display: grid; gap: .15rem; margin: 0; }
+.resumo-identidade div { display: grid; grid-template-columns: 6.2rem 1fr; align-items: baseline; gap: .6rem; padding: .18rem 0; border-bottom: 1px solid color-mix(in srgb, var(--resumo-ouro) 22%, transparent); }
+.resumo-identidade div:last-child { border-bottom: 0; }
+.resumo-identidade dt { font: italic 600 1rem/1.2 var(--font-display); color: var(--tinta-600); }
+.resumo-identidade dd { margin: 0; font: 600 1.18rem/1.2 var(--font-display); color: var(--tinta-900); }
+
+/* ---------- Recursos ---------- */
+.resumo-recursos { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; margin: 0; text-align: center; }
+.resumo-recurso { display: grid; justify-items: center; align-content: start; gap: .1rem; }
+.resumo-recurso + .resumo-recurso { border-left: 1px solid color-mix(in srgb, var(--resumo-ouro) 30%, transparent); }
+.resumo-recurso dt { font: 700 1rem/1 var(--font-display); color: var(--tinta-700); margin-top: .2rem; }
+.resumo-recurso dd { margin: 0; display: grid; justify-items: center; }
+.resumo-recurso .resumo-numero { font-size: 2rem; }
+.resumo-recurso .resumo-numero small { font-size: .55em; color: var(--tinta-600); margin-left: .1em; }
+
+.resumo-medalhao { width: 70px; height: 70px; filter: drop-shadow(0 3px 4px #0007); }
+.resumo-medalhao__pontas path { fill: var(--ouro-700); }
+.resumo-medalhao__aro { stroke: var(--ouro-900); stroke-width: 1.2; }
+.resumo-medalhao__miolo { stroke: var(--ouro-200); stroke-width: .8; }
+.resumo-medalhao__simbolo { fill: #fff5e6; opacity: .95; }
+.resumo-medalhao--vida .resumo-medalhao__miolo { fill: #a3181c; }
+.resumo-medalhao--vida .resumo-medalhao__simbolo { fill: #ff5a5a; stroke: #ffd9c9; stroke-width: 1.4; }
+.resumo-medalhao--proposito .resumo-medalhao__miolo { fill: #173a8a; }
+.resumo-medalhao--proposito .resumo-medalhao__simbolo { fill: #dbe8ff; }
+.resumo-medalhao--defesa .resumo-medalhao__miolo { fill: #4a3316; }
+.resumo-medalhao--defesa .resumo-medalhao__simbolo { fill: #c9a25c; stroke: #f6e6bf; stroke-width: 1.2; }
+
+/* Pingente pendurado sob Recursos: plaquetas entre duas asas, passando da borda de baixo. */
+.resumo-quadro--recursos { margin-bottom: 26px; }
+.resumo-pingente {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: .6rem -1rem -2.9rem;
+}
+.resumo-asa { flex: none; width: 62px; height: 34px; margin-inline: -10px; filter: drop-shadow(0 2px 2px #0004); }
+.resumo-asa--direita { transform: scaleX(-1); }
+.resumo-plaquetas {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: .1rem .5rem;
+  margin: 0;
+  padding: .3rem .9rem;
+  white-space: nowrap;
+  background: linear-gradient(180deg, var(--pergaminho-50), var(--pergaminho-200));
+  border: 1.5px solid var(--ouro-800);
+  border-radius: 999px / 60%;
+  box-shadow: inset 0 0 0 3px var(--pergaminho-50), inset 0 0 0 4px var(--resumo-ouro-claro), 0 5px 10px #0004;
+}
+.resumo-plaqueta { display: flex; align-items: baseline; gap: .35rem; }
+.resumo-plaqueta + .resumo-plaqueta { padding-left: .5rem; border-left: 1px solid color-mix(in srgb, var(--resumo-ouro) 45%, transparent); }
+.resumo-plaqueta dt { font: 600 .84rem/1.2 var(--font-display); color: var(--tinta-700); }
+.resumo-plaqueta dd { margin: 0; display: flex; flex-direction: column; align-items: center; }
+.resumo-plaqueta .resumo-numero { font-size: 1.15rem; }
+
+/* ---------- Números ---------- */
+.resumo-numero { font: 700 1.4rem/1 var(--font-display); color: var(--tinta-900); font-variant-numeric: lining-nums; }
+.resumo-numero--ausente { color: var(--tinta-600); }
+.resumo-motivo { max-width: 14ch; font-size: .72rem; line-height: 1.2; color: var(--tinta-600); }
+
+/* ---------- Linhas (atributos e perícias) ---------- */
+.resumo-grupo + .resumo-grupo { margin-top: .45rem; }
+.resumo-grupo__titulo {
+  margin: 0 0 .15rem;
+  font: 700 .72rem/1.2 var(--font-body);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--tinta-600);
+}
+.resumo-linhas { list-style: none; margin: 0; padding: 0; }
+.resumo-linhas li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 2.8rem;
+  align-items: center;
+  gap: .55rem;
+  min-height: 2.25rem;
+  padding: .15rem .1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--resumo-ouro) 26%, transparent);
+}
+.resumo-linhas li:last-child { border-bottom: 0; }
+.resumo-linhas__icone { display: grid; place-items: center; width: 30px; height: 30px; color: var(--tinta-900); }
+.resumo-linhas__icone--circulo { border: 1px solid color-mix(in srgb, var(--tinta-700) 55%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--pergaminho-200) 60%, transparent); }
+.resumo-linhas__icone--circulo .resumo-icone { width: 18px; height: 18px; }
+.resumo-linhas__nome { font: 600 1.08rem/1.15 var(--font-display); color: var(--tinta-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resumo-linhas .resumo-numero { justify-self: stretch; text-align: center; padding-left: .5rem; border-left: 1px solid color-mix(in srgb, var(--resumo-ouro) 40%, transparent); }
+
+/* ---------- Itens e habilidades ---------- */
+.resumo-itens { list-style: none; display: grid; gap: .55rem; margin: 0; padding: 0; }
+.resumo-itens li { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: .7rem; }
+.resumo-itens__arte {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  color: var(--tinta-700);
+}
+.resumo-itens__arte img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 3px #0005); }
+.resumo-itens__arte--carta {
+  color: #e8f0ff;
+  border: 2px solid var(--ouro-500);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--ouro-900), 0 3px 6px #0005;
+  background: radial-gradient(circle at 50% 45%, #5f86ff, #1a2c6e 60%, #0b1330);
+}
+.resumo-itens__arte--carta img { object-fit: cover; filter: none; }
+.resumo-itens__arte--magia { background: radial-gradient(circle at 50% 45%, #9a7dff, #33227a 60%, #140c33); }
+.resumo-itens__texto { display: grid; gap: .1rem; min-width: 0; }
+.resumo-itens__texto strong { font: 700 1.08rem/1.15 var(--font-display); color: var(--tinta-900); }
+.resumo-itens__qtd { font-weight: 600; color: var(--tinta-700); }
+.resumo-itens__texto small { font-size: .84rem; line-height: 1.3; color: var(--tinta-700); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.resumo-mais { margin: .5rem 0 0; font: italic 600 .95rem/1.2 var(--font-display); color: var(--tinta-700); text-align: right; }
+
+.resumo-vazio { margin: .2rem 0; font: italic 1rem/1.4 var(--font-display); color: var(--tinta-700); }
+
+/* ---------- História ---------- */
+.resumo-historia {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.1rem;
+  padding: 1rem clamp(1rem, 3vw, 2.4rem) .6rem;
+  border-top: 1px solid color-mix(in srgb, var(--resumo-ouro) 45%, transparent);
+}
+.resumo-historia__cabeca { position: relative; display: flex; align-items: center; gap: .7rem; margin-bottom: .7rem; color: var(--resumo-ouro); }
+.resumo-historia__titulo { margin: 0; font: 700 1.7rem/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-900); }
+.resumo-historia__divisor { flex: 1; }
+.resumo-historia .resumo-atalho { position: static; flex: none; }
+.resumo-historia__texto { max-width: 96ch; padding-left: clamp(0rem, 3vw, 2.6rem); }
+.resumo-historia__texto p { margin: 0 0 .7rem; font: 400 1.04rem/1.62 var(--font-body); color: var(--tinta-900); white-space: pre-line; }
+.resumo-historia__primeiro::first-letter {
+  float: left;
+  margin: .3rem .7rem 0 0;
+  padding: .3rem .5rem .25rem;
+  font: 700 3.3rem/.85 var(--font-display);
+  color: var(--ouro-200);
+  background: linear-gradient(160deg, var(--noite-700), var(--noite-950));
+  border: 1px solid var(--resumo-ouro);
+  box-shadow: inset 0 0 0 3px var(--noite-900), inset 0 0 0 4px var(--ouro-500), 0 3px 6px #0005;
+}
+.resumo-historia__convite { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.2rem; }
+.resumo-historia__convite p { margin: 0; font: italic 1.05rem/1.4 var(--font-display); color: var(--tinta-700); }
+
+/* ---------- Pinturas opcionais ---------- */
+/* O fundo de pergaminho das pinturas já sai transparente do preparar_arte.py. */
+.resumo-pintura { position: absolute; z-index: 1; pointer-events: none; }
+.resumo-pintura--primeiro-plano {
+  left: -22%;
+  bottom: -1.6rem;
+  width: 144%;
+  height: auto;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent), linear-gradient(0deg, transparent, #000 16%, #000 70%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent), linear-gradient(0deg, transparent, #000 16%, #000 70%, transparent);
+  mask-composite: intersect;
+}
+.resumo-pintura--natureza-morta {
+  left: 14px;
+  bottom: 12px;
+  width: 250px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%), linear-gradient(0deg, transparent, #000 8%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 10%), linear-gradient(0deg, transparent, #000 8%);
+  mask-composite: intersect;
+}
+.resumo-pintura--bussola { right: 26px; bottom: 22px; width: 160px; filter: drop-shadow(0 4px 6px #0005); }
+.resumo-bussola-svg { position: absolute; right: 42px; bottom: 34px; z-index: 1; color: var(--resumo-ouro); opacity: .75; pointer-events: none; }
+.resumo-historia { padding-right: 150px; }
+.resumo-ficha--natureza-morta .resumo-historia { padding-left: 235px; }
+.resumo-ficha--bussola .resumo-historia { padding-right: 170px; }
+
+/* ---------- Divisores ---------- */
+.resumo-divisor { display: flex; align-items: center; gap: .5rem; color: var(--resumo-ouro); }
+.resumo-divisor__linha { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, currentColor 30%, currentColor 70%, transparent); }
+.resumo-divisor__linha:first-child { background: linear-gradient(90deg, transparent, currentColor); }
+.resumo-divisor__linha:last-child { background: linear-gradient(270deg, transparent, currentColor); }
+.resumo-ficha__fecho { position: relative; z-index: 1; width: min(420px, 70%); margin: .4rem auto 0; }
+
+/* ---------- Três colunas apertadas (a ficha dentro da página da mesa) ---------- */
+@container resumo (max-width: 1179px) {
+  .resumo-ficha { padding-inline: 2.6rem; }
+  .resumo-estandarte { width: 40px; }
+  .resumo-ficha__corpo { grid-template-columns: minmax(230px, 1fr) minmax(250px, 1.05fr) minmax(230px, 1fr); gap: 1rem .9rem; }
+  .resumo-quadro__titulo { font-size: 1.08rem; letter-spacing: .06em; }
+  .resumo-voluta-titulo { width: 24px; }
+  .resumo-linhas__nome { font-size: 1rem; }
+  .resumo-medalhao { width: 60px; height: 60px; }
+  .resumo-recurso .resumo-numero { font-size: 1.7rem; }
+  .resumo-pingente { margin-inline: -.6rem; }
+  .resumo-asa { width: 44px; height: 24px; margin-inline: -8px; }
+  .resumo-plaquetas { padding-inline: .6rem; }
+  .resumo-plaqueta dt { font-size: .76rem; }
+}
+
+/* ---------- Duas colunas ---------- */
+@container resumo (max-width: 999px) {
+  .resumo-ficha { padding-inline: clamp(1rem, 4vw, 2.2rem); }
+  .resumo-estandarte { display: none; }
+  .resumo-ficha__corpo {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "identidade figura"
+      "recursos figura"
+      "atributos pericias"
+      "equipamentos habilidades";
+    grid-template-rows: auto 1fr auto auto;
+    align-items: stretch;
+  }
+  .resumo-ficha__lado { display: contents; }
+  .resumo-ficha__figura { align-self: stretch; }
+  .resumo-ficha__figura { min-height: 420px; }
+  .resumo-pintura--natureza-morta, .resumo-pintura--bussola, .resumo-bussola-svg { display: none; }
+  .resumo-ficha .resumo-historia { padding-inline: clamp(1rem, 3vw, 2.4rem); }
+  .resumo-pintura--primeiro-plano { left: 0; width: 100%; bottom: -1rem; }
+  .resumo-ficha__cena { inset: -1rem -1rem 50%; }
+}
+
+/* ---------- Uma coluna ---------- */
+@container resumo (max-width: 639px) {
+  .resumo-ficha { padding: .9rem .75rem 1rem; }
+  .resumo-ficha__moldura { inset: 6px; }
+  .resumo-canto-folha { width: 52px; height: 52px; }
+  .resumo-flor { display: none; }
+  .resumo-selo-rosa { right: -26px; bottom: -26px; width: 46px; height: 46px; }
+  .resumo-pingente { margin-inline: -.4rem; }
+  .resumo-asa { width: 38px; height: 22px; margin-inline: -8px; }
+  .resumo-plaquetas { padding-inline: .6rem; }
+  .resumo-selo-rosa svg { width: 30px; height: 30px; }
+  .resumo-voluta { display: none; }
+  .resumo-ficha__placa-texto { padding-inline: 1.2rem; }
+  .resumo-ficha__corpo {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "figura" "identidade" "recursos" "atributos" "pericias" "equipamentos" "habilidades";
+    grid-template-rows: none;
+  }
+  .resumo-ficha__cena { display: none; }
+  .resumo-ficha__figura { min-height: 0; aspect-ratio: 2 / 3; max-height: 72vh; }
+  .resumo-ficha__figura-imagem { -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent); }
+  .resumo-medalhao { width: 58px; height: 58px; }
+  .resumo-recurso .resumo-numero { font-size: 1.7rem; }
+  .resumo-historia { padding-inline: .2rem; }
+  .resumo-historia__titulo { font-size: 1.4rem; }
+}

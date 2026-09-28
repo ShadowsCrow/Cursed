@@ -69,23 +69,25 @@ class ProcedenciaTest(unittest.TestCase):
     @unittest.skipUnless(ORIGEM.exists(), "app_streamlit ausente")
     def test_divergencia_com_a_origem_e_informada_sem_falhar(self):
         destino, raiz = self._copiar()
-        (raiz / "app_streamlit/data/catalogs/classes.json").write_text("[]", encoding="utf-8")
-        texto = (destino / "racas.json").read_text(encoding="utf-8").replace('"deslocamento": 9', '"deslocamento": 10', 1)
-        (destino / "racas.json").write_text(texto, encoding="utf-8")
+        # A cópia editada só é detectada em arquivos sem transformações registradas (classes.json).
+        (raiz / "app_streamlit/data/catalogs/racas.json").write_text("[]", encoding="utf-8")
+        texto = (destino / "classes.json").read_text(encoding="utf-8").replace('"cor": "#5B2C6F"', '"cor": "#000000"', 1)
+        (destino / "classes.json").write_text(texto, encoding="utf-8")
 
         relatorio = {p.arquivo: p for p in catalogos.relatorio_procedencia(destino, raiz)}
 
-        self.assertTrue(relatorio["classes.json"].origem_alterada)
-        self.assertFalse(relatorio["classes.json"].copia_alterada)
-        self.assertTrue(relatorio["racas.json"].copia_alterada)
-        self.assertFalse(relatorio["racas.json"].origem_alterada)
+        self.assertTrue(relatorio["racas.json"].origem_alterada)
+        self.assertFalse(relatorio["racas.json"].copia_alterada)
+        self.assertTrue(relatorio["classes.json"].copia_alterada)
+        self.assertFalse(relatorio["classes.json"].origem_alterada)
         # A cópia editada continua valendo: é a fonte de trabalho.
-        self.assertEqual(catalogos.ler(destino).raca("Humano").deslocamento, 10)
+        self.assertEqual(catalogos.ler(destino).classes[0].cor, "#000000")
 
 
 class ConteudoTest(unittest.TestCase):
     def setUp(self):
         self.catalogo = catalogos.ler()
+        self.listas_brutas = json.loads((catalogos.DIRETORIO / "listas_ficha.json").read_text(encoding="utf-8"))
 
     def test_mago_tem_as_bases_de_classes_json(self):
         mago = self.catalogo.classe("Mago")
@@ -131,7 +133,34 @@ class ConteudoTest(unittest.TestCase):
                          ["Ira", "Gula", "Ganância", "Luxúria", "Inveja", "Preguiça", "Orgulho"])
         self.assertEqual(listas.pecado("Ganancia").nome, "Ganância")
         self.assertIsNone(listas.pecado("Soberba"))
-        self.assertEqual(len(listas.campos_personalidade), 9)
+        self.assertEqual(len(listas.campos_personalidade), 10)
+
+    def test_historia_e_campo_longo_com_limite(self):
+        campos = {c.chave: c for c in self.catalogo.listas.campos_personalidade}
+        historia = campos["historia"]
+        self.assertEqual((historia.rotulo, historia.longo, historia.limite), ("História", True, 4000))
+        self.assertEqual(historia.dica, "Ex: de onde veio, o que perdeu e o que o fez partir")
+        self.assertEqual((campos["meu_lema"].longo, campos["meu_lema"].limite), (False, None))
+
+    def test_icones_da_ficha_por_nome_gravado(self):
+        icones = dict(self.catalogo.listas.icones_ficha)
+        self.assertEqual(icones["Proposito"], "proposito")
+        self.assertEqual(icones["Arcanismo"], "arcanismo")
+        self.assertEqual(icones["Conhecimentos"], "conhecimentos")
+
+    def test_campo_de_personalidade_e_icones_invalidos(self):
+        base = {"chave": "historia", "rotulo": "História", "dica": ""}
+        for extra in ({"limite": 0}, {"limite": -5}, {"limite": "4000"}, {"limite": True}, {"longo": "sim"}):
+            dados = {**self.listas_brutas, "campos_personalidade": [{**base, **extra}]}
+            with self.subTest(extra=extra), self.assertRaises(CatalogoInvalido):
+                catalogos.converter_listas(dados)
+        for icones in ([], {"Força": "Forca"}, {"Força": ""}, {" ": "forca"}, {"Força": 3}):
+            with self.subTest(icones=icones), self.assertRaises(CatalogoInvalido):
+                catalogos.converter_listas({**self.listas_brutas, "icones_ficha": icones})
+
+    def test_icones_ausentes_sao_aceitos(self):
+        dados = {k: v for k, v in self.listas_brutas.items() if k != "icones_ficha"}
+        self.assertEqual(catalogos.converter_listas(dados).icones_ficha, ())
 
 
 class RecargaTest(unittest.TestCase):

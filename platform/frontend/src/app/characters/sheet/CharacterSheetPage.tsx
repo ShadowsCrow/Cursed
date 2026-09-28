@@ -3,12 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 
 import { Glyph } from "../../../ui/Display";
+import { useCartasDoPersonagem } from "../../cards/api";
 import { CharacterCardsPanel } from "../../cards/CharacterCardsPanel";
 import { useConnectivityStatus } from "../../connectivity/useConnectivityStatus";
 import type { ApiClient } from "../types";
 import { ActiveStateStrip } from "./ActiveStateStrip";
 import { AttributeTable, type Alteracao } from "./AttributeTable";
 import { DerivedValueGroup } from "./DerivedValueGroup";
+import { ConsequencesPanel } from "./ConsequencesPanel";
 import { EffectsPanel } from "./EffectsPanel";
 import { campoEditavel } from "../fieldPolicy";
 import { useClasses, useListasFicha, useRacas } from "./catalogoApi";
@@ -21,6 +23,7 @@ import { EquippedItemsPanel } from "./InventoryPanel";
 import { InventoryGridPanel } from "./InventoryGridPanel";
 import {
   sheetKeys,
+  useConsequencias,
   useEfeitos,
   useDesgaste,
   useFichaSnapshot,
@@ -29,10 +32,12 @@ import {
   useSalvarCampoFicha,
   useValoresDerivados,
 } from "./sheetApi";
+import { ResumoFicha } from "./resumo/ResumoFicha";
 import { SheetHeader } from "./SheetHeader";
 import { GRUPOS_ATRIBUTOS, GRUPOS_PERICIAS } from "./sheetCatalog";
 
 const SECTIONS = [
+  { id: "resumo", label: "Resumo" },
   { id: "informacoes", label: "Informações básicas" },
   { id: "personalidade", label: "Personalidade" },
   { id: "atributos", label: "Atributos" },
@@ -45,7 +50,8 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
-const DEFAULT_SECTION: SectionId = "informacoes";
+/** O Resumo abre a ficha; links com `?secao=` continuam abrindo a seção pedida. */
+const DEFAULT_SECTION: SectionId = "resumo";
 
 /** Seções renomeadas continuam acessíveis por links antigos. */
 const SECOES_ANTIGAS: Record<string, SectionId> = { habilidades: "cartas" };
@@ -89,6 +95,9 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
   const efeitosQuery = useEfeitos(api, mesaId, personagemId);
   const valoresQuery = useValoresDerivados(api, mesaId, personagemId);
   const desgasteQuery = useDesgaste(api, mesaId, personagemId);
+  const consequenciasQuery = useConsequencias(api, mesaId, personagemId);
+  // Na página, e não só no painel de cartas: o Resumo e o painel dividem a mesma consulta.
+  const cartasQuery = useCartasDoPersonagem(api, mesaId, personagemId);
   const abas = useRef<(HTMLButtonElement | null)[]>([]);
   const salvarCampo = useSalvarCampoFicha(api, mesaId, personagemId, userId);
   const classesQuery = useClasses(api, mesaId);
@@ -150,11 +159,28 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         <span className="eyebrow">FICHA VIVA</span>
       </div>
 
+      {searchParams.get("novo") === "1" && (
+        <div className="aviso-criado" role="status">
+          <p>
+            <strong>{info.nome} foi criado no nível 1.</strong>{" "}
+            {campoEditavel("personagem.imagem_ativo", permissoes)
+              ? "Quer dar um rosto a ele? Envie uma ilustração de corpo inteiro pelo botão abaixo da imagem do Resumo."
+              : "Vantagens e Desvantagens, equipamento e Acessos são combinados com o Narrador."}
+          </p>
+          <button type="button" className="button button--ghost" onClick={() => {
+            const semAviso = new URLSearchParams(searchParams);
+            semAviso.delete("novo");
+            setSearchParams(semAviso, { replace: true });
+          }}>Dispensar</button>
+        </div>
+      )}
+
       {permissoes && !permissoes.editar && (
         <p className="preview-note" role="note"><Glyph name="eye" size={16} /> Você está vendo esta ficha em modo de leitura.</p>
       )}
 
-      <SheetHeader
+      {/* O Resumo já traz imagem, identidade e recursos: o cabeçalho aparece nas demais seções. */}
+      {secao !== "resumo" && <SheetHeader
         ficha={ficha} api={api} mesaId={mesaId} classes={classesQuery.data}
         envioRetrato={campoEditavel("personagem.imagem_ativo", permissoes) ? {
           personagemId, versao,
@@ -172,8 +198,14 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
           } : undefined,
           onConfirmarNivel: narrador ? () => saveCampos([{ path: "personagem.nivel_pela_migracao", value: false }]) : undefined,
         }}
+      />}
+      <ActiveStateStrip
+        desgaste={desgasteQuery.data} efeitos={efeitosQuery.data} consequencias={consequenciasQuery.data} api={api} mesaId={mesaId}
+        controles={permissoes ? {
+          api, mesaId, personagemId, versao, consequencias: consequenciasQuery.data ?? [],
+          narrador, esforco: permissoes.editar,
+        } : undefined}
       />
-      <ActiveStateStrip desgaste={desgasteQuery.data} efeitos={efeitosQuery.data} api={api} mesaId={mesaId} />
 
       <div className="sheet-tabs" role="tablist" aria-label="Seções da ficha">
         {SECTIONS.map((section, indice) => (
@@ -194,17 +226,31 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         ))}
       </div>
 
-      <div hidden={secao !== "informacoes"} role="tabpanel" id="painel-informacoes" aria-labelledby="aba-informacoes" tabIndex={0}>
+      <div hidden={secao !== "resumo"} role="tabpanel" className="ficha-secao ficha-secao--resumo" id="painel-resumo" aria-labelledby="aba-resumo" tabIndex={0}>
+        {valoresQuery.isPending && <p>Carregando resumo…</p>}
+        {valoresQuery.isError && <p role="alert">{valoresQuery.error.message}</p>}
+        {valoresQuery.isSuccess && (
+          <ResumoFicha
+            api={api} mesaId={mesaId} personagemId={personagemId} ficha={ficha} versao={versao}
+            valores={valoresQuery.data} inventario={inventarioQuery.data ?? []} cartas={cartasQuery.data ?? []}
+            listas={listasQuery.data} classes={classesQuery.data} permissoes={permissoes}
+            onAbrir={goTo}
+            onIlustracaoAlterada={() => { void queryClient.invalidateQueries({ queryKey: sheetKeys.ficha(mesaId, personagemId) }); }}
+          />
+        )}
+      </div>
+
+      <div hidden={secao !== "informacoes"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-informacoes" aria-labelledby="aba-informacoes" tabIndex={0}>
         <IdentityPanel ficha={ficha} permissoes={permissoes} classes={classesQuery.data ?? []} racas={racasQuery.data ?? []}
           listas={listasQuery.data} avisos={avisos} onSave={saveCampos} />
       </div>
 
-      <div hidden={secao !== "personalidade"} role="tabpanel" id="painel-personalidade" aria-labelledby="aba-personalidade" tabIndex={0}>
+      <div hidden={secao !== "personalidade"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-personalidade" aria-labelledby="aba-personalidade" tabIndex={0}>
         <PersonalityPanel nome={info.nome} ficha={ficha} permissoes={permissoes} listas={listasQuery.data}
           avisos={avisos} onSave={saveCampos} />
       </div>
 
-      <div hidden={secao !== "atributos"} role="tabpanel" id="painel-atributos" aria-labelledby="aba-atributos" tabIndex={0}>
+      <div hidden={secao !== "atributos"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-atributos" aria-labelledby="aba-atributos" tabIndex={0}>
         {valoresQuery.isPending && <p>Carregando atributos…</p>}
         {valoresQuery.isError && <p role="alert">{valoresQuery.error.message}</p>}
         {valoresQuery.isSuccess && (
@@ -216,7 +262,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         )}
       </div>
 
-      <div hidden={secao !== "pericias"} role="tabpanel" id="painel-pericias" aria-labelledby="aba-pericias" tabIndex={0}>
+      <div hidden={secao !== "pericias"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-pericias" aria-labelledby="aba-pericias" tabIndex={0}>
         {valoresQuery.isSuccess && (
           <AttributeTable
             categoria="pericia" eyebrow="ESPECIALIDADES" titulo="Perícias" grupos={GRUPOS_PERICIAS}
@@ -226,7 +272,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         )}
       </div>
 
-      <div hidden={secao !== "equipamentos"} role="tabpanel" id="painel-equipamentos" aria-labelledby="aba-equipamentos" tabIndex={0}>
+      <div hidden={secao !== "equipamentos"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-equipamentos" aria-labelledby="aba-equipamentos" tabIndex={0}>
         {inventarioQuery.isPending && <p>Carregando equipamentos…</p>}
         {inventarioQuery.isError && <p role="alert">{inventarioQuery.error.message}</p>}
         {inventarioQuery.isSuccess && (
@@ -234,7 +280,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         )}
       </div>
 
-      <div hidden={secao !== "inventario"} role="tabpanel" id="painel-inventario" aria-labelledby="aba-inventario" tabIndex={0}>
+      <div hidden={secao !== "inventario"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-inventario" aria-labelledby="aba-inventario" tabIndex={0}>
         <div className="section-heading"><div /><ImportDialog api={api} mesaId={mesaId} personagemId={personagemId} versao={versao} permissoes={permissoes} onImported={(resultado) => {
           bumpVersao(resultado.versao);
           void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
@@ -245,7 +291,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         <InventoryGridPanel api={api} mesaId={mesaId} personagemId={personagemId} permissoes={permissoes} versao={versao} online={online} onVersaoConfirmada={bumpVersao} />
       </div>
 
-      <div hidden={secao !== "status"} role="tabpanel" id="painel-status" aria-labelledby="aba-status" tabIndex={0}>
+      <div hidden={secao !== "status"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-status" aria-labelledby="aba-status" tabIndex={0}>
         {valoresQuery.isSuccess && (
           <>
             <DerivedValueGroup eyebrow="REGRAS DA CLASSE" title="Recursos" valores={valoresQuery.data} grupo="recurso" emptyMessage="Nenhum recurso calculado." />
@@ -254,7 +300,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         )}
       </div>
 
-      <div hidden={secao !== "efeitos"} role="tabpanel" id="painel-efeitos" aria-labelledby="aba-efeitos" tabIndex={0}>
+      <div hidden={secao !== "efeitos"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-efeitos" aria-labelledby="aba-efeitos" tabIndex={0}>
         {efeitosQuery.isPending && <p>Carregando efeitos…</p>}
         {efeitosQuery.isError && <p role="alert">{efeitosQuery.error.message}</p>}
         {efeitosQuery.isSuccess && (
@@ -265,9 +311,14 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
               : undefined}
           />
         )}
+        {consequenciasQuery.isError && <p role="alert">{consequenciasQuery.error.message}</p>}
+        {consequenciasQuery.isSuccess && (
+          <ConsequencesPanel consequencias={consequenciasQuery.data}
+            admin={narrador ? { api, mesaId, personagemId, versao } : undefined} />
+        )}
       </div>
 
-      <div hidden={secao !== "cartas"} role="tabpanel" id="painel-cartas" aria-labelledby="aba-cartas" tabIndex={0}>
+      <div hidden={secao !== "cartas"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-cartas" aria-labelledby="aba-cartas" tabIndex={0}>
         {permissoes && (
           <CharacterCardsPanel
             api={api} mesaId={mesaId} personagemId={personagemId} versao={versao}

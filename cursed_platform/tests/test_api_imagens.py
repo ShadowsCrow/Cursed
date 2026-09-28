@@ -139,6 +139,55 @@ class ApiImagensTest(unittest.TestCase):
         self.assertEqual(resposta.status_code, 200, resposta.text)
         self.assertNotIn("imagem_ativo", self.ficha("lia")["personagem"])
 
+    # ---------------------------------------------------------------- ilustração do Resumo
+
+    def test_ilustracao_e_independente_do_retrato(self):
+        retrato = self.enviar("retrato", "lia", imagem()).json()["objeto"]
+        original = imagem(tamanho=(1024, 1536), cor=(30, 60, 200))
+        resposta = self.enviar("ilustracao", "lia", original, versao=1)
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        corpo = resposta.json()
+        personagem = self.ficha("lia")["personagem"]
+        self.assertEqual((personagem["ilustracao_ativo"], personagem["imagem_ativo"]), (corpo["objeto"], retrato))
+        self.assertTrue(corpo["objeto"].startswith("mesas/mesa/personagens/lia/imagens/"))
+        self.assertEqual(self.ler(corpo["objeto"]), original)
+        with Image.open(BytesIO(self.ler(corpo["exibicao"]))) as reduzida:
+            self.assertEqual((reduzida.format, reduzida.size), ("WEBP", (1024, 1536)))
+        with Session(self.engine) as session:
+            evento = session.scalars(select(EventoAuditoriaRegistro).where(EventoAuditoriaRegistro.acao == "imagem.alterada")).all()[-1]
+        self.assertEqual(evento.resumo, "Lia: ilustração alterada")
+
+    def test_ilustracao_grande_ganha_versao_de_1536(self):
+        corpo = self.enviar("ilustracao", "lia", imagem(tamanho=(2048, 3072))).json()
+        with Image.open(BytesIO(self.ler(corpo["exibicao"]))) as reduzida:
+            self.assertEqual(reduzida.size, (1024, 1536))
+        grande = imagem() + b"\0" * (9 * 1024 * 1024)
+        resposta = self.enviar("ilustracao", "lia", grande, versao=1)
+        self.assertEqual(resposta.status_code, 422)
+        self.assertIn("8 MB para ilustração", resposta.json()["detail"])
+
+    def test_remover_a_ilustracao_mantem_o_retrato(self):
+        self.enviar("retrato", "lia", imagem())
+        self.enviar("ilustracao", "lia", imagem(), versao=1)
+        resposta = self.client.delete("/mesas/mesa/imagens/ilustracao", params={"alvo": "lia", "versao_esperada": 2})
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        personagem = self.ficha("lia")["personagem"]
+        self.assertNotIn("ilustracao_ativo", personagem)
+        self.assertIn("imagem_ativo", personagem)
+
+    def test_ilustracao_segue_as_permissoes_da_ficha(self):
+        with Session(self.engine) as session:
+            session.get(MesaRegistro, "mesa").campos_bloqueados = ["personagem.ilustracao_ativo"]
+            session.commit()
+        resposta = self.enviar("ilustracao", "lia", imagem())
+        self.assertEqual(resposta.status_code, 403)
+        self.assertIn("bloqueada pelo Narrador", resposta.json()["detail"])
+        self.assertEqual(self.enviar("retrato", "lia", imagem()).status_code, 200)
+        self.ator = "mestre"
+        objeto = self.enviar("ilustracao", "oculta", imagem()).json()["objeto"]
+        self.ator = "ana"
+        self.assertEqual(self.client.get("/mesas/mesa/ativos", params={"caminho": objeto}).status_code, 404)
+
     def test_icone_grande_ganha_versao_reduzida_e_a_original_fica(self):
         original = imagem(tamanho=(1254, 1254))
         corpo = self.enviar("icone-grade", "item:espada", original).json()

@@ -3,6 +3,7 @@ import { useId, useState, type FormEvent } from "react";
 import { Popover } from "../../../ui/primitives";
 import { campoEditavel, campoExigeAprovacao } from "../fieldPolicy";
 import type { PermissoesFicha } from "../types";
+import { contarCaracteres } from "./fichaAccess";
 
 export interface EditableFieldProps {
   label: string;
@@ -18,7 +19,12 @@ export interface EditableFieldProps {
   min?: number;
   /** Aviso do servidor para o valor atual (ex.: fora das regras). */
   aviso?: string;
+  /** Texto longo (ex.: História): área maior e parágrafos preservados na leitura. */
+  longo?: boolean;
+  /** Máximo de caracteres do JSON de listas; mostra o contador e impede salvar acima dele. */
+  limite?: number | null;
 }
+
 
 /**
  * Campo de leitura com edição contextual: o valor aparece sempre como texto;
@@ -29,7 +35,7 @@ export interface EditableFieldProps {
  * foi para aprovação do Narrador em vez de ser aplicada de imediato.
  */
 export function EditableField({
-  label, path, value, kind = "text", permissoes, onSave, emptyLabel = "Não informado", placeholder, min, aviso,
+  label, path, value, kind = "text", permissoes, onSave, emptyLabel = "Não informado", placeholder, min, aviso, longo = false, limite,
 }: EditableFieldProps) {
   const editavel = campoEditavel(path, permissoes);
   const exigeAprovacao = permissoes ? campoExigeAprovacao(path, permissoes) : false;
@@ -38,6 +44,9 @@ export function EditableField({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const fieldId = useId();
+  const contadorId = useId();
+  const caracteres = contarCaracteres(draft);
+  const passou = typeof limite === "number" && caracteres > limite;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,7 +68,7 @@ export function EditableField({
   }
 
   return (
-    <div className="editable-field">
+    <div className={`editable-field ${longo ? "editable-field--longo" : ""}`.trim()}>
       <span className="eyebrow">{label}</span>
       {value.trim() ? <strong>{value}</strong> : <strong className="editable-field__vazio">{emptyLabel}</strong>}
       {aviso && <small className="field-warning">{aviso}</small>}
@@ -69,7 +78,7 @@ export function EditableField({
           label={`Editar ${label}`}
           triggerContent="Editar"
           triggerClassName="text-action"
-          contentClassName="editable-field__popover"
+          contentClassName={`editable-field__popover ${longo ? "editable-field__popover--longo" : ""}`.trim()}
         >
           <form
             onSubmit={(event) => { void submit(event); }}
@@ -77,7 +86,9 @@ export function EditableField({
           >
             <label htmlFor={fieldId}>{label}</label>
             {kind === "textarea" ? (
-              <textarea id={fieldId} value={draft} placeholder={placeholder} onChange={(event) => setDraft(event.target.value)} />
+              <textarea id={fieldId} value={draft} placeholder={placeholder} rows={longo ? 10 : undefined}
+                aria-describedby={typeof limite === "number" ? contadorId : undefined} aria-invalid={passou || undefined}
+                onChange={(event) => setDraft(event.target.value)} />
             ) : (
               <input
                 id={fieldId}
@@ -88,11 +99,16 @@ export function EditableField({
                 onChange={(event) => setDraft(event.target.value)}
               />
             )}
+            {typeof limite === "number" && (
+              <small id={contadorId} className={passou ? "field-error" : "editable-field__contador"}>
+                {caracteres.toLocaleString("pt-BR")} de {limite.toLocaleString("pt-BR")} caracteres{passou ? " — encurte o texto para salvar." : ""}
+              </small>
+            )}
             {exigeAprovacao && <p className="preview-note">Esta alteração será enviada para aprovação do Narrador.</p>}
             {error && <p role="alert">{error}</p>}
             <div className="confirmation__actions">
               <button type="reset" className="button button--ghost">Cancelar</button>
-              <button type="submit" className="button button--primary" disabled={pending}>
+              <button type="submit" className="button button--primary" disabled={pending || passou}>
                 {pending ? "Salvando…" : "Salvar"}
               </button>
             </div>

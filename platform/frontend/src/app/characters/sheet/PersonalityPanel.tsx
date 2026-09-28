@@ -37,6 +37,7 @@ export function PersonalityPanel({ nome, ficha, permissoes, listas, avisos, onSa
           permissoes={permissoes} onSave={onSave} aviso={avisos["personalidade.pecado"]} />
         {(listas?.campos_personalidade ?? []).map((campo) => (
           <EditableField key={campo.chave} label={campo.rotulo} path={`personalidade.${campo.chave}`} kind="textarea"
+            longo={campo.longo} limite={campo.limite}
             value={valor(campo.chave)} emptyLabel={campo.dica || "Não informado"} placeholder={campo.dica}
             permissoes={permissoes} onSave={(path, value) => onSave([{ path, value }])} />
         ))}

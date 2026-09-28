@@ -6,10 +6,13 @@ export interface PersonagemInfo {
   classe?: string;
   arquetipo?: string;
   idade?: number;
+  nivel?: number;
   habilidades: Record<string, unknown>[];
   /** URL de dados do retrato (`personagem.imagem_base64`), quando a ficha traz um. */
   imagemUrl?: string;
   imagemAtivo?: string;
+  /** Ilustração de corpo inteiro do Resumo, separada do retrato. */
+  ilustracaoAtivo?: string;
 }
 
 export function personagemInfo(ficha: FichaContrato): PersonagemInfo {
@@ -20,10 +23,17 @@ export function personagemInfo(ficha: FichaContrato): PersonagemInfo {
     classe: asString(p.classe),
     arquetipo: asString(p.arquetipo),
     idade: asNumber(p.idade),
+    nivel: asNumber(p.nivel),
     habilidades: asArray(p.habilidades).map(asRecord),
     imagemUrl: imagemDataUrl(asString(p.imagem_base64)),
     imagemAtivo: asString(p.imagem_ativo),
+    ilustracaoAtivo: asString(p.ilustracao_ativo),
   };
+}
+
+/** Caracteres como o servidor conta (pontos de código), para o contador bater com a recusa. */
+export function contarCaracteres(texto: string): number {
+  return Array.from(texto).length;
 }
 
 export function personalidadeInfo(ficha: FichaContrato): Record<string, unknown> {

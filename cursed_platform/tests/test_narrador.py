@@ -226,3 +226,18 @@ class NarradorTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IlustracaoForaDaVitrineTest(unittest.TestCase):
+    """A ilustração do Resumo (aba-resumo-da-ficha) nunca entra na vitrine pública do Narrador."""
+
+    def test_entidade_publica_nao_expoe_a_ilustracao(self):
+        from cursed_platform import narrador as regras
+        from cursed_platform.persistence import PersonagemRegistro
+        ficha = {"personagem": {"nome": "Lobo", "ilustracao_ativo": "mesas/mesa/personagens/lobo/imagens/corpo.png"}}
+        for visibilidade, revelacao in (("mesa", None), ("narrador", {"nome_publico": "Vulto", "imagem": True})):
+            with self.subTest(visibilidade=visibilidade):
+                publica = regras.entidade_publica(PersonagemRegistro(
+                    id="lobo", mesa_id="mesa", tipo="monstro", visibilidade=visibilidade, ficha=ficha, revelacao=revelacao))
+                self.assertEqual(set(publica), {"id", "nome_publico", "imagem"})
+                self.assertNotIn("corpo.png", str(publica))

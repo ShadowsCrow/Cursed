@@ -98,18 +98,19 @@ describe("Abas da ficha", () => {
     const GET = vi.fn(async (caminho: string) => {
       if (caminho.endsWith("/ficha")) return { data: { mesa_id: "m", personagem_id: "p", versao: 0, ficha: { personagem: { nome: "Lia" } } } };
       if (caminho.endsWith("/permissoes")) return { data: { papel: "jogador", editar: true, excluir: false, transferir: false, campos_bloqueados: [], campos_exigem_aprovacao: [] } };
-      if (caminho.endsWith("/desgaste") || caminho.endsWith("/efeitos") || caminho.endsWith("/inventario") || caminho.endsWith("/valores-derivados") || caminho.endsWith("/cartas")) return { data: [] };
+      if (caminho.endsWith("/desgaste") || caminho.endsWith("/consequencias") || caminho.endsWith("/efeitos") || caminho.endsWith("/inventario") || caminho.endsWith("/valores-derivados") || caminho.endsWith("/cartas")) return { data: [] };
       throw new Error(`GET não simulado: ${caminho}`);
     });
     comQuery(<CharacterSheetPage api={{ GET } as unknown as ApiClient} mesaId="m" personagemId="p" userId="ana" onBack={vi.fn()} />);
-    const primeira = await screen.findByRole("tab", { name: "Informações básicas" });
+    // O Resumo é a primeira aba e a que abre a ficha (aba-resumo-da-ficha).
+    const primeira = await screen.findByRole("tab", { name: "Resumo" });
     expect(primeira.getAttribute("tabindex")).toBe("0");
-    expect(primeira.getAttribute("aria-controls")).toBe("painel-informacoes");
-    expect(screen.getByRole("tabpanel", { name: "Informações básicas" })).toBeTruthy();
+    expect(primeira.getAttribute("aria-controls")).toBe("painel-resumo");
+    expect(screen.getByRole("tabpanel", { name: "Resumo" })).toBeTruthy();
 
     primeira.focus();
     fireEvent.keyDown(primeira, { key: "ArrowRight" });
-    const segunda = screen.getByRole("tab", { name: "Personalidade" });
+    const segunda = screen.getByRole("tab", { name: "Informações básicas" });
     await waitFor(() => expect(segunda.getAttribute("aria-selected")).toBe("true"));
     expect(document.activeElement).toBe(segunda);
     expect(primeira.getAttribute("tabindex")).toBe("-1");

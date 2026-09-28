@@ -65,7 +65,12 @@ class ApiCatalogosTest(unittest.TestCase):
         self.assertEqual(listas["sexos"], ["Masculino", "Feminino", "Outro"])
         ganancia = next(p for p in listas["pecados"] if p["nome"] == "Ganância")
         self.assertEqual(ganancia["equivalentes"], ["Ganancia"])
-        self.assertEqual(len(listas["campos_personalidade"]), 9)
+        self.assertEqual(len(listas["campos_personalidade"]), 10)
+        historia = next(c for c in listas["campos_personalidade"] if c["chave"] == "historia")
+        self.assertEqual((historia["rotulo"], historia["longo"], historia["limite"]), ("História", True, 4000))
+        lema = next(c for c in listas["campos_personalidade"] if c["chave"] == "meu_lema")
+        self.assertEqual((lema["longo"], lema["limite"]), (False, None))
+        self.assertEqual(listas["icones_ficha"]["Proposito"], "proposito")
 
     def test_efeitos_default_sem_sobrepeso_com_grupo_substituicao_e_icone(self):
         efeitos = {e["associacao"]: e for e in self.client.get(f"{BASE}/efeitos-default").json()}
