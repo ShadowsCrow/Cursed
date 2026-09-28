@@ -73,6 +73,12 @@ As 9 imagens chegaram em `platform/frontend/exemplo/` e foram movidas para `plat
 | `moldura-ornamental.png` | 1254², RGB | **escolhida**: fundo preto puro (luminância máx. 1 fora do ouro), cantos idênticos (caixa do canto ≈ 74–215 px), lados = friso duplo liso (duas linhas de ~5 px com 3 px de intervalo) |
 | `moldura-ornamental-transparente.png` | 1254², RGBA | **descartada**: alfa binário (0 % de pixels semitransparentes), bordas serrilhadas; a preta dá alfa suave pela luminância |
 
+### Migração 0018 no Supabase de testes (tarefa 2.2, concluída)
+
+- 2026-09-28, pelo conector MCP do Supabase, com autorização do usuário: projeto `cursed` (`wvfrwmplruhwfkmwjtvl`, sa-east-1). Antes: `alembic_version = 0017_ficha_completa`, nenhuma das colunas novas existia, tabelas `rpg_tables`, `user_profiles` e `characters` vazias. O projeto não registra migrações do Supabase (`list_migrations` vazio); o controle é o Alembic.
+- Aplicado numa transação o mesmo DDL da `0018_perfil_e_campanha` (`apelido`, `foto_objeto`, `perfil_confirmado_em` em `user_profiles`; `sinopse`, `capa_objeto`, `sistema` com padrão `'cursed'` em `rpg_tables`; `procedencia` JSON em `characters`) e `alembic_version` trocada para `0018_perfil_e_campanha`. O comando terminou sem erro.
+- **Verificado:** `alembic_version = 0018_perfil_e_campanha`; as 7 colunas com os tipos da migração (`sistema` `varchar(40)` não nula, padrão `'cursed'`); RLS ligado em `user_profiles`, `rpg_tables` e `characters`; nenhum privilégio `SELECT/INSERT/UPDATE/DELETE` para `anon` ou `authenticated` nessas tabelas. A primeira leitura foi bloqueada pelo modo automático; a segunda, pedida explicitamente pelo usuário, passou.
+
 ### Decisões e achados da implementação
 
 - **Personagens no formato do Resumo (decisão do usuário, 2026-09-28):** a vitrine própria saiu; `personagens/Vitrine.tsx` monta o `ResumoFicha` da aba-resumo-da-ficha com as mesmas consultas da página da ficha (ficha, valores derivados, inventário, cartas, classes, listas), sem `permissoes` (só leitura: sem troca de ilustração nem convite para a História). Os atalhos dos quadros abrem `/mesas/{m}/personagens/{p}?secao=…`. Acima, a barra com a campanha, "Abrir ficha" e "Copiar para campanha". O cliente de demonstração responde às rotas do Resumo com valores de exemplo. **Dependência:** esta mudança agora usa componentes da `aba-resumo-da-ficha` (não versionada); commitar as duas juntas ou na ordem Resumo → navegação.
@@ -91,3 +97,7 @@ As 9 imagens chegaram em `platform/frontend/exemplo/` e foram movidas para `plat
 ## Integração contínua (tarefa 9.5)
 
 Execução verde do workflow `platform-contract.yml` em 2026-09-28 (https://github.com/ShadowsCrow/Cursed/actions/runs/36414627123), commit `b30096f` na branch `feature/retrato-refinamento`: testes Python, contrato OpenAPI, cliente gerado, typecheck, lint sem avisos, build, Vitest e e2e (Playwright). Os commits foram separados por mudança: `30dbfe8` (arquivamento), `f05470b` (Exaustão e Estresse), `8782e7e` (criação guiada e estética), `736445c` (Resumo) e `b30096f` (navegação); arquivos usados por mais de uma mudança entraram inteiros no commit da mudança com mais conteúdo neles.
+
+## Pendência externa ao arquivar
+
+- **9.3 (login com Google):** adiada por decisão do usuário. O botão existe e fica oculto até `VITE_LOGIN_GOOGLE=1`; falta o usuário criar o cliente OAuth no Google Cloud, ligar o provedor no Supabase (projeto `wvfrwmplruhwfkmwjtvl`) e liberar as URLs de redirecionamento. Não bloqueia o arquivamento (ver a própria tarefa).

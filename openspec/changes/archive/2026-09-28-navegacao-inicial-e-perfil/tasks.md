@@ -12,7 +12,7 @@ Nenhuma regra de mesa ou catálogo muda nesta mudança.
 ## 2. Dados e migração
 
 - [x] 2.1 Migração `0018_perfil_e_campanha`: `user_profiles.apelido`, `foto_objeto`, `perfil_confirmado_em`; `rpg_tables.sinopse`, `capa_objeto`, `sistema` (padrão `'cursed'`); `characters.procedencia` (JSON nulo). Verificar com teste de migração em SQLite (sobe e desce) e com `test_fichas_existentes_inalteradas.py` verde.
-- [ ] 2.2 Aplicar a 0018 no Supabase de testes e registrar no `HANDOFF.md` (depende de autorização do usuário).
+- [x] 2.2 Aplicar a 0018 no Supabase de testes e registrar no `HANDOFF.md` (depende de autorização do usuário).
 
 ## 3. Servidor
 
