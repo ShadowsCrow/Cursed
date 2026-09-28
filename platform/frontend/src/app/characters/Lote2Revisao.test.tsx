@@ -44,7 +44,7 @@ describe("Contadores de pendências na navegação", () => {
 
   it("jogador vê o contador de ofertas em Biblioteca, também para leitor de tela", async () => {
     const api = apiCom({ "/mesas/{mesa_id}/ofertas": [oferta("aberta", false, ["pendente"])] });
-    comQuery(<PlayerShell mesa={{ id: "m", nome: "Mesa", papel: "jogador" }} view="character" onNavigate={vi.fn()} onSignOut={vi.fn()} api={api} userId="ana" onOpenCharacter={vi.fn()} />);
+    comQuery(<PlayerShell mesa={{ id: "m", nome: "Mesa", papel: "jogador", sistema: "cursed" }} view="character" onNavigate={vi.fn()} onSignOut={vi.fn()} api={api} userId="ana" onOpenCharacter={vi.fn()} />);
     const nav = screen.getByRole("navigation", { name: "Navegação da mesa" });
     const biblioteca = await within(nav).findByRole("button", { name: /Biblioteca, 1 pendente/ });
     expect(within(biblioteca).getByText("1")).toBeTruthy();
@@ -53,7 +53,7 @@ describe("Contadores de pendências na navegação", () => {
 
   it("Narrador vê o contador de aprovações em Visão geral", async () => {
     const api = apiCom({ "/mesas/{mesa_id}/solicitacoes": [{ id: "p1" }, { id: "p2" }] });
-    comQuery(<NarratorShell mesa={{ id: "m", nome: "Mesa", papel: "narrador" }} view="cards" onNavigate={vi.fn()} onSignOut={vi.fn()} api={api} userId="mestre" onOpenCharacter={vi.fn()} />);
+    comQuery(<NarratorShell mesa={{ id: "m", nome: "Mesa", papel: "narrador", sistema: "cursed" }} view="cards" onNavigate={vi.fn()} onSignOut={vi.fn()} api={api} userId="mestre" onOpenCharacter={vi.fn()} />);
     const nav = screen.getByRole("navigation", { name: "Navegação móvel da mesa" });
     expect(await within(nav).findByRole("button", { name: /Visão geral, 2 pendente/ })).toBeTruthy();
   });

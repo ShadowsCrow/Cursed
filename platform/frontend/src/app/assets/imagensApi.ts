@@ -2,12 +2,12 @@ import type { components } from "../../api/generated/schema";
 
 import { extractErrorMessage, type ApiClient } from "../characters/types";
 
-export type DestinoImagem = "retrato" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito";
+export type DestinoImagem = "retrato" | "ilustracao" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito" | "capa";
 export type ImagemResposta = components["schemas"]["ImagemResposta"];
 
 /** Limites do servidor por ponto de envio, conferidos antes de enviar para a mensagem chegar mais cedo. */
 export const LIMITE_MB: Record<DestinoImagem, number> = {
-  retrato: 5, item: 5, "icone-grade": 5, efeito: 5, carta: 8, mapa: 15, "icone-efeito": 5,
+  retrato: 5, ilustracao: 8, item: 5, "icone-grade": 5, efeito: 5, carta: 8, mapa: 15, "icone-efeito": 5, capa: 8,
 };
 export const TIPOS_IMAGEM = ["image/png", "image/jpeg", "image/webp"];
 

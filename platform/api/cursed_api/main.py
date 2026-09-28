@@ -24,6 +24,7 @@ from .live_sheet import router as live_sheet_router
 from .audit import router as audit_router
 from .narrator import router as narrator_router
 from .rest import router as rest_router
+from .wear import router as wear_router
 from .cards import router as cards_router
 from .card_lifecycle import router as card_lifecycle_router
 from .room import router as room_router
@@ -31,6 +32,8 @@ from .stashes import router as stashes_router
 from .assets import router as assets_router
 from .catalogs import router as catalogs_router
 from .images import router as images_router
+from .perfil import router as perfil_router
+from .acervo import router as acervo_router
 from .sincronizacao import SincronizadorCatalogo
 
 
@@ -98,12 +101,14 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
                           **({"classe_erro": erro} if erro else {}))
     api.include_router(sheets_router)
     api.include_router(tables_router)
+    api.include_router(acervo_router)  # antes de characters: /personagens/copias não é um id
     api.include_router(characters_router)
     api.include_router(channels_router)
     api.include_router(live_sheet_router)
     api.include_router(audit_router)
     api.include_router(narrator_router)
     api.include_router(rest_router)
+    api.include_router(wear_router)
     api.include_router(cards_router)
     api.include_router(card_lifecycle_router)
     api.include_router(room_router)
@@ -111,6 +116,7 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(assets_router)
     api.include_router(catalogs_router)
     api.include_router(images_router)
+    api.include_router(perfil_router)
 
     @api.get("/health", response_model=HealthResponse, tags=["Operação"])
     def health() -> HealthResponse:

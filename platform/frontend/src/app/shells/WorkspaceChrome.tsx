@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 
 import { Glyph, Portrait } from "../../ui/Display";
+import { CabecalhoIlustrado } from "../../ui/Arte";
+import { Marca, Selo, TituloOrnado } from "../../ui/Tema";
 import { ConnectivityBadge } from "../connectivity/ConnectivityBadge";
 import { routes } from "../routes";
 import { tableNavigation, type TableRole, type TableView } from "../tableNavigation";
@@ -9,6 +11,8 @@ import { tableNavigation, type TableRole, type TableView } from "../tableNavigat
 export interface WorkspaceChromeProps {
   role: TableRole;
   mesaNome: string;
+  /** Mesa atual: o caminho de volta abre a campanha selecionada em Campanhas. */
+  mesaId?: string;
   view: TableView;
   onNavigate: (view: TableView) => void;
   onSignOut: () => void;
@@ -21,6 +25,8 @@ export interface WorkspaceChromeProps {
   badges?: Partial<Record<TableView, number>>;
   /** Bloco de navegação exclusivo do papel, mostrado abaixo da navegação comum na barra lateral. */
   sidebarExtra?: ReactNode;
+  /** Substitui o painel de abertura padrão (ex.: cabeçalho ilustrado do assistente de criação). */
+  hero?: ReactNode;
   children: ReactNode;
 }
 
@@ -58,6 +64,7 @@ function Navigation({ role, view, onNavigate, badges = {}, mobile = false }: { r
 export function WorkspaceChrome({
   role,
   mesaNome,
+  mesaId,
   view,
   onNavigate,
   onSignOut,
@@ -68,22 +75,24 @@ export function WorkspaceChrome({
   headerDescription,
   roomPresence,
   badges,
+  hero,
   children,
 }: WorkspaceChromeProps) {
+  const voltar = mesaId ? routes.campanha(mesaId) : routes.campanhas();
   return (
     <div className={`preview-app workspace-app workspace-app--${role}`}>
       <aside className="sidebar">
-        <div className="brand"><span className="brand__mark"><Glyph name="spark" size={24} /></span><div><strong>CURSED</strong><small>PLATAFORMA RPG</small></div></div>
+        <div className="brand"><Marca tamanho={44} /></div>
         <div className="sidebar__campaign">
           <span className="eyebrow">CAMPANHA ATUAL</span>
           <strong>{mesaNome}</strong>
-          <small><Glyph name="shield" size={14} /> {roleLabel}</small>
+          <Selo tom={role === "narrador" ? "sangue" : "ouro"}>{roleLabel}</Selo>
         </div>
         <div className="sidebar__label">MESA</div>
         <Navigation role={role} view={view} onNavigate={onNavigate} badges={badges} />
         {sidebarExtra}
         <div className="sidebar__bottom">
-          <Link className="nav-item" to={routes.home()}><Glyph name="grid" size={19} /><span>Trocar de mesa</span></Link>
+          <Link className="nav-item" to={voltar}><Glyph name="grid" size={19} /><span>Campanhas</span></Link>
         </div>
       </aside>
       <div className="preview-main">
@@ -96,22 +105,19 @@ export function WorkspaceChrome({
             <ConnectivityBadge />
             {roomPresence}
             <span className="workspace-role">Papel nesta mesa: {role === "narrador" ? "Narrador" : "jogador"}</span>
-            <Link className="workspace-switch-link" to={routes.home()} aria-label="Trocar de mesa"><Glyph name="grid" size={18} /></Link>
+            <Link className="workspace-switch-link" to={voltar} aria-label="Voltar às campanhas"><Glyph name="grid" size={18} /></Link>
             <button className="button button--ghost workspace-signout" type="button" onClick={onSignOut}>Sair</button>
             <Portrait name={role === "narrador" ? "Narrador" : "Jogador"} hue={role === "narrador" ? "copper" : "violet"} />
           </div>
         </header>
         <main id="main-content" className="preview-content">
           <div className="screen-content">
-            <section className={`hero-panel ${role === "jogador" ? "hero-panel--player" : ""}`}>
-              <div className="hero-panel__stars" aria-hidden="true" />
-              <div className="hero-panel__copy">
-                <span className="eyebrow">{headerEyebrow}</span>
-                <h1>{headerTitle}</h1>
+            {hero ?? (
+              <CabecalhoIlustrado className={`hero-panel--tema ${role === "jogador" ? "hero-panel--player" : ""}`.trim()}>
+                <TituloOrnado nivel={1} sobretitulo={headerEyebrow}>{headerTitle}</TituloOrnado>
                 {headerDescription && <p>{headerDescription}</p>}
-              </div>
-              <div className="hero-panel__sigil" aria-hidden="true"><span>{role === "narrador" ? "✧" : "✦"}</span><div className="hero-panel__sigil-ring" /></div>
-            </section>
+              </CabecalhoIlustrado>
+            )}
             {children}
           </div>
         </main>

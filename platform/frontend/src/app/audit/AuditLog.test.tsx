@@ -184,7 +184,7 @@ describe("AuditLog — 7.4/7.5/7.6 registro de auditoria", () => {
     const { api, GET } = createApi({
       eventos: [evento({ ator_id: "ana", relevancia: "narrativa", resumo: "Apelido alterado" })],
       personagensAtivos: [personagem()],
-      participantes: [{ usuario_id: "ana", papel: "jogador" }, { usuario_id: "mestre", papel: "narrador" }],
+      participantes: [{ usuario_id: "ana", papel: "jogador", tem_foto: false }, { usuario_id: "mestre", papel: "narrador", tem_foto: false }],
     });
     renderAuditLog({ api });
 
@@ -210,7 +210,7 @@ describe("AuditLog — 7.4/7.5/7.6 registro de auditoria", () => {
     const { api, GET } = createApi({
       eventos: [evento({ sessao_id: "s1", ator_id: "ana", resumo: "Evento da sessão 1" })],
       personagensAtivos: [personagem()],
-      participantes: [{ usuario_id: "ana", papel: "jogador" }],
+      participantes: [{ usuario_id: "ana", papel: "jogador", tem_foto: false }],
     });
     renderAuditLog({ api });
 
@@ -336,7 +336,7 @@ describe("AuditLog — 7.4/7.5/7.6 registro de auditoria", () => {
         evento({ id: 1, resumo: "Lia: Vigor de 2 para 9", corrigivel: true, corrigido_por: [2] }),
       ],
       personagensAtivos: [personagem({ id: "pj-1", versao: 2 })],
-      participantes: [{ usuario_id: "ana", papel: "jogador" }],
+      participantes: [{ usuario_id: "ana", papel: "jogador", tem_foto: false }],
     });
     renderAuditLog({ api });
     await screen.findByText("Lia: correção de 1 campo");

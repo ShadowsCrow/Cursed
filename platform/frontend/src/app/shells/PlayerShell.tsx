@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router";
 import type { components } from "../../api/generated/schema";
 import { Portrait } from "../../ui/Display";
 import { AuditLog } from "../audit/AuditLog";
@@ -7,6 +8,7 @@ import { PlayerLibrary, PresentationOverlay } from "../cards/PlayerLibrary";
 import { CharacterList } from "../characters/CharacterList";
 import { PublicEntities } from "../characters/PublicEntities";
 import type { ApiClient } from "../characters/types";
+import { routes } from "../routes";
 import type { TableView } from "../tableNavigation";
 import { RoomView } from "../room/RoomView";
 import type { RealtimeSession } from "../room/RoomPresence";
@@ -54,12 +56,14 @@ export interface PlayerShellProps {
  */
 export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, onOpenCharacter, roomPresence, realtime }: PlayerShellProps) {
   const copy = playerCopy[view];
+  const navigate = useNavigate();
   const ofertas = useOfertas(api, mesa.id);
   return (
     <WorkspaceChrome
       badges={{ cards: contarOfertasPendentes(ofertas.data) }}
       role="jogador"
       mesaNome={mesa.nome}
+      mesaId={mesa.id}
       view={view}
       onNavigate={onNavigate}
       onSignOut={onSignOut}
@@ -71,7 +75,8 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
       sidebarExtra={<PlayerSnapshotPanel />}
     >
       {view === "character" ? (
-        <CharacterList api={api} mesaId={mesa.id} userId={userId} role="jogador" onOpen={onOpenCharacter} />
+        <CharacterList api={api} mesaId={mesa.id} userId={userId} role="jogador" onOpen={onOpenCharacter}
+          onCriarPersonagem={({ retomar }) => navigate(`${routes.createCharacter(mesa.id)}${retomar ? "?retomar=1" : ""}`)} />
       ) : view === "activity" ? (
         <AuditLog api={api} mesaId={mesa.id} role="jogador" />
       ) : view === "cards" ? (

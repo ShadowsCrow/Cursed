@@ -7,6 +7,7 @@ autoriza pelo destino e pelo alvo, valida a imagem, grava no espaço de visibili
 
 Destinos e alvos:
     retrato        personagem          personagens/{p}/imagens/  ficha.personagem.imagem_ativo
+    ilustracao     personagem          personagens/{p}/imagens/  ficha.personagem.ilustracao_ativo (Resumo da ficha)
     item           item do inventário  personagens/{p}/imagens/  item.dados.imagem_ativo
     icone-grade    item:{id}           personagens/{p}/imagens/  item.dados.icone_grade
                    carta:{id}          narrador/cartas/          rascunho.formato.icone_grade
@@ -14,6 +15,7 @@ Destinos e alvos:
     carta          carta               narrador/cartas/          rascunho.ativos_privados
     mapa           cena                mesa/mapas/               cena.mapa_objeto
     icone-efeito   associação default  mesa/icones-efeitos/      effect_icons (só nesta mesa)
+    capa           a própria mesa      mesa/capa/                rpg_tables.capa_objeto (só o Narrador)
 
 A arte e o ícone de grade enviados para uma carta ficam no espaço do Narrador até a publicação,
 que os copia para o espaço da mesa (``promover_ativos``).
@@ -44,7 +46,7 @@ from .dependencies import get_correlacao, get_session
 
 router = APIRouter(prefix="/mesas/{mesa_id}/imagens", tags=["Imagens"])
 
-NomeDestino = Literal["retrato", "item", "icone-grade", "efeito", "carta", "mapa", "icone-efeito"]
+NomeDestino = Literal["retrato", "ilustracao", "item", "icone-grade", "efeito", "carta", "mapa", "icone-efeito", "capa"]
 
 
 @dataclass
@@ -57,6 +59,7 @@ class Alvo:
     categoria: str
     personagem: PersonagemRegistro | None = None
     visibilidade: str | None = None
+    feminino: bool = False  # concordância do resumo: "capa alterada", "retrato alterado"
 
 
 def _negar(decisao, recurso: str = "Recurso não encontrado.") -> None:
@@ -97,23 +100,26 @@ def _avancar(session: Session, personagem: PersonagemRegistro, versao_esperada: 
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Versão desatualizada.") from None
 
 
-def _alvo_retrato(session, mesa_id, alvo, ator, versao) -> Alvo:
-    personagem = _personagem_editavel(session, mesa_id, alvo, ator, "personagem.imagem_ativo")
+def _alvo_retrato(session, mesa_id, alvo, ator, versao, chave: str = "imagem_ativo", rotulo: str = "retrato",
+                  feminino: bool = False) -> Alvo:
+    """Retrato do cabeçalho ou ilustração do Resumo: a mesma regra, cada um no seu campo da ficha."""
+    personagem = _personagem_editavel(session, mesa_id, alvo, ator, f"personagem.{chave}")
 
     def aplicar(objeto: str | None) -> int:
         ficha = dict(personagem.ficha or {})
         dados = dict(ficha.get("personagem") or {})
         if objeto:
-            dados["imagem_ativo"] = objeto
+            dados[chave] = objeto
         else:
-            dados.pop("imagem_ativo", None)
+            dados.pop(chave, None)
         ficha["personagem"] = dados
         if not FichaRepository(session).substituir_se_versao(mesa_id, personagem.id, _exigir_versao(versao), ficha):
             session.rollback()
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Versão desatualizada.")
         return _exigir_versao(versao) + 1
 
-    return Alvo(f"mesas/{mesa_id}/personagens/{personagem.id}/imagens", aplicar, "retrato", "ficha", personagem)
+    return Alvo(f"mesas/{mesa_id}/personagens/{personagem.id}/imagens", aplicar, rotulo, "ficha", personagem,
+                feminino=feminino)
 
 
 def _alvo_item(session, mesa_id, item_id, ator, versao, chave: str, rotulo: str) -> Alvo:
@@ -223,9 +229,28 @@ def _alvo_icone_efeito(session, mesa_id, associacao, ator) -> Alvo:
     return Alvo(f"mesas/{mesa_id}/mesa/icones-efeitos", aplicar, f"ícone de {efeito['nome']}", "efeito")
 
 
+def _alvo_capa(session, mesa_id, alvo, ator) -> Alvo:
+    _negar(Autorizador(session).decidir(Acao.EDITAR_CAMPANHA, usuario_id=ator.usuario_id, mesa_id=mesa_id),
+           "Mesa não encontrada.")
+    if alvo != mesa_id:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="O alvo da capa é a própria mesa.")
+    mesa = session.get(MesaRegistro, mesa_id)
+    assert mesa is not None
+
+    def aplicar(objeto: str | None) -> None:
+        mesa.capa_objeto = objeto
+        return None
+
+    return Alvo(f"mesas/{mesa_id}/mesa/capa", aplicar, "capa da campanha", "mesa", feminino=True)
+
+
 def _alvo(session: Session, mesa_id: str, destino: str, alvo: str, ator: Ator, versao: int | None) -> Alvo:
+    if destino == "capa":
+        return _alvo_capa(session, mesa_id, alvo, ator)
     if destino == "retrato":
         return _alvo_retrato(session, mesa_id, alvo, ator, versao)
+    if destino == "ilustracao":
+        return _alvo_retrato(session, mesa_id, alvo, ator, versao, "ilustracao_ativo", "ilustração", feminino=True)
     if destino == "item":
         return _alvo_item(session, mesa_id, alvo, ator, versao, "imagem_ativo", "arte")
     if destino == "icone-grade":
@@ -251,7 +276,8 @@ def _auditar(session: Session, mesa_id: str, destino: Alvo, ator: Ator, acao: st
     auditoria.registrar(
         session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria=destino.categoria, acao=acao,
         relevancia="organizacional", personagem=destino.personagem, visibilidade=destino.visibilidade,
-        resumo=f"{sujeito}{destino.rotulo} {'alterado' if acao == 'imagem.alterada' else 'removido'}",
+        resumo=f"{sujeito}{destino.rotulo} {'alterad' if acao == 'imagem.alterada' else 'removid'}"
+               f"{'a' if destino.feminino else 'o'}",
         # Só a referência: o conteúdo da imagem nunca entra no evento.
         detalhes={"destino": nome_destino, "alvo": alvo, "objeto": objeto}, correlacao_id=correlacao,
     )

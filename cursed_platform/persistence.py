@@ -40,6 +40,10 @@ class MesaRegistro(Base):
     )
     # Quantas moedas (de qualquer tipo) cabem numa pilha, ou seja, numa célula da grade de carga.
     moedas_por_pilha: Mapped[int] = mapped_column(Integer, nullable=False, default=100, server_default="100")
+    # Apresentação da campanha (navegacao-inicial-e-perfil, design D6).
+    sinopse: Mapped[str | None] = mapped_column(String(2000))
+    capa_objeto: Mapped[str | None] = mapped_column(String(500))
+    sistema: Mapped[str] = mapped_column(String(40), nullable=False, default="cursed", server_default="cursed")
 
 
 class MembroRegistro(Base):
@@ -138,6 +142,8 @@ class PersonagemRegistro(Base):
     revelacao: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     excluido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     excluido_por: Mapped[str | None] = mapped_column(String(100))
+    # Cópia independente: {"mesa_id", "personagem_id", "copiado_em"} da origem; nulo nos demais.
+    procedencia: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
 
 class SessaoRegistro(Base):
@@ -587,12 +593,15 @@ for _comando in VERSOES_IMUTAVEIS_POSTGRES:
 
 
 class PerfilUsuarioRegistro(Base):
-    """Nome de exibição da identidade autenticada, atualizado a cada acesso."""
+    """Perfil da pessoa: ``nome`` vem da identidade a cada acesso; ``apelido`` e foto são escolhidos por ela."""
 
     __tablename__ = "user_profiles"
 
     usuario_id: Mapped[str] = mapped_column(String(100), primary_key=True)
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
+    apelido: Mapped[str | None] = mapped_column(String(40))
+    foto_objeto: Mapped[str | None] = mapped_column(String(500))
+    perfil_confirmado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     atualizado_em: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )

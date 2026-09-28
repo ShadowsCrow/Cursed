@@ -5,6 +5,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CharacterList } from "./CharacterList";
+import { estadoInicial } from "./creation/modelo";
+import { gravarRascunho } from "./creation/rascunho";
 import type { ApiClient, ParticipanteResumo, PersonagemResumo, PoliticaMesaContrato } from "./types";
 
 const politicaAberta: PoliticaMesaContrato = {
@@ -122,7 +124,7 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
     const created = personagem({ id: "pj-2", nome: "Aliado", proprietario_id: "usuario-2" });
     const { api, POST } = createApi({
       ativos: [],
-      participantes: [{ usuario_id: "usuario-2", papel: "jogador" }],
+      participantes: [{ usuario_id: "usuario-2", papel: "jogador", tem_foto: false }],
       post: async () => ({ data: created, error: undefined }),
     });
     renderList({ api, role: "narrador", onOpen: vi.fn() });
@@ -170,18 +172,49 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
     expect(screen.queryByRole("button", { name: /Nova entidade/ })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /Criar personagem/ }));
-    const dialog = screen.getByRole("dialog");
-    expect(within(dialog).queryByLabelText("Tipo")).toBeNull();
-    expect(within(dialog).queryByText("Visibilidade inicial")).toBeNull();
-    expect(within(dialog).queryByLabelText("Proprietário (opcional)")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.queryByRole("button", { name: "Visibilidade" })).toBeNull();
+  });
+
+  it("Jogador vai ao assistente de criação e, com rascunho guardado, pode continuá-lo", async () => {
+    const { api, POST } = createApi({ ativos: [] });
+    const onCriarPersonagem = vi.fn();
+    renderList({ api, role: "jogador", onCriarPersonagem });
+    fireEvent.click(await screen.findByRole("button", { name: /Criar personagem/ }));
+    expect(onCriarPersonagem).toHaveBeenCalledWith({ retomar: false });
+    expect(POST).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /Continuar rascunho/ })).toBeNull();
+    cleanup();
+
+    const estado = estadoInicial();
+    estado.etapa = "atributos";
+    estado.alcancada = "atributos";
+    estado.ficha.personagem.nome = "Lia";
+    gravarRascunho(window.localStorage, "mesa-1", "usuario-1", estado);
+    try {
+      renderList({ api, role: "jogador", onCriarPersonagem });
+      fireEvent.click(await screen.findByRole("button", { name: "Continuar rascunho (Lia)" }));
+      expect(onCriarPersonagem).toHaveBeenLastCalledWith({ retomar: true });
+    } finally {
+      window.localStorage.clear();
+    }
+  });
+
+  it("Narrador continua no diálogo de Nova entidade, não no assistente", async () => {
+    const { api } = createApi({ ativos: [] });
+    const onCriarPersonagem = vi.fn();
+    renderList({ api, role: "narrador", onCriarPersonagem });
+    fireEvent.click(await screen.findByRole("button", { name: /Nova entidade/ }));
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(onCriarPersonagem).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /Criar personagem/ })).toBeNull();
   });
 
   it("Narrador transfere um personagem para um participante e para controle exclusivo do Narrador", async () => {
     const alvo = personagem({ id: "pj-1", versao: 4, proprietario_id: "usuario-1" });
     const { api, POST } = createApi({
       ativos: [alvo],
-      participantes: [{ usuario_id: "usuario-2", papel: "jogador" }],
+      participantes: [{ usuario_id: "usuario-2", papel: "jogador", tem_foto: false }],
       post: async () => ({ data: { ...alvo, proprietario_id: "usuario-2", versao: 5 }, error: undefined }),
     });
     renderList({ api, role: "narrador", onOpen: vi.fn() });
@@ -297,7 +330,7 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
   it("não apresenta violações de acessibilidade detectáveis automaticamente", async () => {
     const { api } = createApi({
       ativos: [personagem({ id: "pj-1", nome: "Nara Exemplo" })],
-      participantes: [{ usuario_id: "usuario-2", papel: "jogador" }],
+      participantes: [{ usuario_id: "usuario-2", papel: "jogador", tem_foto: false }],
     });
     renderList({ api, role: "narrador", onOpen: vi.fn() });
     await screen.findByText("Nara Exemplo");
@@ -306,7 +339,7 @@ describe("CharacterList — 6.1 gestão de personagens", () => {
   });
 
   it("o diálogo 'Nova entidade' não apresenta violações de acessibilidade detectáveis automaticamente", async () => {
-    const { api } = createApi({ ativos: [], participantes: [{ usuario_id: "usuario-2", papel: "jogador" }] });
+    const { api } = createApi({ ativos: [], participantes: [{ usuario_id: "usuario-2", papel: "jogador", tem_foto: false }] });
     renderList({ api, role: "narrador", onOpen: vi.fn() });
     fireEvent.click(await screen.findByRole("button", { name: /Nova entidade/ }));
     await screen.findByRole("dialog");

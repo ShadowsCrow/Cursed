@@ -77,10 +77,24 @@ class CriarMesaRequest(BaseModel):
     nome: str = Field(min_length=1, max_length=200)
 
 
+SistemaCampanha = Literal["cursed"]
+
+
 class MesaResumo(BaseModel):
     id: str
     nome: str
     papel: Literal["narrador", "jogador"]
+    sistema: SistemaCampanha = "cursed"
+    sinopse: str | None = None
+    capa_objeto: str | None = Field(
+        default=None, description="Capa no armazenamento privado da mesa; ler por /mesas/{id}/ativos com exibicao=true."
+    )
+
+
+class AtualizarMesaRequest(BaseModel):
+    nome: str = Field(min_length=1, max_length=200)
+    sinopse: str | None = Field(default=None, max_length=2000)
+    sistema: SistemaCampanha | None = Field(default=None, description="Só \"cursed\" nesta versão.")
 
 
 class CriarConviteRequest(BaseModel):
@@ -100,6 +114,26 @@ class ParticipanteResumo(BaseModel):
     usuario_id: str
     papel: Literal["narrador", "jogador"]
     nome: str | None = None
+    tem_foto: bool = Field(default=False, description="A foto do perfil sai em /perfis/{usuario_id}/foto.")
+
+
+class MesaDetalhe(MesaResumo):
+    participantes: list[ParticipanteResumo]
+
+
+class PerfilResposta(BaseModel):
+    usuario_id: str
+    apelido: str | None = Field(default=None, description="Vazio até o primeiro acesso ser confirmado.")
+    apelido_sugerido: str
+    nome_exibido: str
+    tem_foto: bool
+    email: str | None = None
+    provedor: str | None = None
+    confirmado: bool
+
+
+class AtualizarPerfilRequest(BaseModel):
+    apelido: str = Field(max_length=200)
 
 
 class CanalPrivado(BaseModel):
@@ -153,6 +187,28 @@ class PersonagemResumo(BaseModel):
     revelacao: RevelacaoContrato | None = None
     excluido_em: datetime | None = None
     restauravel_ate: datetime | None = None
+    retrato_objeto: str | None = Field(default=None, description="Ler por /mesas/{mesa_id}/ativos com exibicao=true.")
+
+
+class AcervoPersonagem(BaseModel):
+    """Personagem visto fora da mesa, no acervo; valores exatamente como estão na ficha."""
+
+    mesa_id: str
+    mesa_nome: str
+    personagem_id: str
+    tipo: Literal["personagem", "npc", "monstro"]
+    nome: str
+    visibilidade: Literal["mesa", "narrador"]
+    classe: str | None = None
+    arquetipo: str | None = None
+    raca: str | None = None
+    nivel: int | None = None
+    retrato_objeto: str | None = Field(default=None, description="Ler por /mesas/{mesa_id}/ativos com exibicao=true.")
+
+
+class CopiarPersonagemRequest(BaseModel):
+    mesa_origem_id: str = Field(min_length=1, max_length=100)
+    personagem_origem_id: str = Field(min_length=1, max_length=100)
 
 
 class TransferirPersonagemRequest(BaseModel):
@@ -833,6 +889,13 @@ class ProblemaValidacao(BaseModel):
     mensagem: str
 
 
+class PreviaCriacaoResposta(BaseModel):
+    """PV, PP e Escalas de uma ficha ainda não gravada e os problemas que impediriam criá-la."""
+
+    valores: list[ValorDerivadoResumo]
+    problemas: list[ProblemaValidacao] = Field(default_factory=list)
+
+
 class ValidacaoCarta(BaseModel):
     valida: bool
     problemas: list[ProblemaValidacao] = Field(default_factory=list)
@@ -1003,6 +1066,173 @@ class TrilhaDesgaste(BaseModel):
     pontos_ate_proxima: int | None = None
 
 
+TrilhaNome = Literal["exaustao", "estresse"]
+CategoriaConsequencia = Literal["trauma", "ferimento_grave", "sequela", "aflicao", "outro"]
+
+
+class OrigemConsequencia(BaseModel):
+    """O que causou a alteração ou a consequência na ficção (carta, arma, magia, decisão do Narrador...)."""
+
+    tipo: Literal["sistema", "mestre", "arma", "armadura", "magia", "habilidade", "classe", "outro"] = "mestre"
+    nome: str = Field(min_length=1, max_length=200)
+    id: str | None = Field(default=None, max_length=200)
+
+
+class ConsequenciaEntrada(BaseModel):
+    """Campos mínimos de uma consequência persistente; Trauma também exige gatilho."""
+
+    categoria: CategoriaConsequencia
+    nome: str = Field(min_length=1, max_length=200)
+    descricao: str = Field(min_length=1, max_length=2_000)
+    efeito: str = Field(min_length=1, max_length=2_000, description="Manifestação ou efeito atual.")
+    gatilho: str | None = Field(default=None, max_length=500)
+    tratamento_regra: str = Field(min_length=1, max_length=1_000, description="Como é tratada ou encerrada.")
+    origem: OrigemConsequencia | None = None
+
+    def para_dominio(self) -> dict[str, Any]:
+        dados: dict[str, Any] = {
+            "categoria": self.categoria, "nome": self.nome.strip(), "descricao": self.descricao.strip(),
+            "consequencia": self.efeito.strip(), "efeito_atual": self.efeito.strip(),
+            "gatilho": (self.gatilho or "").strip(), "tratamento": {"regra": self.tratamento_regra.strip()},
+        }
+        if self.origem is not None:
+            dados["origem"] = self.origem.model_dump(exclude_none=True)
+        return dados
+
+
+class ColapsoMentalEntrada(BaseModel):
+    """Manifestação escolhida e o Trauma que o colapso cria (novo) ou intensifica (existente)."""
+
+    manifestacao: str = Field(min_length=1, max_length=300)
+    trauma_id: str | None = Field(default=None, max_length=200)
+    trauma: ConsequenciaEntrada | None = None
+
+    def para_dominio(self) -> dict[str, Any]:
+        return {"manifestacao": self.manifestacao, "trauma_id": self.trauma_id,
+                "trauma": self.trauma.para_dominio() if self.trauma is not None else None}
+
+
+class PreviaDesgasteRequest(BaseModel):
+    trilha: TrilhaNome
+    delta: int = Field(ge=-15, le=15)
+
+
+class AlterarDesgasteRequest(PreviaDesgasteRequest):
+    origem: OrigemConsequencia
+    justificativa: str | None = Field(default=None, max_length=300)
+    colapso_mental: ColapsoMentalEntrada | None = None
+    consequencia_excedente: ConsequenciaEntrada | None = None
+    versao_esperada: int = Field(ge=0)
+
+
+class PreviaEsforcoRequest(BaseModel):
+    tipo: Literal["fisico", "mental"]
+    pontos: int = Field(ge=1, le=3)
+    bonus_movimento: int = Field(default=0, ge=0, le=3, description="Pontos convertidos em +1 m cada (só físico).")
+
+
+class EsforcoRequest(PreviaEsforcoRequest):
+    acao: str = Field(min_length=1, max_length=200, description="Ação ou teste em que o esforço foi usado.")
+    colapso_mental: ColapsoMentalEntrada | None = None
+    versao_esperada: int = Field(ge=0)
+
+
+class EncerrarColapsoRequest(BaseModel):
+    motivo: str = Field(min_length=1, max_length=300, description="Auxílio pertinente ou fim do conflito imediato.")
+    versao_esperada: int = Field(ge=0)
+
+
+class PreviaDesgaste(BaseModel):
+    trilha: TrilhaNome
+    antes: int
+    depois: int
+    maximo: int
+    delta_solicitado: int
+    delta_aplicado: int
+    faixa_antes: FaixaDesgaste
+    faixa_depois: FaixaDesgaste
+    mudou_faixa: bool
+    colapso_fisico: bool
+    colapso_mental: bool = Field(description="Exige manifestação e Trauma novo ou intensificado.")
+    excedente_fisico: bool = Field(description="Já estava em 15: o Narrador aplica no máximo uma consequência física.")
+    tipo_esforco: Literal["fisico", "mental"] | None = None
+    bonus_teste: int | None = None
+    bonus_movimento: int | None = None
+
+
+class OrigemResumo(BaseModel):
+    tipo: str
+    nome: str = ""
+    id: str | None = None
+
+
+class TratamentoResumo(BaseModel):
+    estado: Literal["ativo", "mitigado", "em_tratamento", "encerrado"]
+    progresso: int = 0
+    objetivo: int | None = None
+    regra: str = ""
+
+
+class RegistroConsequencia(BaseModel):
+    acao: str
+    justificativa: str | None = None
+    criado_em: str | None = None
+
+
+class ConsequenciaResumo(BaseModel):
+    id: str
+    categoria: CategoriaConsequencia
+    nome: str
+    descricao: str
+    origem: OrigemResumo
+    gatilho: str = ""
+    efeito_atual: str = ""
+    intensidade: int = 1
+    tratamento: TratamentoResumo
+    criado_em: str | None = None
+    atualizado_em: str | None = None
+    historico: list[RegistroConsequencia] = Field(default_factory=list)
+
+
+class DesgasteComandoResposta(BaseModel):
+    versao: int
+    trilhas: list[TrilhaDesgaste]
+    consequencias: list[ConsequenciaResumo]
+    previa: PreviaDesgaste | None = None
+
+
+class CriarConsequenciaRequest(BaseModel):
+    consequencia: ConsequenciaEntrada
+    justificativa: str = Field(min_length=1, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class EditarConsequenciaRequest(BaseModel):
+    """Somente os campos enviados são alterados."""
+
+    nome: str | None = Field(default=None, min_length=1, max_length=200)
+    descricao: str | None = Field(default=None, min_length=1, max_length=2_000)
+    efeito: str | None = Field(default=None, min_length=1, max_length=2_000)
+    gatilho: str | None = Field(default=None, max_length=500)
+    tratamento_regra: str | None = Field(default=None, min_length=1, max_length=1_000)
+    progresso: int | None = Field(default=None, ge=0)
+    objetivo: int | None = Field(default=None, ge=0)
+    origem: OrigemConsequencia | None = None
+    justificativa: str = Field(min_length=1, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class TransicaoConsequenciaRequest(BaseModel):
+    justificativa: str = Field(min_length=1, max_length=300)
+    versao_esperada: int = Field(ge=0)
+
+
+class ConsequenciaComandoResposta(BaseModel):
+    versao: int
+    consequencias: list[ConsequenciaResumo]
+    consequencia: ConsequenciaResumo | None = Field(default=None, description="Ausente quando foi removida.")
+
+
 # ------------------------------------------------------------------- sala
 
 class ModulosMesa(BaseModel):
@@ -1117,11 +1347,23 @@ class ClasseCatalogoResumo(BaseModel):
     arquetipos: list[ArquetipoResumo]
 
 
+class IntervaloAlturaResumo(BaseModel):
+    """Altura em metros; `maxima` vazia é sem limite superior."""
+
+    minima: float
+    maxima: float | None = None
+
+
+class FaixaAlturaResumo(IntervaloAlturaResumo):
+    tamanho: str
+
+
 class RacaCatalogoResumo(BaseModel):
     nome: str
     deslocamento: int | None = None
     tamanho: str | None = None
     habilidades: list[HabilidadeCatalogoResumo]
+    altura: IntervaloAlturaResumo | None = Field(default=None, description="Intervalo típico de altura da raça, na média.")
 
 
 class PecadoResumo(BaseModel):
@@ -1134,6 +1376,8 @@ class CampoPersonalidadeResumo(BaseModel):
     chave: str
     rotulo: str
     dica: str
+    longo: bool = Field(default=False, description="Texto longo (ex.: História): área de texto maior.")
+    limite: int | None = Field(default=None, description="Máximo de caracteres aceito; vazio = sem limite.")
 
 
 class ListasFichaResumo(BaseModel):
@@ -1141,6 +1385,10 @@ class ListasFichaResumo(BaseModel):
     alinhamentos: list[str]
     pecados: list[PecadoResumo]
     campos_personalidade: list[CampoPersonalidadeResumo]
+    faixas_de_altura: list[FaixaAlturaResumo] = Field(
+        default_factory=list, description="Faixa de altura de cada Tamanho, do menor ao maior (fora da média).")
+    icones_ficha: dict[str, str] = Field(
+        default_factory=dict, description="Ícone do Resumo por nome de atributo, perícia ou grupo, como gravado na ficha.")
 
 
 class ModificadorCatalogoResumo(BaseModel):
@@ -1177,7 +1425,7 @@ class EstadoCatalogoResumo(BaseModel):
 class ImagemResposta(BaseModel):
     """Referência gravada no ponto de envio; a imagem nunca volta na resposta."""
 
-    destino: Literal["retrato", "item", "icone-grade", "efeito", "carta", "mapa", "icone-efeito"]
+    destino: Literal["retrato", "ilustracao", "item", "icone-grade", "efeito", "carta", "mapa", "icone-efeito", "capa", "foto"]
     alvo: str
     objeto: str | None = Field(default=None, description="Objeto original no armazenamento privado; vazio após remover.")
     exibicao: str | None = Field(default=None, description="Versão reduzida em WEBP, quando o destino tem uma.")

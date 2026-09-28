@@ -62,6 +62,110 @@
         "title": "AceitarOfertaRequest",
         "type": "object"
       },
+      "AcervoPersonagem": {
+        "description": "Personagem visto fora da mesa, no acervo; valores exatamente como estão na ficha.",
+        "properties": {
+          "arquetipo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arquetipo"
+          },
+          "classe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classe"
+          },
+          "mesa_id": {
+            "title": "Mesa Id",
+            "type": "string"
+          },
+          "mesa_nome": {
+            "title": "Mesa Nome",
+            "type": "string"
+          },
+          "nivel": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nivel"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "raca": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raca"
+          },
+          "retrato_objeto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ler por /mesas/{mesa_id}/ativos com exibicao=true.",
+            "title": "Retrato Objeto"
+          },
+          "tipo": {
+            "enum": [
+              "personagem",
+              "npc",
+              "monstro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "visibilidade": {
+            "enum": [
+              "mesa",
+              "narrador"
+            ],
+            "title": "Visibilidade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mesa_id",
+          "mesa_nome",
+          "personagem_id",
+          "tipo",
+          "nome",
+          "visibilidade"
+        ],
+        "title": "AcervoPersonagem",
+        "type": "object"
+      },
       "AjustarEfeitoRequest": {
         "description": "Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração.",
         "properties": {
@@ -209,6 +313,72 @@
           "capacidade_flechas"
         ],
         "title": "AljavaFormato",
+        "type": "object"
+      },
+      "AlterarDesgasteRequest": {
+        "properties": {
+          "colapso_mental": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ColapsoMentalEntrada"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consequencia_excedente": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsequenciaEntrada"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delta": {
+            "maximum": 15.0,
+            "minimum": -15.0,
+            "title": "Delta",
+            "type": "integer"
+          },
+          "justificativa": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justificativa"
+          },
+          "origem": {
+            "$ref": "#/components/schemas/OrigemConsequencia"
+          },
+          "trilha": {
+            "enum": [
+              "exaustao",
+              "estresse"
+            ],
+            "title": "Trilha",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "trilha",
+          "delta",
+          "origem",
+          "versao_esperada"
+        ],
+        "title": "AlterarDesgasteRequest",
         "type": "object"
       },
       "AlterarVisibilidadeRequest": {
@@ -626,6 +796,60 @@
         "title": "AtualizarFichaComando",
         "type": "object"
       },
+      "AtualizarMesaRequest": {
+        "properties": {
+          "nome": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome",
+            "type": "string"
+          },
+          "sinopse": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sinopse"
+          },
+          "sistema": {
+            "anyOf": [
+              {
+                "const": "cursed",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só \"cursed\" nesta versão.",
+            "title": "Sistema"
+          }
+        },
+        "required": [
+          "nome"
+        ],
+        "title": "AtualizarMesaRequest",
+        "type": "object"
+      },
+      "AtualizarPerfilRequest": {
+        "properties": {
+          "apelido": {
+            "maxLength": 200,
+            "title": "Apelido",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apelido"
+        ],
+        "title": "AtualizarPerfilRequest",
+        "type": "object"
+      },
       "BaseClasseResumo": {
         "properties": {
           "atributo": {
@@ -648,6 +872,20 @@
           "texto"
         ],
         "title": "BaseClasseResumo",
+        "type": "object"
+      },
+      "Body_enviar_foto_perfil_foto_put": {
+        "properties": {
+          "arquivo": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Arquivo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arquivo"
+        ],
+        "title": "Body_enviar_foto_perfil_foto_put",
         "type": "object"
       },
       "Body_enviar_imagem_mesas__mesa_id__imagens__destino__put": {
@@ -724,6 +962,24 @@
           "dica": {
             "title": "Dica",
             "type": "string"
+          },
+          "limite": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Máximo de caracteres aceito; vazio = sem limite.",
+            "title": "Limite"
+          },
+          "longo": {
+            "default": false,
+            "description": "Texto longo (ex.: História): área de texto maior.",
+            "title": "Longo",
+            "type": "boolean"
           },
           "rotulo": {
             "title": "Rotulo",
@@ -1242,6 +1498,44 @@
         "title": "ClasseCatalogoResumo",
         "type": "object"
       },
+      "ColapsoMentalEntrada": {
+        "description": "Manifestação escolhida e o Trauma que o colapso cria (novo) ou intensifica (existente).",
+        "properties": {
+          "manifestacao": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Manifestacao",
+            "type": "string"
+          },
+          "trauma": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsequenciaEntrada"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trauma_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trauma Id"
+          }
+        },
+        "required": [
+          "manifestacao"
+        ],
+        "title": "ColapsoMentalEntrada",
+        "type": "object"
+      },
       "ColocarCartaRequest": {
         "properties": {
           "versao_id": {
@@ -1369,6 +1663,198 @@
         "title": "ConfirmarDescansoRequest",
         "type": "object"
       },
+      "ConsequenciaComandoResposta": {
+        "properties": {
+          "consequencia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsequenciaResumo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ausente quando foi removida."
+          },
+          "consequencias": {
+            "items": {
+              "$ref": "#/components/schemas/ConsequenciaResumo"
+            },
+            "title": "Consequencias",
+            "type": "array"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "consequencias"
+        ],
+        "title": "ConsequenciaComandoResposta",
+        "type": "object"
+      },
+      "ConsequenciaEntrada": {
+        "description": "Campos mínimos de uma consequência persistente; Trauma também exige gatilho.",
+        "properties": {
+          "categoria": {
+            "enum": [
+              "trauma",
+              "ferimento_grave",
+              "sequela",
+              "aflicao",
+              "outro"
+            ],
+            "title": "Categoria",
+            "type": "string"
+          },
+          "descricao": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Descricao",
+            "type": "string"
+          },
+          "efeito": {
+            "description": "Manifestação ou efeito atual.",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Efeito",
+            "type": "string"
+          },
+          "gatilho": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gatilho"
+          },
+          "nome": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome",
+            "type": "string"
+          },
+          "origem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrigemConsequencia"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tratamento_regra": {
+            "description": "Como é tratada ou encerrada.",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Tratamento Regra",
+            "type": "string"
+          }
+        },
+        "required": [
+          "categoria",
+          "nome",
+          "descricao",
+          "efeito",
+          "tratamento_regra"
+        ],
+        "title": "ConsequenciaEntrada",
+        "type": "object"
+      },
+      "ConsequenciaResumo": {
+        "properties": {
+          "atualizado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atualizado Em"
+          },
+          "categoria": {
+            "enum": [
+              "trauma",
+              "ferimento_grave",
+              "sequela",
+              "aflicao",
+              "outro"
+            ],
+            "title": "Categoria",
+            "type": "string"
+          },
+          "criado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criado Em"
+          },
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "efeito_atual": {
+            "default": "",
+            "title": "Efeito Atual",
+            "type": "string"
+          },
+          "gatilho": {
+            "default": "",
+            "title": "Gatilho",
+            "type": "string"
+          },
+          "historico": {
+            "items": {
+              "$ref": "#/components/schemas/RegistroConsequencia"
+            },
+            "title": "Historico",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "intensidade": {
+            "default": 1,
+            "title": "Intensidade",
+            "type": "integer"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "origem": {
+            "$ref": "#/components/schemas/OrigemResumo"
+          },
+          "tratamento": {
+            "$ref": "#/components/schemas/TratamentoResumo"
+          }
+        },
+        "required": [
+          "id",
+          "categoria",
+          "nome",
+          "descricao",
+          "origem",
+          "tratamento"
+        ],
+        "title": "ConsequenciaResumo",
+        "type": "object"
+      },
       "ConviteCriado": {
         "properties": {
           "codigo": {
@@ -1386,6 +1872,28 @@
           "expira_em"
         ],
         "title": "ConviteCriado",
+        "type": "object"
+      },
+      "CopiarPersonagemRequest": {
+        "properties": {
+          "mesa_origem_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Mesa Origem Id",
+            "type": "string"
+          },
+          "personagem_origem_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Personagem Origem Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mesa_origem_id",
+          "personagem_origem_id"
+        ],
+        "title": "CopiarPersonagemRequest",
         "type": "object"
       },
       "CorrigirEventoRequest": {
@@ -1507,6 +2015,31 @@
           "nome"
         ],
         "title": "CriarCenaRequest",
+        "type": "object"
+      },
+      "CriarConsequenciaRequest": {
+        "properties": {
+          "consequencia": {
+            "$ref": "#/components/schemas/ConsequenciaEntrada"
+          },
+          "justificativa": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Justificativa",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "consequencia",
+          "justificativa",
+          "versao_esperada"
+        ],
+        "title": "CriarConsequenciaRequest",
         "type": "object"
       },
       "CriarConviteRequest": {
@@ -1752,6 +2285,45 @@
         "title": "DefinirFormatoRequest",
         "type": "object"
       },
+      "DesgasteComandoResposta": {
+        "properties": {
+          "consequencias": {
+            "items": {
+              "$ref": "#/components/schemas/ConsequenciaResumo"
+            },
+            "title": "Consequencias",
+            "type": "array"
+          },
+          "previa": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviaDesgaste"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trilhas": {
+            "items": {
+              "$ref": "#/components/schemas/TrilhaDesgaste"
+            },
+            "title": "Trilhas",
+            "type": "array"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versao",
+          "trilhas",
+          "consequencias"
+        ],
+        "title": "DesgasteComandoResposta",
+        "type": "object"
+      },
       "DestinatarioOferta": {
         "properties": {
           "escolhas": {
@@ -1812,6 +2384,126 @@
           "campo"
         ],
         "title": "DiferencaCarta",
+        "type": "object"
+      },
+      "EditarConsequenciaRequest": {
+        "description": "Somente os campos enviados são alterados.",
+        "properties": {
+          "descricao": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "efeito": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Efeito"
+          },
+          "gatilho": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gatilho"
+          },
+          "justificativa": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Justificativa",
+            "type": "string"
+          },
+          "nome": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "objetivo": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objetivo"
+          },
+          "origem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrigemConsequencia"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progresso": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progresso"
+          },
+          "tratamento_regra": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tratamento Regra"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "justificativa",
+          "versao_esperada"
+        ],
+        "title": "EditarConsequenciaRequest",
         "type": "object"
       },
       "EfeitoComandoResposta": {
@@ -2026,6 +2718,28 @@
         "title": "EfeitoResumo",
         "type": "object"
       },
+      "EncerrarColapsoRequest": {
+        "properties": {
+          "motivo": {
+            "description": "Auxílio pertinente ou fim do conflito imediato.",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Motivo",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "motivo",
+          "versao_esperada"
+        ],
+        "title": "EncerrarColapsoRequest",
+        "type": "object"
+      },
       "EntidadePublica": {
         "properties": {
           "id": {
@@ -2120,6 +2834,62 @@
           "em"
         ],
         "title": "ErroCatalogoResumo",
+        "type": "object"
+      },
+      "EsforcoRequest": {
+        "properties": {
+          "acao": {
+            "description": "Ação ou teste em que o esforço foi usado.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Acao",
+            "type": "string"
+          },
+          "bonus_movimento": {
+            "default": 0,
+            "description": "Pontos convertidos em +1 m cada (só físico).",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Bonus Movimento",
+            "type": "integer"
+          },
+          "colapso_mental": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ColapsoMentalEntrada"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pontos": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Pontos",
+            "type": "integer"
+          },
+          "tipo": {
+            "enum": [
+              "fisico",
+              "mental"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tipo",
+          "pontos",
+          "acao",
+          "versao_esperada"
+        ],
+        "title": "EsforcoRequest",
         "type": "object"
       },
       "EstadoCatalogoResumo": {
@@ -2324,6 +3094,35 @@
           "resumo"
         ],
         "title": "EventoAuditoriaResumo",
+        "type": "object"
+      },
+      "FaixaAlturaResumo": {
+        "properties": {
+          "maxima": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxima"
+          },
+          "minima": {
+            "title": "Minima",
+            "type": "number"
+          },
+          "tamanho": {
+            "title": "Tamanho",
+            "type": "string"
+          }
+        },
+        "required": [
+          "minima",
+          "tamanho"
+        ],
+        "title": "FaixaAlturaResumo",
         "type": "object"
       },
       "FaixaDesgaste": {
@@ -2850,12 +3649,15 @@
           "destino": {
             "enum": [
               "retrato",
+              "ilustracao",
               "item",
               "icone-grade",
               "efeito",
               "carta",
               "mapa",
-              "icone-efeito"
+              "icone-efeito",
+              "capa",
+              "foto"
             ],
             "title": "Destino",
             "type": "string"
@@ -2969,6 +3771,31 @@
           "versao_esperada"
         ],
         "title": "ImportarCodigoRequest",
+        "type": "object"
+      },
+      "IntervaloAlturaResumo": {
+        "description": "Altura em metros; `maxima` vazia é sem limite superior.",
+        "properties": {
+          "maxima": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxima"
+          },
+          "minima": {
+            "title": "Minima",
+            "type": "number"
+          }
+        },
+        "required": [
+          "minima"
+        ],
+        "title": "IntervaloAlturaResumo",
         "type": "object"
       },
       "ItemInventarioResumo": {
@@ -3346,6 +4173,22 @@
             "title": "Campos Personalidade",
             "type": "array"
           },
+          "faixas_de_altura": {
+            "description": "Faixa de altura de cada Tamanho, do menor ao maior (fora da média).",
+            "items": {
+              "$ref": "#/components/schemas/FaixaAlturaResumo"
+            },
+            "title": "Faixas De Altura",
+            "type": "array"
+          },
+          "icones_ficha": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Ícone do Resumo por nome de atributo, perícia ou grupo, como gravado na ficha.",
+            "title": "Icones Ficha",
+            "type": "object"
+          },
           "pecados": {
             "items": {
               "$ref": "#/components/schemas/PecadoResumo"
@@ -3370,8 +4213,20 @@
         "title": "ListasFichaResumo",
         "type": "object"
       },
-      "MesaResumo": {
+      "MesaDetalhe": {
         "properties": {
+          "capa_objeto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Capa no armazenamento privado da mesa; ler por /mesas/{id}/ativos com exibicao=true.",
+            "title": "Capa Objeto"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -3386,6 +4241,87 @@
               "jogador"
             ],
             "title": "Papel",
+            "type": "string"
+          },
+          "participantes": {
+            "items": {
+              "$ref": "#/components/schemas/ParticipanteResumo"
+            },
+            "title": "Participantes",
+            "type": "array"
+          },
+          "sinopse": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sinopse"
+          },
+          "sistema": {
+            "const": "cursed",
+            "default": "cursed",
+            "title": "Sistema",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "papel",
+          "participantes"
+        ],
+        "title": "MesaDetalhe",
+        "type": "object"
+      },
+      "MesaResumo": {
+        "properties": {
+          "capa_objeto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Capa no armazenamento privado da mesa; ler por /mesas/{id}/ativos com exibicao=true.",
+            "title": "Capa Objeto"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "papel": {
+            "enum": [
+              "narrador",
+              "jogador"
+            ],
+            "title": "Papel",
+            "type": "string"
+          },
+          "sinopse": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sinopse"
+          },
+          "sistema": {
+            "const": "cursed",
+            "default": "cursed",
+            "title": "Sistema",
             "type": "string"
           }
         },
@@ -3841,6 +4777,78 @@
         "title": "OfertarItemRequest",
         "type": "object"
       },
+      "OrigemConsequencia": {
+        "description": "O que causou a alteração ou a consequência na ficção (carta, arma, magia, decisão do Narrador...).",
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "nome": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome",
+            "type": "string"
+          },
+          "tipo": {
+            "default": "mestre",
+            "enum": [
+              "sistema",
+              "mestre",
+              "arma",
+              "armadura",
+              "magia",
+              "habilidade",
+              "classe",
+              "outro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome"
+        ],
+        "title": "OrigemConsequencia",
+        "type": "object"
+      },
+      "OrigemResumo": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "nome": {
+            "default": "",
+            "title": "Nome",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo"
+        ],
+        "title": "OrigemResumo",
+        "type": "object"
+      },
       "PaginaAuditoria": {
         "properties": {
           "eventos": {
@@ -3888,6 +4896,12 @@
             ],
             "title": "Papel",
             "type": "string"
+          },
+          "tem_foto": {
+            "default": false,
+            "description": "A foto do perfil sai em /perfis/{usuario_id}/foto.",
+            "title": "Tem Foto",
+            "type": "boolean"
           },
           "usuario_id": {
             "title": "Usuario Id",
@@ -4033,6 +5047,73 @@
         "title": "PegarItemRequest",
         "type": "object"
       },
+      "PerfilResposta": {
+        "properties": {
+          "apelido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vazio até o primeiro acesso ser confirmado.",
+            "title": "Apelido"
+          },
+          "apelido_sugerido": {
+            "title": "Apelido Sugerido",
+            "type": "string"
+          },
+          "confirmado": {
+            "title": "Confirmado",
+            "type": "boolean"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "nome_exibido": {
+            "title": "Nome Exibido",
+            "type": "string"
+          },
+          "provedor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provedor"
+          },
+          "tem_foto": {
+            "title": "Tem Foto",
+            "type": "boolean"
+          },
+          "usuario_id": {
+            "title": "Usuario Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "usuario_id",
+          "apelido_sugerido",
+          "nome_exibido",
+          "tem_foto",
+          "confirmado"
+        ],
+        "title": "PerfilResposta",
+        "type": "object"
+      },
       "PermissoesFicha": {
         "properties": {
           "campos_bloqueados": {
@@ -4127,6 +5208,18 @@
               }
             ],
             "title": "Restauravel Ate"
+          },
+          "retrato_objeto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ler por /mesas/{mesa_id}/ativos com exibicao=true.",
+            "title": "Retrato Objeto"
           },
           "revelacao": {
             "anyOf": [
@@ -4321,6 +5414,30 @@
         "title": "PosicaoItemGrade",
         "type": "object"
       },
+      "PreviaCriacaoResposta": {
+        "description": "PV, PP e Escalas de uma ficha ainda não gravada e os problemas que impediriam criá-la.",
+        "properties": {
+          "problemas": {
+            "items": {
+              "$ref": "#/components/schemas/ProblemaValidacao"
+            },
+            "title": "Problemas",
+            "type": "array"
+          },
+          "valores": {
+            "items": {
+              "$ref": "#/components/schemas/ValorDerivadoResumo"
+            },
+            "title": "Valores",
+            "type": "array"
+          }
+        },
+        "required": [
+          "valores"
+        ],
+        "title": "PreviaCriacaoResposta",
+        "type": "object"
+      },
       "PreviaDescansoRequest": {
         "properties": {
           "alvos": {
@@ -4372,6 +5489,171 @@
           "alvos"
         ],
         "title": "PreviaDescansoRequest",
+        "type": "object"
+      },
+      "PreviaDesgaste": {
+        "properties": {
+          "antes": {
+            "title": "Antes",
+            "type": "integer"
+          },
+          "bonus_movimento": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bonus Movimento"
+          },
+          "bonus_teste": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bonus Teste"
+          },
+          "colapso_fisico": {
+            "title": "Colapso Fisico",
+            "type": "boolean"
+          },
+          "colapso_mental": {
+            "description": "Exige manifestação e Trauma novo ou intensificado.",
+            "title": "Colapso Mental",
+            "type": "boolean"
+          },
+          "delta_aplicado": {
+            "title": "Delta Aplicado",
+            "type": "integer"
+          },
+          "delta_solicitado": {
+            "title": "Delta Solicitado",
+            "type": "integer"
+          },
+          "depois": {
+            "title": "Depois",
+            "type": "integer"
+          },
+          "excedente_fisico": {
+            "description": "Já estava em 15: o Narrador aplica no máximo uma consequência física.",
+            "title": "Excedente Fisico",
+            "type": "boolean"
+          },
+          "faixa_antes": {
+            "$ref": "#/components/schemas/FaixaDesgaste"
+          },
+          "faixa_depois": {
+            "$ref": "#/components/schemas/FaixaDesgaste"
+          },
+          "maximo": {
+            "title": "Maximo",
+            "type": "integer"
+          },
+          "mudou_faixa": {
+            "title": "Mudou Faixa",
+            "type": "boolean"
+          },
+          "tipo_esforco": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fisico",
+                  "mental"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo Esforco"
+          },
+          "trilha": {
+            "enum": [
+              "exaustao",
+              "estresse"
+            ],
+            "title": "Trilha",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trilha",
+          "antes",
+          "depois",
+          "maximo",
+          "delta_solicitado",
+          "delta_aplicado",
+          "faixa_antes",
+          "faixa_depois",
+          "mudou_faixa",
+          "colapso_fisico",
+          "colapso_mental",
+          "excedente_fisico"
+        ],
+        "title": "PreviaDesgaste",
+        "type": "object"
+      },
+      "PreviaDesgasteRequest": {
+        "properties": {
+          "delta": {
+            "maximum": 15.0,
+            "minimum": -15.0,
+            "title": "Delta",
+            "type": "integer"
+          },
+          "trilha": {
+            "enum": [
+              "exaustao",
+              "estresse"
+            ],
+            "title": "Trilha",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trilha",
+          "delta"
+        ],
+        "title": "PreviaDesgasteRequest",
+        "type": "object"
+      },
+      "PreviaEsforcoRequest": {
+        "properties": {
+          "bonus_movimento": {
+            "default": 0,
+            "description": "Pontos convertidos em +1 m cada (só físico).",
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Bonus Movimento",
+            "type": "integer"
+          },
+          "pontos": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Pontos",
+            "type": "integer"
+          },
+          "tipo": {
+            "enum": [
+              "fisico",
+              "mental"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "pontos"
+        ],
+        "title": "PreviaEsforcoRequest",
         "type": "object"
       },
       "PreviaImportacaoCarta": {
@@ -4570,6 +5852,17 @@
       },
       "RacaCatalogoResumo": {
         "properties": {
+          "altura": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntervaloAlturaResumo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Intervalo típico de altura da raça, na média."
+          },
           "deslocamento": {
             "anyOf": [
               {
@@ -4659,6 +5952,41 @@
           "itens"
         ],
         "title": "RecipienteResumo",
+        "type": "object"
+      },
+      "RegistroConsequencia": {
+        "properties": {
+          "acao": {
+            "title": "Acao",
+            "type": "string"
+          },
+          "criado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criado Em"
+          },
+          "justificativa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justificativa"
+          }
+        },
+        "required": [
+          "acao"
+        ],
+        "title": "RegistroConsequencia",
         "type": "object"
       },
       "ResponderOfertaRequest": {
@@ -5181,6 +6509,27 @@
         "title": "TransicaoCartaRequest",
         "type": "object"
       },
+      "TransicaoConsequenciaRequest": {
+        "properties": {
+          "justificativa": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Justificativa",
+            "type": "string"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "justificativa",
+          "versao_esperada"
+        ],
+        "title": "TransicaoConsequenciaRequest",
+        "type": "object"
+      },
       "TransicaoEfeitoRequest": {
         "properties": {
           "motivo": {
@@ -5205,6 +6554,46 @@
           "versao_esperada"
         ],
         "title": "TransicaoEfeitoRequest",
+        "type": "object"
+      },
+      "TratamentoResumo": {
+        "properties": {
+          "estado": {
+            "enum": [
+              "ativo",
+              "mitigado",
+              "em_tratamento",
+              "encerrado"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "objetivo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objetivo"
+          },
+          "progresso": {
+            "default": 0,
+            "title": "Progresso",
+            "type": "integer"
+          },
+          "regra": {
+            "default": "",
+            "title": "Regra",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estado"
+        ],
+        "title": "TratamentoResumo",
         "type": "object"
       },
       "TrilhaDesgaste": {
@@ -5485,6 +6874,62 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/acervo/personagens": {
+      "get": {
+        "operationId": "listar_acervo_acervo_personagens_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "colecao",
+            "required": true,
+            "schema": {
+              "enum": [
+                "meus",
+                "npcs",
+                "monstros"
+              ],
+              "title": "Colecao",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AcervoPersonagem"
+                  },
+                  "title": "Response Listar Acervo Acervo Personagens Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Acervo",
+        "tags": [
+          "Acervo"
+        ]
+      }
+    },
     "/convites/aceitar": {
       "post": {
         "operationId": "aceitar_convite_convites_aceitar_post",
@@ -5621,6 +7066,109 @@
           }
         ],
         "summary": "Criar Mesa",
+        "tags": [
+          "Mesas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}": {
+      "get": {
+        "description": "Apresentação da campanha: dados, capa e participantes com apelido e foto.",
+        "operationId": "detalhar_mesa_mesas__mesa_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MesaDetalhe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Detalhar Mesa",
+        "tags": [
+          "Mesas"
+        ]
+      },
+      "put": {
+        "operationId": "atualizar_mesa_mesas__mesa_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarMesaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MesaResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Atualizar Mesa",
         "tags": [
           "Mesas"
         ]
@@ -7166,12 +8714,14 @@
             "schema": {
               "enum": [
                 "retrato",
+                "ilustracao",
                 "item",
                 "icone-grade",
                 "efeito",
                 "carta",
                 "mapa",
-                "icone-efeito"
+                "icone-efeito",
+                "capa"
               ],
               "title": "Destino",
               "type": "string"
@@ -7254,12 +8804,14 @@
             "schema": {
               "enum": [
                 "retrato",
+                "ilustracao",
                 "item",
                 "icone-grade",
                 "efeito",
                 "carta",
                 "mapa",
-                "icone-efeito"
+                "icone-efeito",
+                "capa"
               ],
               "title": "Destino",
               "type": "string"
@@ -8095,6 +9647,122 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/personagens/copias": {
+      "post": {
+        "description": "Cria na mesa ``mesa_id`` (narrada pela pessoa) uma cópia independente de um personagem que ela pode ler.",
+        "operationId": "copiar_personagem_mesas__mesa_id__personagens_copias_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopiarPersonagemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonagemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Copiar Personagem",
+        "tags": [
+          "Acervo"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/previa": {
+      "post": {
+        "description": "Valores e problemas da ficha como seria criada, sem gravar, auditar nem conceder cartas.",
+        "operationId": "previsualizar_personagem_mesas__mesa_id__personagens_previa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarPersonagemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaCriacaoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Previsualizar Personagem",
+        "tags": [
+          "Personagens e políticas"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/personagens/{personagem_id}": {
       "delete": {
         "operationId": "excluir_personagem_mesas__mesa_id__personagens__personagem_id__delete",
@@ -8517,6 +10185,299 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/consequencias": {
+      "get": {
+        "description": "Traumas, Ferimentos Graves, Sequelas, Aflições e Outras Consequências, inclusive encerradas.",
+        "operationId": "listar_consequencias_mesas__mesa_id__personagens__personagem_id__consequencias_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsequenciaResumo"
+                  },
+                  "title": "Response Listar Consequencias Mesas  Mesa Id  Personagens  Personagem Id  Consequencias Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Consequencias",
+        "tags": [
+          "Ficha viva"
+        ]
+      },
+      "post": {
+        "description": "Cria a consequência; uma equivalente (mesma categoria, nome e origem) é intensificada.",
+        "operationId": "criar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriarConsequenciaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsequenciaComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Criar Consequencia",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/consequencias/{consequencia_id}": {
+      "patch": {
+        "operationId": "editar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias__consequencia_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consequencia_id",
+            "required": true,
+            "schema": {
+              "title": "Consequencia Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarConsequenciaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsequenciaComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Editar Consequencia",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/consequencias/{consequencia_id}/{acao}": {
+      "post": {
+        "operationId": "transicionar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias__consequencia_id___acao__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "consequencia_id",
+            "required": true,
+            "schema": {
+              "title": "Consequencia Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "acao",
+            "required": true,
+            "schema": {
+              "enum": [
+                "intensificar",
+                "mitigar",
+                "iniciar_tratamento",
+                "reativar",
+                "encerrar",
+                "remover"
+              ],
+              "title": "Acao",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransicaoConsequenciaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsequenciaComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Transicionar Consequencia",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste": {
       "get": {
         "description": "Exaustão e Estresse com faixa e penalidade vindas do domínio; a interface não recalcula regras.",
@@ -8573,6 +10534,340 @@
           }
         ],
         "summary": "Ler Desgaste",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/alteracoes": {
+      "post": {
+        "description": "O Narrador soma ou reduz pontos de uma trilha, com origem, e registra o que a regra exige.",
+        "operationId": "alterar_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_alteracoes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterarDesgasteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesgasteComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Alterar Desgaste",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/colapso-mental/encerrar": {
+      "post": {
+        "description": "Auxílio pertinente ou fim do conflito imediato: Estresse volta a 8 e o Trauma permanece.",
+        "operationId": "encerrar_colapso_mental_mesas__mesa_id__personagens__personagem_id__desgaste_colapso_mental_encerrar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EncerrarColapsoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesgasteComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Encerrar Colapso Mental",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/esforco": {
+      "post": {
+        "description": "Custo do Esforço voluntário, aplicado depois de resolvida a ação com o bônus escolhido.",
+        "operationId": "registrar_esforco_mesas__mesa_id__personagens__personagem_id__desgaste_esforco_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EsforcoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesgasteComandoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar Esforco",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/esforco/previa": {
+      "post": {
+        "operationId": "previsualizar_esforco_mesas__mesa_id__personagens__personagem_id__desgaste_esforco_previa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviaEsforcoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaDesgaste"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Previsualizar Esforco",
+        "tags": [
+          "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/previa": {
+      "post": {
+        "description": "Faixa, colapso e exigências de uma alteração; nada é gravado.",
+        "operationId": "previsualizar_alteracao_mesas__mesa_id__personagens__personagem_id__desgaste_previa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviaDesgasteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviaDesgaste"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Previsualizar Alteracao",
         "tags": [
           "Ficha viva"
         ]
@@ -11034,6 +13329,194 @@
         "summary": "Decidir Solicitacao",
         "tags": [
           "Personagens e políticas"
+        ]
+      }
+    },
+    "/perfil": {
+      "get": {
+        "operationId": "ler_perfil_perfil_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Perfil",
+        "tags": [
+          "Perfil"
+        ]
+      },
+      "put": {
+        "operationId": "atualizar_perfil_perfil_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizarPerfilRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Atualizar Perfil",
+        "tags": [
+          "Perfil"
+        ]
+      }
+    },
+    "/perfil/foto": {
+      "delete": {
+        "operationId": "remover_foto_perfil_foto_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImagemResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remover Foto",
+        "tags": [
+          "Perfil"
+        ]
+      },
+      "put": {
+        "operationId": "enviar_foto_perfil_foto_put",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_enviar_foto_perfil_foto_put"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImagemResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Enviar Foto",
+        "tags": [
+          "Perfil"
+        ]
+      }
+    },
+    "/perfis/{usuario_id}/foto": {
+      "get": {
+        "description": "Versão de exibição da foto; 404 igual para \"sem foto\" e \"sem permissão\".",
+        "operationId": "ler_foto_perfis__usuario_id__foto_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "usuario_id",
+            "required": true,
+            "schema": {
+              "title": "Usuario Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtivoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Foto",
+        "tags": [
+          "Perfil"
         ]
       }
     }

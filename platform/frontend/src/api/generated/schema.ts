@@ -1,4 +1,21 @@
 export interface paths {
+    "/acervo/personagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Acervo */
+        get: operations["listar_acervo_acervo_personagens_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/convites/aceitar": {
         parameters: {
             query?: never;
@@ -45,6 +62,27 @@ export interface paths {
         put?: never;
         /** Criar Mesa */
         post: operations["criar_mesa_mesas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalhar Mesa
+         * @description Apresentação da campanha: dados, capa e participantes com apelido e foto.
+         */
+        get: operations["detalhar_mesa_mesas__mesa_id__get"];
+        /** Atualizar Mesa */
+        put: operations["atualizar_mesa_mesas__mesa_id__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -691,6 +729,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/copias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copiar Personagem
+         * @description Cria na mesa ``mesa_id`` (narrada pela pessoa) uma cópia independente de um personagem que ela pode ler.
+         */
+        post: operations["copiar_personagem_mesas__mesa_id__personagens_copias_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Previsualizar Personagem
+         * @description Valores e problemas da ficha como seria criada, sem gravar, auditar nem conceder cartas.
+         */
+        post: operations["previsualizar_personagem_mesas__mesa_id__personagens_previa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/personagens/{personagem_id}": {
         parameters: {
             query?: never;
@@ -777,6 +855,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/consequencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Consequencias
+         * @description Traumas, Ferimentos Graves, Sequelas, Aflições e Outras Consequências, inclusive encerradas.
+         */
+        get: operations["listar_consequencias_mesas__mesa_id__personagens__personagem_id__consequencias_get"];
+        put?: never;
+        /**
+         * Criar Consequencia
+         * @description Cria a consequência; uma equivalente (mesma categoria, nome e origem) é intensificada.
+         */
+        post: operations["criar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/consequencias/{consequencia_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Editar Consequencia */
+        patch: operations["editar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias__consequencia_id__patch"];
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/consequencias/{consequencia_id}/{acao}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transicionar Consequencia */
+        post: operations["transicionar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias__consequencia_id___acao__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste": {
         parameters: {
             query?: never;
@@ -791,6 +927,103 @@ export interface paths {
         get: operations["ler_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/alteracoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alterar Desgaste
+         * @description O Narrador soma ou reduz pontos de uma trilha, com origem, e registra o que a regra exige.
+         */
+        post: operations["alterar_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_alteracoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/colapso-mental/encerrar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Encerrar Colapso Mental
+         * @description Auxílio pertinente ou fim do conflito imediato: Estresse volta a 8 e o Trauma permanece.
+         */
+        post: operations["encerrar_colapso_mental_mesas__mesa_id__personagens__personagem_id__desgaste_colapso_mental_encerrar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/esforco": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrar Esforco
+         * @description Custo do Esforço voluntário, aplicado depois de resolvida a ação com o bônus escolhido.
+         */
+        post: operations["registrar_esforco_mesas__mesa_id__personagens__personagem_id__desgaste_esforco_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/esforco/previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Previsualizar Esforco */
+        post: operations["previsualizar_esforco_mesas__mesa_id__personagens__personagem_id__desgaste_esforco_previa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/previa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Previsualizar Alteracao
+         * @description Faixa, colapso e exigências de uma alteração; nada é gravado.
+         */
+        post: operations["previsualizar_alteracao_mesas__mesa_id__personagens__personagem_id__desgaste_previa_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1415,6 +1648,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/perfil": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Perfil */
+        get: operations["ler_perfil_perfil_get"];
+        /** Atualizar Perfil */
+        put: operations["atualizar_perfil_perfil_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/perfil/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Enviar Foto */
+        put: operations["enviar_foto_perfil_foto_put"];
+        post?: never;
+        /** Remover Foto */
+        delete: operations["remover_foto_perfil_foto_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/perfis/{usuario_id}/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ler Foto
+         * @description Versão de exibição da foto; 404 igual para "sem foto" e "sem permissão".
+         */
+        get: operations["ler_foto_perfis__usuario_id__foto_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1443,6 +1732,43 @@ export interface components {
              * @description Versão da ficha de quem recebe.
              */
             versao_esperada: number;
+        };
+        /**
+         * AcervoPersonagem
+         * @description Personagem visto fora da mesa, no acervo; valores exatamente como estão na ficha.
+         */
+        AcervoPersonagem: {
+            /** Arquetipo */
+            arquetipo?: string | null;
+            /** Classe */
+            classe?: string | null;
+            /** Mesa Id */
+            mesa_id: string;
+            /** Mesa Nome */
+            mesa_nome: string;
+            /** Nivel */
+            nivel?: number | null;
+            /** Nome */
+            nome: string;
+            /** Personagem Id */
+            personagem_id: string;
+            /** Raca */
+            raca?: string | null;
+            /**
+             * Retrato Objeto
+             * @description Ler por /mesas/{mesa_id}/ativos com exibicao=true.
+             */
+            retrato_objeto?: string | null;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "personagem" | "npc" | "monstro";
+            /**
+             * Visibilidade
+             * @enum {string}
+             */
+            visibilidade: "mesa" | "narrador";
         };
         /**
          * AjustarEfeitoRequest
@@ -1490,6 +1816,23 @@ export interface components {
         AljavaFormato: {
             /** Capacidade Flechas */
             capacidade_flechas: number;
+        };
+        /** AlterarDesgasteRequest */
+        AlterarDesgasteRequest: {
+            colapso_mental?: components["schemas"]["ColapsoMentalEntrada"] | null;
+            consequencia_excedente?: components["schemas"]["ConsequenciaEntrada"] | null;
+            /** Delta */
+            delta: number;
+            /** Justificativa */
+            justificativa?: string | null;
+            origem: components["schemas"]["OrigemConsequencia"];
+            /**
+             * Trilha
+             * @enum {string}
+             */
+            trilha: "exaustao" | "estresse";
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** AlterarVisibilidadeRequest */
         AlterarVisibilidadeRequest: {
@@ -1636,6 +1979,23 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** AtualizarMesaRequest */
+        AtualizarMesaRequest: {
+            /** Nome */
+            nome: string;
+            /** Sinopse */
+            sinopse?: string | null;
+            /**
+             * Sistema
+             * @description Só "cursed" nesta versão.
+             */
+            sistema?: "cursed" | null;
+        };
+        /** AtualizarPerfilRequest */
+        AtualizarPerfilRequest: {
+            /** Apelido */
+            apelido: string;
+        };
         /** BaseClasseResumo */
         BaseClasseResumo: {
             /**
@@ -1647,6 +2007,11 @@ export interface components {
             texto: string;
             /** Valor */
             valor: number;
+        };
+        /** Body_enviar_foto_perfil_foto_put */
+        Body_enviar_foto_perfil_foto_put: {
+            /** Arquivo */
+            arquivo: string;
         };
         /** Body_enviar_imagem_mesas__mesa_id__imagens__destino__put */
         Body_enviar_imagem_mesas__mesa_id__imagens__destino__put: {
@@ -1677,6 +2042,17 @@ export interface components {
             chave: string;
             /** Dica */
             dica: string;
+            /**
+             * Limite
+             * @description Máximo de caracteres aceito; vazio = sem limite.
+             */
+            limite?: number | null;
+            /**
+             * Longo
+             * @description Texto longo (ex.: História): área de texto maior.
+             * @default false
+             */
+            longo: boolean;
             /** Rotulo */
             rotulo: string;
         };
@@ -1869,6 +2245,17 @@ export interface components {
             pp?: components["schemas"]["BaseClasseResumo"] | null;
             pv?: components["schemas"]["BaseClasseResumo"] | null;
         };
+        /**
+         * ColapsoMentalEntrada
+         * @description Manifestação escolhida e o Trauma que o colapso cria (novo) ou intensifica (existente).
+         */
+        ColapsoMentalEntrada: {
+            /** Manifestacao */
+            manifestacao: string;
+            trauma?: components["schemas"]["ConsequenciaEntrada"] | null;
+            /** Trauma Id */
+            trauma_id?: string | null;
+        };
         /** ColocarCartaRequest */
         ColocarCartaRequest: {
             /** Versao Id */
@@ -1911,6 +2298,80 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** ConsequenciaComandoResposta */
+        ConsequenciaComandoResposta: {
+            /** @description Ausente quando foi removida. */
+            consequencia?: components["schemas"]["ConsequenciaResumo"] | null;
+            /** Consequencias */
+            consequencias: components["schemas"]["ConsequenciaResumo"][];
+            /** Versao */
+            versao: number;
+        };
+        /**
+         * ConsequenciaEntrada
+         * @description Campos mínimos de uma consequência persistente; Trauma também exige gatilho.
+         */
+        ConsequenciaEntrada: {
+            /**
+             * Categoria
+             * @enum {string}
+             */
+            categoria: "trauma" | "ferimento_grave" | "sequela" | "aflicao" | "outro";
+            /** Descricao */
+            descricao: string;
+            /**
+             * Efeito
+             * @description Manifestação ou efeito atual.
+             */
+            efeito: string;
+            /** Gatilho */
+            gatilho?: string | null;
+            /** Nome */
+            nome: string;
+            origem?: components["schemas"]["OrigemConsequencia"] | null;
+            /**
+             * Tratamento Regra
+             * @description Como é tratada ou encerrada.
+             */
+            tratamento_regra: string;
+        };
+        /** ConsequenciaResumo */
+        ConsequenciaResumo: {
+            /** Atualizado Em */
+            atualizado_em?: string | null;
+            /**
+             * Categoria
+             * @enum {string}
+             */
+            categoria: "trauma" | "ferimento_grave" | "sequela" | "aflicao" | "outro";
+            /** Criado Em */
+            criado_em?: string | null;
+            /** Descricao */
+            descricao: string;
+            /**
+             * Efeito Atual
+             * @default
+             */
+            efeito_atual: string;
+            /**
+             * Gatilho
+             * @default
+             */
+            gatilho: string;
+            /** Historico */
+            historico?: components["schemas"]["RegistroConsequencia"][];
+            /** Id */
+            id: string;
+            /**
+             * Intensidade
+             * @default 1
+             */
+            intensidade: number;
+            /** Nome */
+            nome: string;
+            origem: components["schemas"]["OrigemResumo"];
+            tratamento: components["schemas"]["TratamentoResumo"];
+        };
         /** ConviteCriado */
         ConviteCriado: {
             /** Codigo */
@@ -1920,6 +2381,13 @@ export interface components {
              * Format: date-time
              */
             expira_em: string;
+        };
+        /** CopiarPersonagemRequest */
+        CopiarPersonagemRequest: {
+            /** Mesa Origem Id */
+            mesa_origem_id: string;
+            /** Personagem Origem Id */
+            personagem_origem_id: string;
         };
         /** CorrigirEventoRequest */
         CorrigirEventoRequest: {
@@ -1968,6 +2436,14 @@ export interface components {
             mapa_objeto?: string | null;
             /** Nome */
             nome: string;
+        };
+        /** CriarConsequenciaRequest */
+        CriarConsequenciaRequest: {
+            consequencia: components["schemas"]["ConsequenciaEntrada"];
+            /** Justificativa */
+            justificativa: string;
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** CriarConviteRequest */
         CriarConviteRequest: {
@@ -2061,6 +2537,16 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** DesgasteComandoResposta */
+        DesgasteComandoResposta: {
+            /** Consequencias */
+            consequencias: components["schemas"]["ConsequenciaResumo"][];
+            previa?: components["schemas"]["PreviaDesgaste"] | null;
+            /** Trilhas */
+            trilhas: components["schemas"]["TrilhaDesgaste"][];
+            /** Versao */
+            versao: number;
+        };
         /** DestinatarioOferta */
         DestinatarioOferta: {
             /** Escolhas */
@@ -2083,6 +2569,31 @@ export interface components {
             campo: string;
             /** Depois */
             depois?: unknown;
+        };
+        /**
+         * EditarConsequenciaRequest
+         * @description Somente os campos enviados são alterados.
+         */
+        EditarConsequenciaRequest: {
+            /** Descricao */
+            descricao?: string | null;
+            /** Efeito */
+            efeito?: string | null;
+            /** Gatilho */
+            gatilho?: string | null;
+            /** Justificativa */
+            justificativa: string;
+            /** Nome */
+            nome?: string | null;
+            /** Objetivo */
+            objetivo?: number | null;
+            origem?: components["schemas"]["OrigemConsequencia"] | null;
+            /** Progresso */
+            progresso?: number | null;
+            /** Tratamento Regra */
+            tratamento_regra?: string | null;
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** EfeitoComandoResposta */
         EfeitoComandoResposta: {
@@ -2161,6 +2672,16 @@ export interface components {
             /** Nome */
             nome: string;
         };
+        /** EncerrarColapsoRequest */
+        EncerrarColapsoRequest: {
+            /**
+             * Motivo
+             * @description Auxílio pertinente ou fim do conflito imediato.
+             */
+            motivo: string;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** EntidadePublica */
         EntidadePublica: {
             /** Id */
@@ -2197,6 +2718,30 @@ export interface components {
             em: string;
             /** Motivo */
             motivo: string;
+        };
+        /** EsforcoRequest */
+        EsforcoRequest: {
+            /**
+             * Acao
+             * @description Ação ou teste em que o esforço foi usado.
+             */
+            acao: string;
+            /**
+             * Bonus Movimento
+             * @description Pontos convertidos em +1 m cada (só físico).
+             * @default 0
+             */
+            bonus_movimento: number;
+            colapso_mental?: components["schemas"]["ColapsoMentalEntrada"] | null;
+            /** Pontos */
+            pontos: number;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "fisico" | "mental";
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** EstadoCatalogoResumo */
         EstadoCatalogoResumo: {
@@ -2259,6 +2804,15 @@ export interface components {
             resumo: string;
             /** Sessao Id */
             sessao_id?: string | null;
+        };
+        /** FaixaAlturaResumo */
+        FaixaAlturaResumo: {
+            /** Maxima */
+            maxima?: number | null;
+            /** Minima */
+            minima: number;
+            /** Tamanho */
+            tamanho: string;
         };
         /** FaixaDesgaste */
         FaixaDesgaste: {
@@ -2491,7 +3045,7 @@ export interface components {
              * Destino
              * @enum {string}
              */
-            destino: "retrato" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito";
+            destino: "retrato" | "ilustracao" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito" | "capa" | "foto";
             /**
              * Exibicao
              * @description Versão reduzida em WEBP, quando o destino tem uma.
@@ -2527,6 +3081,16 @@ export interface components {
             codigo: string;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /**
+         * IntervaloAlturaResumo
+         * @description Altura em metros; `maxima` vazia é sem limite superior.
+         */
+        IntervaloAlturaResumo: {
+            /** Maxima */
+            maxima?: number | null;
+            /** Minima */
+            minima: number;
         };
         /** ItemInventarioResumo */
         ItemInventarioResumo: {
@@ -2647,13 +3211,30 @@ export interface components {
             alinhamentos: string[];
             /** Campos Personalidade */
             campos_personalidade: components["schemas"]["CampoPersonalidadeResumo"][];
+            /**
+             * Faixas De Altura
+             * @description Faixa de altura de cada Tamanho, do menor ao maior (fora da média).
+             */
+            faixas_de_altura?: components["schemas"]["FaixaAlturaResumo"][];
+            /**
+             * Icones Ficha
+             * @description Ícone do Resumo por nome de atributo, perícia ou grupo, como gravado na ficha.
+             */
+            icones_ficha?: {
+                [key: string]: string;
+            };
             /** Pecados */
             pecados: components["schemas"]["PecadoResumo"][];
             /** Sexos */
             sexos: string[];
         };
-        /** MesaResumo */
-        MesaResumo: {
+        /** MesaDetalhe */
+        MesaDetalhe: {
+            /**
+             * Capa Objeto
+             * @description Capa no armazenamento privado da mesa; ler por /mesas/{id}/ativos com exibicao=true.
+             */
+            capa_objeto?: string | null;
             /** Id */
             id: string;
             /** Nome */
@@ -2663,6 +3244,41 @@ export interface components {
              * @enum {string}
              */
             papel: "narrador" | "jogador";
+            /** Participantes */
+            participantes: components["schemas"]["ParticipanteResumo"][];
+            /** Sinopse */
+            sinopse?: string | null;
+            /**
+             * Sistema
+             * @default cursed
+             * @constant
+             */
+            sistema: "cursed";
+        };
+        /** MesaResumo */
+        MesaResumo: {
+            /**
+             * Capa Objeto
+             * @description Capa no armazenamento privado da mesa; ler por /mesas/{id}/ativos com exibicao=true.
+             */
+            capa_objeto?: string | null;
+            /** Id */
+            id: string;
+            /** Nome */
+            nome: string;
+            /**
+             * Papel
+             * @enum {string}
+             */
+            papel: "narrador" | "jogador";
+            /** Sinopse */
+            sinopse?: string | null;
+            /**
+             * Sistema
+             * @default cursed
+             * @constant
+             */
+            sistema: "cursed";
         };
         /** MigrarCartaRequest */
         MigrarCartaRequest: {
@@ -2821,6 +3437,34 @@ export interface components {
             /** Para Personagem Id */
             para_personagem_id: string;
         };
+        /**
+         * OrigemConsequencia
+         * @description O que causou a alteração ou a consequência na ficção (carta, arma, magia, decisão do Narrador...).
+         */
+        OrigemConsequencia: {
+            /** Id */
+            id?: string | null;
+            /** Nome */
+            nome: string;
+            /**
+             * Tipo
+             * @default mestre
+             * @enum {string}
+             */
+            tipo: "sistema" | "mestre" | "arma" | "armadura" | "magia" | "habilidade" | "classe" | "outro";
+        };
+        /** OrigemResumo */
+        OrigemResumo: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Nome
+             * @default
+             */
+            nome: string;
+            /** Tipo */
+            tipo: string;
+        };
         /** PaginaAuditoria */
         PaginaAuditoria: {
             /** Eventos */
@@ -2837,6 +3481,12 @@ export interface components {
              * @enum {string}
              */
             papel: "narrador" | "jogador";
+            /**
+             * Tem Foto
+             * @description A foto do perfil sai em /perfis/{usuario_id}/foto.
+             * @default false
+             */
+            tem_foto: boolean;
             /** Usuario Id */
             usuario_id: string;
         };
@@ -2886,6 +3536,28 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** PerfilResposta */
+        PerfilResposta: {
+            /**
+             * Apelido
+             * @description Vazio até o primeiro acesso ser confirmado.
+             */
+            apelido?: string | null;
+            /** Apelido Sugerido */
+            apelido_sugerido: string;
+            /** Confirmado */
+            confirmado: boolean;
+            /** Email */
+            email?: string | null;
+            /** Nome Exibido */
+            nome_exibido: string;
+            /** Provedor */
+            provedor?: string | null;
+            /** Tem Foto */
+            tem_foto: boolean;
+            /** Usuario Id */
+            usuario_id: string;
+        };
         /** PermissoesFicha */
         PermissoesFicha: {
             /** Campos Bloqueados */
@@ -2918,6 +3590,11 @@ export interface components {
             proprietario_id: string | null;
             /** Restauravel Ate */
             restauravel_ate?: string | null;
+            /**
+             * Retrato Objeto
+             * @description Ler por /mesas/{mesa_id}/ativos com exibicao=true.
+             */
+            retrato_objeto?: string | null;
             revelacao?: components["schemas"]["RevelacaoContrato"] | null;
             /**
              * Tipo
@@ -2997,6 +3674,16 @@ export interface components {
              */
             maos?: number | null;
         };
+        /**
+         * PreviaCriacaoResposta
+         * @description PV, PP e Escalas de uma ficha ainda não gravada e os problemas que impediriam criá-la.
+         */
+        PreviaCriacaoResposta: {
+            /** Problemas */
+            problemas?: components["schemas"]["ProblemaValidacao"][];
+            /** Valores */
+            valores: components["schemas"]["ValorDerivadoResumo"][];
+        };
         /** PreviaDescansoRequest */
         PreviaDescansoRequest: {
             /** Alvos */
@@ -3010,6 +3697,72 @@ export interface components {
              * @enum {string}
              */
             tipo: "curto" | "longo";
+        };
+        /** PreviaDesgaste */
+        PreviaDesgaste: {
+            /** Antes */
+            antes: number;
+            /** Bonus Movimento */
+            bonus_movimento?: number | null;
+            /** Bonus Teste */
+            bonus_teste?: number | null;
+            /** Colapso Fisico */
+            colapso_fisico: boolean;
+            /**
+             * Colapso Mental
+             * @description Exige manifestação e Trauma novo ou intensificado.
+             */
+            colapso_mental: boolean;
+            /** Delta Aplicado */
+            delta_aplicado: number;
+            /** Delta Solicitado */
+            delta_solicitado: number;
+            /** Depois */
+            depois: number;
+            /**
+             * Excedente Fisico
+             * @description Já estava em 15: o Narrador aplica no máximo uma consequência física.
+             */
+            excedente_fisico: boolean;
+            faixa_antes: components["schemas"]["FaixaDesgaste"];
+            faixa_depois: components["schemas"]["FaixaDesgaste"];
+            /** Maximo */
+            maximo: number;
+            /** Mudou Faixa */
+            mudou_faixa: boolean;
+            /** Tipo Esforco */
+            tipo_esforco?: ("fisico" | "mental") | null;
+            /**
+             * Trilha
+             * @enum {string}
+             */
+            trilha: "exaustao" | "estresse";
+        };
+        /** PreviaDesgasteRequest */
+        PreviaDesgasteRequest: {
+            /** Delta */
+            delta: number;
+            /**
+             * Trilha
+             * @enum {string}
+             */
+            trilha: "exaustao" | "estresse";
+        };
+        /** PreviaEsforcoRequest */
+        PreviaEsforcoRequest: {
+            /**
+             * Bonus Movimento
+             * @description Pontos convertidos em +1 m cada (só físico).
+             * @default 0
+             */
+            bonus_movimento: number;
+            /** Pontos */
+            pontos: number;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "fisico" | "mental";
         };
         /** PreviaImportacaoCarta */
         PreviaImportacaoCarta: {
@@ -3083,6 +3836,8 @@ export interface components {
         };
         /** RacaCatalogoResumo */
         RacaCatalogoResumo: {
+            /** @description Intervalo típico de altura da raça, na média. */
+            altura?: components["schemas"]["IntervaloAlturaResumo"] | null;
             /** Deslocamento */
             deslocamento?: number | null;
             /** Habilidades */
@@ -3111,6 +3866,15 @@ export interface components {
             tipo: "chao" | "bau";
             /** Versao */
             versao: number;
+        };
+        /** RegistroConsequencia */
+        RegistroConsequencia: {
+            /** Acao */
+            acao: string;
+            /** Criado Em */
+            criado_em?: string | null;
+            /** Justificativa */
+            justificativa?: string | null;
         };
         /** ResponderOfertaRequest */
         ResponderOfertaRequest: {
@@ -3288,12 +4052,39 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** TransicaoConsequenciaRequest */
+        TransicaoConsequenciaRequest: {
+            /** Justificativa */
+            justificativa: string;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
         /** TransicaoEfeitoRequest */
         TransicaoEfeitoRequest: {
             /** Motivo */
             motivo?: string | null;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /** TratamentoResumo */
+        TratamentoResumo: {
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "ativo" | "mitigado" | "em_tratamento" | "encerrado";
+            /** Objetivo */
+            objetivo?: number | null;
+            /**
+             * Progresso
+             * @default 0
+             */
+            progresso: number;
+            /**
+             * Regra
+             * @default
+             */
+            regra: string;
         };
         /**
          * TrilhaDesgaste
@@ -3400,6 +4191,37 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listar_acervo_acervo_personagens_get: {
+        parameters: {
+            query: {
+                colecao: "meus" | "npcs" | "monstros";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcervoPersonagem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     aceitar_convite_convites_aceitar_post: {
         parameters: {
             query?: never;
@@ -3488,6 +4310,72 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MesaResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detalhar_mesa_mesas__mesa_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MesaDetalhe"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    atualizar_mesa_mesas__mesa_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtualizarMesaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4348,7 +5236,7 @@ export interface operations {
             header?: never;
             path: {
                 mesa_id: string;
-                destino: "retrato" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito";
+                destino: "retrato" | "ilustracao" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito" | "capa";
             };
             cookie?: never;
         };
@@ -4387,7 +5275,7 @@ export interface operations {
             header?: never;
             path: {
                 mesa_id: string;
-                destino: "retrato" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito";
+                destino: "retrato" | "ilustracao" | "item" | "icone-grade" | "efeito" | "carta" | "mapa" | "icone-efeito" | "capa";
             };
             cookie?: never;
         };
@@ -4874,6 +5762,76 @@ export interface operations {
             };
         };
     };
+    copiar_personagem_mesas__mesa_id__personagens_copias_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopiarPersonagemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonagemResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previsualizar_personagem_mesas__mesa_id__personagens_previa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarPersonagemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviaCriacaoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     excluir_personagem_mesas__mesa_id__personagens__personagem_id__delete: {
         parameters: {
             query: {
@@ -5084,6 +6042,149 @@ export interface operations {
             };
         };
     };
+    listar_consequencias_mesas__mesa_id__personagens__personagem_id__consequencias_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsequenciaResumo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    criar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarConsequenciaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsequenciaComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias__consequencia_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                consequencia_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarConsequenciaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsequenciaComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transicionar_consequencia_mesas__mesa_id__personagens__personagem_id__consequencias__consequencia_id___acao__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+                consequencia_id: string;
+                acao: "intensificar" | "mitigar" | "iniciar_tratamento" | "reativar" | "encerrar" | "remover";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransicaoConsequenciaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsequenciaComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ler_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_get: {
         parameters: {
             query?: never;
@@ -5103,6 +6204,186 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrilhaDesgaste"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alterar_desgaste_mesas__mesa_id__personagens__personagem_id__desgaste_alteracoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlterarDesgasteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesgasteComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    encerrar_colapso_mental_mesas__mesa_id__personagens__personagem_id__desgaste_colapso_mental_encerrar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EncerrarColapsoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesgasteComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_esforco_mesas__mesa_id__personagens__personagem_id__desgaste_esforco_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EsforcoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesgasteComandoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previsualizar_esforco_mesas__mesa_id__personagens__personagem_id__desgaste_esforco_previa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviaEsforcoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviaDesgaste"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previsualizar_alteracao_mesas__mesa_id__personagens__personagem_id__desgaste_previa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviaDesgasteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviaDesgaste"];
                 };
             };
             /** @description Validation Error */
@@ -6433,6 +7714,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PedidoAlteracaoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_perfil_perfil_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilResposta"];
+                };
+            };
+        };
+    };
+    atualizar_perfil_perfil_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtualizarPerfilRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enviar_foto_perfil_foto_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_enviar_foto_perfil_foto_put"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImagemResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remover_foto_perfil_foto_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImagemResposta"];
+                };
+            };
+        };
+    };
+    ler_foto_perfis__usuario_id__foto_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                usuario_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtivoResposta"];
                 };
             };
             /** @description Validation Error */

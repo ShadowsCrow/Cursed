@@ -1,15 +1,24 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Route, Routes, useNavigate, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router";
 import type { Session } from "@supabase/supabase-js";
 
-import { signInWithPassword, signOut } from "../auth/supabase";
+import { signOut } from "../auth/supabase";
 import { CharacterSheetPage } from "./characters/sheet/CharacterSheetPage";
-import { extractErrorMessage, type ApiClient } from "./characters/types";
+import { CriarPersonagemPage } from "./characters/creation/CriarPersonagemPage";
+import type { ApiClient } from "./characters/types";
 import type { createPlatformClients } from "./clients";
 import { TableWorkspace } from "./TableWorkspace";
 import { routePatterns, routes } from "./routes";
 import { TableEvents, type RealtimeSession } from "./room/RoomPresence";
+import { EstadoDePagina } from "../ui/Tema";
+import { Biblioteca } from "./plataforma/biblioteca/Biblioteca";
+import { Campanhas } from "./plataforma/campanhas/Campanhas";
+import { CascoPlataforma } from "./plataforma/CascoPlataforma";
+import { Entrada, type ModoEntrada } from "./plataforma/entrada/Entrada";
+import { Inicio } from "./plataforma/Inicio";
+import { BoasVindas, MeuPerfil } from "./plataforma/perfil/Perfil";
+import { Personagens } from "./plataforma/personagens/Personagens";
 
 type Clients = ReturnType<typeof createPlatformClients>;
 
@@ -17,122 +26,30 @@ function ErrorNotice({ error }: { error: unknown }) {
   return <p role="alert">{error instanceof Error ? error.message : "Não foi possível carregar os dados."}</p>;
 }
 
-function Login({ clients }: { clients: Clients }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<unknown>(null);
-  const [pending, setPending] = useState(false);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(null);
-    try {
-      await signInWithPassword(clients.auth, email, password);
-    } catch (cause) {
-      setError(cause);
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <main className="page">
-      <h1>Cursed</h1>
-      <p>Entre para acessar suas mesas.</p>
-      <p><Link to="/preview">Conhecer a prévia visual</Link></p>
-      <form onSubmit={(event) => { void submit(event); }}>
-        <label>E-mail<input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-        <label>Senha<input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
-        <button type="submit" disabled={pending}>{pending ? "Entrando…" : "Entrar"}</button>
-      </form>
-      {error !== null && <ErrorNotice error={error} />}
-    </main>
-  );
-}
-
 function useMesas(api: ApiClient, userId: string) {
   return useQuery({
     queryKey: ["mesas", userId],
     queryFn: async () => {
       const { data, error } = await api.GET("/mesas");
-      if (error) throw new Error("Não foi possível carregar as mesas.");
+      if (error) throw new Error("Não foi possível carregar as campanhas.");
       return data ?? [];
     },
     refetchOnMount: "always",
   });
 }
 
-function NewTableForms({ api, userId }: { api: ApiClient; userId: string }) {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const [nome, setNome] = useState("");
-  const [codigo, setCodigo] = useState("");
-  const aposEntrar = (mesa: { id: string }) => {
-    void queryClient.invalidateQueries({ queryKey: ["mesas", userId] });
-    navigate(routes.table(mesa.id));
-  };
-  const criar = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await api.POST("/mesas", { body: { nome: nome.trim() } });
-      if (error) throw new Error(extractErrorMessage(error, "Não foi possível criar a mesa."));
-      return data as { id: string };
-    },
-    onSuccess: aposEntrar,
-  });
-  const aceitar = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await api.POST("/convites/aceitar", { body: { codigo: codigo.trim() } });
-      if (error) throw new Error(extractErrorMessage(error, "Convite indisponível."));
-      return data as { id: string };
-    },
-    onSuccess: aposEntrar,
-  });
-  return (
-    <div className="table-forms">
-      <form className="panel" onSubmit={(event) => { event.preventDefault(); criar.mutate(); }}>
-        <h2>Criar mesa</h2>
-        <p>Você será o Narrador da nova mesa.</p>
-        <label>Nome da mesa<input required value={nome} onChange={(event) => setNome(event.target.value)} /></label>
-        <button type="submit" className="button" disabled={criar.isPending || !nome.trim()}>Criar mesa</button>
-        {criar.isError && <p role="alert">{criar.error.message}</p>}
-      </form>
-      <form className="panel" onSubmit={(event) => { event.preventDefault(); aceitar.mutate(); }}>
-        <h2>Entrar com convite</h2>
-        <p>Cole o código enviado pelo Narrador.</p>
-        <label>Código do convite<input required value={codigo} onChange={(event) => setCodigo(event.target.value)} /></label>
-        <button type="submit" className="button" disabled={aceitar.isPending || !codigo.trim()}>Entrar na mesa</button>
-        {aceitar.isError && <p role="alert">{aceitar.error.message}</p>}
-      </form>
-    </div>
-  );
+function VoltarAsCampanhas() {
+  return <Link to={routes.campanhas()}>Voltar às campanhas</Link>;
 }
 
-function Tables({ api, userId, onSignOut }: { api: ApiClient; userId: string; onSignOut: () => void }) {
-  const mesas = useMesas(api, userId);
-
-  return (
-    <main className="page">
-      <header className="topbar"><span>CURSED · PLATAFORMA RPG</span><button type="button" onClick={onSignOut}>Sair</button></header>
-      <h1>Suas mesas</h1>
-      {mesas.isPending && <p>Carregando mesas…</p>}
-      {mesas.isError && <ErrorNotice error={mesas.error} />}
-      {mesas.isSuccess && mesas.data.length === 0 && <p>Você ainda não participa de uma mesa.</p>}
-      {mesas.isSuccess && (
-        <ul>{mesas.data.map((mesa) => <li key={mesa.id}><Link to={routes.table(mesa.id)}>{mesa.nome}</Link> — {mesa.papel}</li>)}</ul>
-      )}
-      <NewTableForms api={api} userId={userId} />
-    </main>
-  );
-}
-
-export function TablePage({ api, userId, onSignOut, realtime }: { api: ApiClient; userId: string; onSignOut: () => void; realtime?: RealtimeSession }) {
+export function TablePage({ api, userId, onSignOut, realtime, pagina = "mesa" }: { api: ApiClient; userId: string; onSignOut: () => void; realtime?: RealtimeSession; pagina?: "mesa" | "criar-personagem" }) {
   const { mesaId } = useParams<"mesaId">();
   const mesas = useMesas(api, userId);
-  if (mesas.isPending || mesas.isFetching) return <main className="page"><p>Verificando acesso à mesa…</p></main>;
-  if (mesas.isError) return <main className="page"><ErrorNotice error={mesas.error} /><Link to={routes.home()}>Voltar às mesas</Link></main>;
+  if (mesas.isPending || mesas.isFetching) return <EstadoDePagina><p>Verificando acesso à mesa…</p></EstadoDePagina>;
+  if (mesas.isError) return <EstadoDePagina><ErrorNotice error={mesas.error} /><VoltarAsCampanhas /></EstadoDePagina>;
   const mesa = mesas.data.find((item) => item.id === mesaId);
-  if (!mesa) return <main className="page"><h1>Mesa indisponível</h1><p>Esta mesa não está entre as suas mesas ativas.</p><Link to={routes.home()}>Voltar às mesas</Link></main>;
+  if (!mesa) return <main className="page"><h1>Mesa indisponível</h1><p>Esta mesa não está entre as suas campanhas ativas.</p><VoltarAsCampanhas /></main>;
+  if (pagina === "criar-personagem") return <CriarPersonagemPage mesa={mesa} api={api} userId={userId} onSignOut={onSignOut} />;
   return <TableWorkspace mesa={mesa} api={api} userId={userId} onSignOut={onSignOut} realtime={realtime} />;
 }
 
@@ -140,11 +57,12 @@ function CharacterPage({ api, userId, realtime }: { api: ApiClient; userId: stri
   const { mesaId, personagemId } = useParams<"mesaId" | "personagemId">();
   const navigate = useNavigate();
   if (!mesaId || !personagemId) {
-    return <main className="page"><h1>Personagem indisponível</h1><Link to={routes.home()}>Voltar às mesas</Link></main>;
+    return <main className="page"><h1>Personagem indisponível</h1><VoltarAsCampanhas /></main>;
   }
   return (
     <main className="page">
       {realtime && <TableEvents api={api} mesaId={mesaId} realtime={realtime} />}
+      <p><Link to={routes.campanha(mesaId)}>Campanhas</Link></p>
       <CharacterSheetPage
         api={api}
         mesaId={mesaId}
@@ -156,10 +74,23 @@ function CharacterPage({ api, userId, realtime }: { api: ApiClient; userId: stri
   );
 }
 
+/** Telas antes de entrar: cada modo tem endereço próprio; qualquer outro endereço mostra "Entrar". */
+function RotasPublicas({ clients }: { clients: Clients }) {
+  const local = useLocation();
+  const modos: Record<string, ModoEntrada> = {
+    [routePatterns.cadastro]: "cadastro",
+    [routePatterns.recuperarSenha]: "recuperar",
+  };
+  const modo = modos[local.pathname] ?? "entrar";
+  return <Entrada key={modo} auth={clients.auth} modo={modo} />;
+}
+
 export function App({ clients }: { clients: Clients }) {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [recuperandoSenha, setRecuperandoSenha] = useState(false);
   const [authError, setAuthError] = useState<unknown>(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let active = true;
@@ -168,11 +99,12 @@ export function App({ clients }: { clients: Clients }) {
       if (error) setAuthError(error);
       setSession(data.session);
     });
-    const { data: subscription } = clients.auth.auth.onAuthStateChange((_event, next) => {
-      if (active) {
-        setSession(next);
-        queryClient.clear();
-      }
+    const { data: subscription } = clients.auth.auth.onAuthStateChange((event, next) => {
+      if (!active) return;
+      // O link de redefinição cria uma sessão temporária: antes de tudo, a pessoa escolhe a nova senha.
+      if (event === "PASSWORD_RECOVERY") setRecuperandoSenha(true);
+      setSession(next);
+      queryClient.clear();
     });
     return () => {
       active = false;
@@ -180,11 +112,19 @@ export function App({ clients }: { clients: Clients }) {
     };
   }, [clients, queryClient]);
 
-  if (authError) return <main className="page"><ErrorNotice error={authError} /></main>;
-  if (session === undefined) return <main className="page"><p>Verificando acesso…</p></main>;
-  if (session === null) return <Login clients={clients} />;
+  if (authError) return <EstadoDePagina alerta><ErrorNotice error={authError} /></EstadoDePagina>;
+  if (session === undefined) return <EstadoDePagina><p>Verificando acesso…</p></EstadoDePagina>;
+  if (session === null) return <RotasPublicas clients={clients} />;
+  if (recuperandoSenha) {
+    return <Entrada auth={clients.auth} modo="redefinir"
+      onSenhaRedefinida={() => { setRecuperandoSenha(false); navigate(routes.home(), { replace: true }); }} />;
+  }
 
-  const onSignOut = () => { void signOut(clients.auth).catch(setAuthError); };
+  const onSignOut = () => {
+    queryClient.clear();
+    navigate(routes.entrar(), { replace: true });
+    void signOut(clients.auth).catch(setAuthError);
+  };
 
   return <AppRoutes api={clients.api} userId={session.user.id} onSignOut={onSignOut}
     realtime={{ client: clients.auth, accessToken: session.access_token }} />;
@@ -192,12 +132,30 @@ export function App({ clients }: { clients: Clients }) {
 
 /** Rotas autenticadas, compartilhadas pelo login Supabase e pelo modo de desenvolvimento local. */
 export function AppRoutes({ api, userId, onSignOut, realtime }: { api: ApiClient; userId: string; onSignOut: () => void; realtime?: RealtimeSession }) {
+  const props = { api, userId };
   return (
     <Routes>
-      <Route path={routePatterns.home} element={<Tables api={api} userId={userId} onSignOut={onSignOut} />} />
+      <Route element={<CascoPlataforma api={api} userId={userId} onSignOut={onSignOut} />}>
+        <Route index element={<Inicio {...props} />} />
+        <Route path={routePatterns.campanhas} element={<Campanhas {...props} />} />
+        <Route path={routePatterns.campanha} element={<Campanhas {...props} />} />
+        <Route path={routePatterns.personagens} element={<Navigate to={routes.personagens()} replace />} />
+        <Route path={routePatterns.colecao} element={<Personagens {...props} />} />
+        <Route path={routePatterns.personagemDoAcervo} element={<Personagens {...props} />} />
+        <Route path={routePatterns.biblioteca} element={<Biblioteca />} />
+        <Route path={routePatterns.regras} element={<Biblioteca />} />
+        <Route path={routePatterns.documento} element={<Biblioteca />} />
+        <Route path={routePatterns.perfil} element={<MeuPerfil {...props} />} />
+        <Route path="*" element={<main className="page"><h1>Página não encontrada</h1><Link to={routes.home()}>Ir ao Início</Link></main>} />
+      </Route>
+      <Route path={routePatterns.boasVindas} element={<BoasVindas {...props} />} />
+      {/* Endereços de entrada abertos já com sessão (ex.: link de confirmação) levam ao Início. */}
+      {[routePatterns.entrar, routePatterns.cadastro, routePatterns.recuperarSenha, routePatterns.redefinirSenha].map((caminho) => (
+        <Route key={caminho} path={caminho} element={<Navigate to={routes.home()} replace />} />
+      ))}
       <Route path={routePatterns.table} element={<TablePage api={api} userId={userId} onSignOut={onSignOut} realtime={realtime} />} />
+      <Route path={routePatterns.createCharacter} element={<TablePage api={api} userId={userId} onSignOut={onSignOut} pagina="criar-personagem" />} />
       <Route path={routePatterns.character} element={<CharacterPage api={api} userId={userId} realtime={realtime} />} />
-      <Route path="*" element={<main className="page"><h1>Página não encontrada</h1><Link to={routes.home()}>Ir às mesas</Link></main>} />
     </Routes>
   );
 }

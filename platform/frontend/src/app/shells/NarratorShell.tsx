@@ -61,6 +61,7 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
       badges={{ overview: solicitacoes.data?.length ?? 0 }}
       role="narrador"
       mesaNome={mesa.nome}
+      mesaId={mesa.id}
       view={view}
       onNavigate={onNavigate}
       onSignOut={onSignOut}

@@ -34,6 +34,7 @@ class Acao(StrEnum):
     GERENCIAR_CARTAS = "gerenciar_cartas"
     ADMINISTRAR_SALA = "administrar_sala"
     DEFINIR_FORMATO_ITEM = "definir_formato_item"
+    EDITAR_CAMPANHA = "editar_campanha"
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,7 @@ class Autorizador:
             Acao.GERENCIAR_CARTAS,
             Acao.ADMINISTRAR_SALA,
             Acao.DEFINIR_FORMATO_ITEM,
+            Acao.EDITAR_CAMPANHA,
         }:
             return DecisaoAcesso(narrador, motivo="Ação reservada ao Narrador.")
         if acao == Acao.CRIAR_PERSONAGEM:

@@ -34,12 +34,16 @@ class Destino:
 
 DESTINOS: dict[str, Destino] = {d.nome: d for d in (
     Destino("retrato", "retrato", 5, 512),
+    # Imagem de corpo inteiro do Resumo da ficha (aba-resumo-da-ficha, D7).
+    Destino("ilustracao", "ilustração", 8, 1536),
     Destino("item", "arte do item", 5, 256),
     Destino("icone-grade", "ícone de grade", 5, 256),
     Destino("efeito", "imagem do efeito", 5, 256),
     Destino("carta", "arte da carta", 8, None),
     Destino("mapa", "mapa da cena", 15, None),
     Destino("icone-efeito", "ícone do efeito", 5, 256),
+    Destino("capa", "capa da campanha", 8, 1600),
+    Destino("foto", "foto do perfil", 5, 256),
 )}
 
 

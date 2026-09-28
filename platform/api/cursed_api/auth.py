@@ -22,6 +22,9 @@ IDENTIDADE_DEV = re.compile(r"dev:([a-z0-9][a-z0-9_-]{0,49})")
 @dataclass(frozen=True)
 class Ator:
     usuario_id: str
+    email: str | None = None
+    # Como a pessoa entrou: "email", "google", "desenvolvimento"… (só informativo, no perfil).
+    provedor: str | None = None
 
 
 def get_actor(
@@ -40,7 +43,7 @@ def get_actor(
         if identidade is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de desenvolvimento inválido.")
         perfis.lembrar(session, identidade.group(1), perfis.nome_de_identidade_dev(identidade.group(1)))
-        return Ator(usuario_id=identidade.group(1))
+        return Ator(usuario_id=identidade.group(1), provedor="desenvolvimento")
     if not configuracao.supabase_url or not configuracao.supabase_publishable_key:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identidade não configurada.")
 
@@ -67,4 +70,8 @@ def get_actor(
     if not isinstance(usuario_id, str) or not usuario_id:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Resposta de identidade inválida.")
     perfis.lembrar(session, usuario_id, perfis.nome_de_usuario_supabase(usuario))
-    return Ator(usuario_id=usuario_id)
+    email = usuario.get("email")
+    app_metadata = usuario.get("app_metadata") if isinstance(usuario.get("app_metadata"), dict) else {}
+    provedor = app_metadata.get("provider")
+    return Ator(usuario_id=usuario_id, email=email if isinstance(email, str) else None,
+                provedor=provedor if isinstance(provedor, str) else None)

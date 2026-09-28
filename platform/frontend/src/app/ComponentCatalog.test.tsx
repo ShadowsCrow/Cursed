@@ -9,6 +9,27 @@ describe("catálogo visual isolado de componentes", () => {
   beforeEach(() => { window.scrollTo = vi.fn(); });
   afterEach(() => cleanup());
 
+  it("mostra moldura, pergaminho, título ornado, selos e marca", () => {
+    render(<MemoryRouter><ComponentCatalog /></MemoryRouter>);
+    expect(screen.getByRole("group", { name: "Exemplo de moldura noturna" })).toBeTruthy();
+    const pergaminho = screen.getByRole("group", { name: "Exemplo de pergaminho" });
+    expect(within(pergaminho).getByRole("heading", { name: "Atributos" })).toBeTruthy();
+    expect(within(pergaminho).getByRole("alert").textContent).toContain("Erro:");
+    expect(screen.getAllByText("Ativo").length).toBe(2);
+    expect(screen.getAllByText("CURSED").length).toBe(2);
+  });
+
+  it("mostra a moldura ornamentada nos três estados, pontos, alternância e avatares", () => {
+    render(<MemoryRouter><ComponentCatalog /></MemoryRouter>);
+    for (const nome of ["painel", "quadro", "selecionada", "em pergaminho"]) {
+      expect(screen.getByRole("group", { name: `Moldura ornamentada ${nome}` })).toBeTruthy();
+    }
+    expect(screen.getByRole("img", { name: "Carisma: 7 de 7" })).toBeTruthy();
+    fireEvent.click(within(screen.getByRole("group", { name: "Exemplo de alternância" })).getByRole("button", { name: /Jogando/ }));
+    expect(screen.getByRole("button", { name: /Jogando/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("img", { name: "Foto de Corvo Negro" }).textContent).toBe("CN");
+  });
+
   it("mostra o retrato com e sem imagem", () => {
     render(<MemoryRouter><ComponentCatalog /></MemoryRouter>);
     expect(screen.getByText("Sem imagem (iniciais ilustrativas)")).toBeTruthy();

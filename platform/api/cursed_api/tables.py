@@ -14,8 +14,8 @@ from sqlalchemy.orm import Session
 from cursed_platform import auditoria, corpos, perfis
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
-    AceitarConviteRequest, ConviteCriado, CriarConviteRequest,
-    CriarMesaRequest, MesaResumo, ParticipanteResumo,
+    AceitarConviteRequest, AtualizarMesaRequest, ConviteCriado, CriarConviteRequest,
+    CriarMesaRequest, MesaDetalhe, MesaResumo, ParticipanteResumo,
 )
 from cursed_platform.persistence import ConviteMesaRegistro, MembroRegistro, MesaRegistro
 from cursed_platform.repositories import MesaRepository
@@ -25,6 +25,22 @@ from .dependencies import get_correlacao, get_session
 
 
 router = APIRouter(tags=["Mesas"])
+
+
+def _resumo(mesa: MesaRegistro, papel: str) -> MesaResumo:
+    return MesaResumo(id=mesa.id, nome=mesa.nome, papel=papel, sistema=mesa.sistema or "cursed",
+                      sinopse=mesa.sinopse, capa_objeto=mesa.capa_objeto)
+
+
+def _participantes(session: Session, mesa_id: str) -> list[ParticipanteResumo]:
+    membros = MesaRepository(session).listar_membros(mesa_id)
+    ids = [m.usuario_id for m in membros]
+    conhecidos, com_foto = perfis.nomes(session, ids), perfis.fotos(session, ids)
+    return [
+        ParticipanteResumo(usuario_id=m.usuario_id, papel=m.papel, nome=conhecidos.get(m.usuario_id),
+                           tem_foto=m.usuario_id in com_foto)
+        for m in membros
+    ]
 
 
 def _mesa_e_narrador(session: Session, mesa_id: str, ator: Ator, acao: Acao) -> MesaRegistro:
@@ -52,7 +68,8 @@ def criar_mesa(
     if not nome:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Nome da mesa vazio.")
     mesa_id = uuid4().hex
-    session.add(MesaRegistro(id=mesa_id, nome=nome, narrador_id=ator.usuario_id))
+    mesa = MesaRegistro(id=mesa_id, nome=nome, narrador_id=ator.usuario_id, sistema="cursed")
+    session.add(mesa)
     session.flush()
     session.add(MembroRegistro(mesa_id=mesa_id, usuario_id=ator.usuario_id, papel="narrador"))
     session.flush()
@@ -62,7 +79,7 @@ def criar_mesa(
         relevancia="organizacional", resumo=f"Mesa criada: {nome}"[:500], correlacao_id=correlacao,
     )
     session.commit()
-    return MesaResumo(id=mesa_id, nome=nome, papel="narrador")
+    return _resumo(mesa, "narrador")
 
 
 @router.get("/mesas", response_model=list[MesaResumo])
@@ -70,10 +87,46 @@ def listar_mesas(
     ator: Ator = Depends(get_actor),
     session: Session = Depends(get_session),
 ) -> list[MesaResumo]:
-    return [
-        MesaResumo(id=mesa.id, nome=mesa.nome, papel=papel)
-        for mesa, papel in MesaRepository(session).listar_para_usuario(ator.usuario_id)
-    ]
+    return [_resumo(mesa, papel) for mesa, papel in MesaRepository(session).listar_para_usuario(ator.usuario_id)]
+
+
+@router.get("/mesas/{mesa_id}", response_model=MesaDetalhe)
+def detalhar_mesa(
+    mesa_id: str,
+    ator: Ator = Depends(get_actor),
+    session: Session = Depends(get_session),
+) -> MesaDetalhe:
+    """Apresentação da campanha: dados, capa e participantes com apelido e foto."""
+    mesa = _mesa_e_narrador(session, mesa_id, ator, Acao.LER_MESA)
+    membro = MesaRepository(session).membro(mesa_id, ator.usuario_id)
+    assert membro is not None
+    return MesaDetalhe(**_resumo(mesa, membro.papel).model_dump(), participantes=_participantes(session, mesa_id))
+
+
+@router.put("/mesas/{mesa_id}", response_model=MesaResumo)
+def atualizar_mesa(
+    mesa_id: str,
+    pedido: AtualizarMesaRequest,
+    ator: Ator = Depends(get_actor),
+    session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
+) -> MesaResumo:
+    mesa = _mesa_e_narrador(session, mesa_id, ator, Acao.EDITAR_CAMPANHA)
+    nome = pedido.nome.strip()
+    if not nome:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Nome da campanha vazio.")
+    sinopse = (pedido.sinopse or "").strip() or None
+    alterados = [campo for campo, antes, depois in (("nome", mesa.nome, nome), ("sinopse", mesa.sinopse, sinopse))
+                 if antes != depois]
+    mesa.nome, mesa.sinopse = nome, sinopse
+    if alterados:
+        auditoria.registrar(
+            session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="mesa.atualizada",
+            relevancia="organizacional", resumo=f"Campanha atualizada: {', '.join(alterados)}",
+            detalhes={"campos": alterados}, correlacao_id=correlacao,
+        )
+    session.commit()
+    return _resumo(mesa, "narrador")
 
 
 @router.post("/mesas/{mesa_id}/convites", response_model=ConviteCriado, status_code=status.HTTP_201_CREATED)
@@ -151,7 +204,7 @@ def aceitar_convite(
         alvo_tipo="participante", alvo_id=ator.usuario_id, correlacao_id=correlacao,
     )
     session.commit()
-    return MesaResumo(id=mesa.id, nome=mesa.nome, papel="jogador")
+    return _resumo(mesa, "jogador")
 
 
 @router.get("/mesas/{mesa_id}/participantes", response_model=list[ParticipanteResumo])
@@ -165,12 +218,7 @@ def listar_participantes(
     )
     if not decisao.permitido:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mesa não encontrada.")
-    membros = MesaRepository(session).listar_membros(mesa_id)
-    conhecidos = perfis.nomes(session, (m.usuario_id for m in membros))
-    return [
-        ParticipanteResumo(usuario_id=m.usuario_id, papel=m.papel, nome=conhecidos.get(m.usuario_id))
-        for m in membros
-    ]
+    return _participantes(session, mesa_id)
 
 
 @router.delete("/mesas/{mesa_id}/participantes/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)

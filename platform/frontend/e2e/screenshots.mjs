@@ -45,7 +45,6 @@ export async function semear() {
     personalidade: { alinhamento: "Caótico | Bom", pecado: "Orgulho", meu_lema: "A magia encontra uma saída." },
     atributos: { valores: { "Força": 1, Destreza: 3, Vigor: 2, Carisma: 2, "Manipulação": 1, Proposito: 3, "Percepção": 2, "Inteligência": 4, "Raciocínio": 3 }, ajustes: { "Inteligência": 1 } },
     pericias: { valores: { Arcanismo: 4, Furtividade: 2, Esquiva: 2, "Investigação": 3, Ocultismo: 3 }, ajustes: { Arcanismo: 1 } },
-    desgaste: { exaustao: 9, estresse: 5 },
   } })).personagem_id;
   const bram = (await chamar("jogador-2", "POST", `/mesas/${m}/personagens`, { ficha: {
     personagem: { nome: "Bram Ferro-Velho", raca: "Anão", classe: "Especialista de Combate" },
@@ -76,12 +75,12 @@ export async function semear() {
     versao_ids: magias.map((v) => v.id), personagem_ids: [lia, bram], min_escolhas: 2, max_escolhas: 2, expira_em: null });
   await chamar("narrador", "POST", `/mesas/${m}/entidades`, { tipo: "npc", visibilidade: "narrador",
     revelacao: { nome_publico: "Figura encapuzada", imagem: false }, ficha: { personagem: { nome: "Rainha Velada" } } });
-  // O Narrador sobe Lia ao nível 3 e registra o PV gasto; o jogador pede para mudar a idade (exige aprovação).
+  // O Narrador sobe Lia ao nível 3 e registra PV gasto e desgaste; o jogador pede para mudar a idade (exige aprovação).
   const doNarrador = await chamar("narrador", "GET", `/mesas/${m}/personagens/${lia}/ficha`);
   await chamar("narrador", "PUT", `/mesas/${m}/personagens/${lia}/ficha`, {
     id: "cmd-nivel", mesa_id: m, personagem_id: lia, ator_id: "narrador", versao_esperada: doNarrador.versao,
     ficha: { ...doNarrador.ficha, personagem: { ...doNarrador.ficha.personagem, nivel: 3 },
-      recursos: { ...doNarrador.ficha.recursos, pv: { atual: 9 }, pp: { atual: 3 } } },
+      recursos: { ...doNarrador.ficha.recursos, pv: { atual: 9 }, pp: { atual: 3 } }, desgaste: { exaustao: 9, estresse: 5 } },
   });
   const ficha = await chamar("jogador-1", "GET", `/mesas/${m}/personagens/${lia}/ficha`);
   await chamar("jogador-1", "PUT", `/mesas/${m}/personagens/${lia}/ficha`, {
@@ -97,7 +96,7 @@ const TELAS = ({ m, lia }) => [
   ["narrador", "03-personagens", `/mesas/${m}?painel=character`],
   ["narrador", "04-biblioteca", `/mesas/${m}?painel=cards`],
   ["narrador", "05-registro", `/mesas/${m}?painel=activity`],
-  ["narrador", "06-ficha-informacoes", `/mesas/${m}/personagens/${lia}`],
+  ["narrador", "06-ficha-informacoes", `/mesas/${m}/personagens/${lia}?secao=informacoes`],
   ["narrador", "07-ficha-atributos", `/mesas/${m}/personagens/${lia}?secao=atributos`],
   ["narrador", "08-ficha-efeitos", `/mesas/${m}/personagens/${lia}?secao=efeitos`],
   ["narrador", "09-ficha-cartas", `/mesas/${m}/personagens/${lia}?secao=cartas`],
@@ -119,7 +118,7 @@ const TELAS = ({ m, lia }) => [
   ["jogador-1", "17-jogador-efeitos", `/mesas/${m}/personagens/${lia}?secao=efeitos`],
   ["narrador", "18-ficha-personalidade", `/mesas/${m}/personagens/${lia}?secao=personalidade`],
   ["narrador", "19-ficha-status", `/mesas/${m}/personagens/${lia}?secao=status`],
-  ["narrador", "20-troca-de-classe", `/mesas/${m}/personagens/${lia}`, async (p) => {
+  ["narrador", "20-troca-de-classe", `/mesas/${m}/personagens/${lia}?secao=informacoes`, async (p) => {
     // O popover de edição abre por hover ou foco (um clique logo depois do hover o fecha).
     await p.getByRole("button", { name: "Editar Classe" }).focus();
     await p.getByRole("group", { name: "Editar Classe" }).getByRole("combobox").selectOption("Druida");
@@ -128,10 +127,41 @@ const TELAS = ({ m, lia }) => [
     await p.getByRole("button", { name: /Aplicar condição/ }).click();
     await p.getByRole("radio", { name: /Cego/ }).check();
   }],
-  ["jogador-1", "22-jogador-informacoes", `/mesas/${m}/personagens/${lia}`],
-  ["narrador", "23-ajuste-pv", `/mesas/${m}/personagens/${lia}`, async (p) => {
+  ["jogador-1", "22-jogador-informacoes", `/mesas/${m}/personagens/${lia}?secao=informacoes`],
+  ["narrador", "23-ajuste-pv", `/mesas/${m}/personagens/${lia}?secao=informacoes`, async (p) => {
     await p.getByRole("button", { name: "Ajustar PV/PP" }).click();
   }],
+  ["jogador-1", "24-assistente-conceito", `/mesas/${m}/criar-personagem`],
+  ["jogador-1", "25-assistente-classe", `/mesas/${m}/criar-personagem`, async (p) => {
+    await p.getByRole("button", { name: "Avançar" }).click();
+    await p.getByLabel("Nome (obrigatório)").fill("Nara");
+    await p.getByRole("button", { name: "Avançar" }).click();
+    await p.getByRole("radio", { name: /^Elfo/ }).check();
+    await p.getByRole("button", { name: "Avançar" }).click();
+    await p.getByRole("radio", { name: /^Mago/ }).check();
+    await p.getByRole("radio", { name: /^Mutante Arcano/ }).check();
+  }],
+  ["jogador-1", "26-assistente-atributos", `/mesas/${m}/criar-personagem`, async (p) => {
+    await p.getByRole("button", { name: "Avançar" }).click();
+    await p.getByLabel("Nome (obrigatório)").fill("Nara");
+    await p.getByRole("button", { name: "Avançar" }).click();
+    await p.getByRole("radio", { name: /^Elfo/ }).check();
+    await p.getByRole("button", { name: "Avançar" }).click();
+    await p.getByRole("radio", { name: /^Mago/ }).check();
+    await p.getByRole("radio", { name: /^Mutante Arcano/ }).check();
+    await p.getByRole("button", { name: "Avançar" }).click();
+    await p.getByRole("group", { name: "Inteligência", exact: true }).getByRole("radio", { name: "3", exact: true }).check({ force: true });
+  }],
+  ["jogador-1", "27-prova-do-tema", "/preview/tema"],
+  ["jogador-1", "28-prova-do-resumo", "/preview/resumo"],
+  ["jogador-1", "29-ficha-resumo", `/mesas/${m}/personagens/${lia}`],
+  // Navegação inicial (navegacao-inicial-e-perfil).
+  ["narrador", "29-campanha-narrador", `/campanhas/${m}`],
+  ["jogador-1", "30-campanha-jogador", `/campanhas/${m}`],
+  ["jogador-1", "31-personagens", `/personagens/meus/${m}/${lia}`],
+  ["jogador-1", "32-biblioteca-regra", "/biblioteca/regras/carga"],
+  ["jogador-2", "33-primeiro-acesso", "/boas-vindas"],
+  ["jogador-1", "34-prova-da-plataforma", "/preview/plataforma/"],
 ];
 
 const VIEWPORTS = { desktop: { width: 1440, height: 900 }, celular: { width: 390, height: 844 } };
@@ -139,6 +169,10 @@ const VIEWPORTS = { desktop: { width: 1440, height: 900 }, celular: { width: 390
 async function main() {
   mkdirSync(SAIDA, { recursive: true });
   const dados = await semear();
+  // As telas fora da mesa exigem o primeiro acesso confirmado; o jogador 2 fica sem, para a captura dele.
+  for (const [usuario, apelido] of [["narrador", "Mestra Íris"], ["jogador-1", "Corvo"]]) {
+    await chamar(usuario, "PUT", "/perfil", { apelido });
+  }
   const navegador = await chromium.launch();
   for (const [nomeViewport, viewport] of Object.entries(VIEWPORTS)) {
     for (const [usuario, nome, rota, acao] of TELAS(dados)) {

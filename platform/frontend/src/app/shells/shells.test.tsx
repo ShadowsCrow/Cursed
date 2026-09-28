@@ -9,7 +9,7 @@ import type { ApiClient } from "../characters/types";
 import { NarratorShell } from "./NarratorShell";
 import { PlayerShell } from "./PlayerShell";
 
-const mesa = { id: "mesa-a", nome: "O Véu de Aram", papel: "narrador" as const };
+const mesa = { id: "mesa-a", nome: "O Véu de Aram", papel: "narrador" as const, sistema: "cursed" as const };
 
 const api = {
   GET: vi.fn().mockResolvedValue({ data: [], error: undefined }),
@@ -23,6 +23,12 @@ function withProviders(children: ReactNode) {
 describe("shells de Narrador e jogador", () => {
   beforeEach(() => { window.scrollTo = vi.fn(); });
   afterEach(() => cleanup());
+
+  it("a mesa oferece o caminho de volta para a campanha em Campanhas", () => {
+    render(withProviders(<PlayerShell mesa={{ ...mesa, papel: "jogador" }} view="character" onNavigate={vi.fn()} onSignOut={vi.fn()} api={api} userId="usuario-1" onOpenCharacter={vi.fn()} />));
+    expect(screen.getByRole("link", { name: "Campanhas" }).getAttribute("href")).toBe("/campanhas/mesa-a");
+    expect(screen.getByRole("link", { name: "Voltar às campanhas" }).getAttribute("href")).toBe("/campanhas/mesa-a");
+  });
 
   it("o shell do Narrador tem uma estrutura própria: fila de pendências e atalhos exclusivos na lateral", () => {
     render(withProviders(<NarratorShell mesa={mesa} view="overview" onNavigate={vi.fn()} onSignOut={vi.fn()} api={api} userId="usuario-1" onOpenCharacter={vi.fn()} />));

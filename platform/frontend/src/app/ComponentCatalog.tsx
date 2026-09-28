@@ -11,6 +11,8 @@ import { Popover } from "../ui/primitives/Popover";
 import { SidePanel } from "../ui/primitives/SidePanel";
 import { Tooltip } from "../ui/primitives/Tooltip";
 import { ContentCard, EffectIcon, EquipmentSlot, Glyph, Portrait, ResourceBar } from "../ui/Display";
+import { EmblemaSimples, Marca, Moldura, Pergaminho, Selo, TituloOrnado } from "../ui/Tema";
+import { AlternanciaSegmentada, Avatar, Icone, MolduraOrnamentada, PontosDeValor, type NomeIcone } from "../ui/Ornamentos";
 
 function CatalogSection({ eyebrow, title, description, children }: { eyebrow: string; title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -18,6 +20,37 @@ function CatalogSection({ eyebrow, title, description, children }: { eyebrow: st
       <div className="section-heading"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2>{description && <p>{description}</p>}</div></div>
       <div className="catalog-grid">{children}</div>
     </section>
+  );
+}
+
+const ICONES: NomeIcone[] = ["livro", "pessoas", "busto", "rosa", "coroa", "pergaminho", "olho", "copiar", "porta", "lapis", "mais", "seta", "menu", "fechar", "sair"];
+
+function NavegacaoCatalog() {
+  const [lado, setLado] = useState<"narrando" | "jogando">("narrando");
+  return (
+    <CatalogSection eyebrow="NAVEGAÇÃO INICIAL" title="Moldura ornamentada, avatar, alternância, pontos e ícones" description="Mesma moldura SVG do Resumo da ficha (painel e quadro; noite, sangue, vazio e pergaminho); seleção também por aria-pressed/aria-current.">
+      <MolduraOrnamentada className="catalog-item" tipo="painel" role="group" aria-label="Moldura ornamentada painel"><strong>Painel</strong><p>Conteúdo de uma seção.</p></MolduraOrnamentada>
+      <MolduraOrnamentada className="catalog-item" role="group" aria-label="Moldura ornamentada quadro"><strong>Quadro</strong><p>Seções internas e itens.</p></MolduraOrnamentada>
+      <MolduraOrnamentada className="catalog-item" selecionada role="group" aria-label="Moldura ornamentada selecionada"><strong>Selecionada</strong><p>Item atual da lista.</p></MolduraOrnamentada>
+      <MolduraOrnamentada className="catalog-item" tipo="painel" fundo="pergaminho" role="group" aria-label="Moldura ornamentada em pergaminho">
+        <PontosDeValor rotulo="Força" valor={2} />
+        <PontosDeValor rotulo="Inteligência" valor={3} tom="arcano" />
+        <PontosDeValor rotulo="Carisma" valor={7} tom="ouro" />
+        <PontosDeValor rotulo="Vigor" valor={null} />
+      </MolduraOrnamentada>
+      <div className="catalog-item">
+        <AlternanciaSegmentada rotulo="Exemplo de alternância" valor={lado} onChange={setLado}
+          opcoes={[{ id: "narrando", rotulo: "Narrando", contagem: 2 }, { id: "jogando", rotulo: "Jogando", contagem: 1 }]} />
+      </div>
+      <div className="catalog-item" style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+        <Avatar nome="Corvo Negro" tamanho={56} />
+        <Avatar nome="Ana" tamanho={40} />
+        <Avatar nome="Foto quebrada" src="/arte/nao-existe.webp" tamanho={40} />
+      </div>
+      <div className="catalog-item" style={{ display: "flex", flexWrap: "wrap", gap: ".8rem", color: "var(--ouro-300)" }}>
+        {ICONES.map((nome) => <span key={nome} title={nome}><Icone nome={nome} tamanho={28} /></span>)}
+      </div>
+    </CatalogSection>
   );
 }
 
@@ -201,6 +234,44 @@ const catalogQueryClient = new QueryClient();
  * barra de recurso, ícone de efeito, slot de equipamento, carta base e
  * conectividade) em todos os seus estados, com dados fictícios e sem API.
  */
+function TemaCatalog() {
+  return (
+    <CatalogSection eyebrow="TEMA" title="Moldura, pergaminho, título ornado, selo e marca" description="Ornamentos são decorativos: ocultos do leitor de tela, sem foco e sem clique.">
+      <div className="catalog-item">
+        <span className="catalog-label">Moldura sobre a noite</span>
+        <Moldura className="catalogo-tema__moldura" aria-label="Exemplo de moldura noturna" role="group">
+          <TituloOrnado nivel={3} sobretitulo="Campanha atual">O Véu de Aram</TituloOrnado>
+          <p className="body-copy">Conteúdo na paleta noturna.</p>
+        </Moldura>
+      </div>
+      <div className="catalog-item">
+        <span className="catalog-label">Pergaminho dentro de moldura</span>
+        <Moldura variante="pergaminho">
+          <Pergaminho className="catalogo-tema__pergaminho" role="group" aria-label="Exemplo de pergaminho">
+            <TituloOrnado nivel={3} sobretitulo="Etapa 5 de 8">Atributos</TituloOrnado>
+            <label>Nome<input defaultValue="Lia Andarilha" /></label>
+            <p className="campo-erro" role="alert">Erro: o nome é obrigatório.</p>
+            <button type="button" className="button button--primary">Avançar</button>{" "}
+            <button type="button" className="button button--ghost" disabled>Indisponível</button>
+          </Pergaminho>
+        </Moldura>
+      </div>
+      <div className="catalog-item">
+        <span className="catalog-label">Selos (noite)</span>
+        <div className="tag-row"><Selo>Destaque</Selo><Selo tom="sangue">Ativo</Selo><Selo tom="noite">Neutro</Selo></div>
+        <span className="catalog-label">Selos (pergaminho)</span>
+        <Pergaminho className="catalogo-tema__pergaminho"><div className="tag-row"><Selo>Destaque</Selo><Selo tom="sangue">Ativo</Selo></div></Pergaminho>
+      </div>
+      <div className="catalog-item">
+        <span className="catalog-label">Marca detalhada, compacta e simplificada</span>
+        <Marca />
+        <Marca compacta subtitulo={null} tamanho={32} />
+        <span className="catalogo-tema__emblema"><EmblemaSimples tamanho={16} /><EmblemaSimples tamanho={32} /></span>
+      </div>
+    </CatalogSection>
+  );
+}
+
 export function ComponentCatalog() {
   return (
     <QueryClientProvider client={catalogQueryClient}>
@@ -209,6 +280,8 @@ export function ComponentCatalog() {
         <main id="main-content" className="preview-content">
           <div className="screen-content">
             <div className="page-intro"><span className="eyebrow">DESIGN SYSTEM · CATÁLOGO</span><h1>Componentes em todos os estados</h1><p>Cada componente de fundação do frontend, isolado dos dados reais da mesa.</p></div>
+            <TemaCatalog />
+            <NavegacaoCatalog />
             <PrimitivesCatalog />
             <PortraitCatalog />
             <ResourceBarCatalog />
