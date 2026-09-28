@@ -27,10 +27,198 @@ export const sheetKeys = {
   efeitos: (mesaId: string, personagemId: string) => ["efeitos", mesaId, personagemId] as const,
   valoresDerivados: (mesaId: string, personagemId: string) => ["valores-derivados", mesaId, personagemId] as const,
   desgaste: (mesaId: string, personagemId: string) => ["desgaste", mesaId, personagemId] as const,
+  consequencias: (mesaId: string, personagemId: string) => ["consequencias", mesaId, personagemId] as const,
   grade: (mesaId: string, personagemId: string) => ["grade-inventario", mesaId, personagemId] as const,
 };
 
 export type TrilhaDesgaste = components["schemas"]["TrilhaDesgaste"];
+export type PreviaDesgaste = components["schemas"]["PreviaDesgaste"];
+export type ConsequenciaResumo = components["schemas"]["ConsequenciaResumo"];
+export type ConsequenciaEntrada = components["schemas"]["ConsequenciaEntrada"];
+export type ColapsoMentalEntrada = components["schemas"]["ColapsoMentalEntrada"];
+export type OrigemConsequencia = components["schemas"]["OrigemConsequencia"];
+export type DesgasteComandoResposta = components["schemas"]["DesgasteComandoResposta"];
+export type ConsequenciaComandoResposta = components["schemas"]["ConsequenciaComandoResposta"];
+export type AcaoConsequencia = "intensificar" | "mitigar" | "iniciar_tratamento" | "reativar" | "encerrar" | "remover";
+
+export function useConsequencias(api: ApiClient, mesaId: string, personagemId: string): UseQueryResult<ConsequenciaResumo[], Error> {
+  return useQuery({
+    queryKey: sheetKeys.consequencias(mesaId, personagemId),
+    queryFn: async () => {
+      const { data, error } = await api.GET("/mesas/{mesa_id}/personagens/{personagem_id}/consequencias", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível carregar as consequências."));
+      return data ?? [];
+    },
+  });
+}
+
+/** Prévia de alteração (Narrador) ou de esforço; nada é gravado. `null` desativa a consulta. */
+export type PedidoPrevia =
+  | { tipo: "alteracao"; trilha: "exaustao" | "estresse"; delta: number }
+  | { tipo: "esforco"; esforco: "fisico" | "mental"; pontos: number; bonusMovimento: number };
+
+export function usePreviaDesgaste(
+  api: ApiClient, mesaId: string, personagemId: string, versao: number, pedido: PedidoPrevia | null,
+): UseQueryResult<PreviaDesgaste, Error> {
+  return useQuery({
+    queryKey: ["previa-desgaste", mesaId, personagemId, versao, pedido] as const,
+    enabled: pedido !== null,
+    retry: false,
+    queryFn: async () => {
+      const path = { mesa_id: mesaId, personagem_id: personagemId };
+      const resultado = pedido?.tipo === "esforco"
+        ? await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/esforco/previa", {
+          params: { path }, body: { tipo: pedido.esforco, pontos: pedido.pontos, bonus_movimento: pedido.bonusMovimento },
+        })
+        : await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/previa", {
+          params: { path }, body: { trilha: pedido!.trilha, delta: pedido!.delta },
+        });
+      if (resultado.error) throw new Error(extractErrorMessage(resultado.error, "Não foi possível calcular a prévia."));
+      return resultado.data as PreviaDesgaste;
+    },
+  });
+}
+
+/** Resultado comum dos comandos de desgaste e consequências: versão, trilhas e consequências novas em cache. */
+function useDesgasteResultado(mesaId: string, personagemId: string) {
+  const queryClient = useQueryClient();
+  return (data: { versao: number; consequencias: ConsequenciaResumo[]; trilhas?: TrilhaDesgaste[] }) => {
+    queryClient.setQueryData(sheetKeys.ficha(mesaId, personagemId), (old?: FichaSnapshot) =>
+      old ? { ...old, versao: data.versao } : old,
+    );
+    if (data.trilhas) queryClient.setQueryData(sheetKeys.desgaste(mesaId, personagemId), data.trilhas);
+    queryClient.setQueryData(sheetKeys.consequencias(mesaId, personagemId), data.consequencias);
+    void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
+  };
+}
+
+export interface AlterarDesgasteVariaveis {
+  trilha: "exaustao" | "estresse";
+  delta: number;
+  origem: OrigemConsequencia;
+  justificativa?: string | null;
+  colapsoMental?: ColapsoMentalEntrada | null;
+  consequenciaExcedente?: ConsequenciaEntrada | null;
+  versaoEsperada: number;
+}
+
+/** Comando do Narrador: soma ou reduz pontos de uma trilha, com origem. */
+export function useAlterarDesgaste(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useDesgasteResultado(mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (v: AlterarDesgasteVariaveis) => {
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/alteracoes", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+        body: {
+          trilha: v.trilha, delta: v.delta, origem: v.origem, justificativa: v.justificativa ?? null,
+          colapso_mental: v.colapsoMental ?? null, consequencia_excedente: v.consequenciaExcedente ?? null,
+          versao_esperada: v.versaoEsperada,
+        },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível registrar a alteração."));
+      return data as DesgasteComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
+
+export interface EsforcoVariaveis {
+  tipo: "fisico" | "mental";
+  pontos: number;
+  bonusMovimento: number;
+  acao: string;
+  colapsoMental?: ColapsoMentalEntrada | null;
+  versaoEsperada: number;
+}
+
+/** Custo do Esforço voluntário, registrado depois de resolvida a ação. */
+export function useEsforco(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useDesgasteResultado(mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (v: EsforcoVariaveis) => {
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/esforco", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+        body: {
+          tipo: v.tipo, pontos: v.pontos, bonus_movimento: v.bonusMovimento, acao: v.acao,
+          colapso_mental: v.colapsoMental ?? null, versao_esperada: v.versaoEsperada,
+        },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível registrar o esforço."));
+      return data as DesgasteComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
+
+export function useEncerrarColapso(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useDesgasteResultado(mesaId, personagemId);
+  return useMutation({
+    mutationFn: async ({ motivo, versaoEsperada }: { motivo: string; versaoEsperada: number }) => {
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/desgaste/colapso-mental/encerrar", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+        body: { motivo, versao_esperada: versaoEsperada },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível encerrar o Colapso Mental."));
+      return data as DesgasteComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
+
+export function useCriarConsequencia(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useDesgasteResultado(mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (v: { consequencia: ConsequenciaEntrada; justificativa: string; versaoEsperada: number }) => {
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/consequencias", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
+        body: { consequencia: v.consequencia, justificativa: v.justificativa, versao_esperada: v.versaoEsperada },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível registrar a consequência."));
+      return data as ConsequenciaComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
+
+export interface EditarConsequenciaVariaveis {
+  consequenciaId: string;
+  campos: Partial<Pick<components["schemas"]["EditarConsequenciaRequest"],
+    "nome" | "descricao" | "efeito" | "gatilho" | "tratamento_regra" | "progresso" | "objetivo">>;
+  justificativa: string;
+  versaoEsperada: number;
+}
+
+export function useEditarConsequencia(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useDesgasteResultado(mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (v: EditarConsequenciaVariaveis) => {
+      const { data, error } = await api.PATCH("/mesas/{mesa_id}/personagens/{personagem_id}/consequencias/{consequencia_id}", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId, consequencia_id: v.consequenciaId } },
+        body: { ...v.campos, justificativa: v.justificativa, versao_esperada: v.versaoEsperada },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível editar a consequência."));
+      return data as ConsequenciaComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
+
+export function useTransicionarConsequencia(api: ApiClient, mesaId: string, personagemId: string) {
+  const onResultado = useDesgasteResultado(mesaId, personagemId);
+  return useMutation({
+    mutationFn: async (v: { consequenciaId: string; acao: AcaoConsequencia; justificativa: string; versaoEsperada: number }) => {
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/consequencias/{consequencia_id}/{acao}", {
+        params: { path: { mesa_id: mesaId, personagem_id: personagemId, consequencia_id: v.consequenciaId, acao: v.acao } },
+        body: { justificativa: v.justificativa, versao_esperada: v.versaoEsperada },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível alterar a consequência."));
+      return data as ConsequenciaComandoResposta;
+    },
+    onSuccess: onResultado,
+  });
+}
 
 export function useDesgaste(api: ApiClient, mesaId: string, personagemId: string): UseQueryResult<TrilhaDesgaste[], Error> {
   return useQuery({

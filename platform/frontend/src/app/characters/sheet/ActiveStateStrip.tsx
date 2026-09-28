@@ -1,7 +1,9 @@
 import { Popover } from "../../../ui/primitives";
 import type { ApiClient, EfeitoResumo } from "../types";
 import { EffectDetailIcon } from "./EffectsPanel";
-import type { TrilhaDesgaste } from "./sheetApi";
+import type { ConsequenciaResumo, TrilhaDesgaste } from "./sheetApi";
+import { useControlesDesgaste, type ControlesDesgaste } from "./useControlesDesgaste";
+import { ROTULO_CATEGORIA } from "./wearForms";
 
 const ROTULO: Record<TrilhaDesgaste["recurso"], string> = { exaustao: "Exaustão", estresse: "Estresse" };
 
@@ -33,20 +35,42 @@ function Trilha({ trilha }: { trilha: TrilhaDesgaste }) {
 }
 
 /**
- * Faixa de estado ativo (design, decisão 7): desgaste e efeitos ativos visíveis em
- * qualquer seção da ficha, porque são a informação mais urgente durante o jogo.
- * Estados usam texto além da cor; detalhes completos ficam no popover.
+ * Faixa de estado ativo (design, decisão 7): desgaste, consequências persistentes e efeitos
+ * ativos visíveis em qualquer seção da ficha, porque são a informação mais urgente durante o
+ * jogo. Estados usam texto além da cor; detalhes completos ficam no popover. Com `controles`,
+ * o Narrador altera as trilhas e quem controla o personagem usa o Esforço.
  */
-export function ActiveStateStrip({ desgaste, efeitos, api, mesaId }: {
-  desgaste: TrilhaDesgaste[] | undefined; efeitos: EfeitoResumo[] | undefined; api?: ApiClient; mesaId?: string;
+export function ActiveStateStrip({ desgaste, efeitos, consequencias, api, mesaId, controles }: {
+  desgaste: TrilhaDesgaste[] | undefined; efeitos: EfeitoResumo[] | undefined;
+  consequencias?: ConsequenciaResumo[]; api?: ApiClient; mesaId?: string; controles?: ControlesDesgaste;
 }) {
   const ativos = (efeitos ?? []).filter((efeito) => efeito.estado === "ativo");
   const suspensos = (efeitos ?? []).filter((efeito) => efeito.estado === "suspenso").length;
+  const persistentes = (consequencias ?? []).filter((c) => c.tratamento.estado !== "encerrado");
+  const { botoesTrilha, acoes, dialogo } = useControlesDesgaste(controles, desgaste);
   return (
     <section className="active-state" aria-label="Estado ativo">
       <div className="active-state__wear">
-        {(desgaste ?? []).map((trilha) => <Trilha key={trilha.recurso} trilha={trilha} />)}
+        {(desgaste ?? []).map((trilha) => (
+          <span key={trilha.recurso} className="wear-track">
+            <Trilha trilha={trilha} />
+            {botoesTrilha(trilha.recurso)}
+          </span>
+        ))}
+        {acoes}
       </div>
+      {persistentes.length > 0 && (
+        <div className="active-state__consequences">
+          <span className="eyebrow">Consequências</span>
+          <ul className="effect-strip">
+            {persistentes.map((c) => (
+              <li key={c.id} className="consequence-chip">
+                {ROTULO_CATEGORIA[c.categoria]}: {c.nome}{c.intensidade > 1 ? ` (intensidade ${c.intensidade})` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="active-state__effects">
         <span className="eyebrow">Efeitos ativos</span>
         {ativos.length === 0 ? (
@@ -63,6 +87,7 @@ export function ActiveStateStrip({ desgaste, efeitos, api, mesaId }: {
         )}
         {suspensos > 0 && <span className="active-state__empty">{suspensos} suspenso(s)</span>}
       </div>
+      {dialogo}
     </section>
   );
 }

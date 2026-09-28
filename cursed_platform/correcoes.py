@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from cursed_platform import auditoria, ficha_viva
@@ -25,7 +25,8 @@ class CorrecaoConflitante(ValueError):
 
 def tipo_correcao(evento: EventoAuditoriaRegistro) -> str | None:
     reverte = (evento.detalhes or {}).get("reverte")
-    if evento.acao in {"ficha.atualizada", "solicitacao.aprovada", "descanso.aplicado"} or reverte == "ficha":
+    if (evento.acao in {"ficha.atualizada", "solicitacao.aprovada", "descanso.aplicado"}
+            or evento.acao.startswith(("desgaste.", "consequencia.")) or reverte == "ficha"):
         return "ficha"
     if evento.acao in {"item.equipado", "item.desequipado"} or reverte == "equipamento":
         return "equipamento"
@@ -57,6 +58,30 @@ def _definir(dados: dict[str, Any], caminho: str, valor: Any, remover: bool) -> 
         atual[partes[-1]] = deepcopy(valor)
 
 
+PREFIXOS_DESGASTE = ("desgaste.", "consequencia.")
+
+
+def _desgaste_posterior(session: Session, evento: EventoAuditoriaRegistro) -> bool:
+    """Há alteração posterior de desgaste, consequências ou descanso do mesmo personagem que não foi desfeita.
+
+    Esses comandos dependem do estado deixado pelos anteriores (o excedente só existe em 15, a
+    intensificação depende do Trauma criado), então só o mais recente pode ser desfeito direto.
+    """
+    desfeitos = select(EventoAuditoriaRegistro.corrige_evento_id).where(
+        EventoAuditoriaRegistro.corrige_evento_id.is_not(None))
+    posterior = session.scalar(
+        select(EventoAuditoriaRegistro.id).where(
+            EventoAuditoriaRegistro.mesa_id == evento.mesa_id,
+            EventoAuditoriaRegistro.personagem_id == evento.personagem_id,
+            EventoAuditoriaRegistro.id > evento.id,
+            or_(*(EventoAuditoriaRegistro.acao.startswith(prefixo) for prefixo in PREFIXOS_DESGASTE),
+                EventoAuditoriaRegistro.acao == "descanso.aplicado"),
+            EventoAuditoriaRegistro.id.not_in(desfeitos),
+        ).limit(1)
+    )
+    return posterior is not None
+
+
 def _exigir_atual(atual: Any, esperado: Any, ausente_esperado: bool) -> None:
     if (atual is _AUSENTE) != ausente_esperado or (atual is not _AUSENTE and atual != esperado):
         raise CorrecaoConflitante("O valor mudou depois deste evento; revise antes de corrigir.")
@@ -84,6 +109,12 @@ def corrigir(
         raise ficha_viva.ConflitoVersao()
     detalhes = {"reverte": tipo, "motivo": motivo or None, "evento_corrigido": evento.id}
     nome = auditoria.nome_personagem(personagem)
+
+    if evento.acao.startswith(PREFIXOS_DESGASTE) and _desgaste_posterior(session, evento):
+        raise CorrecaoConflitante(
+            "Há uma alteração posterior de desgaste ou consequências deste personagem. "
+            "Desfaça a mais recente primeiro ou registre uma correção manual com justificativa."
+        )
 
     if tipo == "ficha":
         atual = FichaDraft.de_payload(personagem.ficha).para_payload()

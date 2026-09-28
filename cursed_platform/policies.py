@@ -62,6 +62,9 @@ CAMPOS_EXCLUSIVOS_NARRADOR: tuple[str, ...] = (
     "personagem.tamanho",
     "personagem.tamanho_raca",
     "recursos.ajustes",
+    # Exaustão, Estresse e consequências mudam só pelos comandos próprios, que exigem origem e justificativa.
+    "desgaste",
+    "consequencias",
 )
 ROTULOS_EXCLUSIVOS = {
     "personagem.nivel": "nível",
@@ -69,6 +72,8 @@ ROTULOS_EXCLUSIVOS = {
     "personagem.tamanho": "Tamanho atual",
     "personagem.tamanho_raca": "Tamanho atual",
     "recursos.ajustes": "ajustes de PV e PP",
+    "desgaste": "Exaustão e Estresse (use o Esforço ou peça ao Narrador)",
+    "consequencias": "consequências persistentes",
 }
 
 

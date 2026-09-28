@@ -143,6 +143,16 @@ A futura reforma de Descanso e Recuperação chamará as mesmas transações de 
 
 Cartas, equipamentos, habilidades e classes poderão fornecer uma origem estruturada e uma intenção de efeito. O criador de objetos continuará podendo fornecer efeitos vinculados, enquanto uma ação expressamente causadora de Trauma ou Ferimento Grave criará uma instância aplicada. O mestre mantém autoridade para criar e impor conteúdo; o framework de criação não é exposto como mecânica do jogador.
 
+### 10. Revisão de 2026-09-27: implementação na plataforma nova
+
+As decisões 6 a 8 foram escritas para o Streamlit. A implementação da ficha passou para a plataforma nova (`cursed_platform`, `platform/api`, `platform/frontend`), e as mudanças irmãs decidiram não alterar a interface Streamlit. Esta decisão substitui 6 e 8 onde houver conflito:
+
+- **Dados:** a ficha guarda `desgaste = {exaustao, estresse}` e `consequencias` (lista de consequências persistentes no formato normalizado pelo domínio). Ficha sem essas chaves é lida como 0 e lista vazia; nada é gravado só para inicializar. Efeitos da tabela `character_effects` continuam sendo os efeitos ativáveis (default, externos e vinculados a equipamento); consequências não são copiadas para lá.
+- **Histórico e desfazer:** não há `historico_desgaste` na ficha. Cada comando registra um evento de auditoria com as mudanças completas de `desgaste` e `consequencias`, e a correção de eventos da plataforma reverte o evento quando os valores atuais ainda são os que ele gravou; caso contrário, recusa e orienta a correção manual. Isso cumpre "Histórico e desfazer seguro" sem um segundo histórico.
+- **Autoridade:** o Narrador aplica ganhos e reduções de fontes externas, decide a consequência do excedente físico, encerra o Colapso Mental e administra consequências. Quem controla o personagem (dono ou Narrador) usa o Esforço voluntário e, se ele levar ao Colapso Mental, registra a manifestação e o Trauma, que o Narrador pode editar depois. `desgaste` e `consequencias` deixam de ser alteráveis pelo jogador no `PUT /ficha`.
+- **Penalidades:** as faixas continuam derivadas do valor atual. Só a parte calculável pela ficha entra nos valores derivados (−1 em Defesas em Exausto); penalidades em testes e Movimento seguem como texto da faixa, porque a plataforma não calcula testes nem Movimento.
+- **Interface:** a faixa de estado ativo já mostra valor/máximo, faixa, penalidade e próximo limiar; ela ganha os controles de alteração com prévia e de esforço. Consequências ganham um painel próprio na ficha.
+
 ## Risks / Trade-offs
 
 - **Escalas preservadas podem continuar granulares demais.** Mitigação: medir uso real após a separação; uma futura mudança pode recalibrar números sem reabrir a arquitetura.
@@ -155,6 +165,8 @@ Cartas, equipamentos, habilidades e classes poderão fornecer uma origem estrutu
 - **Remover morte automática pode parecer reduzir a letalidade.** A letalidade migra para fontes e situações explicitamente letais, tornando o perigo mais legível e ficcionalmente justificável.
 
 ## Migration Plan
+
+> Os passos 3 a 8 abaixo refletem o plano original para o Streamlit; a decisão 10 e as seções 3 a 6 de `tasks.md` descrevem o plano vigente na plataforma nova.
 
 1. Atualizar a documentação normativa de Exaustão e Estresse e ajustar referências em Descansos e Recuperação, sem redesenhar o restante do descanso.
 2. Adicionar funções de domínio e testes para faixas, esforço, colapsos, efeitos aplicados, prévia, histórico e desfazer.

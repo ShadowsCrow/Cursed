@@ -26,7 +26,7 @@ _AUSENTE = object()
 CAMPOS_MECANICOS = (
     "atributos", "pericias", "armas", "armaduras", "outros", "efeitos_externos", "recursos",
     "personagem.habilidades", "personagem.nivel", "personagem.raca", "personagem.classe",
-    "personagem.arquetipo",
+    "personagem.arquetipo", "desgaste", "consequencias",
 )
 
 

@@ -17,14 +17,14 @@ FAIXAS: Dict[str, List[Dict[str, Any]]] = {
         {"min": 6, "max": 8, "id": "cansado", "nome": "Cansado", "efeito": "−1 em testes físicos."},
         {"min": 9, "max": 11, "id": "exausto", "nome": "Exausto", "efeito": "−2 em testes físicos e −1 em Defesas."},
         {"min": 12, "max": 14, "id": "no_limite", "nome": "No Limite", "efeito": "−3 em testes físicos, −1 em testes mentais e sociais e −3 m de Movimento."},
-        {"min": 15, "max": 15, "id": "colapso_fisico", "nome": "Colapso Físico", "efeito": "Inconsciente e incapaz de realizar ações até receber auxílio ou recuperação aplicável."},
+        {"min": 15, "max": 15, "id": "colapso_fisico", "nome": "Colapso Físico", "efeito": "Fica Inconsciente e incapaz de realizar ações até receber auxílio ou recuperação aplicável."},
     ],
     "estresse": [
         {"min": 0, "max": 4, "id": "controlado", "nome": "Controlado", "efeito": "Sem penalidade."},
         {"min": 5, "max": 6, "id": "pressionado", "nome": "Pressionado", "efeito": "−1 em testes mentais e sociais."},
         {"min": 7, "max": 8, "id": "abalado", "nome": "Abalado", "efeito": "−2 em testes mentais e sociais e −1 em testes físicos."},
         {"min": 9, "max": 9, "id": "a_beira", "nome": "À Beira", "efeito": "−3 em testes mentais e sociais, −1 em testes físicos e não pode assumir Estresse voluntariamente."},
-        {"min": 10, "max": 10, "id": "colapso_mental", "nome": "Colapso Mental", "efeito": "Manifestação de colapso e afastamento da participação efetiva até auxílio ou fim do conflito imediato."},
+        {"min": 10, "max": 10, "id": "colapso_mental", "nome": "Colapso Mental", "efeito": "Sofre uma manifestação de colapso coerente com a cena e fica fora de participação efetiva até receber auxílio pertinente ou o conflito imediato terminar."},
     ],
 }
 

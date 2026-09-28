@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, catalogos, ficha_viva, icones_efeitos
+from cursed_platform import auditoria, catalogos, desgaste_ficha, ficha_viva, icones_efeitos
 from cursed_platform.domain import recursos
 from cursed_platform.domain.efeitos import indexar_catalogo
 from cursed_platform.authorization import Acao, Autorizador
@@ -184,7 +184,7 @@ def listar_valores_derivados(
     valores = ficha_viva.calcular_valores_derivados(
         personagem.ficha or {},
         ficha_viva.itens(session, mesa_id, personagem_id),
-        inventario_grade.efeitos_com_derivados(session, personagem),
+        [*inventario_grade.efeitos_com_derivados(session, personagem), *efeitos_de_faixa(personagem.ficha or {})],
     )
     return [
         *(
@@ -199,9 +199,26 @@ def listar_valores_derivados(
     ]
 
 
+def efeitos_de_faixa(ficha: dict) -> list[ficha_viva.EfeitoAtual]:
+    """Penalidades calculáveis das faixas de Exaustão e Estresse, derivadas do valor atual.
+    Não são gravadas nem listadas como efeitos: a faixa de estado ativo já mostra a faixa."""
+    efeitos: dict[str, ficha_viva.EfeitoAtual] = {}
+    for efeito_id, nome, alvo, valor in desgaste_ficha.modificadores_de_faixa(ficha):
+        rotulo = "Exaustão" if ":exaustao:" in efeito_id else "Estresse"
+        efeito = efeitos.setdefault(efeito_id, ficha_viva.EfeitoAtual(
+            id=efeito_id, nome=f"{nome} ({rotulo})", descricao="", estado="ativo", duracao_rodadas=None,
+            modificadores=[], fontes=[], conteudo={"derivado": True, "origem": "desgaste"},
+        ))
+        efeito.modificadores.append(ficha_viva.Modificador(alvo, valor))
+    return list(efeitos.values())
+
+
 def valores_de_recurso(ficha: dict) -> list[ValorDerivadoResumo]:
     """PV, PP e Escalas calculados pela classe, atributos e nível (grupo "recurso")."""
-    calculado = recursos.calcular(ficha, catalogos.obter())
+    return resumo_recursos(recursos.calcular(ficha, catalogos.obter()))
+
+
+def resumo_recursos(calculado: recursos.Recursos) -> list[ValorDerivadoResumo]:
     return [
         ValorDerivadoResumo(
             chave=v.chave, rotulo=v.rotulo, grupo="recurso", total=v.total, calculavel=v.calculavel, motivo=v.motivo,
@@ -257,7 +274,11 @@ def ler_desgaste(
 ) -> list[TrilhaDesgaste]:
     """Exaustão e Estresse com faixa e penalidade vindas do domínio; a interface não recalcula regras."""
     personagem = _personagem(session, mesa_id, personagem_id, ator)
-    desgaste = (personagem.ficha or {}).get("desgaste")
+    return trilhas_resumo(personagem.ficha or {})
+
+
+def trilhas_resumo(ficha: dict) -> list[TrilhaDesgaste]:
+    desgaste = ficha.get("desgaste")
     registrado = isinstance(desgaste, dict)
     return [
         TrilhaDesgaste(**resumo_trilha(recurso, desgaste), registrado=registrado and recurso in desgaste)

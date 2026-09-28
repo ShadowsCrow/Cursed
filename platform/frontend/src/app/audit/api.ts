@@ -86,6 +86,11 @@ export function useCorrigirEvento(api: ApiClient, mesaId: string) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: auditKeys.listPrefix(mesaId) });
+      // A correção muda a versão e o conteúdo do personagem: sem isso, uma segunda correção
+      // seguida usaria a versão antiga e a ficha aberta mostraria valores já revertidos.
+      for (const chave of ["personagens", "ficha", "desgaste", "consequencias", "efeitos", "valores-derivados", "inventario"]) {
+        void queryClient.invalidateQueries({ queryKey: [chave, mesaId] });
+      }
     },
   });
 }

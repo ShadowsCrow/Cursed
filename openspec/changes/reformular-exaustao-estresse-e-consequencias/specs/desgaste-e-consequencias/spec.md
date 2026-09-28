@@ -37,7 +37,7 @@ O sistema SHALL derivar os efeitos temporários de Exaustão exclusivamente do v
 | 6–8 | Cansado | −1 em testes físicos |
 | 9–11 | Exausto | −2 em testes físicos e −1 em Defesas |
 | 12–14 | No Limite | −3 em testes físicos, −1 em testes mentais e sociais e −3 m de Movimento |
-| 15 | Colapso Físico | Inconsciente e incapaz de realizar ações até receber auxílio ou recuperação aplicável |
+| 15 | Colapso Físico | Fica Inconsciente e incapaz de realizar ações até receber auxílio ou recuperação aplicável |
 
 #### Scenario: Mudança automática de faixa
 
@@ -82,7 +82,7 @@ O sistema SHALL derivar os efeitos temporários de Estresse exclusivamente do va
 | 5–6 | Pressionado | −1 em testes mentais e sociais |
 | 7–8 | Abalado | −2 em testes mentais e sociais e −1 em testes físicos |
 | 9 | À Beira | −3 em testes mentais e sociais, −1 em testes físicos e não pode assumir Estresse voluntariamente |
-| 10 | Colapso Mental | Sofre uma manifestação de colapso coerente com a cena e fica fora de participação efetiva até receber auxílio ou o conflito imediato terminar |
+| 10 | Colapso Mental | Sofre uma manifestação de colapso coerente com a cena e fica fora de participação efetiva até receber auxílio pertinente ou o conflito imediato terminar |
 
 Classes, habilidades e outros efeitos MAY modificar aquisição, capacidade ou penalidades de Estresse quando declararem isso expressamente, sem recriar uma tabela universal por patamar.
 
