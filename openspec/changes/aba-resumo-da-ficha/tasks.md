@@ -52,4 +52,4 @@
 - [x] 8.1 Suítes completas: `npm run lint`, `npm run typecheck`, `npm test`, `npm run check:client`, `python -m unittest discover -s cursed_platform/tests -t .` e `export_openapi --check` verdes.
 - [x] 8.2 E2E: jogador abre a ficha no Resumo, envia ilustração, escreve a História em Personalidade e vê ambas no Resumo, em desktop e em 360 px (verificação: `npm run test:e2e` verde).
 - [x] 8.3 Capturas novas do Resumo (completo, vazio, celular) em `npm run capturas` e comparação lado a lado com a imagem de referência, aprovada pelo usuário (verificação: aprovação registrada no `HANDOFF.md`).
-- [ ] 8.5 Execução verde do workflow `platform-contract.yml` no GitHub Actions após commit e push, registrada no `HANDOFF.md`.
+- [x] 8.5 Execução verde do workflow `platform-contract.yml` no GitHub Actions após commit e push, registrada no `HANDOFF.md`.

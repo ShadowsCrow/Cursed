@@ -545,3 +545,94 @@ test("navegação: acervo mostra a ficha e copia o personagem próprio como NPC"
     await contexto.close();
   }
 });
+
+// ---------------------------------------------------------------- navegação só pelo teclado (tarefa 9.1)
+
+/** Leva o foco ao elemento só com Tab (sem clique nem foco programático). */
+async function tabAte(pagina, alvo, limite = 80) {
+  for (let i = 0; i < limite; i += 1) {
+    if (await alvo.evaluate((el) => el === document.activeElement).catch(() => false)) return;
+    await pagina.keyboard.press("Tab");
+  }
+  throw new Error("Tab não alcançou o elemento esperado.");
+}
+
+async function tabEnter(pagina, alvo) {
+  await tabAte(pagina, alvo);
+  await pagina.keyboard.press("Enter");
+}
+
+for (const [rotulo, viewport] of [["desktop", { width: 1280, height: 900 }], ["celular", { width: 360, height: 780 }]]) {
+  test(`navegação (${rotulo}) só pelo teclado: primeiro acesso, campanha, lados, vitrine, cópia e regra`, async ({ browser }) => {
+    const usuario = `teclado-${rotulo}-${Date.now().toString(36)}`;
+    const { contexto, pagina } = await abrir(browser, usuario, "/", { viewport, hasTouch: rotulo === "celular" });
+    const secao = async (nome) => {
+      if (rotulo === "celular") await tabEnter(pagina, pagina.getByRole("button", { name: /Seções/ }));
+      await tabEnter(pagina, pagina.getByRole("navigation", { name: "Seções da plataforma" }).getByRole("link", { name: nome }));
+    };
+    try {
+      // Primeiro acesso: verificador sem violações e confirmação pelo teclado.
+      await expect(pagina.getByRole("heading", { name: "Como o seu grupo vai chamar você?" })).toBeVisible();
+      await verificarAxe(pagina, `primeiro acesso (${rotulo})`);
+      await tabAte(pagina, pagina.getByRole("textbox", { name: /Apelido/ }));
+      await pagina.keyboard.press("Control+A");
+      await pagina.keyboard.type("Teclado");
+      await tabEnter(pagina, pagina.getByRole("button", { name: "Confirmar e entrar" }));
+      await expect(pagina.getByRole("heading", { level: 1, name: "Histórias vivem aqui" })).toBeVisible();
+
+      // Criar campanha: o diálogo foca o nome; Enter envia.
+      await tabEnter(pagina, pagina.getByRole("button", { name: /Criar campanha/ }));
+      await expect(pagina.getByRole("textbox", { name: "Nome da campanha" })).toBeFocused();
+      await pagina.keyboard.type("Campanha do Teclado");
+      await pagina.keyboard.press("Enter");
+      await expect(pagina.getByRole("heading", { level: 1, name: "Campanha do Teclado" })).toBeVisible();
+      const mesaId = pagina.url().split("/campanhas/")[1];
+
+      // Trocar de lado e voltar.
+      await tabEnter(pagina, pagina.getByRole("button", { name: /Jogando/ }));
+      await expect(pagina.getByText(/Você ainda não joga em nenhuma campanha/)).toBeVisible();
+      await tabEnter(pagina, pagina.getByRole("button", { name: /Narrando/ }));
+      await expect(pagina.getByRole("heading", { level: 1, name: "Campanha do Teclado" })).toBeVisible();
+
+      // Vitrine de um NPC e cópia para a mesma campanha, só pelo teclado.
+      await chamar(usuario, "POST", `/mesas/${mesaId}/entidades`, { tipo: "npc", ficha: { personagem: { nome: "Guarda do Portão" } } });
+      await secao("Personagens");
+      await tabEnter(pagina, pagina.getByRole("button", { name: "NPCs" }));
+      await expect(pagina.getByRole("article", { name: "Resumo de Guarda do Portão" })).toBeVisible();
+      await tabEnter(pagina, pagina.getByRole("button", { name: /Copiar para campanha/ }));
+      const dialogo = pagina.getByRole("dialog", { name: "Copiar para campanha" });
+      const radio = dialogo.getByRole("radio", { name: "Campanha do Teclado" });
+      await tabAte(pagina, radio);
+      await pagina.keyboard.press("Space");
+      await expect(radio).toBeChecked();
+      await tabEnter(pagina, dialogo.getByRole("button", { name: "Copiar" }));
+      await expect(dialogo.getByText(/agora é NPC em/)).toBeVisible();
+      await pagina.keyboard.press("Escape");
+      await expect(dialogo).toHaveCount(0);
+
+      // Ler uma regra.
+      await secao("Biblioteca");
+      await tabEnter(pagina, pagina.getByRole("navigation", { name: "Seções da Biblioteca" }).getByRole("link", { name: "Regras" }));
+      await tabEnter(pagina, pagina.getByRole("navigation", { name: "Seções da Biblioteca" }).getByRole("link", { name: "Carga", exact: true }));
+      await expect(pagina.getByRole("heading", { level: 1, name: "Carga e Transporte" })).toBeVisible();
+      await semRolagemHorizontal(pagina);
+    } finally {
+      await contexto.close();
+    }
+  });
+}
+
+test("entrada e cadastro sem violações de acessibilidade", async ({ browser }) => {
+  // Em modo de desenvolvimento não há Supabase: as telas de entrada são as da prévia (mesmo componente).
+  const contexto = await browser.newContext();
+  const pagina = await contexto.newPage();
+  try {
+    for (const [rota, titulo] of [["/preview/plataforma/entrar", "Entrar"], ["/preview/plataforma/cadastro", "Criar conta"], ["/preview/plataforma/recuperar-senha", "Recuperar senha"]]) {
+      await pagina.goto(`${APP}${rota}`);
+      await expect(pagina.getByRole("heading", { level: 1, name: titulo })).toBeVisible();
+      await verificarAxe(pagina, titulo);
+    }
+  } finally {
+    await contexto.close();
+  }
+});

@@ -64,4 +64,4 @@ Nenhuma regra de mesa ou catálogo muda nesta mudança.
 
 - [x] 7.1 Executar `npm run lint`, `npm run typecheck`, `npm test`, `npm run check:client` e a suíte Python da plataforma; verificar que todas passam localmente.
 - [x] 7.2 Executar `npm run test:e2e` com um percurso novo: criar um Mago Elfo pelo assistente até a ficha aberta, e outro que abandona no meio e retoma o rascunho; verificar que os dois passam em Chromium, também em viewport móvel.
-- [ ] 7.4 Rodar a integração contínua no GitHub Actions com as mudanças e registrar a execução verde no `HANDOFF.md`, como nas mudanças anteriores.
+- [x] 7.4 Rodar a integração contínua no GitHub Actions com as mudanças e registrar a execução verde no `HANDOFF.md`, como nas mudanças anteriores.

@@ -57,7 +57,7 @@ Nenhuma regra de mesa ou catálogo muda nesta mudança.
 
 A antiga 9.4 (validação de uso com uma pessoa que não conhece a plataforma) foi retirada: a regra do projeto de 2026-09-28 (`openspec/config.yaml`) proíbe tarefas de validação em mesa ou com jogadores; a verificação fecha com testes automatizados e a aprovação do usuário (4.2 e 8.3).
 
-- [ ] 9.1 Acessibilidade: `axe-core` sem violações nas seções novas; navegação completa só pelo teclado (entrar, confirmar perfil, criar campanha, trocar lado, abrir vitrine, copiar, ler uma regra) em desktop e 360 px.
+- [x] 9.1 Acessibilidade: `axe-core` sem violações nas seções novas; navegação completa só pelo teclado (entrar, confirmar perfil, criar campanha, trocar lado, abrir vitrine, copiar, ler uma regra) em desktop e 360 px.
 - [x] 9.2 Suítes completas verdes: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`, `python -m unittest discover -s cursed_platform/tests -t .`, `export_openapi --check`, `npm run check:client`; `npm run capturas` com as telas novas.
 - [ ] 9.3 **Adiada por decisão do usuário (2026-09-28).** Configuração real do Google (cliente OAuth e URLs no Supabase), ativação de `VITE_LOGIN_GOOGLE=1` e teste manual de entrada pelo Google em produção e em `localhost`; registrar no `HANDOFF.md`. Não bloqueia o arquivamento se o botão continuar oculto.
-- [ ] 9.5 Commit em branch própria, push e execução verde do workflow `platform-contract.yml`; registrar no `HANDOFF.md`.
+- [x] 9.5 Commit em branch própria, push e execução verde do workflow `platform-contract.yml`; registrar no `HANDOFF.md`.

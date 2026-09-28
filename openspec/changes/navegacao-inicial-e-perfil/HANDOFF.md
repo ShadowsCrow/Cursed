@@ -36,7 +36,7 @@ Artefatos: `proposal.md`, `design.md` (D1–D11), `specs/` (conta-e-perfil, nave
 - **2.2** aplicar a 0018 no Supabase de testes: precisa de autorização do usuário.
 - ~~**4.2**~~ prova visual **aprovada pelo usuário em 2026-09-28** ("ficou excelente, validei"), depois das revisões: layout colado da referência, moldura do Resumo, ilustrações até a moldura, moldura do site contendo a página, Personagens no formato do Resumo, foto do perfil e aviso da mesa na prévia.
 - **8.3** texto da Visão geral (`src/app/plataforma/biblioteca/visao-geral.md`) escrito e com links testados; falta a **aprovação do usuário**.
-- **9.1** axe sem violações em Início, campanha (Narrador e jogador no celular), vitrine e regra de Carga no celular; falta percorrer **todo** o caminho só pelo teclado (entrar, primeiro acesso, criar campanha, trocar lado, vitrine, copiar, ler regra) e o axe em entrada e primeiro acesso.
+- ~~**9.1**~~ acessibilidade concluída: e2e percorre só com Tab/Enter/Espaço (desktop e 360 px) primeiro acesso, criar campanha, trocar lado, vitrine, cópia e regra; axe sem violações em primeiro acesso, entrar, cadastro e recuperar senha. Achado corrigido: depois de copiar, o foco caía fora do diálogo (Esc parava de fechar); agora vai para "Abrir a campanha".
 - **9.3** Google adiado; **9.5** commit/push/CI. A 9.4 (pessoa de fora) foi retirada pela regra do projeto de 2026-09-28 que proíbe validação em mesa ou com jogadores.
 
 ## Onde está cada parte
@@ -87,3 +87,7 @@ As 9 imagens chegaram em `platform/frontend/exemplo/` e foram movidas para `plat
 - **Retratos na campanha:** `GET /mesas/{id}/personagens` só lista o que a pessoa pode ler (jogador: os próprios), então incluir `retrato_objeto` no resumo não expõe nada novo.
 - **Axe achou** blocos de código roláveis sem foco nas regras: `pre` com `tabIndex=0`.
 - **Árvore compartilhada:** outra conversa edita `scripts/preparar_arte.py` (arte do Resumo) ao mesmo tempo; as mudanças desta ficaram em funções próprias.
+
+## Integração contínua (tarefa 9.5)
+
+Execução verde do workflow `platform-contract.yml` em 2026-09-28 (https://github.com/ShadowsCrow/Cursed/actions/runs/36414627123), commit `b30096f` na branch `feature/retrato-refinamento`: testes Python, contrato OpenAPI, cliente gerado, typecheck, lint sem avisos, build, Vitest e e2e (Playwright). Os commits foram separados por mudança: `30dbfe8` (arquivamento), `f05470b` (Exaustão e Estresse), `8782e7e` (criação guiada e estética), `736445c` (Resumo) e `b30096f` (navegação); arquivos usados por mais de uma mudança entraram inteiros no commit da mudança com mais conteúdo neles.

@@ -52,3 +52,7 @@ Estado em 2026-09-28: **26 de 27 tarefas concluídas e verificadas.** A aba Resu
 - Vite no Windows às vezes serve módulo antigo depois de gravações seguidas: `touch` no arquivo resolve.
 - `npx vitest run` sem filtro também pega `e2e/platform.spec.mjs` (Playwright) e falha; usar `npm test`.
 - O popover de edição da ficha abre por foco ou hover; nos testes de navegador, usar `focus()` em vez de clique.
+
+## Integração contínua (tarefa 8.5)
+
+Execução verde do workflow `platform-contract.yml` em 2026-09-28 (https://github.com/ShadowsCrow/Cursed/actions/runs/36414627123), commit `b30096f` na branch `feature/retrato-refinamento`: testes Python, contrato OpenAPI, cliente gerado, typecheck, lint sem avisos, build, Vitest e e2e (Playwright). Os commits foram separados por mudança: `30dbfe8` (arquivamento), `f05470b` (Exaustão e Estresse), `8782e7e` (criação guiada e estética), `736445c` (Resumo) e `b30096f` (navegação); arquivos usados por mais de uma mudança entraram inteiros no commit da mudança com mais conteúdo neles.

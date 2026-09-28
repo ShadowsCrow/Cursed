@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
 
@@ -28,6 +28,9 @@ function DialogoCopiar({ api, userId, personagem, aberto, onFechar }: {
     },
   });
   const tipoDaCopia = personagem.tipo === "monstro" ? "monstro" : "NPC";
+  // Ao concluir, o formulário some: o foco vai para o resultado, dentro do diálogo (Esc continua fechando).
+  const resultado = useRef<HTMLAnchorElement>(null);
+  useEffect(() => { if (copiar.isSuccess) resultado.current?.focus(); }, [copiar.isSuccess]);
   const escolhida = narradas.find((mesa) => mesa.id === destino);
   return (
     <Dialog open={aberto} onClose={onFechar} title="Copiar para campanha"
@@ -38,7 +41,7 @@ function DialogoCopiar({ api, userId, personagem, aberto, onFechar }: {
         ? (
           <div role="status" className="formulario-dialogo">
             <p>{personagem.nome} agora é {tipoDaCopia} em <strong>{escolhida.nome}</strong>.</p>
-            <Link className="button button--primary" to={routes.campanha(escolhida.id)}>Abrir a campanha</Link>
+            <Link ref={resultado} className="button button--primary" to={routes.campanha(escolhida.id)}>Abrir a campanha</Link>
           </div>
         )
         : narradas.length > 0 && (

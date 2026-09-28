@@ -270,6 +270,8 @@ describe("navegação inicial", () => {
       fireEvent.click(within(dialogo).getByRole("button", { name: "Copiar" }));
       expect(await within(dialogo).findByText(/agora é NPC em/)).toBeTruthy();
       expect(within(dialogo).getByRole("link", { name: "Abrir a campanha" }).getAttribute("href")).toBe("/campanhas/vigrad");
+      // O resultado recebe o foco, dentro do diálogo: quem usa teclado não se perde e o Esc continua fechando.
+      await waitFor(() => expect(document.activeElement).toBe(within(dialogo).getByRole("link", { name: "Abrir a campanha" })));
       const copia = estado.personagens.find((p) => p.mesa_id === "vigrad" && p.nome === "Caelren");
       expect(copia && [copia.tipo, copia.visibilidade, copia.proprietario_id]).toEqual(["npc", "narrador", null]);
       expect(estado.personagens.find((p) => p.id === "caelren")?.mesa_id).toBe("ordem");

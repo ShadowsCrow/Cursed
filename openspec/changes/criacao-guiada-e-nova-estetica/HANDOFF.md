@@ -113,3 +113,7 @@ A constante da distribuição vive no cliente (`distribuicao.ts`, design D4). Se
 
 1. **7.4:** decidir com o usuário como separar os commits (esta mudança, a `reformular-exaustao-estresse-e-consequencias` e a limpeza das mudanças arquivadas estão juntas na árvore), commitar, fazer push e registrar aqui a execução verde do workflow `platform-contract.yml`.
 2. Depois: `/opsx:archive criacao-guiada-e-nova-estetica`.
+
+## Integração contínua (tarefa 7.4)
+
+Execução verde do workflow `platform-contract.yml` em 2026-09-28 (https://github.com/ShadowsCrow/Cursed/actions/runs/36414627123), commit `b30096f` na branch `feature/retrato-refinamento`: testes Python, contrato OpenAPI, cliente gerado, typecheck, lint sem avisos, build, Vitest e e2e (Playwright). Os commits foram separados por mudança: `30dbfe8` (arquivamento), `f05470b` (Exaustão e Estresse), `8782e7e` (criação guiada e estética), `736445c` (Resumo) e `b30096f` (navegação); arquivos usados por mais de uma mudança entraram inteiros no commit da mudança com mais conteúdo neles.
