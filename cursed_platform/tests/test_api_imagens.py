@@ -89,6 +89,23 @@ class ApiImagensTest(unittest.TestCase):
 
     # ---------------------------------------------------------------- retrato
 
+    def test_mesma_imagem_em_usos_de_tamanhos_diferentes(self):
+        """Retrato (512 px), ilustração (1536 px) e arte de item (256 px) com o mesmo arquivo não colidem."""
+        mesma = imagem(tamanho=(1600, 1200))
+        retrato = self.enviar("retrato", "lia", mesma, versao=0)
+        self.assertEqual(retrato.status_code, 200, retrato.text)
+        ilustracao = self.enviar("ilustracao", "lia", mesma, versao=1)
+        self.assertEqual(ilustracao.status_code, 200, ilustracao.text)
+        item = self.enviar("item", "espada", mesma, versao=2)
+        self.assertEqual(item.status_code, 200, item.text)
+        objetos = [r.json()["objeto"] for r in (retrato, ilustracao, item)]
+        self.assertEqual([o.split("/")[-2] for o in objetos], ["retrato", "ilustracao", "item"])
+        lados = []
+        for resposta in (retrato, ilustracao, item):
+            with Image.open(BytesIO(self.ler(resposta.json()["exibicao"]))) as reduzida:
+                lados.append(max(reduzida.size))
+        self.assertEqual(lados, [512, 1536, 256])
+
     def test_jogador_envia_o_retrato(self):
         resposta = self.enviar("retrato", "lia", imagem())
         self.assertEqual(resposta.status_code, 200, resposta.text)

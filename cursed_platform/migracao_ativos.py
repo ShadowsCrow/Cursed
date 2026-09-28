@@ -7,6 +7,7 @@ import binascii
 from dataclasses import dataclass, field
 import hashlib
 import json
+import os
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Protocol
@@ -46,6 +47,18 @@ class ArmazenamentoObjetos(Protocol):
     def gravar(self, bucket: str, caminho: str, conteudo: bytes, tipo: str) -> None: ...
 
 
+def _sem_limite_de_caminho(arquivo: Path) -> Path:
+    """No Windows, caminhos com mais de 260 caracteres só abrem no formato estendido (`\\\\?\\`).
+
+    Os objetos têm dois ids de 32 caracteres e um nome de 64; numa pasta temporária longa, a versão
+    de exibição passa do limite. O formato estendido vale só para caminhos absolutos já resolvidos.
+    """
+    texto = str(arquivo)
+    if os.name == "nt" and len(texto) >= 240 and not texto.startswith("\\\\?\\"):
+        return Path("\\\\?\\" + texto)
+    return arquivo
+
+
 class ArmazenamentoLocal:
     """Backend de ensaio com a mesma convenção de caminhos do bucket privado."""
 
@@ -58,7 +71,7 @@ class ArmazenamentoLocal:
         arquivo = (self.raiz / bucket / caminho).resolve()
         if not arquivo.is_relative_to(self.raiz) or bucket != BUCKET_PRIVADO:
             raise AtivoInvalido("Caminho de objeto fora do bucket privado.")
-        return arquivo
+        return _sem_limite_de_caminho(arquivo)
 
     def ler(self, bucket: str, caminho: str) -> bytes | None:
         arquivo = self._arquivo(bucket, caminho)

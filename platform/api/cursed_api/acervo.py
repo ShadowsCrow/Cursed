@@ -45,7 +45,7 @@ def _copiar_retrato(request: Request, origem: PersonagemRegistro, destino_mesa: 
     if not isinstance(objeto, str) or not objeto or armazenamento is None:
         return None
     arquivo = objeto.rsplit("/", 1)[-1]
-    novo = f"mesas/{destino_mesa}/personagens/{novo_id}/imagens/{arquivo}"
+    novo = f"mesas/{destino_mesa}/personagens/{novo_id}/imagens/retrato/{arquivo}"
     try:
         dados = armazenamento.ler(BUCKET_PRIVADO, objeto)
         if dados is None:

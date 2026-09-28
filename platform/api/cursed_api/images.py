@@ -302,7 +302,10 @@ def enviar_imagem(
     armazenamento = request.app.state.armazenamento_objetos
     if armazenamento is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Armazenamento indisponível.")
-    objeto = f"{ponto.prefixo}/{imagem.nome}"
+    # Imagens de personagem ficam numa subpasta por uso: a mesma imagem pode ser retrato (512 px),
+    # ilustração (1536 px) ou item (256 px), e a versão de exibição, derivada do nome, não colide.
+    subpasta = f"/{destino}" if ponto.personagem is not None else ""
+    objeto = f"{ponto.prefixo}{subpasta}/{imagem.nome}"
     exibicao = None
     try:
         armazenamento.gravar(BUCKET_PRIVADO, objeto, imagem.conteudo, imagem.tipo)
