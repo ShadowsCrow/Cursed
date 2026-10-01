@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FichaContrato, PermissoesFicha } from "../types";
 import type { ClasseCatalogo, ListasFicha, RacaCatalogo } from "./catalogoApi";
 import { IdentityPanel } from "./IdentityPanel";
-import { PersonalityPanel } from "./PersonalityPanel";
+import { iconeDoSexo } from "./informacoes/sexo";
 
 const hab = (nome: string) => ({ nome, descricao: `${nome}.`, tipo: "Passiva" });
 const CLASSES: ClasseCatalogo[] = [
@@ -139,62 +139,95 @@ describe("Aba Informações", () => {
   });
 });
 
-describe("Aba Personalidade", () => {
+describe("Folha de Informações básicas", () => {
   afterEach(() => cleanup());
 
-  function personalidade(valores: Record<string, unknown>) {
-    const onSave = vi.fn(async () => ({ status: "salvo" as const }));
-    render(<PersonalityPanel nome="Ayla" ficha={ficha({}, valores)} permissoes={JOGADOR} listas={LISTAS} avisos={{}} onSave={onSave} />);
-    return onSave;
+  const LION = { nome: "Lion", classe: "Mago", arquetipo: "Mutante Arcano", raca: "Elfo", nivel: 1, idade: 15, sexo: "Masculino" };
+
+  function quadro(nome: string) {
+    return screen.getByRole("region", { name: nome });
   }
 
-  it("ficha migrada mostra os valores antigos, com Ganancia como Ganância", () => {
-    personalidade({ pecado: "Ganancia", alinhamento: "Leal | Bom", medo: "aranhas gigantes" });
-    expect(screen.getByText("💰 Ganância")).toBeTruthy();
-    expect(screen.getByText("Leal | Bom")).toBeTruthy();
-    expect(screen.getByText("aranhas gigantes")).toBeTruthy();
+  it("divide os campos nos dois quadros da referência, com título e subtítulo da folha", () => {
+    montar(ficha(LION));
+    const folha = screen.getByRole("region", { name: "Informações básicas" });
+    expect(within(folha).getByRole("heading", { level: 2, name: "Informações básicas" })).toBeTruthy();
+    expect(within(folha).getByText("Dados fundamentais sobre o personagem.")).toBeTruthy();
+    const rotulos = (nome: string) => Array.from(quadro(nome).querySelectorAll(".info-linha .eyebrow")).map((e) => e.textContent);
+    expect(within(quadro("Características pessoais")).getByRole("heading", { level: 3 })).toBeTruthy();
+    expect(rotulos("Características pessoais")).toEqual(["Nome", "Arquétipo", "Nível", "Altura (m)", "Tamanho base"]);
+    expect(rotulos("Classificação e origem")).toEqual(["Classe", "Raça", "Idade", "Sexo", "Tamanho atual"]);
+    expect(within(quadro("Características pessoais")).getByText("Lion")).toBeTruthy();
+    expect(within(quadro("Classificação e origem")).getByText("Masculino")).toBeTruthy();
   });
 
-  it("campo vazio mostra a dica sem gravá-la", () => {
-    const onSave = personalidade({});
-    expect(screen.getByText("Ex: proteger os inocentes")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Editar Vivo para" }));
-    expect((screen.getByLabelText("Vivo para", { selector: "textarea" }) as HTMLTextAreaElement).placeholder).toBe("Ex: proteger os inocentes");
-    expect(onSave).not.toHaveBeenCalled();
+  it("Tamanho base não tem botão de edição e mostra a raça de origem", () => {
+    montar(ficha(LION), NARRADOR);
+    const linha = screen.getByText("Tamanho base").closest(".info-linha") as HTMLElement;
+    expect(within(linha).queryByRole("button")).toBeNull();
+    expect(within(linha).getByText("Da raça Elfo")).toBeTruthy();
   });
 
-  it("pecado escolhido da lista com ícone", async () => {
-    const onSave = personalidade({});
-    fireEvent.click(screen.getByRole("button", { name: "Editar Pecado Capital" }));
-    fireEvent.change(screen.getByLabelText("Pecado Capital", { selector: "select" }), { target: { value: "Orgulho" } });
-    expect(screen.getByRole("option", { name: "👑 Orgulho" })).toBeTruthy();
-    fireEvent.click(screen.getAllByRole("button", { name: "Salvar" })[0]!);
-    await waitFor(() => expect(onSave).toHaveBeenCalledWith([{ path: "personalidade.pecado", value: "Orgulho" }]));
+  it("só leitura: nenhuma linha tem Editar", () => {
+    montar(ficha(LION), { ...JOGADOR, editar: false });
+    expect(screen.queryAllByRole("button", { name: /^Editar / })).toHaveLength(0);
+    expect(document.querySelectorAll(".info-linha")).toHaveLength(10);
   });
 
-  it("História: texto longo com parágrafos, contador e limite do JSON", async () => {
-    const onSave = personalidade({ historia: "Primeiro parágrafo.\n\nSegundo parágrafo." });
-    const leitura = screen.getByText(/Primeiro parágrafo\./);
-    expect(leitura.textContent).toBe("Primeiro parágrafo.\n\nSegundo parágrafo.");
-    expect(leitura.closest(".editable-field--longo")).not.toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Editar História" }));
-    const campo = screen.getByLabelText("História", { selector: "textarea" }) as HTMLTextAreaElement;
-    expect(campo.rows).toBe(10);
-    expect(screen.getByText("39 de 4.000 caracteres")).toBeTruthy();
-    fireEvent.change(campo, { target: { value: "a".repeat(4001) } });
-    expect(screen.getByText(/4\.001 de 4\.000 caracteres — encurte o texto/)).toBeTruthy();
-    expect(campo.getAttribute("aria-invalid")).toBe("true");
-    expect((screen.getAllByRole("button", { name: "Salvar" }).at(-1) as HTMLButtonElement).disabled).toBe(true);
-
-    fireEvent.change(campo, { target: { value: "Veio do norte.\n\nPerdeu tudo." } });
-    fireEvent.click(screen.getAllByRole("button", { name: "Salvar" }).at(-1)!);
-    await waitFor(() => expect(onSave).toHaveBeenCalledWith([{ path: "personalidade.historia", value: "Veio do norte.\n\nPerdeu tudo." }]));
+  it("faixa do conceito com título pelo arquétipo; sem conceito, a faixa não aparece", () => {
+    montar(ficha(LION));
+    const faixa = screen.getByRole("region", { name: "Conceito do arquétipo Mutante Arcano" });
+    expect(within(faixa).getByText("Corpos propícios a mutações.")).toBeTruthy();
+    cleanup();
+    montar(ficha({ ...LION, classe: "Gatuno", arquetipo: "Ladrão" }));
+    expect(screen.queryByRole("region", { name: /Conceito do arquétipo/ })).toBeNull();
+    cleanup();
+    montar(ficha({ ...LION, arquetipo: "" }));
+    expect(screen.queryByRole("region", { name: /Conceito do arquétipo/ })).toBeNull();
   });
 
-  it("não apresenta violações de acessibilidade detectáveis", async () => {
-    personalidade({ pecado: "Ira", medo: "escuro" });
-    const resultado = await axe.run(document.body, { rules: { region: { enabled: false } } });
-    expect(resultado.violations).toEqual([]);
+  it("ícones, emblemas e ornamentos ficam fora da árvore de acessibilidade", () => {
+    montar(ficha(LION));
+    const svgs = Array.from(document.querySelectorAll("svg"));
+    expect(svgs.length).toBeGreaterThan(15);
+    for (const svg of svgs) {
+      expect(svg.closest("[aria-hidden='true']")).toBeTruthy();
+      expect(svg.getAttribute("focusable")).toBe("false");
+    }
+  });
+
+  it("o símbolo do sexo segue o valor gravado", () => {
+    expect(iconeDoSexo("Masculino")).toBe("sexo-masculino");
+    expect(iconeDoSexo("feminino")).toBe("sexo-feminino");
+    expect(iconeDoSexo("Outro")).toBe("sexo-outro");
+    expect(iconeDoSexo("")).toBe("sexo-outro");
+    montar(ficha({ ...LION, sexo: "Feminino" }));
+    expect(document.querySelector(".info-icone--sexo-feminino")).toBeTruthy();
+  });
+
+  it("pinturas: a que falha some sem imagem quebrada e o texto do conceito fica com o espaço; a que carrega abre espaço", () => {
+    montar(ficha(LION));
+    const faixa = screen.getByRole("region", { name: "Conceito do arquétipo Mutante Arcano" });
+    const esquerda = faixa.querySelector(".info-pintura--conceito-esquerda") as HTMLImageElement;
+    const direita = faixa.querySelector(".info-pintura--conceito-direita") as HTMLImageElement;
+    expect(esquerda.getAttribute("alt")).toBe("");
+    fireEvent.load(esquerda);
+    fireEvent.error(direita);
+    expect(faixa.className).toContain("info-conceito--esquerda");
+    expect(faixa.className).not.toContain("info-conceito--direita");
+    expect(faixa.querySelector(".info-pintura--conceito-direita")).toBeNull();
+
+    const paisagem = document.querySelector(".info-pintura--paisagem") as HTMLImageElement;
+    expect(document.querySelector(".info-folha__rosa")).toBeTruthy();
+    fireEvent.error(paisagem);
+    expect(document.querySelector(".info-pintura--paisagem")).toBeNull();
+    expect(document.querySelector(".info-folha__rosa")).toBeTruthy();
+  });
+
+  it("paisagem carregada toma o lugar da rosa dos ventos", () => {
+    montar(ficha(LION));
+    fireEvent.load(document.querySelector(".info-pintura--paisagem") as HTMLImageElement);
+    expect(document.querySelector(".info-folha")?.className).toContain("info-folha--paisagem");
+    expect(document.querySelector(".info-folha__rosa")).toBeNull();
   });
 });

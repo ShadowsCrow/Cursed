@@ -1,0 +1,285 @@
+/*
+ * Informações básicas (redesenhar-informacoes-basicas). Folha de pergaminho do Resumo (moldura dupla, cantos e
+ * flores de `resumo/ornamentos.tsx`), dois quadros na moldura em 9 fatias do Resumo e a faixa do conceito na
+ * moldura de destaque. Pinturas só como ilustração, e o texto nunca fica por baixo delas. A disposição segue a
+ * largura da folha (container query), não a da janela (D7).
+ */
+
+.info-folha-conteiner { container: informacoes / inline-size; }
+
+.info-folha {
+  --resumo-pergaminho: var(--pergaminho-100);
+  --resumo-ouro: var(--ouro-700);
+  --resumo-ouro-claro: var(--ouro-500);
+  --info-emblema-fundo: var(--pergaminho-50);
+  position: relative;
+  isolation: isolate;
+  padding: 2.2rem clamp(1.4rem, 4vw, 3.6rem) 2.6rem;
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tinta-900) 55%, transparent),
+    inset 0 0 38px color-mix(in srgb, #5c3410 55%, transparent),
+    inset 0 0 110px color-mix(in srgb, #7a4a1a 28%, transparent),
+    0 22px 60px #000a;
+}
+
+/* Moldura dupla da folha, com os cantos grandes e as flores do Resumo. */
+.info-folha__moldura {
+  position: absolute;
+  inset: 12px;
+  z-index: 0;
+  pointer-events: none;
+  border: 1.5px solid var(--resumo-ouro);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--pergaminho-50) 60%, transparent), inset 0 0 0 5px color-mix(in srgb, var(--resumo-ouro-claro) 55%, transparent);
+}
+
+/* ---------- Cabeçalho da folha ---------- */
+.info-folha__cabecalho { position: relative; min-height: 10.5rem; padding-top: .4rem; }
+.info-folha--paisagem .info-folha__cabecalho { min-height: 15.5rem; }
+.info-folha__cabecalho > :not(.resumo-pintura):not(.info-folha__rosa) { position: relative; z-index: 2; }
+.info-folha--paisagem .info-folha__cabecalho > :not(.resumo-pintura) { max-width: min(34rem, 48%); }
+.info-folha__etiqueta {
+  display: inline-block;
+  padding: .22rem .75rem;
+  border: 1px solid color-mix(in srgb, var(--resumo-ouro) 65%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--pergaminho-200) 55%, transparent);
+  color: var(--tinta-700);
+  font: 700 .78rem/1.2 var(--font-body);
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+.info-folha__linha-titulo { display: flex; align-items: flex-end; gap: .7rem; margin-top: .55rem; }
+.info-folha__titulo { margin: 0; color: var(--tinta-900); font: 700 clamp(2.2rem, 4.6vw, 3.5rem)/1 var(--font-display); overflow-wrap: anywhere; }
+.info-pena { flex: none; width: 2.7rem; height: 2.7rem; margin-bottom: .1rem; color: var(--tinta-700); }
+.info-folha__subtitulo { margin: .75rem 0 0; color: var(--tinta-700); font-size: 1.1rem; }
+.info-folha__friso { display: flex; align-items: center; margin-top: .85rem; color: var(--resumo-ouro); }
+.info-folha__friso::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, currentColor 60%, transparent); }
+
+/*
+ * Paisagem em sépia multiplicada sobre o papel; o fundo liso dela some sem recorte (D5). Inteira, encostada à
+ * direita e na altura do cabeçalho: castelo, ponte e rosa aparecem sem corte.
+ */
+.info-pintura--paisagem {
+  top: -1.4rem;
+  right: .6rem;
+  width: auto;
+  max-width: 62%;
+  height: calc(100% + 2.4rem);
+  z-index: 0;
+  object-fit: contain;
+  object-position: right top;
+  mix-blend-mode: multiply;
+  /* A imagem tem a proporção dela: o esmaecimento cai sobre a pintura, e não sobre um espaço vazio. */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 38%, #000 94%, transparent), linear-gradient(0deg, transparent, #000 16%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 38%, #000 94%, transparent), linear-gradient(0deg, transparent, #000 16%);
+  mask-composite: intersect;
+}
+.info-folha__rosa {
+  position: absolute;
+  top: 50%;
+  right: clamp(.5rem, 3vw, 2.5rem);
+  z-index: 0;
+  color: var(--resumo-ouro);
+  opacity: .6;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* ---------- Quadros ---------- */
+.info-quadros {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 2.6rem 1.8rem;
+  margin-top: 2.4rem;
+}
+/*
+ * Moldura recortada em 9 fatias do Resumo. O pergaminho vem do preenchimento do border-image, que o axe não
+ * enxerga: a mesma cor como fundo real, só dentro da moldura, deixa o contraste verificável.
+ */
+.info-quadro {
+  position: relative;
+  min-width: 0;
+  padding: .55rem .9rem .5rem;
+  border: 18px solid transparent;
+  border-image: url("../resumo/molduras/quadro.svg") 36 fill / 36px / 8px stretch;
+  background-color: var(--pergaminho-50);
+  background-clip: padding-box;
+}
+/* O popover aberto numa linha passa por cima do quadro vizinho e da faixa do conceito. */
+.info-quadro:focus-within, .info-quadro:has(.popover__surface) { z-index: 3; }
+.info-quadro__cabeca {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: .15rem .2rem .85rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--resumo-ouro) 50%, transparent);
+}
+.info-emblema { flex: none; width: 3.5rem; height: 3.5rem; color: var(--tinta-900); }
+.info-quadro__titulo { margin: 0; color: var(--tinta-900); font: 700 clamp(1.45rem, 2.3vw, 1.8rem)/1.1 var(--font-display); }
+
+/* ---------- Linhas: ícone | rótulo | valor | Editar ---------- */
+.info-linha {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.8rem minmax(0, 1fr);
+  align-items: center;
+  gap: .9rem;
+  /* Altura de uma linha com botão: as linhas dos dois quadros ficam alinhadas, com ou sem "Editar". */
+  min-height: 4rem;
+  padding: .72rem .25rem;
+}
+.info-linha + .info-linha { border-top: 1px solid color-mix(in srgb, var(--resumo-ouro) 32%, transparent); }
+/* Losango na ponta esquerda do divisor, como na referência. */
+.info-linha + .info-linha::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -.3rem;
+  width: 7px;
+  height: 7px;
+  background: var(--resumo-ouro);
+  transform: rotate(45deg);
+}
+.info-linha:focus-within, .info-linha:has(.popover__surface) { z-index: 3; }
+.info-linha__icone { display: grid; place-items: center; color: var(--tinta-900); }
+.info-linha .editable-field {
+  display: grid;
+  grid-template-columns: 7.9rem minmax(0, 1fr) auto;
+  grid-template-areas: "rotulo valor acao";
+  align-items: center;
+  gap: .15rem 1rem;
+  min-width: 0;
+}
+.info-linha .editable-field > .eyebrow {
+  grid-area: rotulo;
+  margin: 0;
+  color: var(--tinta-700);
+  font: 700 .78rem/1.25 var(--font-body);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.info-linha .editable-field > strong {
+  grid-area: valor;
+  min-width: 0;
+  color: var(--tinta-900);
+  font: 600 1.28rem/1.2 var(--font-display);
+  overflow-wrap: anywhere;
+}
+.info-linha .class-swatch { flex: none; }
+.info-linha .editable-field > .editable-field__vazio { color: var(--tinta-600); font-weight: 500; font-style: italic; }
+.info-linha .editable-field > small,
+.info-linha .editable-field > p { grid-column: 2 / -1; margin: 0; font-size: .84rem; }
+.info-linha .editable-field > small:not(.field-warning) { color: var(--tinta-600); }
+.info-linha .editable-field > .popover { grid-area: acao; }
+.info-linha .popover__trigger.text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 2.5rem;
+  padding: .35rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--ouro-800) 70%, transparent);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--pergaminho-50), var(--pergaminho-100));
+  color: var(--tinta-900);
+  font: 700 1.02rem/1 var(--font-display);
+  box-shadow: inset 0 0 0 2px #fff7, 0 1px 3px #3b24103d;
+}
+.info-linha .popover__trigger.text-action::before {
+  content: "";
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m2.5 21.5 1.3-5.6L15.9 3.8a2.2 2.2 0 0 1 3.1 0l1.2 1.2a2.2 2.2 0 0 1 0 3.1L8.1 20.2Zm2.9-4.3-.6 2 2-.6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m2.5 21.5 1.3-5.6L15.9 3.8a2.2 2.2 0 0 1 3.1 0l1.2 1.2a2.2 2.2 0 0 1 0 3.1L8.1 20.2Zm2.9-4.3-.6 2 2-.6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.info-linha .popover__trigger.text-action:hover { border-color: var(--ouro-800); background: var(--pergaminho-50); }
+.info-linha .popover__trigger.text-action:focus-visible { outline: 2px solid var(--ouro-800); outline-offset: 2px; }
+/* O botão fica na borda direita: a edição abre alinhada a ele, sem sair da tela no celular. */
+.info-linha .popover__surface { left: auto; right: 0; transform: none; }
+
+/* ---------- Faixa do conceito ---------- */
+.info-conceito {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-items: center;
+  min-height: 12.5rem;
+  margin-top: 2.6rem;
+  padding: 1rem 1.6rem 1.2rem;
+  border: 24px solid transparent;
+  border-image: url("../resumo/molduras/quadro-destaque.svg") 60 fill / 60px / 14px stretch;
+  background-color: var(--pergaminho-50);
+  background-clip: padding-box;
+}
+.info-conceito--esquerda { padding-left: clamp(12rem, 25%, 17.5rem); }
+.info-conceito--direita { padding-right: clamp(10rem, 21%, 15rem); }
+.info-conceito__texto { position: relative; z-index: 2; min-width: 0; }
+.info-conceito__cabeca { display: flex; align-items: center; gap: .8rem; }
+.info-livro { flex: none; width: 2.9rem; height: 2.4rem; color: var(--tinta-900); }
+.info-conceito__titulo { margin: 0; color: var(--tinta-900); font: 700 clamp(1.35rem, 2.2vw, 1.7rem)/1.15 var(--font-display); }
+.info-conceito__divisor { margin: .45rem 0 .7rem; }
+.info-conceito__divisor .resumo-rosa { width: 20px; height: 20px; }
+.info-conceito p { max-width: 62ch; margin: 0; color: var(--tinta-900); font-size: 1.05rem; line-height: 1.6; }
+
+.info-pintura--conceito-esquerda,
+.info-pintura--conceito-direita { bottom: -16px; height: calc(100% + 28px); object-fit: contain; }
+.info-pintura--conceito-esquerda {
+  left: -18px;
+  width: clamp(12.5rem, 26%, 18rem);
+  object-position: left bottom;
+  -webkit-mask-image: linear-gradient(270deg, transparent, #000 18%);
+  mask-image: linear-gradient(270deg, transparent, #000 18%);
+}
+.info-pintura--conceito-direita {
+  right: -18px;
+  width: clamp(10.5rem, 22%, 15.5rem);
+  object-position: right bottom;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%);
+  mask-image: linear-gradient(90deg, transparent, #000 18%);
+}
+
+/* ---------- Larguras menores ---------- */
+@container informacoes (max-width: 899px) {
+  .info-quadros { grid-template-columns: minmax(0, 1fr); gap: 2.6rem; }
+  /* Pinturas menores na faixa do conceito: o texto fica com a maior parte da largura. */
+  .info-pintura--conceito-esquerda { width: 10rem; }
+  .info-pintura--conceito-direita { width: 8.5rem; }
+  .info-conceito--esquerda { padding-left: 8.8rem; }
+  .info-conceito--direita { padding-right: 7.2rem; }
+}
+
+@container informacoes (max-width: 639px) {
+  .info-folha { padding: 1.6rem .9rem 1.5rem; }
+  .info-folha__moldura { inset: 6px; }
+  .info-folha .resumo-canto-folha { width: 52px; height: 52px; }
+  .info-folha .resumo-flor { display: none; }
+  /* Sem pinturas nem rosa: o espaço vai todo para o texto. */
+  .info-folha .info-pintura, .info-folha__rosa { display: none; }
+  .info-folha--paisagem .info-folha__cabecalho > :not(.resumo-pintura) { max-width: none; }
+  .info-folha__cabecalho { min-height: 0; }
+  .info-pena { width: 2rem; height: 2rem; }
+  .info-folha__subtitulo { font-size: 1rem; }
+  .info-quadros { margin-top: 2.2rem; }
+  .info-quadro { padding: .4rem .35rem .35rem; border-width: 14px; }
+  .info-emblema { width: 2.8rem; height: 2.8rem; }
+  .info-linha { grid-template-columns: 1.9rem minmax(0, 1fr); gap: .55rem; padding-inline: .1rem; }
+  .info-linha .info-icone { width: 24px; height: 24px; }
+  /* Rótulo acima do valor, e o botão ao lado dos dois. */
+  .info-linha .editable-field {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "rotulo acao" "valor acao";
+    column-gap: .6rem;
+  }
+  .info-linha .editable-field > small,
+  .info-linha .editable-field > p { grid-column: 1 / -1; }
+  .info-linha .popover__trigger.text-action { min-height: 2.3rem; padding-inline: .7rem; }
+  .info-conceito { padding: .6rem .5rem .8rem; border-width: 18px; }
+  .info-conceito--esquerda, .info-conceito--direita { padding-inline: .5rem; }
+}
