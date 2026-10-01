@@ -27,6 +27,13 @@ SUBTIPOS: tuple[str, ...] = (
     "peitoral", "capacete", "luvas", "botas", "uma_mao", "duas_maos", "escudo",
     "mochila", "aljava", "moedas", "outro", "criatura",
 )
+
+
+def sem_peso(dados: Mapping[str, Any]) -> dict[str, Any]:
+    """Os dados do item sem o peso: a carga é só a grade (simplificar-criacao-de-cartas, D7a)."""
+    return {chave: valor for chave, valor in dados.items() if chave != "peso"}
+
+
 TAMANHOS: tuple[str, ...] = ("minusculo", "pequeno", "medio", "grande", "enorme", "colossal")
 
 # Números aprovados na calibração de 2026-09-27 (docs/regras/calibracao-carga-em-grade.md).
@@ -49,7 +56,7 @@ ROTULO_SUBTIPO: dict[str, str] = {
     "mochila": "mochila", "aljava": "aljava", "moedas": "moedas", "outro": "item", "criatura": "criatura",
 }
 
-TIPOS_MOEDA: tuple[str, ...] = ("cobre", "prata", "ouro", "platina")
+TIPOS_MOEDA: tuple[str, ...] = ("cobre", "prata", "ouro")
 
 
 @dataclass(frozen=True)
@@ -353,7 +360,7 @@ def retirar_moedas(pilhas: Sequence[Mapping[str, int]], saida: Mapping[str, int]
 
 
 def distribuir_moedas(bolsa: Mapping[str, int], por_pilha: int) -> list[dict[str, int]]:
-    """Pilhas mistas de até `por_pilha`, na ordem cobre, prata, ouro, platina."""
+    """Pilhas mistas de até `por_pilha`, na ordem cobre, prata, ouro."""
     if not isinstance(por_pilha, int) or por_pilha < 1:
         raise ValueError("Moedas por pilha deve ser um inteiro positivo.")
     pilhas: list[dict[str, int]] = []

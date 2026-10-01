@@ -45,6 +45,8 @@ export interface ItemGrade {
   requisitoForca?: number;
   /** Mochila: quanto amplia a grade quando equipada. */
   ampliacao?: { linhas: number; colunas: number };
+  /** Unidades na pilha (só exibição; o motor não usa). */
+  quantidade?: number;
 }
 
 export interface RegrasGrade {
@@ -337,15 +339,15 @@ export function avaliar(grade: Grade, itens: readonly ItemGrade[]): Avaliacao {
   };
 }
 
-export const TIPOS_MOEDA = ["cobre", "prata", "ouro", "platina"] as const;
+export const TIPOS_MOEDA = ["cobre", "prata", "ouro"] as const;
 export type TipoMoeda = (typeof TIPOS_MOEDA)[number];
 export type Bolsa = Record<TipoMoeda, number>;
 
-/** Divide as moedas em pilhas mistas de até `porPilha`, na ordem cobre, prata, ouro, platina. */
+/** Divide as moedas em pilhas mistas de até `porPilha`, na ordem cobre, prata, ouro. */
 export function distribuirMoedas(bolsa: Bolsa, porPilha: number): Bolsa[] {
   if (!Number.isInteger(porPilha) || porPilha < 1) throw new Error("Moedas por pilha deve ser um inteiro positivo.");
   const pilhas: Bolsa[] = [];
-  let atual: Bolsa = { cobre: 0, prata: 0, ouro: 0, platina: 0 };
+  let atual: Bolsa = { cobre: 0, prata: 0, ouro: 0 };
   let ocupadas = 0;
   for (const tipo of TIPOS_MOEDA) {
     let restante = Math.max(0, Math.floor(bolsa[tipo]));
@@ -356,7 +358,7 @@ export function distribuirMoedas(bolsa: Bolsa, porPilha: number): Bolsa[] {
       restante -= cabe;
       if (ocupadas === porPilha) {
         pilhas.push(atual);
-        atual = { cobre: 0, prata: 0, ouro: 0, platina: 0 };
+        atual = { cobre: 0, prata: 0, ouro: 0 };
         ocupadas = 0;
       }
     }

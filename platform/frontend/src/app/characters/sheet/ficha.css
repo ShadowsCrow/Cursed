@@ -1,0 +1,242 @@
+/*
+ * Ficha fora do Resumo (reformular-visual-da-ficha, visual-da-ficha): cabeçalho ornamentado, faixa de
+ * estado, barra de abas com ícones e a moldura comum das seções. Molduras vêm da MolduraOrnamentada
+ * (SVG em 9 fatias); pinturas só como fundo, com o gradiente do tema quando faltam.
+ */
+
+/* A ficha usa mais largura que as páginas de formulário (referência: cerca de 1400 px). */
+.page.page--ficha { max-width: 90rem; padding-inline: clamp(1rem, 2.5vw, 2rem); }
+
+/* ---------- Moldura das seções ---------- */
+.ficha-secao--moldura { margin-top: 1.2rem; }
+.moldura-secao { display: block; }
+/*
+ * O pergaminho das molduras vem do preenchimento do border-image, que ferramentas de contraste não
+ * enxergam: a mesma cor como fundo real, só dentro da moldura, deixa a leitura verificável.
+ */
+.moldura-secao, .moldura-secao .moldura-ornada--pergaminho {
+  background-color: var(--pergaminho-100);
+  background-clip: padding-box;
+}
+.moldura-secao__cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem 1rem;
+  margin: -.2rem 0 1.1rem;
+  padding-bottom: .9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ouro-700) 45%, transparent);
+}
+.moldura-secao__medalhao {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  color: var(--ouro-200);
+  background: radial-gradient(circle at 35% 30%, var(--noite-600), var(--noite-900));
+  box-shadow: 0 0 0 2px var(--ouro-700), 0 0 0 4px var(--pergaminho-100), 0 0 0 5px var(--ouro-700), 0 4px 10px #0006;
+}
+.moldura-secao__titulos { flex: 1 1 14rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem 1.2rem; min-width: 0; }
+.moldura-secao__titulo { margin: 0; color: var(--tinta-900); font: 700 clamp(1.8rem, 3vw, 2.4rem)/1 var(--font-display); }
+.moldura-secao__subtitulo { margin: 0; color: var(--tinta-700); font-size: .98rem; }
+.moldura-secao__ferramentas { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-left: auto; }
+/* As seções e as faixas encolhem com a tela: nada dentro delas impõe largura mínima à página. */
+.page--ficha .screen-content > * { min-width: 0; }
+@media (max-width: 760px) {
+  .moldura-secao__titulos { flex: 1 1 0; min-width: 0; }
+  .moldura-secao__titulo { overflow-wrap: anywhere; }
+  .moldura-secao__medalhao { width: 2.8rem; height: 2.8rem; }
+  .moldura-secao__ferramentas { margin-left: 0; width: 100%; }
+  .moldura-secao__ferramentas .busca-inventario { flex: 1; }
+  .moldura-secao__ferramentas .busca-inventario input { width: 100%; }
+}
+
+/* ---------- Cabeçalho ---------- */
+.character-hero.cabecalho-ficha {
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(15rem, 21rem);
+  align-items: center;
+  gap: 1rem 2rem;
+  padding: .7rem 1.2rem .9rem;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.cabecalho-ficha__cena {
+  position: absolute;
+  inset: -16px;
+  z-index: -1;
+  clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px), 0 18px);
+  background:
+    linear-gradient(90deg, rgb(7 11 16 / .96) 0%, rgb(7 11 16 / .82) 38%, rgb(7 11 16 / .35) 70%, rgb(7 11 16 / .55) 100%),
+    url("/arte/ancora-castelo-1536.webp") 72% 38% / cover,
+    linear-gradient(120deg, var(--noite-950), var(--noite-800));
+}
+.cabecalho-ficha__retrato { display: grid; justify-items: center; gap: .45rem; max-width: 11rem; }
+.cabecalho-ficha__moldura-retrato {
+  display: block;
+  padding: 5px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #3a2a14, #120c07);
+  box-shadow: 0 0 0 1.5px var(--ouro-500), 0 0 0 4px #0b0806, 0 0 0 5px color-mix(in srgb, var(--ouro-300) 60%, transparent), 0 10px 22px #000b;
+}
+.cabecalho-ficha .portrait--large { width: 8.6rem; height: 9.6rem; border-radius: 8px; font-size: 3rem; }
+.cabecalho-ficha__retrato .image-upload { display: grid; justify-items: center; gap: .15rem; text-align: center; }
+.cabecalho-ficha__retrato .text-action { color: var(--ouro-300); font-weight: 700; }
+.cabecalho-ficha__retrato .image-upload__hint { color: var(--osso-400); font-size: .72rem; }
+.cabecalho-ficha__identidade { min-width: 0; }
+.cabecalho-ficha h1 { overflow-wrap: anywhere; }
+.cabecalho-ficha__classe {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  color: var(--ouro-300);
+  font-size: .82rem;
+  letter-spacing: .2em;
+}
+.cabecalho-ficha__classe::before {
+  content: "";
+  width: .55rem;
+  height: .55rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffd79a, #c66a1c);
+  box-shadow: 0 0 8px #ffb24d88;
+}
+.cabecalho-ficha__classe:has(.class-swatch)::before { display: none; }
+.cabecalho-ficha h1 { margin: .3rem 0 .7rem; color: var(--osso-100); font: 700 clamp(2.6rem, 5vw, 4rem)/1 var(--font-display); text-shadow: 0 3px 14px #000c; }
+.cabecalho-ficha .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cabecalho-ficha .tag {
+  padding: .3rem .95rem;
+  border: 1px solid color-mix(in srgb, var(--ouro-300) 55%, transparent);
+  border-radius: 99px;
+  background: rgb(11 17 24 / .6);
+  color: var(--osso-100);
+  font-size: .85rem;
+}
+.cabecalho-ficha__recursos { display: grid; gap: .75rem; padding: .5rem .75rem; }
+.cabecalho-ficha__recursos .resource__head { color: var(--osso-100); font-size: .9rem; font-weight: 600; }
+.cabecalho-ficha__recursos .resource__head strong { color: var(--osso-100); font-size: 1.05rem; }
+.cabecalho-ficha__recursos .resource__track { height: 7px; background: #05080c; box-shadow: inset 0 0 0 1px #ffffff14; }
+.cabecalho-ficha__recursos .resource--life .resource__track span { background: linear-gradient(90deg, #b63a3a, #f07a6a); }
+.cabecalho-ficha__recursos .resource--power .resource__track span { background: linear-gradient(90deg, #6d4fd6, #b39cff); }
+.cabecalho-ficha__recursos .resource-status__sources { color: var(--osso-300); font-size: .82rem; }
+.cabecalho-ficha__recursos .resource-status__sources b { color: var(--osso-100); }
+@media (max-width: 1080px) {
+  .character-hero.cabecalho-ficha { grid-template-columns: auto minmax(0, 1fr); }
+  .cabecalho-ficha__recursos { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .character-hero.cabecalho-ficha { gap: .8rem; padding: .3rem .4rem .6rem; }
+  .cabecalho-ficha .portrait--large { width: 5.6rem; height: 6.4rem; font-size: 2rem; }
+  .cabecalho-ficha__retrato { max-width: 7rem; }
+  .cabecalho-ficha h1 { font-size: 2.2rem; margin-bottom: .45rem; }
+  .cabecalho-ficha__classe { font-size: .7rem; letter-spacing: .12em; }
+}
+
+/* ---------- Faixa de estado ---------- */
+.active-state {
+  gap: .7rem 1.2rem;
+  margin-block: 1rem;
+  padding: .55rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--ouro-500) 35%, transparent);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgb(20 30 41 / .9), rgb(11 17 24 / .95));
+  box-shadow: inset 0 0 0 1px #0008, 0 6px 14px #0006;
+}
+.active-state .wear-chip {
+  gap: .55rem;
+  align-items: center;
+  min-height: 2.8rem;
+  padding: .35rem 1rem .35rem .75rem;
+  border: 1px solid color-mix(in srgb, var(--ouro-500) 40%, transparent);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--noite-800), var(--noite-900));
+  font-size: .9rem;
+}
+.active-state .wear-chip__icone { color: var(--ouro-300); }
+.active-state .wear-chip__label { color: var(--osso-300); }
+.active-state .wear-chip strong { color: var(--osso-100); }
+.active-state .wear-chip__band { color: var(--musgo-300); }
+.active-state .wear-chip--penalty { border-color: color-mix(in srgb, var(--sangue-300) 70%, transparent); }
+.active-state .wear-chip--penalty .wear-chip__band { color: #ff9f8d; }
+.active-state .wear-actions .button {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 2.8rem;
+  padding-inline: 1rem;
+  border: 1.5px solid var(--ouro-300);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2a2112, #15100a);
+  color: var(--ouro-200);
+  box-shadow: 0 0 12px #e5c78a33;
+}
+.active-state .wear-actions .button::before {
+  content: "";
+  width: 1rem;
+  height: 1.1rem;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.5 2 4 14h6.5L9.5 22 20 9.5h-6.8Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.active-state__effects .eyebrow { color: var(--ouro-300); letter-spacing: .2em; }
+.active-state__empty { color: var(--osso-300); font-size: .85rem; }
+
+/* ---------- Barra de abas ---------- */
+.sheet-tabs {
+  gap: .15rem;
+  padding: 0 .2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ouro-500) 40%, transparent);
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.sheet-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  min-height: 3.1rem;
+  padding: .7rem 1.05rem;
+  border: 0;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: var(--osso-300);
+  font-size: .92rem;
+  font-weight: 600;
+  scroll-snap-align: center;
+  white-space: nowrap;
+}
+.sheet-tabs button .icone-secao { color: var(--osso-400); }
+.sheet-tabs button:hover { color: var(--ouro-200); }
+.sheet-tabs button:hover .icone-secao { color: var(--ouro-300); }
+.sheet-tabs button[aria-selected="true"] {
+  border-top-color: var(--ouro-500);
+  border-bottom-color: var(--ouro-300);
+  background: linear-gradient(180deg, #43201a 0%, #24120d 100%);
+  color: var(--ouro-200);
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px #0007, 0 -4px 14px #e5c78a1f;
+}
+.sheet-tabs button[aria-selected="true"] .icone-secao { color: var(--ouro-300); }
+@media (max-width: 760px) {
+  .sheet-tabs button { padding: .6rem .8rem; font-size: .85rem; }
+}
+
+/* Controles da prévia `/preview/ficha` (só existem na prova visual). */
+.prova-ficha__controles {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.2rem;
+  padding: .5rem 1rem; border-bottom: 1px solid var(--border); background: var(--noite-900); color: var(--osso-300); font-size: .85rem;
+}
+.prova-ficha__controles label { display: inline-flex; align-items: center; gap: .4rem; }
+.prova-ficha__controles select { min-height: 2rem; padding: .1rem .4rem; }
+
+/* Telas estreitas: placas, passos do Narrador e ações quebram linha em vez de alargar a página. */
+.active-state .wear-track { flex-wrap: wrap; max-width: 100%; }
+.active-state .wear-chip { min-width: 0; }
+.moldura-secao .section-heading { flex-wrap: wrap; gap: .6rem; }
+@media (max-width: 400px) {
+  .active-state { padding: .5rem; }
+  .active-state .wear-chip { padding-inline: .6rem .7rem; gap: .4rem; }
+}

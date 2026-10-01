@@ -91,7 +91,7 @@ Itens do tipo Outros podem **empilhar** numa célula até o limite definido na c
 
 ### Moedas
 
-As moedas são de quatro tipos: **cobre, prata, ouro e platina**. Uma pilha de moedas ocupa uma célula e pode misturar tipos. Quantas moedas cabem numa pilha é uma **configuração da campanha**, definida pelo Narrador. Não há câmbio entre tipos de moeda.
+As moedas são de três tipos: **cobre, prata e ouro**. Uma pilha de moedas ocupa uma célula e pode misturar tipos. Quantas moedas cabem numa pilha é uma **configuração da campanha**, definida pelo Narrador. Não há câmbio entre tipos de moeda.
 
 ## Ampliações
 

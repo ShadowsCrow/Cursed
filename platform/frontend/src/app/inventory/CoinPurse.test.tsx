@@ -14,7 +14,7 @@ const pilha = (id: string, dados: Record<string, number>, coluna: number | null,
 // Ordem da grade: a pilha da linha 1 vem antes da linha 2, e a de fora da grade por último.
 const MISTA = pilha("b", { cobre: 40, prata: 60 }, 0, 1);
 const PRATA = pilha("a", { prata: 35, ouro: 12 }, 3, 2);
-const FORA = pilha("c", { platina: 5 }, null, null);
+const FORA = pilha("c", { ouro: 5 }, null, null);
 
 function montar(extra: Partial<CoinPurseProps> = {}) {
   const onGuardarBolsa = vi.fn();
@@ -35,20 +35,20 @@ describe("CoinPurse — 5.3 moedas na tela", () => {
     montar();
     expect(total("Cobre")).toBe("40");
     expect(total("Prata")).toBe("95");
-    expect(total("Ouro")).toBe("12");
-    expect(total("Platina")).toBe("5");
+    expect(total("Ouro")).toBe("17");
+    expect(screen.queryByText("Platina")).toBeNull();
     expect(screen.getByText(/152 moeda\(s\) em 3 pilha\(s\)\. Cada pilha ocupa uma célula e guarda até 100 moedas/)).toBeTruthy();
     expect(screen.getByText(/Não há câmbio entre tipos/)).toBeTruthy();
     const itens = screen.getAllByRole("listitem").map((li) => li.textContent);
     expect(itens[0]).toMatch(/Pilha 1: 40 de cobre, 60 de prata \(coluna 1, linha 2\)/);
     expect(itens[1]).toMatch(/Pilha 2: 35 de prata, 12 de ouro \(coluna 4, linha 3\)/);
-    expect(itens[2]).toMatch(/Pilha 3: 5 de platina \(fora da grade\)/);
+    expect(itens[2]).toMatch(/Pilha 3: 5 de ouro \(fora da grade\)/);
   });
 
   it("juntar envia os totais atuais para o servidor refazer as pilhas", () => {
     const { onGuardarBolsa } = montar();
     fireEvent.click(screen.getByRole("button", { name: "Juntar pilhas" }));
-    expect(onGuardarBolsa).toHaveBeenCalledWith({ cobre: 40, prata: 95, ouro: 12, platina: 5 });
+    expect(onGuardarBolsa).toHaveBeenCalledWith({ cobre: 40, prata: 95, ouro: 17 });
   });
 
   it("não oferece juntar quando as pilhas já são o mínimo possível", () => {
@@ -66,17 +66,17 @@ describe("CoinPurse — 5.3 moedas na tela", () => {
     expect((screen.getByLabelText("Cobre", { selector: "#dividir-cobre" }) as HTMLInputElement).value).toBe("40");
     fireEvent.click(separar);
     expect(onGuardarPilhas).toHaveBeenCalledWith([
-      { cobre: 0, prata: 40, ouro: 0, platina: 0 },
-      { cobre: 0, prata: 35, ouro: 12, platina: 0 },
-      { cobre: 0, prata: 0, ouro: 0, platina: 5 },
-      { cobre: 40, prata: 20, ouro: 0, platina: 0 },
+      { cobre: 0, prata: 40, ouro: 0 },
+      { cobre: 0, prata: 35, ouro: 12 },
+      { cobre: 0, prata: 0, ouro: 5 },
+      { cobre: 40, prata: 20, ouro: 0 },
     ]);
   });
 
   it("não deixa dividir movendo a pilha inteira", () => {
     montar();
     fireEvent.click(screen.getByRole("button", { name: "Dividir pilha 3" }));
-    fireEvent.change(screen.getByLabelText("Platina", { selector: "#dividir-platina" }), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText("Ouro", { selector: "#dividir-ouro" }), { target: { value: "5" } });
     expect((screen.getByRole("button", { name: "Separar" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -85,19 +85,19 @@ describe("CoinPurse — 5.3 moedas na tela", () => {
     fireEvent.change(screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }), { target: { value: "30" } });
     fireEvent.change(screen.getByLabelText("Cobre", { selector: "#ajuste-cobre" }), { target: { value: "5" } });
     fireEvent.click(screen.getByRole("button", { name: "Adicionar" }));
-    expect(onAjustar).toHaveBeenCalledWith("adicionar", { cobre: 5, prata: 0, ouro: 30, platina: 0 });
+    expect(onAjustar).toHaveBeenCalledWith("adicionar", { cobre: 5, prata: 0, ouro: 30 });
     await waitFor(() => expect((screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }) as HTMLInputElement).value).toBe("0"));
     expect((screen.getByLabelText("Cobre", { selector: "#ajuste-cobre" }) as HTMLInputElement).value).toBe("0");
   });
 
   it("retirar não pede pilha e recusa mais do que há", async () => {
     const { onAjustar } = montar();
-    fireEvent.change(screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }), { target: { value: "13" } });
+    fireEvent.change(screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }), { target: { value: "18" } });
     expect((screen.getByRole("button", { name: "Retirar" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText(/Não dá para retirar: há só 12 de ouro/)).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }), { target: { value: "12" } });
+    expect(screen.getByText(/Não dá para retirar: há só 17 de ouro/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }), { target: { value: "17" } });
     fireEvent.click(screen.getByRole("button", { name: "Retirar" }));
-    expect(onAjustar).toHaveBeenCalledWith("retirar", { cobre: 0, prata: 0, ouro: 12, platina: 0 });
+    expect(onAjustar).toHaveBeenCalledWith("retirar", { cobre: 0, prata: 0, ouro: 17 });
     await waitFor(() => expect((screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }) as HTMLInputElement).value).toBe("0"));
   });
 

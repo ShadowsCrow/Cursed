@@ -7,6 +7,22 @@ import { ROTULO_CATEGORIA } from "./wearForms";
 
 const ROTULO: Record<TrilhaDesgaste["recurso"], string> = { exaustao: "Exaustão", estresse: "Estresse" };
 
+/** Desenho de cada trilha (decorativo; o nome está escrito ao lado). */
+const DESENHO: Record<TrilhaDesgaste["recurso"], string[]> = {
+  exaustao: ["M7 3.5h10M7 20.5h10", "M8 3.5c0 4.5 4 5.5 4 8.5s-4 4-4 8.5M16 3.5c0 4.5-4 5.5-4 8.5s4 4 4 8.5", "M9.5 18h5"],
+  estresse: ["M12 4.5c-3.6 0-6.5 2.6-6.5 5.8 0 1.6.7 3 1.8 4l-.8 3.7 3.4-1.6c.7.2 1.4.3 2.1.3 3.6 0 6.5-2.6 6.5-5.8S15.6 4.5 12 4.5Z",
+    "M9.2 9.5l1.6 1.4-1.6 1.4M14.8 9.5l-1.6 1.4 1.6 1.4"],
+};
+
+function DesenhoTrilha({ recurso }: { recurso: TrilhaDesgaste["recurso"] }) {
+  return (
+    <svg className="wear-chip__icone" viewBox="0 0 24 24" width={20} height={20} aria-hidden="true" focusable="false" fill="none"
+      stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      {DESENHO[recurso].map((d) => <path key={d} d={d} />)}
+    </svg>
+  );
+}
+
 function Trilha({ trilha }: { trilha: TrilhaDesgaste }) {
   const nome = ROTULO[trilha.recurso];
   const semPenalidade = trilha.faixa.min === 0;
@@ -16,6 +32,7 @@ function Trilha({ trilha }: { trilha: TrilhaDesgaste }) {
       triggerClassName={`wear-chip ${semPenalidade ? "" : "wear-chip--penalty"}`.trim()}
       triggerContent={
         <>
+          <DesenhoTrilha recurso={trilha.recurso} />
           <span className="wear-chip__label">{nome}</span>
           <strong>{trilha.atual}/{trilha.maximo}</strong>
           <span className="wear-chip__band">{trilha.faixa.nome}</span>

@@ -1,38 +1,41 @@
-import { useState, type CSSProperties, type SyntheticEvent } from "react";
+import { useState, type CSSProperties, type ReactNode, type SyntheticEvent } from "react";
 
-import type { components } from "../../api/generated/schema";
 import { useAssetImage } from "../assets/useAssetImage";
+import { useCatalogoItens } from "../characters/sheet/catalogoApi";
 import type { ApiClient } from "../characters/types";
-import type { Subtipo } from "./gridEngine";
+import { SUBTIPOS_EM_FILA, formatoDoSubtipo, type FormatoItem, type SubtipoCriavel } from "./formatoDoItem";
+import { IconeSubtipo } from "./iconesItem";
 import "./inventory.css";
 
-/** Formato do item na grade, definido na criação (carga-por-espacos 5.2). */
-// O cliente gerado marca como obrigatório todo booleano com padrão; aqui `versatil` fica opcional.
-export type FormatoItem = Omit<components["schemas"]["FormatoItemGrade"], "versatil"> & { versatil?: boolean };
-type SubtipoCriavel = Exclude<Subtipo, "moedas" | "criatura">;
+export type { FormatoItem, SubtipoCriavel } from "./formatoDoItem";
 
 
-const GRUPOS: Array<[string, Array<[SubtipoCriavel, string]>]> = [
-  ["Armadura", [["peitoral", "Peitoral"], ["capacete", "Capacete"], ["luvas", "Luvas"], ["botas", "Botas"]]],
-  ["Armas", [["uma_mao", "Uma mão"], ["duas_maos", "Duas mãos"]]],
-  ["Escudo", [["escudo", "Escudo"]]],
-  ["Acessórios", [["mochila", "Mochila"], ["aljava", "Aljava"]]],
-  ["Outros", [["outro", "Outros (não se equipa, mas ocupa espaço)"]]],
-];
-
-/** Dimensões de referência aprovadas na calibração (docs/regras/calibracao-carga-em-grade.md); o Narrador ajusta à vontade. */
-const SUGESTAO: Record<SubtipoCriavel, FormatoItem> = {
-  peitoral: { subtipo: "peitoral", largura: 2, altura: 3 },
-  capacete: { subtipo: "capacete", largura: 1, altura: 1 },
-  luvas: { subtipo: "luvas", largura: 1, altura: 1 },
-  botas: { subtipo: "botas", largura: 1, altura: 2 },
-  uma_mao: { subtipo: "uma_mao", largura: 1, altura: 3 },
-  duas_maos: { subtipo: "duas_maos", largura: 1, altura: 4 },
-  escudo: { subtipo: "escudo", largura: 2, altura: 2 },
-  mochila: { subtipo: "mochila", largura: 2, altura: 2, mochila: { linhas: 1, colunas: 0, requisito_forca: 2 } },
-  aljava: { subtipo: "aljava", largura: 1, altura: 2, aljava: { capacidade_flechas: 20 } },
-  outro: { subtipo: "outro", largura: 1, altura: 1, maos: 0, pilha_max: 1 },
-};
+export function SeletorDeSubtipo({ valor, onEscolher, rotulo, idPrefix, descricao }: {
+  valor: SubtipoCriavel | null | undefined;
+  onEscolher: (subtipo: SubtipoCriavel) => void;
+  rotulo: string;
+  idPrefix: string;
+  /** Mensagens ligadas ao grupo (problemas de validação). */
+  descricao?: string;
+}) {
+  return (
+    <div className="seletor-subtipo" role="radiogroup" aria-labelledby={`${idPrefix}-subtipo-rotulo`} aria-describedby={descricao}>
+      <span id={`${idPrefix}-subtipo-rotulo`} className="seletor-subtipo__rotulo">{rotulo}</span>
+      <span className="seletor-subtipo__opcoes">
+        {SUBTIPOS_EM_FILA.map(([subtipo, nome]) => (
+          <label key={subtipo} className={`seletor-subtipo__opcao${valor === subtipo ? " seletor-subtipo__opcao--escolhida" : ""}`}
+            title={nome.replace(/ \(.*\)$/, "")}>
+            <input type="radio" name={`${idPrefix}-subtipo`} value={subtipo} checked={valor === subtipo}
+              onChange={() => onEscolher(subtipo)} aria-label={nome} />
+            {subtipo === "outro"
+              ? <span className="seletor-subtipo__mais" aria-hidden="true">…</span>
+              : <IconeSubtipo subtipo={subtipo} />}
+          </label>
+        ))}
+      </span>
+    </div>
+  );
+}
 
 const inteiro = (texto: string, minimo: number, maximo: number) => {
   const numero = Math.trunc(Number(texto));
@@ -48,7 +51,7 @@ function Icone({ api, mesaId, caminho, alt, onLoad }: {
   return <img src={imagem.data} alt={alt} onLoad={onLoad} className="formato-item__icone" />;
 }
 
-function Previa({ formato, nome, api, mesaId, arte }: {
+export function Previa({ formato, nome, api, mesaId, arte }: {
   formato: FormatoItem; nome: string; api?: ApiClient; mesaId?: string; arte?: string | null;
 }) {
   const [aviso, setAviso] = useState("");
@@ -84,10 +87,27 @@ export interface ItemFormatEditorProps {
   mesaId?: string;
   /** Arte do item, usada na prévia quando não há ícone de grade. */
   arte?: string | null;
+  /**
+   * Envio das duas imagens do item (ex.: no editor de cartas): a foto, que aparece na carta e no painel
+   * "Item selecionado", e o ícone que ocupa as células do item dentro da bolsa.
+   */
+  imagens?: { foto: ReactNode; icone: ReactNode };
 }
 
-export function ItemFormatEditor({ valor, onChange, nome, idPrefix, api, mesaId, arte }: ItemFormatEditorProps) {
+/** Foto do item (a arte), mostrada grande no painel do item e na carta. */
+function FotoPrevia({ api, mesaId, caminho, nome }: { api?: ApiClient; mesaId?: string; caminho?: string | null; nome: string }) {
+  return (
+    <div className="formato-item__foto" aria-label={caminho ? `Foto de ${nome || "item"}` : "Sem foto"} role="img">
+      {caminho && api && mesaId
+        ? <Icone api={api} mesaId={mesaId} caminho={caminho} alt="" onLoad={() => undefined} />
+        : <span className="formato-item__silhueta">Sem foto</span>}
+    </div>
+  );
+}
+
+export function ItemFormatEditor({ valor, onChange, nome, idPrefix, api, mesaId, arte, imagens }: ItemFormatEditorProps) {
   const formato = valor ?? null;
+  const catalogo = useCatalogoItens(api, mesaId).data;
   const alterar = (patch: Partial<FormatoItem>) => formato && onChange({ ...formato, ...patch });
   const alterarMochila = (patch: { linhas?: number; colunas?: number; requisito_forca?: number | null }) => {
     const atual = formato?.mochila;
@@ -100,22 +120,9 @@ export function ItemFormatEditor({ valor, onChange, nome, idPrefix, api, mesaId,
   return (
     <fieldset className="formato-item">
       <legend>Formato na grade</legend>
-      <label htmlFor={`${idPrefix}-subtipo`}>Tipo na grade</label>
-      <select
-        id={`${idPrefix}-subtipo`}
-        value={formato?.subtipo ?? ""}
-        onChange={(e) => {
-          const subtipo = e.target.value as SubtipoCriavel | "";
-          onChange(subtipo ? { ...SUGESTAO[subtipo], ...(formato?.icone_grade ? { icone_grade: formato.icone_grade } : {}) } : null);
-        }}
-      >
-        <option value="">Escolha…</option>
-        {GRUPOS.map(([grupo, opcoes]) => (
-          <optgroup key={grupo} label={grupo}>
-            {opcoes.map(([valorOpcao, rotulo]) => <option key={valorOpcao} value={valorOpcao}>{rotulo}</option>)}
-          </optgroup>
-        ))}
-      </select>
+      {/* Trocar o tipo mantém ícone e raridade; a categoria só existe em Outros. */}
+      <SeletorDeSubtipo valor={formato?.subtipo as SubtipoCriavel | undefined} rotulo="Tipo na grade" idPrefix={idPrefix}
+        onEscolher={(subtipo) => onChange(formatoDoSubtipo(subtipo, formato))} />
       {!formato && <p className="formato-item__dica">Sem tipo e dimensão o item não entra na grade nem pode ser publicado como carta.</p>}
       {formato && (
         <>
@@ -130,6 +137,23 @@ export function ItemFormatEditor({ valor, onChange, nome, idPrefix, api, mesaId,
               Girar
             </button>
           </div>
+          {catalogo && (
+            <div className="formato-item__linha">
+              <label>Raridade
+                <select value={formato.raridade ?? catalogo.raridades[0]?.id ?? ""} onChange={(e) => alterar({ raridade: e.target.value })}>
+                  {catalogo.raridades.map((r) => <option key={r.id} value={r.id}>{r.rotulo}</option>)}
+                </select>
+              </label>
+              {formato.subtipo === "outro" && (
+                <label>Categoria
+                  <select value={formato.categoria ?? catalogo.categorias.find((c) => c.padrao_outros)?.id ?? ""}
+                    onChange={(e) => alterar({ categoria: e.target.value })}>
+                    {catalogo.categorias.filter((c) => c.escolha_em_outros).map((c) => <option key={c.id} value={c.id}>{c.rotulo}</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
           {formato.subtipo === "uma_mao" && (
             <label className="checkbox-row">
               <input type="checkbox" checked={formato.versatil === true}
@@ -171,12 +195,32 @@ export function ItemFormatEditor({ valor, onChange, nome, idPrefix, api, mesaId,
                 onChange={(e) => alterar({ aljava: { capacidade_flechas: inteiro(e.target.value, 1, 200) } })} />
             </label>
           )}
-          <label>Ícone de grade (imagem no armazenamento da mesa, na proporção da dimensão)
-            <input value={formato.icone_grade ?? ""} placeholder={mesaId ? `mesas/${mesaId}/mesa/icone.png` : ""}
-              onChange={(e) => alterar({ icone_grade: e.target.value.trim() || null })} />
-          </label>
-          <Previa formato={formato} nome={nome} api={api} mesaId={mesaId} arte={arte} />
+          {!imagens && <Previa formato={formato} nome={nome} api={api} mesaId={mesaId} arte={arte} />}
         </>
+      )}
+      {imagens && (
+        <section className="formato-item__imagens" aria-label="Imagens do item">
+          <div className="formato-item__imagem">
+            <strong>Foto do item</strong>
+            <small>Aparece na carta e no painel “Item selecionado”. Qualquer proporção.</small>
+            <FotoPrevia api={api} mesaId={mesaId} caminho={arte} nome={nome} />
+            {imagens.foto}
+          </div>
+          <div className="formato-item__imagem">
+            <strong>Ícone na bolsa</strong>
+            {formato ? (
+              <>
+                <small>
+                  Ocupa {formato.largura} × {formato.altura} célula{formato.largura * formato.altura > 1 ? "s" : ""} da grade.
+                  Use essa proporção (por exemplo, {formato.largura * 256} × {formato.altura * 256} px), de preferência com fundo transparente.
+                  Sem ícone, a bolsa usa a foto.
+                </small>
+                <Previa formato={formato} nome={nome} api={api} mesaId={mesaId} arte={arte} />
+                {imagens.icone}
+              </>
+            ) : <small>Escolha o tipo na grade para enviar o ícone: ele precisa da dimensão do item.</small>}
+          </div>
+        </section>
       )}
     </fieldset>
   );

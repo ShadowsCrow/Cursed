@@ -3,13 +3,13 @@ import { useState } from "react";
 import type { ItemInventarioResumo } from "../characters/types";
 import "./inventory.css";
 
-const TIPOS_MOEDA = ["cobre", "prata", "ouro", "platina"] as const;
+const TIPOS_MOEDA = ["cobre", "prata", "ouro"] as const;
 export type TipoMoeda = (typeof TIPOS_MOEDA)[number];
 export type Pilha = Record<TipoMoeda, number>;
 
-const ROTULO: Record<TipoMoeda, string> = { cobre: "Cobre", prata: "Prata", ouro: "Ouro", platina: "Platina" };
+const ROTULO: Record<TipoMoeda, string> = { cobre: "Cobre", prata: "Prata", ouro: "Ouro" };
 
-const vazia = (): Pilha => ({ cobre: 0, prata: 0, ouro: 0, platina: 0 });
+const vazia = (): Pilha => ({ cobre: 0, prata: 0, ouro: 0 });
 const soma = (pilha: Pilha) => TIPOS_MOEDA.reduce((total, tipo) => total + pilha[tipo], 0);
 
 function conteudo(item: ItemInventarioResumo): Pilha {

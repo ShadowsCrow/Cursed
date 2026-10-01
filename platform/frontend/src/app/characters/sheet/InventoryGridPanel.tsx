@@ -1,17 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Dialog } from "../../../ui/primitives";
 import { ImageUpload, type ImagemResposta } from "../../assets/ImageUpload";
+import { useAssetImages } from "../../assets/useAssetImage";
 import { CoinPurse, type Pilha } from "../../inventory/CoinPurse";
 import { InventoryGrid, type Destino } from "../../inventory/InventoryGrid";
 import { ItemFormatEditor, type FormatoItem } from "../../inventory/ItemFormatEditor";
 import { ItemOffers } from "../../inventory/ItemOffers";
 import { equiparOuGuardar } from "../../inventory/mochila";
 import type { ItemGrade, ParametrosGrade } from "../../inventory/gridEngine";
-import { paraGrade, parametrosDaGrade, temFormato } from "./gradeFicha";
+import { contarPorCategoria, itensEmDestaque } from "../../inventory/filtro";
+import { faixaDaGrade, paraGrade, parametrosDaGrade, temFormato } from "./gradeFicha";
+import { useCatalogoItens } from "./catalogoApi";
+import {
+  BarraMoedas, Bolsa, BuscaInventario, ListaCategorias, PainelItem, PlacaIndicadores,
+} from "./InventarioFicha";
+import { MolduraSecao } from "./MolduraSecao";
 import { useEntidadesPublicas, usePersonagens, usePoliticaMesa } from "../api";
-import type { ApiClient, GradeInventario, ItemInventarioResumo, PermissoesFicha } from "../types";
+import type { ApiClient, EfeitoResumo, GradeInventario, ItemInventarioResumo, PermissoesFicha } from "../types";
 import { InventoryItemsPanel } from "./InventoryPanel";
 import {
   aceitarOferta, ConflitoArrumacao, definirFormatoItem, encerrarOferta, gravarArrumacao, gravarMoedas, largarItem,
@@ -117,12 +124,8 @@ function DefinirFormatoDialog({ api, mesaId, personagemId, item, versao, onFecha
       setEnviando(false);
     }
   }
-  const pesoAntigo = item.dados?.peso;
   return (
     <Dialog open title={`Definir formato: ${item.nome}`} onClose={onFechar}>
-      {pesoAntigo !== undefined && (
-        <p className="preview-note">Peso antigo (só referência, não é convertido): {String(pesoAntigo)}</p>
-      )}
       <ItemFormatEditor valor={formato} onChange={setFormato} nome={item.nome} idPrefix={`formato-${item.id}`}
         api={api} mesaId={mesaId} />
       {erro && <p role="alert">{erro}</p>}
@@ -151,9 +154,15 @@ export interface InventoryGridPanelProps {
   versao: number;
   online: boolean;
   onVersaoConfirmada: (versao: number) => void;
+  /** Efeitos da ficha, para mostrar os de cada item no painel. */
+  efeitos?: EfeitoResumo[];
+  /** Ferramentas da seção ao lado da busca (ex.: importar código). */
+  ferramentas?: ReactNode;
 }
 
-export function InventoryGridPanel({ api, mesaId, personagemId, permissoes, versao, online, onVersaoConfirmada }: InventoryGridPanelProps) {
+export function InventoryGridPanel({
+  api, mesaId, personagemId, permissoes, versao, online, onVersaoConfirmada, efeitos, ferramentas,
+}: InventoryGridPanelProps) {
   const queryClient = useQueryClient();
   const gradeQuery = useGradeInventario(api, mesaId, personagemId);
   const politica = usePoliticaMesa(api, mesaId);
@@ -166,6 +175,12 @@ export function InventoryGridPanel({ api, mesaId, personagemId, permissoes, vers
   const [oferecendo, setOferecendo] = useState<ItemGrade | null>(null);
   const [lugarPara, setLugarPara] = useState<OfertaItem | null>(null);
   const ofertas = useOfertasItem(api, mesaId, INTERVALO_TROCAS_MS);
+  const catalogo = useCatalogoItens(api, mesaId).data;
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
+  const [categoria, setCategoria] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
+  const [painelAlvo, setPainelAlvo] = useState<HTMLDivElement | null>(null);
+  const [bandejaAlvo, setBandejaAlvo] = useState<HTMLDivElement | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const servidor = gradeQuery.data;
 
@@ -174,6 +189,15 @@ export function InventoryGridPanel({ api, mesaId, personagemId, permissoes, vers
   const itens = local ?? comGrade.map(paraGrade);
 
   const parametros = useMemo<ParametrosGrade | null>(() => servidor ? parametrosDaGrade(servidor) : null, [servidor]);
+
+  // Ícone de grade de cada item; sem ele, a arte do item (encaixada no formato pela grade).
+  const caminhos = useMemo(() => Object.fromEntries(comGrade.flatMap((item) => {
+    const dados = item.dados ?? {};
+    const caminho = [dados.icone_grade, dados.imagem_ativo].find((c): c is string => typeof c === "string" && c.length > 0);
+    return caminho ? [[item.id, caminho]] : [];
+  })) as Record<string, string>, [comGrade]);
+  const imagens = useAssetImages(api, mesaId, Object.values(caminhos));
+  const icones = Object.fromEntries(Object.entries(caminhos).map(([id, caminho]) => [id, imagens[caminho]]));
 
   const aplicarResposta = useCallback((grade: GradeInventario) => {
     queryClient.setQueryData(sheetKeys.grade(mesaId, personagemId), grade);
@@ -329,116 +353,177 @@ export function InventoryGridPanel({ api, mesaId, personagemId, permissoes, vers
     }
   }
 
-  if (gradeQuery.isPending) return <p>Carregando a grade…</p>;
-  if (gradeQuery.isError) return <p role="alert">{gradeQuery.error.message}</p>;
+  const moldura = (conteudo: ReactNode) => (
+    <MolduraSecao nome="inventario" titulo="Inventário" subtitulo="Seus itens, equipamentos e recursos de aventura."
+      ferramentas={<>
+        {/* Espaço sempre reservado: "Guardando…" e os avisos curtos trocam de texto sem mover a aba. */}
+        <span className="inventario-ficha__estado" role="status" aria-live="polite">
+          {enviando ? "Guardando…" : !aviso && info ? info : ""}
+        </span>
+        <BuscaInventario valor={busca} onChange={setBusca} />{ferramentas}
+      </>}>
+      {conteudo}
+    </MolduraSecao>
+  );
+  if (gradeQuery.isPending) return moldura(<p>Carregando a grade…</p>);
+  if (gradeQuery.isError) return moldura(<p role="alert">{gradeQuery.error.message}</p>);
   if (!servidor || !parametros) return null;
+
+  const faixa = faixaDaGrade(servidor.colunas);
+  // Itens do tipo Outros ganham o desenho da categoria (chave, pergaminho…) enquanto não têm imagem.
+  const desenhos = Object.fromEntries(comGrade.filter((i) => i.subtipo === "outro").map((i) =>
+    [i.id, catalogo?.categorias.find((c) => c.id === i.categoria)?.icone]));
+  const destaque = itensEmDestaque(comGrade, catalogo, categoria, busca);
+  const contagem = catalogo ? contarPorCategoria(comGrade, catalogo) : [];
+  const rotuloCategoria = contagem.find((c) => c.id === categoria)?.rotulo;
+  const moedas = (servidor.itens ?? []).filter((i) => i.subtipo === "moedas");
+  const totais = { cobre: 0, prata: 0, ouro: 0 };
+  for (const pilha of moedas) {
+    for (const tipo of ["cobre", "prata", "ouro"] as const) {
+      const valor = (pilha.dados ?? {})[tipo];
+      totais[tipo] += typeof valor === "number" ? valor : 0;
+    }
+  }
+  const categorias = (variante: "lista" | "fileira") => catalogo && (
+    <ListaCategorias categorias={contagem} total={comGrade.length} ativa={categoria} onEscolher={setCategoria} variante={variante} />
+  );
 
   const mover = (id: string, destino: Destino) => alterar(itens.map((i) => (i.id === id ? { ...i, ...destino } : i)));
   const equipar = (id: string, equipado: boolean) => alterar(equiparOuGuardar(parametros, itens, id, equipado));
   const empunhar = (id: string, maos: 1 | 2) => alterar(itens.map((i) => (i.id === id ? { ...i, maos } : i)));
   const retirar = (id: string) => alterar(itens.map((i) => (i.id === id ? { ...i, coluna: null, linha: null, equipado: false } : i)));
 
-  return (
-    <div className="grade-ficha">
+  return moldura(
+    <div className={`grade-ficha inventario-ficha inventario-ficha--${faixa}`} style={{ "--colunas": servidor.colunas } as CSSProperties}>
       {(aviso || rascunhoDescartado) && (
         <p className="grade-ficha__aviso" role="alert">
           {aviso || "Uma arrumação não enviada ficou para trás porque a ficha mudou; ela foi descartada."}
         </p>
       )}
-      {enviando && <p className="grade-ficha__estado" role="status">Guardando…</p>}
-      {!enviando && info && !aviso && <p className="grade-ficha__estado" role="status">{info}</p>}
-      <InventoryGrid
-        rotulo="Inventário em grade"
-        parametros={parametros}
-        itens={itens}
-        onMover={mover}
-        onEquipar={equipar}
-        onRetirar={retirar}
-        onLargar={(id) => void largar(id)}
-        onEmpunhar={empunhar}
-        onOferecer={(id) => setOferecendo(itens.find((i) => i.id === id) ?? null)}
-        acoesDoItem={permissoes?.editar ? (id) => {
-          const dados = (servidor.itens ?? []).find((i) => i.id === id)?.dados ?? {};
-          const aoConcluir = (resposta: ImagemResposta) => {
-            if (resposta.versao != null) onVersaoConfirmada(resposta.versao);
-            void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
-            void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
-          };
-          return (
-            <div className="grade-inventario__imagens">
-              <ImageUpload api={api} mesaId={mesaId} destino="item" alvo={id} versao={Math.max(servidor.versao, versao)}
-                rotulo="arte do item" temImagem={Boolean(dados.imagem_ativo)} onConcluido={aoConcluir} />
-              <ImageUpload api={api} mesaId={mesaId} destino="icone-grade" alvo={`item:${id}`} versao={Math.max(servidor.versao, versao)}
-                rotulo="ícone de grade" temImagem={Boolean(dados.icone_grade)} onConcluido={aoConcluir} />
-            </div>
-          );
-        } : undefined}
-        somenteLeitura={!permissoes?.editar}
-        externo={lugarPara && lugarPara.largura != null && lugarPara.altura != null
-          ? { nome: lugarPara.item_nome, largura: lugarPara.largura, altura: lugarPara.altura }
-          : null}
-        onColocarExterno={lugarPara ? (destino) => void responder(lugarPara, "aceitar", destino) : undefined}
-      />
-      <ItemOffers
-        personagemId={personagemId}
-        ofertas={ofertas.data ?? []}
-        editavel={permissoes?.editar === true}
-        ocupado={enviando}
-        escolhendoLugar={lugarPara?.id ?? null}
-        onAceitar={(oferta) => void responder(oferta, "aceitar")}
-        onEscolherLugar={setLugarPara}
-        onRecusar={(oferta) => void responder(oferta, "recusar")}
-        onCancelar={(oferta) => void responder(oferta, "cancelar")}
-      />
-      {oferecendo && (
-        <OferecerDialog api={api} mesaId={mesaId} personagemId={personagemId} item={oferecendo}
-          narrador={permissoes?.papel === "narrador"}
-          onFechar={() => setOferecendo(null)}
-          onOferecido={(oferta) => {
-            setOferecendo(null);
-            setAviso("");
-            setInfo(`${oferta.item_nome} oferecido a ${oferta.para_nome}.`);
-            void queryClient.invalidateQueries({ queryKey: ofertasItemKey(mesaId) });
-          }} />
-      )}
-      <CoinPurse
-        pilhas={(servidor.itens ?? []).filter((i) => i.subtipo === "moedas")}
-        porPilha={politica.data?.moedas_por_pilha ?? undefined}
-        editavel={permissoes?.editar === true}
-        ocupado={enviando || local !== null}
-        onGuardarBolsa={(bolsa) => void guardarMoedas({ bolsa })}
-        onGuardarPilhas={(pilhas) => void guardarMoedas({ pilhas })}
-        onAjustar={(operacao, moedas) => guardarMoedas(operacao === "adicionar" ? { adicionar: moedas } : { retirar: moedas })}
-      />
-      {semDimensao.length > 0 && (
-        <InventoryItemsPanel
-          api={api} mesaId={mesaId} personagemId={personagemId} itens={semDimensao} versao={Math.max(servidor.versao, versao)}
-          permissoes={permissoes} online={online} onVersaoConfirmada={onVersaoConfirmada}
-          titulo="Sem dimensão"
-          descricao={`Estes itens ainda não têm formato: não podem ir para a grade, então não são levados nem equipados. ${permissoes?.papel === "narrador"
-            ? "Defina o tipo e a dimensão de cada um."
-            : "O Narrador precisa definir o tipo e a dimensão de cada um."}`}
-          incluirEquipados
-          permitirEquipar={false}
-          acaoItem={permissoes?.papel === "narrador" ? (item) => (
-            <button type="button" className="button button--secondary" onClick={() => setFormatando(item)}>
-              Definir formato de {item.nome}
-            </button>
-          ) : undefined}
-        />
-      )}
-      {formatando && (
-        <DefinirFormatoDialog
-          api={api} mesaId={mesaId} personagemId={personagemId} item={formatando} versao={Math.max(servidor.versao, versao)}
-          onFechar={() => setFormatando(null)}
-          onDefinido={(nova) => {
-            setFormatando(null);
-            onVersaoConfirmada(nova);
-            void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
-            void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
+      <p className="sr-only" role="status" aria-live="polite">
+        {destaque ? `${destaque.size} ${destaque.size === 1 ? "item" : "itens"}${rotuloCategoria ? ` em ${rotuloCategoria}` : ""}${busca.trim() ? ` para “${busca.trim()}”` : ""}` : ""}
+      </p>
+      <div className="inventario-ficha__fileira">{categorias("fileira")}</div>
+      <div className="inventario-ficha__bolsa">
+        <InventoryGrid
+          rotulo="Inventário em grade"
+          parametros={parametros}
+          itens={itens}
+          icones={icones}
+          desenhos={desenhos}
+          selecionadoId={selecionadoId}
+          onSelecionar={setSelecionadoId}
+          destaque={destaque}
+          bandejaAlvo={bandejaAlvo}
+          resumo={(dados) => <PlacaIndicadores dados={dados} />}
+          envolver={(grade) => <Bolsa faixa={faixa} colunas={servidor.colunas}>{grade}</Bolsa>}
+          painel={{
+            alvo: painelAlvo,
+            render: (contexto) => (
+              <PainelItem contexto={contexto} servidor={(servidor.itens ?? []).find((i) => i.id === contexto.selecionado?.id)}
+                catalogo={catalogo} efeitos={efeitos} icone={contexto.selecionado ? icones[contexto.selecionado.id] : undefined}
+                api={api} mesaId={mesaId} />
+            ),
           }}
+          onMover={mover}
+          onEquipar={equipar}
+          onRetirar={retirar}
+          onLargar={(id) => void largar(id)}
+          onEmpunhar={empunhar}
+          onOferecer={(id) => setOferecendo(itens.find((i) => i.id === id) ?? null)}
+          acoesDoItem={permissoes?.editar ? (id) => {
+            const dados = (servidor.itens ?? []).find((i) => i.id === id)?.dados ?? {};
+            const aoConcluir = (resposta: ImagemResposta) => {
+              if (resposta.versao != null) onVersaoConfirmada(resposta.versao);
+              void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
+              void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
+            };
+            return (
+              <div className="grade-inventario__imagens">
+                <ImageUpload api={api} mesaId={mesaId} destino="item" alvo={id} versao={Math.max(servidor.versao, versao)}
+                  rotulo="foto do item" temImagem={Boolean(dados.imagem_ativo)} onConcluido={aoConcluir} />
+                <ImageUpload api={api} mesaId={mesaId} destino="icone-grade" alvo={`item:${id}`} versao={Math.max(servidor.versao, versao)}
+                  rotulo="ícone da bolsa" temImagem={Boolean(dados.icone_grade)} onConcluido={aoConcluir} />
+              </div>
+            );
+          } : undefined}
+          somenteLeitura={!permissoes?.editar}
+          externo={lugarPara && lugarPara.largura != null && lugarPara.altura != null
+            ? { nome: lugarPara.item_nome, largura: lugarPara.largura, altura: lugarPara.altura }
+            : null}
+          onColocarExterno={lugarPara ? (destino) => void responder(lugarPara, "aceitar", destino) : undefined}
         />
-      )}
+      </div>
+      <div className="inventario-ficha__lateral">
+        <div className="inventario-ficha__painel moldura-ornada moldura-ornada--quadro moldura-ornada--pergaminho tema-pergaminho"
+          ref={setPainelAlvo} />
+        <BarraMoedas totais={totais} editavel={permissoes?.editar === true} gerenciador={
+          <CoinPurse
+            pilhas={moedas}
+            porPilha={politica.data?.moedas_por_pilha ?? undefined}
+            editavel={permissoes?.editar === true}
+            ocupado={enviando || local !== null}
+            onGuardarBolsa={(bolsa) => void guardarMoedas({ bolsa })}
+            onGuardarPilhas={(pilhas) => void guardarMoedas({ pilhas })}
+            onAjustar={(operacao, moedas) => guardarMoedas(operacao === "adicionar" ? { adicionar: moedas } : { retirar: moedas })}
+          />
+        } />
+      </div>
+      <div className="inventario-ficha__categorias">{categorias("lista")}</div>
+      <div className="inventario-ficha__rodape">
+        <div className="inventario-ficha__bandeja" ref={setBandejaAlvo} />
+        <ItemOffers
+          personagemId={personagemId}
+          ofertas={ofertas.data ?? []}
+          editavel={permissoes?.editar === true}
+          ocupado={enviando}
+          escolhendoLugar={lugarPara?.id ?? null}
+          onAceitar={(oferta) => void responder(oferta, "aceitar")}
+          onEscolherLugar={setLugarPara}
+          onRecusar={(oferta) => void responder(oferta, "recusar")}
+          onCancelar={(oferta) => void responder(oferta, "cancelar")}
+        />
+        {oferecendo && (
+          <OferecerDialog api={api} mesaId={mesaId} personagemId={personagemId} item={oferecendo}
+            narrador={permissoes?.papel === "narrador"}
+            onFechar={() => setOferecendo(null)}
+            onOferecido={(oferta) => {
+              setOferecendo(null);
+              setAviso("");
+              setInfo(`${oferta.item_nome} oferecido a ${oferta.para_nome}.`);
+              void queryClient.invalidateQueries({ queryKey: ofertasItemKey(mesaId) });
+            }} />
+        )}
+        {semDimensao.length > 0 && (
+          <InventoryItemsPanel
+            api={api} mesaId={mesaId} personagemId={personagemId} itens={semDimensao} versao={Math.max(servidor.versao, versao)}
+            permissoes={permissoes} online={online} onVersaoConfirmada={onVersaoConfirmada}
+            titulo="Sem dimensão"
+            descricao={`Estes itens ainda não têm formato: não podem ir para a grade, então não são levados nem equipados. ${permissoes?.papel === "narrador"
+              ? "Defina o tipo e a dimensão de cada um."
+              : "O Narrador precisa definir o tipo e a dimensão de cada um."}`}
+            incluirEquipados
+            permitirEquipar={false}
+            acaoItem={permissoes?.papel === "narrador" ? (item) => (
+              <button type="button" className="button button--secondary" onClick={() => setFormatando(item)}>
+                Definir formato de {item.nome}
+              </button>
+            ) : undefined}
+          />
+        )}
+        {formatando && (
+          <DefinirFormatoDialog
+            api={api} mesaId={mesaId} personagemId={personagemId} item={formatando} versao={Math.max(servidor.versao, versao)}
+            onFechar={() => setFormatando(null)}
+            onDefinido={(nova) => {
+              setFormatando(null);
+              onVersaoConfirmada(nova);
+              void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
+              void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

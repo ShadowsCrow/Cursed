@@ -1,14 +1,17 @@
-import { useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useId, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { Confirmation } from "../../ui/primitives";
 import { TIPO_ARRASTE_ITEM, type ItemExterno } from "./arrasteExterno";
 import { mochilaSubstituida } from "./mochila";
 import { RegraLevantar } from "./RegraLevantar";
 import {
-  avaliar, calcularGrade, dimensoes, ehVermelha, limitesFisicos, lugarParaGirar, maosOcupadas, naGrade, ROTULO_SUBTIPO, validarEquipar,
+  avaliar, calcularGrade, dimensoes, ehVermelha, encontrarEspaco, limitesFisicos, lugarParaGirar, maosOcupadas, naGrade, ROTULO_SUBTIPO, validarEquipar,
   validarPosicao,
   type ItemGrade, type ParametrosGrade,
 } from "./gridEngine";
+import { ImagemAjustada } from "../assets/ImagemAjustada";
+import { IconeCategoria, IconeSubtipo } from "./iconesItem";
 import "./inventory.css";
 
 export interface Destino {
@@ -34,6 +37,8 @@ export interface InventoryGridProps {
   onRetirar?: (id: string) => void;
   /** URL do ícone de grade de cada item, quando existir. */
   icones?: Record<string, string | undefined>;
+  /** Desenho de categoria para itens sem imagem (ex.: chave, pergaminho); sem ele, o desenho do subtipo. */
+  desenhos?: Record<string, string | undefined>;
   /** Sem permissão de edição: a grade só mostra. */
   somenteLeitura?: boolean;
   /** Tira o item do personagem e o deixa no chão da cena. */
@@ -48,6 +53,57 @@ export interface InventoryGridProps {
   onColocarExterno?: (destino: Destino) => void;
   /** Ações a mais para o item selecionado (ex.: enviar a arte e o ícone de grade). */
   acoesDoItem?: (id: string) => ReactNode;
+  /** Seleção controlada pela tela (opcional): sem ela, a grade guarda a seleção sozinha. */
+  selecionadoId?: string | null;
+  onSelecionar?: (id: string | null) => void;
+  /** Itens em destaque (filtro ou busca); os demais ficam esmaecidos, no mesmo lugar e clicáveis. `null` = sem filtro. */
+  destaque?: ReadonlySet<string> | null;
+  /**
+   * Painel do item desenhado pela tela, fora da grade (ex.: "Item selecionado" da ficha). A grade entrega o
+   * item e as ações já validadas; sem `painel`, ela mostra o grupo de ações próprio abaixo da grade.
+   */
+  painel?: { alvo: HTMLElement | null; render: (contexto: ContextoPainel) => ReactNode };
+  /** Troca o resumo em linha do topo da grade (ex.: a placa de indicadores da ficha). */
+  resumo?: (dados: ResumoGrade) => ReactNode;
+  /** Envolve o resumo e a área da grade (ex.: a bolsa de couro da ficha); bandeja e ações ficam fora. */
+  envolver?: (grade: ReactNode) => ReactNode;
+  /** Onde mostrar "Fora da grade" (ex.: o rodapé da aba, em largura inteira); sem ele, logo abaixo da grade. */
+  bandejaAlvo?: HTMLElement | null;
+}
+
+/** Números do topo da grade, para quem desenha o próprio resumo. */
+export interface ResumoGrade {
+  celulasOcupadas: number;
+  celulasVerdes: number;
+  celulasNoVermelho: number;
+  colunasVerdes: number;
+  linhasVerdes: number;
+  maosOcupadas: number;
+  sobrecarga: boolean;
+  ampliacoes: string[];
+  /** Mochila equipada e a ação de desequipá-la, quando permitida. */
+  mochila: { nome: string; desequipar?: () => void } | null;
+}
+
+/** Ações do item selecionado; cada uma só existe quando cabe (permissão, estado e tipo do item). */
+export interface AcoesItem {
+  equipar?: () => void;
+  empunhar?: () => void;
+  colocar?: () => void;
+  girar?: () => void;
+  largar?: () => void;
+  remover?: () => void;
+  oferecer?: () => void;
+}
+
+export interface ContextoPainel {
+  selecionado: ItemGrade | null;
+  acoes: AcoesItem;
+  /** Motivo da última recusa de equipar ou empunhar o item selecionado. */
+  recusa: string | null;
+  /** Ações extras da tela para o item (ex.: envio de imagens). */
+  extras: ReactNode;
+  somenteLeitura: boolean;
 }
 
 const LIMIAR_ARRASTE = 6;
@@ -57,19 +113,37 @@ function descreverPosicao(coluna: number, linha: number) {
 }
 
 export function InventoryGrid({
-  rotulo, parametros, itens, onMover, onEquipar, onRetirar, icones = {}, somenteLeitura = false, onLargar, onOferecer, onEmpunhar, acoesDoItem,
+  rotulo, parametros, itens, onMover, onEquipar, onRetirar, icones = {}, desenhos = {}, somenteLeitura = false, onLargar, onOferecer, onEmpunhar, acoesDoItem,
   externo = null,
   onColocarExterno,
+  selecionadoId: selecionadoControlado,
+  onSelecionar,
+  destaque = null,
+  painel,
+  resumo,
+  envolver = (grade) => grade,
+  bandejaAlvo = null,
 }: InventoryGridProps) {
   const grade = useMemo(() => calcularGrade(parametros, itens), [parametros, itens]);
   const limites = useMemo(() => limitesFisicos(grade, itens), [grade, itens]);
   const avaliacao = useMemo(() => avaliar(grade, itens), [grade, itens]);
-  const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
+  const [selecionadoInterno, setSelecionadoInterno] = useState<string | null>(null);
+  const controlada = selecionadoControlado !== undefined;
+  const selecionadoId = controlada ? selecionadoControlado : selecionadoInterno;
+  const setSelecionadoId = (id: string | null) => {
+    if (!controlada) setSelecionadoInterno(id);
+    onSelecionar?.(id);
+  };
+  const dicaId = useId();
   const [movimento, setMovimento] = useState<Movimento | null>(null);
   const [anuncio, setAnuncio] = useState("");
   /** Motivo da última recusa de equipar, mostrado junto das ações do item. */
   const [recusa, setRecusa] = useState<{ id: string; mensagem: string } | null>(null);
   const [substituicao, setSubstituicao] = useState<{ nova: ItemGrade; antiga: ItemGrade } | null>(null);
+  /** Célula sob o mouse enquanto um item de fora da grade espera lugar. */
+  const [sobre, setSobre] = useState<{ coluna: number; linha: number } | null>(null);
+  /** Item da bandeja que está sendo arrastado com o mouse para a grade. */
+  const [arrastandoBandeja, setArrastandoBandeja] = useState<string | null>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const ponteiro = useRef<{ x: number; y: number; arrastando: boolean } | null>(null);
 
@@ -87,12 +161,18 @@ export function InventoryGrid({
     return total + vermelhas;
   }, 0);
 
+  const colocando = !somenteLeitura && !externo && selecionado && !naGrade(selecionado)
+    && !(selecionado.subtipo === "mochila" && selecionado.equipado) ? selecionado : null;
+  const alvoColocar = colocando && sobre ? sobre : null;
+
   const previa = movimento ? (() => {
     const item = itens.find((i) => i.id === movimento.id);
     if (!item) return null;
     const resultado = validarPosicao(grade, itens, item, movimento.coluna, movimento.linha, movimento.girado);
     return { ...dimensoes({ ...item, girado: movimento.girado }), ...movimento, valido: resultado.ok };
-  })() : null;
+  })() : alvoColocar && colocando ? {
+    ...dimensoes(colocando), ...alvoColocar, valido: validarPosicao(grade, itens, colocando, alvoColocar.coluna, alvoColocar.linha, colocando.girado).ok,
+  } : null;
 
   function motivoTexto(motivo: string | undefined) {
     return motivo === "sobreposicao" ? "há outro item nesse lugar" : "fica fora da grade";
@@ -222,6 +302,26 @@ export function InventoryGrid({
     tentarSoltar(mov);
   }
 
+  function escolherDaBandeja(item: ItemGrade) {
+    const escolher = item.id !== selecionadoId;
+    setSelecionadoId(escolher ? item.id : null);
+    setMovimento(null);
+    setSobre(null);
+    if (escolher && !somenteLeitura) setAnuncio(`${item.nome} está fora da grade. Toque numa célula da grade para colocá-lo ali, ou use "Colocar na grade".`);
+  }
+
+  function colocarNoPrimeiroEspaco() {
+    if (!colocando) return;
+    const lugar = encontrarEspaco(grade, itens, colocando);
+    if (!lugar) {
+      setAnuncio(`Não há espaço livre na grade para ${colocando.nome}.`);
+      return;
+    }
+    setMovimento(null);
+    onMover(colocando.id, lugar);
+    setAnuncio(`${colocando.nome} colocado em ${descreverPosicao(lugar.coluna, lugar.linha)}.`);
+  }
+
   function girarSelecionado() {
     if (!selecionado || !naGrade(selecionado)) return;
     const lugar = lugarParaGirar(grade, itens, selecionado);
@@ -282,114 +382,230 @@ export function InventoryGrid({
 
   const estiloArea = { "--colunas": limites.colunas, "--linhas": limites.linhas } as CSSProperties;
 
-  const aceitaArraste = (event: DragEvent) => Boolean(onColocarExterno) && event.dataTransfer.types.includes(TIPO_ARRASTE_ITEM);
+  const dadosResumo: ResumoGrade = {
+    celulasOcupadas: avaliacao.celulasOcupadas,
+    celulasVerdes: avaliacao.celulasVerdes,
+    celulasNoVermelho,
+    colunasVerdes: grade.colunasVerdes,
+    linhasVerdes: grade.linhasVerdes,
+    maosOcupadas: avaliacao.maosOcupadas,
+    sobrecarga: avaliacao.sobrecarga,
+    ampliacoes: grade.ampliacoes.map((a) => [
+      a.rotulo, a.linhas ? `+${a.linhas} linha${a.linhas > 1 ? "s" : ""}` : null, a.colunas ? `+${a.colunas} coluna${a.colunas > 1 ? "s" : ""}` : null,
+    ].filter(Boolean).join(" ")),
+    mochila: mochilaEquipada ? {
+      nome: mochilaEquipada.nome,
+      desequipar: onEquipar && !somenteLeitura
+        ? () => { onEquipar(mochilaEquipada.id, false); setAnuncio(`${mochilaEquipada.nome} desequipada.`); }
+        : undefined,
+    } : null,
+  };
+
+  const acoes: AcoesItem = {};
+  if (selecionado && !somenteLeitura) {
+    if (onEquipar && (naGrade(selecionado) || selecionado.equipado || selecionado.subtipo === "mochila")) acoes.equipar = alternarEquipado;
+    if (onEmpunhar && selecionado.versatil) acoes.empunhar = alternarEmpunhadura;
+    if (colocando) acoes.colocar = colocarNoPrimeiroEspaco;
+    if (naGrade(selecionado)) acoes.girar = girarSelecionado;
+    if (onLargar) acoes.largar = () => { onLargar(selecionado.id); setSelecionadoId(null); };
+    if (onRetirar && naGrade(selecionado)) acoes.remover = () => { onRetirar(selecionado.id); setSelecionadoId(null); };
+    if (onOferecer && selecionado.subtipo !== "moedas") acoes.oferecer = () => onOferecer(selecionado.id);
+  }
+  const contexto: ContextoPainel = {
+    selecionado,
+    acoes,
+    recusa: selecionado && recusa?.id === selecionado.id ? recusa.mensagem : null,
+    extras: selecionado ? acoesDoItem?.(selecionado.id) : null,
+    somenteLeitura,
+  };
+
+  const aceitaArraste = (event: DragEvent) =>
+    arrastandoBandeja !== null || (Boolean(onColocarExterno) && event.dataTransfer.types.includes(TIPO_ARRASTE_ITEM));
   function soltarExterno(event: DragEvent<HTMLDivElement>) {
-    if (!aceitaArraste(event) || !onColocarExterno) return;
+    if (!aceitaArraste(event)) return;
     event.preventDefault();
     const celula = celulaSobPonteiro(event.clientX, event.clientY);
+    const daBandeja = itens.find((i) => i.id === arrastandoBandeja);
+    setArrastandoBandeja(null);
+    setSobre(null);
     if (!celula || celula.coluna < 0 || celula.linha < 0) return;
-    onColocarExterno({ coluna: celula.coluna, linha: celula.linha, girado: false });
+    if (daBandeja) {
+      tentarSoltar({ id: daBandeja.id, via: "ponteiro", coluna: celula.coluna, linha: celula.linha, girado: daBandeja.girado, pegaColuna: 0, pegaLinha: 0 });
+      return;
+    }
+    onColocarExterno?.({ coluna: celula.coluna, linha: celula.linha, girado: false });
   }
+  function arrastarSobre(event: DragEvent<HTMLDivElement>) {
+    if (!aceitaArraste(event)) return;
+    event.preventDefault();
+    const celula = celulaSobPonteiro(event.clientX, event.clientY);
+    if (arrastandoBandeja && celula && (celula.coluna !== sobre?.coluna || celula.linha !== sobre?.linha)) setSobre(celula);
+  }
+
+  const bandejaElemento = bandeja.length > 0 ? (
+    <section className="grade-inventario__bandeja" aria-label="Fora da grade">
+      <h3>Fora da grade</h3>
+      <p className="grade-inventario__dica">
+        Estes itens não estão sendo levados: coloque-os na grade para levá-los ou equipá-los.
+        {!somenteLeitura && " Arraste o item para a bolsa ou escolha-o e toque numa célula."}
+      </p>
+      <ul>
+        {bandeja.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              className="button button--ghost"
+              aria-pressed={item.id === selecionadoId}
+              draggable={!somenteLeitura}
+              onDragStart={(event) => {
+                if (somenteLeitura) return;
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", item.nome);
+                setSelecionadoId(item.id);
+                setArrastandoBandeja(item.id);
+              }}
+              onDragEnd={() => { setArrastandoBandeja(null); setSobre(null); }}
+              onClick={() => escolherDaBandeja(item)}
+            >
+              {item.nome} ({item.largura} x {item.altura})
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : null;
 
   return (
     <section className="grade-inventario" aria-label={rotulo}>
-      <header className="grade-inventario__resumo">
-        <span>
-          <strong>{avaliacao.celulasOcupadas}</strong> de {avaliacao.celulasVerdes} células
-          {celulasNoVermelho > 0 && ` (${celulasNoVermelho} na área vermelha)`}
-          {" · "}{grade.colunasVerdes} x {grade.linhasVerdes}
-          {" · "}mãos {avaliacao.maosOcupadas}/2
-        </span>
-        {avaliacao.sobrecarga
-          ? <span className="grade-inventario__estado grade-inventario__estado--sobrecarga">Sobrecarga</span>
-          : <span className="grade-inventario__estado">Normal</span>}
-        <RegraLevantar />
-        {grade.ampliacoes.length > 0 && (
-          <span className="grade-inventario__ampliacoes">
-            Ampliações: {grade.ampliacoes.map((a) => [
-              a.rotulo, a.linhas ? `+${a.linhas} linha${a.linhas > 1 ? "s" : ""}` : null, a.colunas ? `+${a.colunas} coluna${a.colunas > 1 ? "s" : ""}` : null,
-            ].filter(Boolean).join(" ")).join(" · ")}
-          </span>
-        )}
-        {mochilaEquipada && onEquipar && !somenteLeitura && (
-          <button type="button" className="button button--ghost" onClick={() => { onEquipar(mochilaEquipada.id, false); setAnuncio(`${mochilaEquipada.nome} desequipada.`); }}>
-            Desequipar {mochilaEquipada.nome}
-          </button>
-        )}
-      </header>
-
-      {externo && onColocarExterno && (
-        <p className="grade-inventario__dica" role="status">
-          Toque numa célula para colocar {externo.nome} ({externo.largura} x {externo.altura}) ali.
-        </p>
-      )}
-      <div className="grade-inventario__area" ref={areaRef} style={estiloArea}
-        onDragOver={(event) => { if (aceitaArraste(event)) event.preventDefault(); }}
-        onDrop={soltarExterno}>
-        <div className="grade-inventario__celulas" aria-hidden="true">
-          {Array.from({ length: limites.linhas * limites.colunas }, (_, indice) => {
-            const coluna = indice % limites.colunas;
-            const linha = Math.floor(indice / limites.colunas);
-            const vermelha = ehVermelha(grade, coluna, linha);
-            return (
-              <div
-                key={indice}
-                className={`grade-inventario__celula${vermelha ? " grade-inventario__celula--vermelha" : ""}`}
-                onClick={() => tocarCelula(coluna, linha)}
-              />
-            );
-          })}
-        </div>
-
-        {previa && (
-          <div
-            className={`grade-inventario__previa${previa.valido ? "" : " grade-inventario__previa--invalida"}`}
-            style={{ "--c": previa.coluna, "--l": previa.linha, "--w": previa.largura, "--h": previa.altura } as CSSProperties}
-            aria-hidden="true"
-          />
-        )}
-
-        {noGrid.map((item) => {
-          const { largura, altura } = dimensoes(item);
-          const classes = ["grade-inventario__item"];
-          if (item.equipado) classes.push("grade-inventario__item--equipado");
-          if (emSobrecarga.has(item.id)) classes.push("grade-inventario__item--sobrecarga");
-          if (item.id === selecionadoId) classes.push("grade-inventario__item--selecionado");
-          if (movimento?.id === item.id) classes.push("grade-inventario__item--movendo");
-          const icone = icones[item.id];
-          const rotuloItem = [
-            item.nome, `${ROTULO_SUBTIPO[item.subtipo]}`, `${largura} por ${altura}`, descreverPosicao(item.coluna, item.linha),
-            item.equipado ? "equipado" : null, item.versatil ? (item.maos === 2 ? "com as duas mãos" : "com uma mão") : null,
-            emSobrecarga.has(item.id) ? "em sobrecarga" : null,
-          ].filter(Boolean).join(", ");
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={classes.join(" ")}
-              style={{ "--c": item.coluna, "--l": item.linha, "--w": largura, "--h": altura } as CSSProperties}
-              aria-label={rotuloItem}
-              aria-pressed={item.id === selecionadoId}
-              onKeyDown={(event) => teclaNoItem(event, item)}
-              onPointerDown={(event) => ponteiroDesce(event, item)}
-              onPointerMove={ponteiroMove}
-              onPointerUp={() => ponteiroSobe(item)}
-              onPointerCancel={() => { ponteiro.current = null; setMovimento(null); }}
-            >
-              {icone
-                ? <img
-                    className={`grade-inventario__icone${item.girado ? " grade-inventario__icone--girado" : ""}`}
-                    style={{ "--w0": item.largura, "--h0": item.altura } as CSSProperties}
-                    src={icone} alt="" draggable={false}
+      {envolver(
+        <>
+          {resumo ? <header className="grade-inventario__resumo grade-inventario__resumo--proprio">{resumo(dadosResumo)}</header> : (
+            <header className="grade-inventario__resumo">
+              <span>
+                <strong>{avaliacao.celulasOcupadas}</strong> de {avaliacao.celulasVerdes} células
+                {celulasNoVermelho > 0 && ` (${celulasNoVermelho} na área vermelha)`}
+                {" · "}{grade.colunasVerdes} x {grade.linhasVerdes}
+                {" · "}mãos {avaliacao.maosOcupadas}/2
+              </span>
+              {avaliacao.sobrecarga
+                ? <span className="grade-inventario__estado grade-inventario__estado--sobrecarga">Sobrecarga</span>
+                : <span className="grade-inventario__estado">Normal</span>}
+              <RegraLevantar />
+              {grade.ampliacoes.length > 0 && (
+                <span className="grade-inventario__ampliacoes">
+                  Ampliações: {grade.ampliacoes.map((a) => [
+                    a.rotulo, a.linhas ? `+${a.linhas} linha${a.linhas > 1 ? "s" : ""}` : null, a.colunas ? `+${a.colunas} coluna${a.colunas > 1 ? "s" : ""}` : null,
+                  ].filter(Boolean).join(" ")).join(" · ")}
+                </span>
+              )}
+              {mochilaEquipada && onEquipar && !somenteLeitura && (
+                <button type="button" className="button button--ghost" onClick={() => { onEquipar(mochilaEquipada.id, false); setAnuncio(`${mochilaEquipada.nome} desequipada.`); }}>
+                  Desequipar {mochilaEquipada.nome}
+                </button>
+              )}
+            </header>
+          )}
+          {externo && onColocarExterno && (
+            <p className="grade-inventario__dica" role="status">
+              Toque numa célula para colocar {externo.nome} ({externo.largura} x {externo.altura}) ali.
+            </p>
+          )}
+          {colocando && (
+            <div className="grade-inventario__colocar">
+              <p>
+                <strong>{colocando.nome}</strong> ({colocando.largura} x {colocando.altura}) está fora da grade.
+                {" "}Toque numa célula da grade para colocá-lo ali.
+              </p>
+              <span className="grade-inventario__colocar-acoes">
+                <button type="button" className="button button--secondary" onClick={colocarNoPrimeiroEspaco}>Colocar na grade</button>
+                <button type="button" className="button button--ghost" onClick={() => setSelecionadoId(null)}>Cancelar escolha</button>
+              </span>
+            </div>
+          )}
+          <div className={`grade-inventario__area${colocando ? " grade-inventario__area--colocando" : ""}`} ref={areaRef} style={estiloArea}
+            onMouseLeave={() => setSobre(null)}
+            onDragOver={arrastarSobre}
+            onDrop={soltarExterno}>
+            <div className="grade-inventario__celulas" aria-hidden="true">
+              {Array.from({ length: limites.linhas * limites.colunas }, (_, indice) => {
+                const coluna = indice % limites.colunas;
+                const linha = Math.floor(indice / limites.colunas);
+                const vermelha = ehVermelha(grade, coluna, linha);
+                return (
+                  <div
+                    key={indice}
+                    className={`grade-inventario__celula${vermelha ? " grade-inventario__celula--vermelha" : ""}`}
+                    data-alerta={vermelha ? "sobrecarga" : undefined}
+                    onClick={() => tocarCelula(coluna, linha)}
+                    onMouseEnter={colocando ? () => setSobre({ coluna, linha }) : undefined}
                   />
-                : <span className="grade-inventario__nome">{item.nome}</span>}
-              {item.equipado && <span className="grade-inventario__marca" aria-hidden="true" title="Equipado">E</span>}
-            </button>
-          );
-        })}
-      </div>
+                );
+              })}
+            </div>
 
-      <p className="grade-inventario__anuncio" role="status" aria-live="polite">{anuncio}</p>
+            {previa && (
+              <div
+                className={`grade-inventario__previa${previa.valido ? "" : " grade-inventario__previa--invalida"}`}
+                style={{ "--c": previa.coluna, "--l": previa.linha, "--w": previa.largura, "--h": previa.altura } as CSSProperties}
+                aria-hidden="true"
+              />
+            )}
+
+            {noGrid.map((item) => {
+              const { largura, altura } = dimensoes(item);
+              const classes = ["grade-inventario__item"];
+              if (item.equipado) classes.push("grade-inventario__item--equipado");
+              if (emSobrecarga.has(item.id)) classes.push("grade-inventario__item--sobrecarga");
+              if (item.id === selecionadoId) classes.push("grade-inventario__item--selecionado");
+              if (movimento?.id === item.id) classes.push("grade-inventario__item--movendo");
+              if (destaque && !destaque.has(item.id)) classes.push("grade-inventario__item--esmaecido");
+              if (destaque?.has(item.id)) classes.push("grade-inventario__item--destacado");
+              const icone = icones[item.id];
+              const rotuloItem = [
+                item.nome, `${ROTULO_SUBTIPO[item.subtipo]}`, `${largura} por ${altura}`, descreverPosicao(item.coluna, item.linha),
+                (item.quantidade ?? 1) > 1 ? `${item.quantidade} unidades` : null,
+                item.equipado ? "equipado" : null, item.versatil ? (item.maos === 2 ? "com as duas mãos" : "com uma mão") : null,
+                emSobrecarga.has(item.id) ? "em sobrecarga" : null,
+              ].filter(Boolean).join(", ");
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={classes.join(" ")}
+                  style={{ "--c": item.coluna, "--l": item.linha, "--w": largura, "--h": altura } as CSSProperties}
+                  aria-label={rotuloItem}
+                  aria-describedby={somenteLeitura ? undefined : dicaId}
+                  title={item.nome}
+                  aria-pressed={item.id === selecionadoId}
+                  onKeyDown={(event) => teclaNoItem(event, item)}
+                  onPointerDown={(event) => ponteiroDesce(event, item)}
+                  onPointerMove={ponteiroMove}
+                  onPointerUp={() => ponteiroSobe(item)}
+                  onPointerCancel={() => { ponteiro.current = null; setMovimento(null); }}
+                >
+                  {icone
+                    ? <ImagemAjustada
+                        className={`grade-inventario__icone${item.girado ? " grade-inventario__icone--girado" : ""}`}
+                        style={{ "--w0": item.largura, "--h0": item.altura } as CSSProperties}
+                        src={icone} alt="" draggable={false}
+                      />
+                    : <span className="grade-inventario__sem-icone">
+                        {desenhos[item.id] ? <IconeCategoria icone={desenhos[item.id] ?? ""} /> : <IconeSubtipo subtipo={item.subtipo} />}
+                        <span className="grade-inventario__nome">{item.nome}</span>
+                      </span>}
+                  {item.equipado && <span className="grade-inventario__marca" aria-hidden="true" title="Equipado">E</span>}
+                  {(item.quantidade ?? 1) > 1 && <span className="grade-inventario__quantidade" aria-hidden="true">{item.quantidade}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </>,
+      )}
+      {/* Só as recusas aparecem na tela; o resto é leitura para tecnologias assistivas, sem texto avulso sob a grade. */}
+      <p className={`grade-inventario__anuncio${/^Não (dá|há)/.test(anuncio) ? "" : " sr-only"}`} role="status" aria-live="polite">{anuncio}</p>
+      {!somenteLeitura && (
+        <p id={dicaId} className="sr-only">Enter ou Espaço começa a mover; setas movem, R gira, Enter solta e Esc cancela.</p>
+      )}
 
       {substituicao && (
         <Confirmation
@@ -407,69 +623,37 @@ export function InventoryGrid({
         />
       )}
 
-      {selecionado && (
+      {painel
+        ? (painel.alvo ? createPortal(painel.render(contexto), painel.alvo) : painel.render(contexto))
+        : selecionado && (
         <div className="grade-inventario__acoes" role="group" aria-label={`Ações para ${selecionado.nome}`}>
           <strong>{selecionado.nome}</strong>
           <span className="grade-inventario__detalhe">
             {ROTULO_SUBTIPO[selecionado.subtipo]} · {dimensoes(selecionado).largura} x {dimensoes(selecionado).altura}
             {selecionado.equipado ? " · equipado" : ""}
           </span>
-          {!somenteLeitura && naGrade(selecionado) && (
-            <button type="button" className="button button--secondary" onClick={girarSelecionado}>Girar</button>
-          )}
-          {!somenteLeitura && (
-            <button type="button" className="button button--secondary" onClick={() => iniciarTeclado(selecionado)}>Mover pelo teclado</button>
-          )}
-          {!somenteLeitura && onEquipar && (naGrade(selecionado) || selecionado.equipado || selecionado.subtipo === "mochila") && (
-            <button type="button" className="button button--secondary" onClick={alternarEquipado}>
+          {acoes.equipar && (
+            <button type="button" className="button button--secondary" onClick={acoes.equipar}>
               {selecionado.equipado ? "Desequipar" : "Equipar"}
             </button>
           )}
-          {!somenteLeitura && onRetirar && naGrade(selecionado) && (
-            <button type="button" className="button button--ghost" onClick={() => { onRetirar(selecionado.id); setSelecionadoId(null); }}>
-              Tirar da grade
-            </button>
-          )}
-          {recusa?.id === selecionado.id && <p className="grade-inventario__recusa" role="alert">{recusa.mensagem}</p>}
-          {!somenteLeitura && onEmpunhar && selecionado.versatil && (
-            <button type="button" className="button button--secondary" onClick={alternarEmpunhadura}>
+          {acoes.empunhar && (
+            <button type="button" className="button button--secondary" onClick={acoes.empunhar}>
               {selecionado.maos === 2 ? "Empunhar com uma mão" : "Empunhar com duas mãos"}
             </button>
           )}
-          {!somenteLeitura && onOferecer && selecionado.subtipo !== "moedas" && (
-            <button type="button" className="button button--ghost" onClick={() => onOferecer(selecionado.id)}>Oferecer…</button>
-          )}
-          {!somenteLeitura && onLargar && (
-            <button type="button" className="button button--ghost" onClick={() => { onLargar(selecionado.id); setSelecionadoId(null); }}>
-              Largar no chão
-            </button>
-          )}
-          {acoesDoItem?.(selecionado.id)}
-          {!somenteLeitura && <p className="grade-inventario__dica">Toque numa célula para colocar o item ali.</p>}
+          {acoes.colocar && <button type="button" className="button button--secondary" onClick={acoes.colocar}>Colocar na grade</button>}
+          {acoes.girar && <button type="button" className="button button--secondary" onClick={acoes.girar}>Girar</button>}
+          {acoes.largar && <button type="button" className="button button--ghost" onClick={acoes.largar}>Largar no chão</button>}
+          {acoes.remover && <button type="button" className="button button--ghost" onClick={acoes.remover}>Remover da grade</button>}
+          {acoes.oferecer && <button type="button" className="button button--ghost" onClick={acoes.oferecer}>Oferecer…</button>}
+          {contexto.recusa && <p className="grade-inventario__recusa" role="alert">{contexto.recusa}</p>}
+          {contexto.extras}
+          {!somenteLeitura && !naGrade(selecionado) && <p className="grade-inventario__dica">Toque numa célula da grade para colocar o item ali.</p>}
         </div>
       )}
 
-      {bandeja.length > 0 && (
-        <section className="grade-inventario__bandeja" aria-label="Fora da grade">
-          <h3>Fora da grade</h3>
-          <p className="grade-inventario__dica">Estes itens não estão sendo levados: coloque-os na grade para levá-los ou equipá-los.</p>
-          <ul>
-            {bandeja.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className="button button--ghost"
-                  aria-pressed={item.id === selecionadoId}
-                  onClick={() => setSelecionadoId(item.id === selecionadoId ? null : item.id)}
-                  onKeyDown={(event) => teclaNoItem(event, item)}
-                >
-                  {item.nome} ({item.largura} x {item.altura})
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {bandejaElemento && (bandejaAlvo ? createPortal(bandejaElemento, bandejaAlvo) : bandejaElemento)}
     </section>
   );
 }

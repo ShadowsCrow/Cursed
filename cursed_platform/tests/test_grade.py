@@ -84,15 +84,15 @@ class ComportamentoComplementarTest(unittest.TestCase):
 class MoedasIncrementaisTest(unittest.TestCase):
     def test_adicionar_enche_na_ordem_e_cria_pilhas_novas(self):
         existentes, novas = g.adicionar_moedas([{"cobre": 90}, {"prata": 10}], {"cobre": 15, "ouro": 190}, 100)
-        self.assertEqual(existentes, [{"cobre": 100, "prata": 0, "ouro": 0, "platina": 0},
-                                      {"cobre": 5, "prata": 10, "ouro": 85, "platina": 0}])
-        self.assertEqual(novas, [{"cobre": 0, "prata": 0, "ouro": 100, "platina": 0},
-                                 {"cobre": 0, "prata": 0, "ouro": 5, "platina": 0}])
+        self.assertEqual(existentes, [{"cobre": 100, "prata": 0, "ouro": 0},
+                                      {"cobre": 5, "prata": 10, "ouro": 85}])
+        self.assertEqual(novas, [{"cobre": 0, "prata": 0, "ouro": 100},
+                                 {"cobre": 0, "prata": 0, "ouro": 5}])
 
     def test_retirar_da_ultima_para_a_primeira(self):
         pilhas = g.retirar_moedas([{"prata": 60, "cobre": 40}, {"prata": 35, "ouro": 12}], {"prata": 40, "ouro": 12})
-        self.assertEqual(pilhas, [{"cobre": 40, "prata": 55, "ouro": 0, "platina": 0},
-                                  {"cobre": 0, "prata": 0, "ouro": 0, "platina": 0}])
+        self.assertEqual(pilhas, [{"cobre": 40, "prata": 55, "ouro": 0},
+                                  {"cobre": 0, "prata": 0, "ouro": 0}])
 
     def test_retirar_mais_do_que_ha(self):
         with self.assertRaises(ValueError):

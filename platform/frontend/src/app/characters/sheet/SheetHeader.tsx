@@ -1,4 +1,5 @@
 import { Portrait } from "../../../ui/Display";
+import { MolduraOrnamentada } from "../../../ui/Ornamentos";
 import { ImageUpload, type ImagemResposta } from "../../assets/ImageUpload";
 import { useAssetImage } from "../../assets/useAssetImage";
 import { acharPorNome, type ClasseCatalogo } from "./catalogoApi";
@@ -11,6 +12,11 @@ function RetratoMigrado({ api, mesaId, caminho, nome }: { api: ApiClient; mesaId
   return <Portrait name={nome} imageUrl={imagem.data} hue="violet" size="large" />;
 }
 
+/**
+ * Cabeçalho da ficha (visual-da-ficha): quadro noturno com moldura dourada recortada e o castelo ao
+ * fundo; retrato emoldurado com trocar/remover abaixo; classe · raça, nome e etiquetas; PV e PP num
+ * quadro próprio. A pintura é só fundo em CSS: sem ela, fica o gradiente do tema.
+ */
 export function SheetHeader({ ficha, api, mesaId, classes, recursos, envioRetrato }: {
   ficha: FichaContrato; api?: ApiClient; mesaId?: string; classes?: ClasseCatalogo[];
   /** PV e PP calculados; sem eles o cabeçalho mostra só a identidade. */
@@ -23,18 +29,21 @@ export function SheetHeader({ ficha, api, mesaId, classes, recursos, envioRetrat
   // A cor da classe complementa o nome, que continua escrito.
   const cor = acharPorNome(classes, info.classe)?.cor ?? undefined;
   return (
-    <section className="character-hero">
-      <div className="character-hero__portrait">
-        {info.imagemAtivo && api && mesaId
-          ? <RetratoMigrado api={api} mesaId={mesaId} caminho={info.imagemAtivo} nome={info.nome} />
-          : <Portrait name={info.nome} imageUrl={info.imagemUrl} hue="violet" size="large" />}
+    <MolduraOrnamentada as="section" tipo="painel" fundo="vazio" className="character-hero cabecalho-ficha" aria-label={`Cabeçalho de ${info.nome}`}>
+      <div className="cabecalho-ficha__cena" aria-hidden="true" />
+      <div className="character-hero__portrait cabecalho-ficha__retrato">
+        <span className="cabecalho-ficha__moldura-retrato">
+          {info.imagemAtivo && api && mesaId
+            ? <RetratoMigrado api={api} mesaId={mesaId} caminho={info.imagemAtivo} nome={info.nome} />
+            : <Portrait name={info.nome} imageUrl={info.imagemUrl} hue="violet" size="large" />}
+        </span>
         {envioRetrato && api && mesaId && (
           <ImageUpload api={api} mesaId={mesaId} destino="retrato" alvo={envioRetrato.personagemId} versao={envioRetrato.versao}
             rotulo="retrato" temImagem={Boolean(info.imagemAtivo)} onConcluido={envioRetrato.onConcluido} />
         )}
       </div>
-      <div className="character-hero__identity">
-        <span className="eyebrow">
+      <div className="character-hero__identity cabecalho-ficha__identidade">
+        <span className="eyebrow cabecalho-ficha__classe">
           {cor && <span className="class-swatch" style={{ background: cor }} aria-hidden="true" />}
           {eyebrow || "Identidade não preenchida"}
         </span>
@@ -44,9 +53,11 @@ export function SheetHeader({ ficha, api, mesaId, classes, recursos, envioRetrat
           {info.idade !== undefined && <span className="tag">{info.idade} anos</span>}
         </div>
       </div>
-      <div className="character-hero__resources">
-        {recursos && <ResourcesStatus ficha={ficha} {...recursos} />}
-      </div>
-    </section>
+      {recursos && (
+        <MolduraOrnamentada tipo="quadro" fundo="noite" className="character-hero__resources cabecalho-ficha__recursos">
+          <ResourcesStatus ficha={ficha} {...recursos} />
+        </MolduraOrnamentada>
+      )}
+    </MolduraOrnamentada>
   );
 }

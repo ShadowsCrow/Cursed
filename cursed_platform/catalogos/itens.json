@@ -1,0 +1,88 @@
+{
+  "raridades": [
+    { "id": "comum", "rotulo": "Comum", "cor": "#5B5348" },
+    { "id": "incomum", "rotulo": "Incomum", "cor": "#2F6B2A" },
+    { "id": "raro", "rotulo": "Raro", "cor": "#1F4F8F" },
+    { "id": "epico", "rotulo": "Épico", "cor": "#6A2F8F" },
+    { "id": "lendario", "rotulo": "Lendário", "cor": "#8A5200" }
+  ],
+  "categorias": [
+    { "id": "armas", "rotulo": "Armas", "icone": "armas", "subtipos": ["uma_mao", "duas_maos"] },
+    { "id": "armaduras", "rotulo": "Armaduras", "icone": "armaduras", "subtipos": ["peitoral", "capacete", "luvas", "botas"] },
+    { "id": "escudos", "rotulo": "Escudos", "icone": "escudos", "subtipos": ["escudo"] },
+    { "id": "acessorios", "rotulo": "Acessórios", "icone": "acessorios", "subtipos": ["mochila", "aljava"] },
+    { "id": "consumiveis", "rotulo": "Consumíveis", "icone": "consumiveis", "escolha_em_outros": true },
+    { "id": "materiais", "rotulo": "Materiais", "icone": "materiais", "escolha_em_outros": true },
+    { "id": "chaves", "rotulo": "Chaves", "icone": "chaves", "escolha_em_outros": true },
+    { "id": "itens_de_missao", "rotulo": "Itens de Missão", "icone": "itens_de_missao", "escolha_em_outros": true },
+    { "id": "diversos", "rotulo": "Diversos", "icone": "diversos", "escolha_em_outros": true, "padrao_outros": true },
+    { "id": "moedas", "rotulo": "Moedas", "icone": "moedas", "subtipos": ["moedas"] },
+    { "id": "criaturas", "rotulo": "Criaturas", "icone": "criaturas", "subtipos": ["criatura"] }
+  ],
+  "listas": {
+    "atributos": ["Força", "Destreza", "Vigor", "Carisma", "Manipulação", "Proposito", "Percepção", "Inteligência", "Raciocínio"],
+    "pericias": [
+      "Prontidão", "Esportes", "Briga", "Esquiva", "Empatia", "Expressão", "Intimidação", "Liderança", "Conhecimento urbano", "Lábia",
+      "Lidar com animais", "Oficios", "Pilotagem", "Etiqueta", "Longo alcance", "Armas Brancas", "Performance", "Prestidigitação", "Furtividade", "Sobrevivência",
+      "Acadêmicos", "Arcanismo", "Finanças", "Investigação", "Direito", "Linguistica", "Medicina", "Ocultismo", "Politica", "Natureza"
+    ],
+    "familias_proficiencia": [
+      "Armas Brancas Leves", "Armas Brancas de Uma Mão", "Armas Brancas Pesadas", "Armas de Haste", "Arcos", "Bestas",
+      "Armas de Arremesso", "Armas de Fogo", "Armas Exóticas"
+    ],
+    "tipos_dano": [
+      "Cortante", "Perfurante", "Contundente", "Fogo", "Gelo", "Elétrico", "Ácido", "Veneno",
+      "Força", "Trovejante", "Arcano", "Psíquico", "Necrótico", "Radiante"
+    ],
+    "categorias_armadura": ["Leve", "Média", "Pesada"],
+    "perfis_armadura": ["Esquiva", "Bloqueio", "Híbrido"],
+    "propriedades_arma": ["Leve", "Pesada", "Versátil", "Arremesso", "Alcance", "Munição", "Recarga", "Defensiva", "Ocultável", "Exótica"]
+  },
+  "campos": {
+    "categoria_arma": { "rotulo": "Categoria", "tipo": "texto", "icone": "categoria" },
+    "familia_proficiencia": { "rotulo": "Família de Proficiência", "tipo": "escolha", "lista": "familias_proficiencia", "icone": "familia" },
+    "atributo_ataque": { "rotulo": "Atributo de Ataque", "tipo": "escolhas", "lista": "atributos", "icone": "atributo" },
+    "pericia_ataque": { "rotulo": "Perícia de Ataque", "tipo": "escolha", "lista": "pericias", "icone": "pericia" },
+    "dano": { "rotulo": "Dano", "tipo": "texto", "icone": "dano", "exemplo": "1d8" },
+    "atributo_dano": { "rotulo": "Atributo de Dano", "tipo": "escolhas", "lista": "atributos", "icone": "atributo" },
+    "tipo_dano": { "rotulo": "Tipo de Dano", "tipo": "escolha", "lista": "tipos_dano", "icone": "tipo_dano" },
+    "alcance_normal": { "rotulo": "Alcance Normal", "tipo": "inteiro", "icone": "alcance" },
+    "alcance_maximo": { "rotulo": "Alcance Máximo", "tipo": "inteiro", "icone": "alcance" },
+    "categoria_armadura": { "rotulo": "Categoria", "tipo": "escolha", "lista": "categorias_armadura", "icone": "categoria" },
+    "perfil": { "rotulo": "Perfil", "tipo": "escolha", "lista": "perfis_armadura", "icone": "perfil" },
+    "categoria_escudo": { "rotulo": "Categoria", "tipo": "texto", "icone": "categoria" },
+    "bonus_esquiva": { "rotulo": "Bônus de Esquiva", "tipo": "inteiro", "icone": "esquiva" },
+    "armadura": { "rotulo": "Armadura", "tipo": "inteiro", "icone": "armadura" },
+    "rdb": { "rotulo": "RDB", "tipo": "inteiro", "icone": "rdb" },
+    "penalidade_esquiva": { "rotulo": "Penalidade de Esquiva", "tipo": "inteiro", "icone": "penalidade" },
+    "penalidade_destreza": { "rotulo": "Penalidade de Destreza", "tipo": "inteiro", "icone": "penalidade" },
+    "penalidade_furtividade": { "rotulo": "Penalidade de Furtividade", "tipo": "inteiro", "icone": "penalidade" },
+    "penalidade_deslocamento": { "rotulo": "Penalidade de Deslocamento", "tipo": "inteiro", "icone": "penalidade", "unidade": "m" },
+    "requisito_forca": { "rotulo": "Requisito de Força", "tipo": "inteiro", "icone": "forca" },
+    "propriedades": { "rotulo": "Propriedades", "tipo": "etiquetas", "icone": "propriedades" }
+  },
+  "campos_por_subtipo": {
+    "uma_mao": [
+      "categoria_arma", "familia_proficiencia", "atributo_ataque", "pericia_ataque", "dano", "atributo_dano", "tipo_dano",
+      "alcance_normal", "alcance_maximo", "requisito_forca", { "campo": "propriedades", "sugestoes": "propriedades_arma" }
+    ],
+    "duas_maos": [
+      "categoria_arma", "familia_proficiencia", "atributo_ataque", "pericia_ataque", "dano", "atributo_dano", "tipo_dano",
+      "alcance_normal", "alcance_maximo", "requisito_forca", { "campo": "propriedades", "sugestoes": "propriedades_arma" }
+    ],
+    "peitoral": [
+      "categoria_armadura", "perfil", "bonus_esquiva", "armadura", "rdb", "penalidade_esquiva", "penalidade_destreza",
+      "penalidade_furtividade", "penalidade_deslocamento", "requisito_forca", "propriedades"
+    ],
+    "escudo": [
+      "categoria_escudo", "armadura", "rdb", "penalidade_esquiva", "penalidade_destreza", "penalidade_furtividade",
+      "penalidade_deslocamento", "requisito_forca", "propriedades"
+    ],
+    "capacete": ["propriedades"],
+    "luvas": ["propriedades"],
+    "botas": ["propriedades"],
+    "mochila": ["propriedades"],
+    "aljava": ["propriedades"],
+    "outro": ["propriedades"]
+  }
+}

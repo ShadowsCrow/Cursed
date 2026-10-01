@@ -97,6 +97,6 @@ describe("motor da grade — comportamento complementar", () => {
   });
 
   it("recusa moedas por pilha inválido", () => {
-    expect(() => distribuirMoedas({ cobre: 1, prata: 0, ouro: 0, platina: 0 }, 0)).toThrow();
+    expect(() => distribuirMoedas({ cobre: 1, prata: 0, ouro: 0 }, 0)).toThrow();
   });
 });

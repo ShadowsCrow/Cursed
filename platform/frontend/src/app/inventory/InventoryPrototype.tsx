@@ -107,7 +107,7 @@ export function InventoryPrototype() {
   const [bolso, setBolso] = useState(false);
   const [itens, setItens] = useState<ItemGrade[]>([]);
   const [aviso, setAviso] = useState("");
-  const [bolsa, setBolsa] = useState<Bolsa>({ cobre: 0, prata: 0, ouro: 0, platina: 0 });
+  const [bolsa, setBolsa] = useState<Bolsa>({ cobre: 0, prata: 0, ouro: 0 });
   const [porPilha, setPorPilha] = useState(100);
   const [mochila, setMochila] = useState(MOCHILAS[1] ?? MOCHILAS[0]!);
   const [novo, setNovo] = useState({ nome: "", subtipo: "outro" as Subtipo, largura: 1, altura: 1, maos: 0, versatil: false, ampliacaoLinhas: 1, ampliacaoColunas: 0, requisitoForca: 0 });

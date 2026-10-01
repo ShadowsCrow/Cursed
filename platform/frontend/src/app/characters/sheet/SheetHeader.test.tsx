@@ -108,3 +108,39 @@ describe("SheetHeader — 6.2 cabeçalho visual da ficha", () => {
     });
   });
 });
+
+describe("SheetHeader — visual-da-ficha", () => {
+  afterEach(() => cleanup());
+  const ficha = {
+    personagem: { nome: "Lion", raca: "Elfo", classe: "Especialista de Combate", arquetipo: "Antimago", idade: 15 },
+    recursos: { pv: { atual: 25 }, pp: { atual: 6 } },
+  } as unknown as FichaContrato;
+  const valores = [
+    { chave: "recurso:pv_maximo", rotulo: "PV máximo", grupo: "recurso", calculavel: true, motivo: null, total: 25, fontes: [], situacionais: [] },
+    { chave: "recurso:pp_maximo", rotulo: "PP máximo", grupo: "recurso", calculavel: true, motivo: null, total: 6, fontes: [], situacionais: [] },
+  ] as ValorDerivadoResumo[];
+
+  it("quadro com classe · raça, nome, etiquetas e PV/PP com máximo; a cena é decorativa", () => {
+    render(<SheetHeader ficha={ficha} recursos={{ valores }} />);
+    const cabecalho = screen.getByRole("region", { name: "Cabeçalho de Lion" });
+    expect(cabecalho.textContent).toMatch(/Especialista de Combate · Elfo/);
+    expect(screen.getByText("Antimago")).toBeTruthy();
+    expect(screen.getByText("15 anos")).toBeTruthy();
+    expect(cabecalho.textContent).toMatch(/Máximo/);
+    expect(cabecalho.querySelector(".cabecalho-ficha__cena")?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("trocar e remover o retrato só para quem pode editar", () => {
+    const api = { GET: vi.fn(async () => ({ data: undefined, error: undefined })), PUT: vi.fn(), DELETE: vi.fn() } as unknown as ApiClient;
+    const { unmount } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SheetHeader ficha={ficha} api={api} mesaId="mesa" recursos={{ valores }}
+          envioRetrato={{ personagemId: "pj", versao: 1, onConcluido: vi.fn() }} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole("button", { name: /retrato/i })).toBeTruthy();
+    unmount();
+    render(<SheetHeader ficha={ficha} api={api} mesaId="mesa" recursos={{ valores }} />);
+    expect(screen.queryByRole("button", { name: /retrato/i })).toBeNull();
+  });
+});

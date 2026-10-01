@@ -213,16 +213,16 @@
     {
       "nome": "Pilhas mistas de 100",
       "porPilha": 100,
-      "bolsa": { "cobre": 40, "prata": 95, "ouro": 12, "platina": 0 },
+      "bolsa": { "cobre": 40, "prata": 95, "ouro": 12 },
       "esperado": [
-        { "cobre": 40, "prata": 60, "ouro": 0, "platina": 0 },
-        { "cobre": 0, "prata": 35, "ouro": 12, "platina": 0 }
+        { "cobre": 40, "prata": 60, "ouro": 0 },
+        { "cobre": 0, "prata": 35, "ouro": 12 }
       ]
     },
     {
       "nome": "Mil moedas de ouro em pilhas de 100",
       "porPilha": 100,
-      "bolsa": { "cobre": 0, "prata": 0, "ouro": 1000, "platina": 0 },
+      "bolsa": { "cobre": 0, "prata": 0, "ouro": 1000 },
       "esperadoQuantidade": 10
     }
   ]

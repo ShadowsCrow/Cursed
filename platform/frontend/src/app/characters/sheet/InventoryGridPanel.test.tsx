@@ -33,6 +33,7 @@ function rotasGet(gradeAtual: () => GradeInventario, ofertas: () => OfertaItem[]
     if (path.endsWith("/inventario/grade")) return { data: gradeAtual(), error: undefined };
     if (path.endsWith("/politicas")) return { data: { moedas_por_pilha: 100 }, error: undefined };
     if (path.endsWith("/ofertas-item")) return { data: ofertas(), error: undefined };
+    if (path.endsWith("/ativos")) return { data: { tipo: "image/png", base64: "SUNPTkU=" }, error: undefined };
     if (path.endsWith("/entidades-publicas")) {
       return { data: [{ id: "pj-1", nome_publico: "Eu" }, { id: "teo", nome_publico: "Teo" }], error: undefined };
     }
@@ -40,11 +41,11 @@ function rotasGet(gradeAtual: () => GradeInventario, ofertas: () => OfertaItem[]
   };
 }
 
-function montar({ online = true, editar = true, put, post, papel = "jogador", ofertas = [] }: {
+function montar({ online = true, editar = true, put, post, papel = "jogador", ofertas = [], itens = [CORDA, ANTIGA, MOEDAS] }: {
   online?: boolean; editar?: boolean; put?: ReturnType<typeof vi.fn>; post?: ReturnType<typeof vi.fn>; papel?: PermissoesFicha["papel"];
-  ofertas?: OfertaItem[];
+  ofertas?: OfertaItem[]; itens?: ItemInventarioResumo[];
 }) {
-  const estado = { grade: grade([CORDA, ANTIGA, MOEDAS]), ofertas };
+  const estado = { grade: grade(itens), ofertas };
   const GET = vi.fn(rotasGet(() => estado.grade, () => estado.ofertas));
   const PUT = put ?? vi.fn(async (_path: string, opcoes: { body: { versao_esperada: number; itens: unknown[] } }) => ({
     data: grade([{ ...CORDA, coluna: 1 }, ANTIGA], opcoes.body.versao_esperada + 1), error: undefined, response: { status: 200 },
@@ -78,7 +79,22 @@ describe("InventoryGridPanel", () => {
     expect(await screen.findByRole("button", { name: /^Corda, item, 1 por 2, coluna 1, linha 1/ })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Sem dimensão" }).textContent).toMatch(/Espada antiga/);
     expect(screen.getByRole("region", { name: "Sem dimensão" }).textContent).toMatch(/O Narrador precisa definir/);
-    expect(screen.getByRole("region", { name: "Sem dimensão" }).textContent).toMatch(/Peso: 3 \(só descrição\)/);
+    // A plataforma não tem peso (simplificar-criacao-de-cartas, D7a), nem quando a API ainda o traz.
+    expect(screen.getByRole("region", { name: "Sem dimensão" }).textContent).not.toMatch(/Peso/);
+  });
+
+  it("mostra na célula o ícone de grade enviado e, sem ele, a arte do item", async () => {
+    const { GET } = montar({ itens: [
+      { ...CORDA, dados: { icone_grade: "mesas/mesa-1/mesa/corda.png", imagem_ativo: "mesas/mesa-1/mesa/corda-arte.png" } },
+      item({ id: "adaga", nome: "Adaga", subtipo: "uma_mao", tipo: "arma", largura: 1, altura: 1, coluna: 2, linha: 0,
+        dados: { imagem_ativo: "mesas/mesa-1/mesa/adaga.png" } }),
+    ] });
+    const corda = await screen.findByRole("button", { name: /^Corda/ });
+    await waitFor(() => expect(corda.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,SUNPTkU="));
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Adaga/ }).querySelector("img")).toBeTruthy());
+    const chamadas = GET.mock.calls as unknown as Array<[string, { params: { query: { caminho: string } } }]>;
+    const pedidos = chamadas.filter(([caminho]) => caminho.endsWith("/ativos")).map(([, opcoes]) => opcoes.params.query.caminho);
+    expect(pedidos.sort()).toEqual(["mesas/mesa-1/mesa/adaga.png", "mesas/mesa-1/mesa/corda.png"]);
   });
 
   it("envia a arrumação inteira pouco depois do movimento, com a versão da ficha", async () => {
@@ -134,13 +150,14 @@ describe("InventoryGridPanel", () => {
       throw new Error(`PUT não simulado: ${caminho}`);
     });
     const { onVersaoConfirmada } = montar({ put });
+    fireEvent.click(await screen.findByRole("button", { name: "Gerenciar moedas" }));
     const moedas = await screen.findByRole("region", { name: "Moedas" });
     expect(moedas.textContent).toMatch(/40 moeda\(s\) em 1 pilha\(s\)\. Cada pilha ocupa uma célula e guarda até 100/);
     fireEvent.change(screen.getByLabelText("Ouro", { selector: "#ajuste-ouro" }), { target: { value: "7" } });
     fireEvent.click(screen.getByRole("button", { name: "Adicionar" }));
     await waitFor(() => expect(put).toHaveBeenCalledTimes(1));
     const [, opcoes] = put.mock.calls[0] as [string, { body: unknown }];
-    expect(opcoes.body).toEqual({ versao_esperada: 3, adicionar: { cobre: 0, prata: 0, ouro: 7, platina: 0 } });
+    expect(opcoes.body).toEqual({ versao_esperada: 3, adicionar: { cobre: 0, prata: 0, ouro: 7 } });
     await waitFor(() => expect(onVersaoConfirmada).toHaveBeenCalledWith(4));
     await waitFor(() => expect(moedas.textContent).toMatch(/47 moeda\(s\)/));
   });
@@ -150,6 +167,7 @@ describe("InventoryGridPanel", () => {
       data: undefined, error: { detail: "A pilha 1 passa do limite de 100 moedas por pilha da mesa." }, response: { status: 422 },
     }));
     montar({ put });
+    fireEvent.click(await screen.findByRole("button", { name: "Gerenciar moedas" }));
     await screen.findByRole("region", { name: "Moedas" });
     fireEvent.change(screen.getByLabelText("Cobre", { selector: "#ajuste-cobre" }), { target: { value: "500" } });
     fireEvent.click(screen.getByRole("button", { name: "Adicionar" }));
@@ -261,7 +279,7 @@ describe("InventoryGridPanel", () => {
     expect(screen.queryByRole("button", { name: /Definir formato/ })).toBeNull();
   });
 
-  it("o Narrador define o formato de um item sem dimensão, vendo o peso antigo só como referência", async () => {
+  it("o Narrador define o formato de um item sem dimensão, sem peso na tela", async () => {
     const put = vi.fn(async (caminho: string, opcoes: { body: Record<string, unknown> }) => {
       if (caminho.endsWith("/formato")) {
         return { data: { versao: opcoes.body.versao_esperada as number + 1, item: ANTIGA }, error: undefined, response: { status: 200 } };
@@ -272,10 +290,10 @@ describe("InventoryGridPanel", () => {
     expect(await screen.findByText(/Defina o tipo e a dimensão de cada um/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Definir formato de Espada antiga" }));
     const dialogo = await screen.findByRole("dialog", { name: "Definir formato: Espada antiga" });
-    expect(dialogo.textContent).toMatch(/Peso antigo \(só referência, não é convertido\): 3/);
+    expect(dialogo.textContent).not.toMatch(/Peso/);
     const confirmar = screen.getByRole("button", { name: "Definir formato" }) as HTMLButtonElement;
     expect(confirmar.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "uma_mao" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Uma mão" }));
     fireEvent.click(confirmar);
     await waitFor(() => expect(put).toHaveBeenCalledTimes(1));
     const [caminho, opcoes] = put.mock.calls[0] as [string, { params: { path: Record<string, string> }; body: Record<string, unknown> }];
@@ -290,7 +308,7 @@ describe("InventoryGridPanel", () => {
     const put = vi.fn(async () => ({ data: undefined, error: { detail: "Versão da ficha desatualizada." }, response: { status: 409 } }));
     montar({ put, papel: "narrador" });
     fireEvent.click(await screen.findByRole("button", { name: "Definir formato de Espada antiga" }));
-    fireEvent.change(await screen.findByLabelText("Tipo na grade"), { target: { value: "outro" } });
+    fireEvent.click(await screen.findByRole("radio", { name: "Outros (não se equipa, mas ocupa espaço)" }));
     fireEvent.click(screen.getByRole("button", { name: "Definir formato" }));
     expect(await screen.findByText("Versão da ficha desatualizada.")).toBeTruthy();
     expect(screen.getByRole("dialog")).toBeTruthy();

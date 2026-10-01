@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import axe from "axe-core";
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, createEvent, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { InventoryGrid, type Destino } from "./InventoryGrid";
@@ -87,6 +87,49 @@ describe("InventoryGrid", () => {
     expect(onMover).toHaveBeenCalledWith("t", { coluna: 1, linha: 1, girado: false });
   });
 
+  it("escolher um item de fora da grade mostra o que fazer e o botão coloca no primeiro espaço livre", () => {
+    const onMover = vi.fn();
+    render(
+      <InventoryGrid rotulo="Inventário" parametros={{ forca: 3, tamanho: "medio" }} onMover={onMover}
+        itens={[base({ id: "t", nome: "Tocha", largura: 1, altura: 2 })]} />,
+    );
+    expect(document.querySelector(".grade-inventario__colocar")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Tocha (1 x 2)" }));
+    const aviso = document.querySelector(".grade-inventario__colocar");
+    expect(aviso?.textContent).toMatch(/Tocha \(1 x 2\) está fora da grade\. Toque numa célula da grade para colocá-lo ali/);
+    expect(document.querySelector(".grade-inventario__area--colocando")).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Colocar na grade" })[0] as HTMLElement);
+    expect(onMover).toHaveBeenCalledWith("t", { coluna: 0, linha: 0, girado: false });
+  });
+
+  it("mostra a prévia da posição ao passar o mouse e cancela a escolha", () => {
+    render(
+      <InventoryGrid rotulo="Inventário" parametros={{ forca: 3, tamanho: "medio" }} onMover={vi.fn()}
+        itens={[base({ id: "t", nome: "Tocha", largura: 1, altura: 2 })]} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tocha (1 x 2)" }));
+    fireEvent.mouseEnter(document.querySelectorAll(".grade-inventario__celula")[6] as HTMLElement);
+    expect(document.querySelector(".grade-inventario__previa")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar escolha" }));
+    expect(document.querySelector(".grade-inventario__colocar")).toBeNull();
+  });
+
+  it("arrastar um item da bandeja e soltar sobre a grade o coloca na célula", () => {
+    const onMover = vi.fn();
+    render(
+      <InventoryGrid rotulo="Inventário" parametros={{ forca: 3, tamanho: "medio" }} onMover={onMover}
+        itens={[base({ id: "t", nome: "Tocha" })]} />,
+    );
+    const dados = { setData: vi.fn(), effectAllowed: "", types: [] as string[] };
+    fireEvent.dragStart(screen.getByRole("button", { name: "Tocha (1 x 1)" }), { dataTransfer: dados });
+    const area = document.querySelector(".grade-inventario__area") as HTMLElement;
+    area.getBoundingClientRect = () => ({ left: 0, top: 0, width: 500, height: 300, right: 500, bottom: 300, x: 0, y: 0, toJSON: () => ({}) });
+    const soltar = createEvent.drop(area, { dataTransfer: dados });
+    Object.defineProperties(soltar, { clientX: { value: 150 }, clientY: { value: 50 } });
+    fireEvent(area, soltar);
+    expect(onMover).toHaveBeenCalledWith("t", { coluna: 1, linha: 0, girado: false });
+  });
+
   it("item na bandeja não é levado: a grade avisa e não oferece equipar", () => {
     render(<Controlado inicial={[base({ id: "e", nome: "Espada", subtipo: "uma_mao", largura: 1, altura: 3 })]} />);
     const bandeja = screen.getByRole("region", { name: "Fora da grade" });
@@ -163,6 +206,81 @@ describe("InventoryGrid", () => {
     expect(dica.textContent).toMatch(/1d20 \+ Força \+ Esportes contra CD 18/);
     expect(dica.textContent).toMatch(/\+1 por ajudante, até \+3/);
     expect(info.getAttribute("aria-describedby")).toBe(dica.id);
+  });
+
+  it("sem botão Mover: Enter no item começa o movimento, com a dica de teclado no próprio item", () => {
+    render(<Controlado inicial={[base({ id: "c", nome: "Corda", largura: 1, altura: 2, coluna: 0, linha: 0 })]} />);
+    const corda = screen.getByRole("button", { name: /^Corda/ });
+    fireEvent.pointerDown(corda, { button: 0, clientX: 0, clientY: 0 });
+    fireEvent.pointerUp(corda);
+    expect(screen.queryByRole("button", { name: /Mover/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Remover da grade" })).toBeTruthy();
+    const dica = document.getElementById(corda.getAttribute("aria-describedby") ?? "");
+    expect(dica?.textContent).toMatch(/Enter ou Espaço começa a mover/);
+  });
+
+  it("seleção controlada, destaque do filtro e selo de quantidade", () => {
+    const onSelecionar = vi.fn();
+    const itens = [
+      base({ id: "a", nome: "Adaga", subtipo: "uma_mao", coluna: 0, linha: 0 }),
+      base({ id: "p", nome: "Poção", coluna: 1, linha: 0, quantidade: 3 }),
+    ];
+    render(<InventoryGrid rotulo="Grade" parametros={{ forca: 3, tamanho: "medio" }} itens={itens} onMover={vi.fn()}
+      selecionadoId="p" onSelecionar={onSelecionar} destaque={new Set(["a"])} />);
+    const pocao = screen.getByRole("button", { name: /^Poção, item, 1 por 1, coluna 2, linha 1, 3 unidades/ });
+    expect(pocao.getAttribute("aria-pressed")).toBe("true");
+    expect(pocao.querySelector(".grade-inventario__quantidade")?.textContent).toBe("3");
+    // Esmaecido continua no lugar e clicável.
+    expect(pocao.className).toMatch(/grade-inventario__item--esmaecido/);
+    expect(screen.getByRole("button", { name: /^Adaga/ }).className).toMatch(/grade-inventario__item--destacado/);
+    const adaga = screen.getByRole("button", { name: /^Adaga/ });
+    fireEvent.pointerDown(adaga, { button: 0, clientX: 0, clientY: 0 });
+    fireEvent.pointerUp(adaga);
+    expect(onSelecionar).toHaveBeenLastCalledWith("a");
+  });
+
+  it("painel externo recebe o item e as ações, no lugar do grupo de ações da grade", () => {
+    const alvo = document.createElement("div");
+    document.body.appendChild(alvo);
+    const onLargar = vi.fn();
+    render(<InventoryGrid rotulo="Grade" parametros={{ forca: 3, tamanho: "medio" }} onMover={vi.fn()} onEquipar={vi.fn()}
+      onLargar={onLargar} selecionadoId="a"
+      itens={[base({ id: "a", nome: "Adaga", subtipo: "uma_mao", coluna: 0, linha: 0 })]}
+      painel={{ alvo, render: ({ selecionado, acoes }) => (
+        <div>
+          <h3>{selecionado?.nome ?? "Nada"}</h3>
+          {Object.keys(acoes).sort().join(",")}
+          <button type="button" onClick={acoes.largar}>Largar</button>
+        </div>
+      ) }} />);
+    expect(alvo.querySelector("h3")?.textContent).toBe("Adaga");
+    expect(alvo.textContent).toMatch(/equipar,girar,largar/);
+    expect(screen.queryByRole("group", { name: /Ações para/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Largar" }));
+    expect(onLargar).toHaveBeenCalledWith("a");
+    alvo.remove();
+  });
+
+  it("célula vermelha marcada como alerta de sobrecarga", () => {
+    render(<Controlado inicial={[]} />);
+    expect(document.querySelectorAll('[data-alerta="sobrecarga"]').length).toBe(5);
+  });
+
+  it("sem imagem, cada subtipo mostra o próprio desenho, com o nome no rótulo e ao passar o mouse", () => {
+    const subtipos = ["peitoral", "capacete", "luvas", "botas", "uma_mao", "duas_maos", "escudo", "mochila", "aljava",
+      "moedas", "outro", "criatura"] as const;
+    render(<InventoryGrid rotulo="Grade" parametros={{ forca: 5, tamanho: "colossal" }} onMover={vi.fn()} somenteLeitura
+      itens={subtipos.map((subtipo, i) => base({ id: subtipo, nome: `Item ${subtipo}`, subtipo, coluna: i % 11, linha: Math.floor(i / 11) }))} />);
+    const desenhos = new Set<string>();
+    for (const subtipo of subtipos) {
+      const botao = screen.getByRole("button", { name: new RegExp(`^Item ${subtipo},`) });
+      expect(botao.getAttribute("title")).toBe(`Item ${subtipo}`);
+      const svg = botao.querySelector("svg.icone-subtipo");
+      expect(svg?.getAttribute("data-subtipo")).toBe(subtipo);
+      expect(svg?.getAttribute("aria-hidden")).toBe("true");
+      desenhos.add(svg?.innerHTML ?? "");
+    }
+    expect(desenhos.size).toBe(subtipos.length);
   });
 
   it("passa na verificação automática de acessibilidade", async () => {

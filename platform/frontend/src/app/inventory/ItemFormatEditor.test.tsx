@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { apiSimulada, renderComQuery } from "../cards/testing";
 import type { ApiClient } from "../characters/types";
+import { CATALOGO_ITENS } from "./catalogoItensTeste";
 import { ItemFormatEditor, type FormatoItem } from "./ItemFormatEditor";
 
 function Controlado({ inicial = null, api, arte, onChange }: {
@@ -36,15 +37,50 @@ describe("ItemFormatEditor — 5.2 criação de item com formato", () => {
     expect(screen.queryByLabelText("Largura")).toBeNull();
   });
 
+  it("o subtipo se escolhe numa fila de ícones, um botão de opção com nome por subtipo", () => {
+    renderComQuery(<Controlado inicial={{ subtipo: "mochila", largura: 2, altura: 2, mochila: { linhas: 1, colunas: 0 } }} />);
+    const grupo = screen.getByRole("radiogroup", { name: "Tipo na grade" });
+    const opcoes = Array.from(grupo.querySelectorAll<HTMLInputElement>("input[type=radio]"));
+    expect(opcoes.map((o) => o.getAttribute("aria-label"))).toEqual([
+      "Uma mão", "Duas mãos", "Peitoral", "Escudo", "Capacete", "Luvas", "Botas", "Mochila", "Aljava",
+      "Outros (não se equipa, mas ocupa espaço)",
+    ]);
+    // Os nove primeiros têm o desenho do subtipo; Outros, as reticências.
+    expect(grupo.querySelectorAll("svg").length).toBe(9);
+    expect(opcoes.filter((o) => o.checked).map((o) => o.value)).toEqual(["mochila"]);
+  });
+
   it("escolher o subtipo preenche a dimensão sugerida, e girar troca largura e altura", () => {
     const onChange = vi.fn();
     renderComQuery(<Controlado onChange={onChange} />);
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "uma_mao" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Uma mão" }));
     expect(ultimo(onChange)).toEqual({ subtipo: "uma_mao", largura: 1, altura: 3 });
     expect(screen.getByRole("figure", { name: "Prévia na grade: 1 por 3" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Girar" }));
     expect(ultimo(onChange)).toMatchObject({ largura: 3, altura: 1 });
     expect(screen.getByRole("figure", { name: "Prévia na grade: 3 por 1" })).toBeTruthy();
+  });
+
+  it("pede raridade em todo item e categoria só em Outros, com as opções do catálogo", async () => {
+    const onChange = vi.fn();
+    const { api } = apiSimulada({ GET: { "/mesas/{mesa_id}/catalogos/itens": { data: CATALOGO_ITENS } } });
+    renderComQuery(<Controlado api={api} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Uma mão" }));
+    const raridade = await screen.findByLabelText("Raridade");
+    expect(Array.from((raridade as HTMLSelectElement).options).map((o) => o.text)).toEqual(["Comum", "Incomum", "Raro", "Épico", "Lendário"]);
+    expect(screen.queryByLabelText("Categoria")).toBeNull();
+    fireEvent.change(raridade, { target: { value: "raro" } });
+    expect(ultimo(onChange)).toMatchObject({ subtipo: "uma_mao", raridade: "raro" });
+    // Trocar para Outros mantém a raridade e passa a pedir a categoria.
+    fireEvent.click(screen.getByRole("radio", { name: "Outros (não se equipa, mas ocupa espaço)" }));
+    const categoria = screen.getByLabelText("Categoria") as HTMLSelectElement;
+    expect(Array.from(categoria.options).map((o) => o.text)).toEqual(["Consumíveis", "Materiais", "Chaves", "Itens de Missão", "Diversos"]);
+    expect(categoria.value).toBe("diversos");
+    fireEvent.change(categoria, { target: { value: "chaves" } });
+    expect(ultimo(onChange)).toMatchObject({ subtipo: "outro", raridade: "raro", categoria: "chaves" });
+    // Voltar para arma descarta a categoria escolhida.
+    fireEvent.click(screen.getByRole("radio", { name: "Duas mãos" }));
+    expect(ultimo(onChange)).not.toHaveProperty("categoria");
   });
 
   it("limita a dimensão entre 1 e 12", () => {
@@ -59,9 +95,9 @@ describe("ItemFormatEditor — 5.2 criação de item com formato", () => {
   it("mostra mãos e pilha só em Outros", () => {
     const onChange = vi.fn();
     renderComQuery(<Controlado onChange={onChange} />);
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "peitoral" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Peitoral" }));
     expect(screen.queryByLabelText("Ocupa mãos")).toBeNull();
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "outro" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Outros (não se equipa, mas ocupa espaço)" }));
     fireEvent.change(screen.getByLabelText("Ocupa mãos"), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText("Empilha até (por célula)"), { target: { value: "3" } });
     expect(ultimo(onChange)).toMatchObject({ subtipo: "outro", maos: 1, pilha_max: 3 });
@@ -70,13 +106,13 @@ describe("ItemFormatEditor — 5.2 criação de item com formato", () => {
   it("pede ampliação e Requisito de Força na mochila, e capacidade na aljava", () => {
     const onChange = vi.fn();
     renderComQuery(<Controlado onChange={onChange} />);
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "mochila" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Mochila" }));
     fireEvent.change(screen.getByLabelText("Colunas a mais"), { target: { value: "2" } });
     fireEvent.change(screen.getByLabelText("Requisito de Força"), { target: { value: "3" } });
     expect(ultimo(onChange)?.mochila).toEqual({ linhas: 1, colunas: 2, requisito_forca: 3 });
     fireEvent.change(screen.getByLabelText("Requisito de Força"), { target: { value: "" } });
     expect(ultimo(onChange)?.mochila?.requisito_forca).toBeNull();
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "aljava" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Aljava" }));
     expect(screen.queryByLabelText("Colunas a mais")).toBeNull();
     fireEvent.change(screen.getByLabelText("Capacidade de flechas"), { target: { value: "30" } });
     expect(ultimo(onChange)).toMatchObject({ subtipo: "aljava", aljava: { capacidade_flechas: 30 } });
@@ -86,7 +122,7 @@ describe("ItemFormatEditor — 5.2 criação de item com formato", () => {
   it("trocar o subtipo preserva o ícone de grade já informado", () => {
     const onChange = vi.fn();
     renderComQuery(<Controlado onChange={onChange} inicial={{ subtipo: "uma_mao", largura: 1, altura: 3, icone_grade: "mesas/mesa/mesa/espada.png" }} />);
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "duas_maos" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Duas mãos" }));
     expect(ultimo(onChange)).toMatchObject({ subtipo: "duas_maos", icone_grade: "mesas/mesa/mesa/espada.png" });
   });
 
