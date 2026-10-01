@@ -1,0 +1,509 @@
+/*
+ * Aba Personalidade (reformular-personalidade-da-ficha). Cópia fiel da referência do usuário, medida em
+ * `e2e/fixtures/referencias/personalidade/caixas.json`: as medidas em px abaixo são as da referência com a folha
+ * em 1098 px. Molduras e ornamentos em SVG/CSS; pinturas só como ilustração, em áreas reservadas pelo layout.
+ * A disposição segue a largura da folha (container query), não a da janela (D9).
+ */
+
+.personalidade-conteiner { container: personalidade / inline-size; }
+
+.folha-personalidade {
+  /* Paleta medida na referência: vem de `paleta.ts`, aplicada pelo componente. */
+  /* Serifa só desta folha (D8): a escolha entre Cormorant e EB Garamond não muda as outras telas. */
+  --fonte-folha: "EB Garamond", var(--font-display);
+  --resumo-pergaminho: var(--pergaminho-100);
+  --resumo-ouro: var(--ouro-700);
+  --resumo-ouro-claro: var(--ouro-500);
+  position: relative;
+  isolation: isolate;
+  padding: 36px 31px 34px 29px;
+  border-radius: var(--radius-sm);
+  color: var(--pers-valor);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tinta-900) 55%, transparent),
+    inset 0 0 38px color-mix(in srgb, #5c3410 50%, transparent),
+    inset 0 0 110px color-mix(in srgb, #7a4a1a 24%, transparent),
+    0 22px 60px #000a;
+}
+
+/* Moldura dupla da folha, com os cantos grandes. */
+.folha-personalidade__moldura {
+  /* Faixa de bronze da borda, com o filete dourado por dentro (referência: bronze escuro e ouro). */
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border: 5px solid #5c3d1c;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px #d6a452, inset 0 0 0 2px #7a52248c, inset 0 0 6px 2px #3b24104d, 0 0 0 1px #1c1108;
+}
+/* Cantos de filigrana: avançam 8 px para fora da folha, com o azul-noite da página entre os ramos. */
+.canto-filigrana { position: absolute; width: 96px; height: 96px; overflow: visible; }
+.canto-filigrana__fundo { fill: var(--pers-noite, #13212c); }
+.canto-filigrana__ouro { stroke: #cf9a45; }
+.canto-filigrana__ponta { fill: #cf9a45; }
+.canto-filigrana__brilho { stroke: #f4d08a; opacity: .7; }
+.folha-personalidade__moldura .canto-filigrana--se { top: -8px; left: -8px; }
+.folha-personalidade__moldura .canto-filigrana--sd { top: -8px; right: -8px; transform: scaleX(-1); }
+.folha-personalidade__moldura .canto-filigrana--ie { bottom: -8px; left: -8px; transform: scaleY(-1); }
+.folha-personalidade__moldura .canto-filigrana--id { bottom: -8px; right: -8px; transform: scale(-1, -1); }
+
+/* ---------- Topo ---------- */
+.folha-personalidade__topo {
+  position: relative;
+  display: grid;
+  grid-template-columns: 392px 348px minmax(0, 1fr);
+  min-height: 145px;
+  padding-left: 40px;
+}
+.folha-personalidade__haste {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  color: var(--pers-eyebrow);
+  line-height: 0;
+}
+.folha-personalidade__titulos { position: relative; z-index: 2; min-width: 0; padding-top: 9px; }
+.folha-personalidade__eyebrow {
+  display: inline-block;
+  padding-bottom: 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--pers-eyebrow) 45%, transparent);
+  color: var(--pers-eyebrow);
+  font: 800 14px/1 var(--font-body);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.folha-personalidade__titulo {
+  margin: 2px 0 0;
+  color: var(--pers-titulo);
+  font: 700 51px/1 var(--fonte-folha);
+  letter-spacing: -.05em;
+}
+.folha-personalidade__linha-titulo {
+  position: relative;
+  display: block;
+  width: min(362px, 100%);
+  height: 1px;
+  margin: 4px 0 0 -1px;
+  background: var(--pers-filete);
+}
+.folha-personalidade__linha-titulo::before,
+.folha-personalidade__linha-titulo::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 3px;
+  height: 3px;
+  background: var(--pers-filete);
+  transform: rotate(45deg);
+}
+.folha-personalidade__linha-titulo::before { left: 0; }
+.folha-personalidade__linha-titulo::after { right: 12px; border-radius: 50%; transform: none; }
+.folha-personalidade__subtitulo {
+  margin: 9px 0 0 4px;
+  color: var(--pers-subtitulo);
+  font: 400 18px/1.2 var(--fonte-folha);
+  letter-spacing: -.01em;
+}
+
+.folha-personalidade__destaques {
+  position: relative;
+  z-index: 2;
+  grid-column: 2;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  margin-top: -3px;
+}
+/* Com um editor aberto, o bloco sobe acima da moldura da folha (z-index 3), que senão cruzaria o editor. */
+.folha-personalidade__destaques:focus-within,
+.folha-personalidade__destaques:has(.popover__surface) { z-index: 4; }
+.personalidade-citacao {
+  position: relative;
+  width: min(300px, 100%);
+  display: grid;
+  align-items: start;
+  min-height: 104px;
+  padding: 29px 20px 10px 40px;
+  background: color-mix(in srgb, var(--pers-quadro) 70%, transparent);
+}
+/* A moldura fina do quadro, esmaecendo à direita, onde a referência entra na pintura. */
+.personalidade-citacao::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid transparent;
+  border-image: url("./quadro-fino.svg") 24 / 24px / 0 stretch;
+  -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent 92%);
+  mask-image: linear-gradient(90deg, #000 62%, transparent 92%);
+}
+.personalidade-citacao__aspas { position: absolute; top: 35px; left: 22px; color: var(--pers-citacao); }
+.personalidade-citacao .editable-field { display: block; text-align: center; }
+/* O editor aberto sobre a citação não herda o centro nem o itálico da frase. */
+.personalidade-citacao .popover__surface { text-align: left; font-style: normal; }
+.personalidade-citacao .editable-field > .eyebrow {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.personalidade-citacao .editable-field > strong {
+  display: block;
+  color: var(--pers-citacao);
+  font: italic 500 20px/1.2 var(--fonte-folha);
+  letter-spacing: -.02em;
+}
+.personalidade-citacao .editable-field > strong:not(.editable-field__vazio)::before { content: "“"; }
+.personalidade-citacao .editable-field > strong:not(.editable-field__vazio)::after { content: "”"; }
+/* O lápis fica fora do quadro, sobre a pintura: o quadro continua igual ao da referência. */
+.personalidade-citacao .editable-field > .popover { position: absolute; top: 6px; right: -38px; }
+/* A citação e as etiquetas não têm botão na referência: para quem edita, só o lápis, fora do desenho. */
+.folha-personalidade .personalidade-citacao .popover__trigger.text-action,
+.folha-personalidade .personalidade-etiquetas-campo .popover__trigger.text-action {
+  min-width: 30px; width: 30px; height: 30px; padding: 0; gap: 0; font-size: 0;
+}
+
+.personalidade-etiquetas-campo { position: relative; display: flex; align-items: center; }
+.personalidade-etiquetas-campo > .popover { position: absolute; top: 1px; left: 100%; margin-left: 8px; }
+.personalidade-etiquetas {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin: 0 0 0 13px;
+  padding: 0;
+  list-style: none;
+}
+.personalidade-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 11px;
+  border: 1.5px solid var(--pers-etiqueta-borda);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ebcf9c, var(--pers-etiqueta-fundo));
+  color: var(--pers-etiqueta-texto);
+  font: 600 14px/1 var(--font-body);
+  box-shadow: inset 0 1px 0 #fff6, 0 1px 2px #3b24103d;
+}
+.personalidade-etiquetas__vazio { margin: 0 0 0 13px; color: var(--pers-vazio); font: italic 500 16px/1.2 var(--fonte-folha); }
+
+/* Pintura da escrivaninha: encosta no alto e à direita e esmaece à esquerda e embaixo (D6). */
+.personalidade-pintura { position: absolute; z-index: 0; pointer-events: none; }
+.personalidade-pintura img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.personalidade-pintura--escrivaninha {
+  top: -33px;
+  right: -21px;
+  width: 360px;
+  height: 210px;
+}
+.personalidade-pintura--escrivaninha img {
+  object-position: right top;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 32%), linear-gradient(0deg, transparent, #000 18%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 32%), linear-gradient(0deg, transparent, #000 18%);
+  mask-composite: intersect;
+}
+.personalidade-pintura--reserva { display: grid; place-items: center; color: var(--resumo-ouro); opacity: .45; }
+
+.folha-personalidade__divisor {
+  position: relative;
+  display: block;
+  width: min(754px, 100%);
+  height: 14px;
+  margin: 1px 0 0 4px;
+  color: var(--pers-filete);
+  /* A linha começa depois do floreio. */
+  background: linear-gradient(var(--pers-filete), var(--pers-filete)) 64px 50% / calc(100% - 64px) 1px no-repeat;
+}
+.folha-personalidade__floreio { position: absolute; top: 0; left: 0; }
+
+/* ---------- Grupos ---------- */
+.personalidade-grupos {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 18px;
+  margin: 17px 0 0 5px;
+}
+.personalidade-grupo {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-width: 0;
+  min-height: 457px;
+  padding: 12px 22px 15px 26px;
+  /* Moldura fina em 9 fatias (D4), desenhada sobre o padding: a borda real fica com 1 px. */
+  border: 1px solid transparent;
+  border-image: url("./quadro-fino.svg") 24 / 24px / 0 stretch;
+  background-color: color-mix(in srgb, var(--pers-quadro) 55%, transparent);
+  background-clip: padding-box;
+}
+.personalidade-grupo:focus-within, .personalidade-grupo:has(.popover__surface) { z-index: 3; }
+.personalidade-grupo__cabeca { display: flex; align-items: center; gap: 12px; }
+.personalidade-grupo__emblema { flex: none; width: 70px; height: 70px; color: var(--pers-icone); line-height: 0; }
+.personalidade-grupo__titulo { margin: 0; color: var(--pers-titulo); font: 700 22px/1.1 var(--fonte-folha); letter-spacing: -.02em; }
+.personalidade-grupo__subtitulo { margin: 8px 0 0; color: var(--pers-subtitulo); font: 400 15px/1.2 var(--fonte-folha); letter-spacing: -.01em; }
+.personalidade-grupo__divisor {
+  position: relative;
+  display: block;
+  height: 1px;
+  margin: 9px 0 0 8px;
+  background: var(--pers-filete);
+}
+/* Pontos nas duas pontas do divisor. */
+.personalidade-grupo__divisor::before,
+.personalidade-grupo__divisor::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--pers-filete);
+}
+.personalidade-grupo__divisor::before { left: -2px; }
+.personalidade-grupo__divisor::after { right: -2px; }
+
+.personalidade-grupo__linhas {
+  display: grid;
+  /* A coluna dos rótulos vem da medida da linha mais larga (`--rotulo`), mais as margens do rótulo. */
+  grid-template-columns: 50px calc(var(--rotulo, 7.4rem) + 34px) minmax(0, 1fr) auto;
+  /*
+   * Na referência, o quadro mais cheio (6 linhas de 58 px) define a altura dos dois; o outro estica, mas as
+   * linhas dele param em 66,75 px e sobra espaço embaixo. O teto vem do `max-height` desta área esticada.
+   */
+  grid-template-rows: repeat(var(--linhas, 5), minmax(58px, 1fr));
+  max-height: calc(var(--linhas, 5) * 66.75px);
+  column-gap: 0;
+}
+.personalidade-linha {
+  position: relative;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+.personalidade-linha + .personalidade-linha::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  margin-top: -2px;
+  opacity: .8;
+  /* Ponto, intervalo, tique de seta e a linha, como nos separadores da referência. */
+  background:
+    radial-gradient(circle, var(--pers-filete) 1.6px, transparent 2px) 0 50% / 5px 5px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='5'%3E%3Cpath d='M0 2.5 5 .4v4.2Z' fill='%23b8905c'/%3E%3C/svg%3E") 22px 50% / 6px 5px no-repeat,
+    linear-gradient(var(--pers-filete), var(--pers-filete)) 27px 50% / calc(100% - 27px) 1px no-repeat;
+}
+.personalidade-linha:focus-within, .personalidade-linha:has(.popover__surface) { z-index: 3; }
+.personalidade-linha__icone { display: grid; place-items: center; color: var(--pers-icone); line-height: 0; }
+/* Ícone recortado da referência: o formato vem da máscara e a cor, do tema. */
+.personalidade-icone--mascara {
+  display: inline-block;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask: var(--icone) center / contain no-repeat;
+  mask: var(--icone) center / contain no-repeat;
+}
+.personalidade-linha .editable-field {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  min-width: 0;
+}
+.personalidade-linha .editable-field > .eyebrow {
+  grid-column: 1;
+  justify-self: start;
+  width: max-content;
+  max-width: 8.2rem;
+  margin: 0 14px 0 20px;
+  color: var(--pers-rotulo);
+  font: 800 11.5px/1.35 var(--font-body);
+  letter-spacing: .112em;
+  text-transform: uppercase;
+}
+.personalidade-linha .editable-field > strong {
+  grid-column: 2;
+  min-width: 0;
+  color: var(--pers-valor);
+  font: 600 19px/1.15 var(--fonte-folha);
+  letter-spacing: -.05em;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+/* Vazio: o `EditableField` marca o texto; o `SelectField` não, então a linha também marca (`--vazia`). */
+.personalidade-linha .editable-field > .editable-field__vazio,
+.personalidade-linha--vazia .editable-field > strong { color: var(--pers-vazio); font-weight: 400; font-style: italic; letter-spacing: -.06em; }
+.personalidade-linha .editable-field > small,
+.personalidade-linha .editable-field > p { grid-column: 2 / -1; margin: 0; font-size: .84rem; }
+.personalidade-linha .editable-field > .popover { grid-column: 3; grid-row: 1; justify-self: end; }
+.personalidade-linha .popover__surface,
+.personalidade-historia__editar .popover__surface { left: auto; right: 0; transform: none; }
+
+/* Botão "Editar" medido: 84 × 36, com o lápis. */
+.folha-personalidade .popover__trigger.text-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 84px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--pers-botao-borda);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f8ebcf, var(--pers-botao-fundo));
+  color: var(--pers-botao-texto);
+  font: 600 16px/1 var(--fonte-folha);
+  text-decoration: none;
+  box-shadow: inset 0 0 0 1px #fff8, 0 1px 2px #3b241030;
+}
+.folha-personalidade .popover__trigger.text-action::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m2.5 21.5 1.3-5.6L15.9 3.8a2.2 2.2 0 0 1 3.1 0l1.2 1.2a2.2 2.2 0 0 1 0 3.1L8.1 20.2Zm2.9-4.3-.6 2 2-.6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m2.5 21.5 1.3-5.6L15.9 3.8a2.2 2.2 0 0 1 3.1 0l1.2 1.2a2.2 2.2 0 0 1 0 3.1L8.1 20.2Zm2.9-4.3-.6 2 2-.6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.folha-personalidade .popover__trigger.text-action:hover { border-color: var(--ouro-700); background: #fbf2de; }
+.folha-personalidade .popover__trigger.text-action:focus-visible { outline: 2px solid var(--ouro-800); outline-offset: 2px; }
+
+/* ---------- História ---------- */
+.personalidade-historia {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 251px;
+  margin-top: 15px;
+  padding: 25px 30px 24px 55px;
+  border: 1.5px solid #c08a3c;
+  background-color: color-mix(in srgb, var(--pers-quadro) 55%, transparent);
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--pers-quadro) 85%, transparent), inset 0 0 0 5.5px #c08a3c;
+}
+.personalidade-historia__cantos { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.personalidade-historia__cantos .canto-filigrana { width: 50px; height: 50px; }
+.personalidade-historia__cantos .canto-filigrana__fundo { fill: #4a3016; }
+.personalidade-historia__cantos .canto-filigrana--se { top: -5px; left: -5px; }
+.personalidade-historia__cantos .canto-filigrana--sd { top: -5px; right: -5px; transform: scaleX(-1); }
+.personalidade-historia__cantos .canto-filigrana--ie { bottom: -5px; left: -5px; transform: scaleY(-1); }
+.personalidade-historia__cantos .canto-filigrana--id { bottom: -5px; right: -5px; transform: scale(-1, -1); }
+.personalidade-historia__filigrana { position: absolute; left: 8px; bottom: 6px; z-index: 1; color: #9c7646; opacity: .8; pointer-events: none; }
+.personalidade-historia:focus-within, .personalidade-historia:has(.popover__surface) { z-index: 3; }
+.personalidade-historia__corpo { position: relative; z-index: 2; max-width: 540px; }
+.personalidade-historia__cabeca { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 22px; }
+.personalidade-historia__icone { position: relative; top: -7px; color: var(--pers-icone); line-height: 0; }
+.personalidade-historia__titulo { margin: 0; color: var(--pers-titulo); font: 700 39px/1 var(--fonte-folha); letter-spacing: -.05em; }
+.personalidade-historia__subtitulo { margin: 2px 0 0; color: var(--pers-subtitulo); font: 400 15px/1.1 var(--fonte-folha); letter-spacing: -.01em; }
+/* Só o "Editar": o rótulo é o título do quadro e o texto aparece em parágrafos logo abaixo. */
+.personalidade-historia__editar .editable-field { display: block; }
+.personalidade-historia__editar .editable-field > .eyebrow {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.personalidade-historia__editar .editable-field > strong { display: none; }
+.personalidade-historia__divisor {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(518px, 100%);
+  height: 19px;
+  margin: 1px 0 0 -14px;
+  color: var(--pers-filete);
+  background: linear-gradient(var(--pers-filete), var(--pers-filete)) 0 50% / 100% 1px no-repeat;
+}
+.personalidade-historia__divisor svg { flex: none; background: var(--pers-quadro); }
+.personalidade-historia__divisor-ponta--direita { transform: scaleX(-1); }
+.personalidade-historia__texto { max-width: 470px; margin: 12px 0 0 19px; color: var(--pers-historia); font: 400 18.5px/1.45 var(--fonte-folha); }
+.personalidade-historia__texto p { margin: 0; }
+.personalidade-historia__texto p + p { margin-top: .7em; }
+.personalidade-historia__texto--vazio { font-style: italic; color: var(--pers-vazio); }
+/*
+ * A cena vai até o filete dourado de dentro do quadro, em cima, embaixo e à direita, como na referência; só a
+ * esquerda se dissolve no pergaminho, num esmaecimento longo (sem linha visível na mesa).
+ */
+.personalidade-pintura--historia {
+  top: 5.5px;
+  right: 5.5px;
+  bottom: 5.5px;
+  width: 484px;
+  height: auto;
+}
+.personalidade-pintura--historia img {
+  object-position: right center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 34%);
+  mask-image: linear-gradient(90deg, transparent, #000 34%);
+}
+
+/* ---------- Larguras menores (D9) ---------- */
+@container personalidade (max-width: 999px) {
+  .personalidade-etiquetas-campo { flex-wrap: wrap; gap: 8px; }
+  .personalidade-etiquetas { flex-wrap: wrap; }
+  .personalidade-etiquetas-campo > .popover { position: static; margin-left: 0; }
+  /* A filigrana d'água ficaria sob o fim do texto da História. */
+  .personalidade-historia__filigrana { display: none; }
+  .folha-personalidade__topo { grid-template-columns: minmax(0, 1fr) minmax(0, 340px); padding-left: 36px; }
+  .folha-personalidade__destaques { grid-column: 2; }
+  .personalidade-pintura--escrivaninha { opacity: .35; height: 150px; }
+  .personalidade-historia__corpo { max-width: 62%; }
+  .personalidade-pintura--historia { width: 38%; }
+}
+
+@container personalidade (max-width: 759px) {
+  .personalidade-grupos { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .personalidade-grupo { min-height: 0; }
+  .personalidade-grupo__linhas { grid-template-rows: none; grid-auto-rows: minmax(58px, auto); }
+}
+
+@container personalidade (max-width: 639px) {
+  .folha-personalidade { padding: 26px 14px 22px; }
+  .folha-personalidade__moldura { inset: 4px; }
+  .folha-personalidade__moldura .canto-filigrana { width: 56px; height: 56px; }
+  .folha-personalidade__moldura .canto-filigrana--se { top: -5px; left: -5px; }
+  .folha-personalidade__moldura .canto-filigrana--sd { top: -5px; right: -5px; }
+  .folha-personalidade__moldura .canto-filigrana--ie { bottom: -5px; left: -5px; }
+  .folha-personalidade__moldura .canto-filigrana--id { bottom: -5px; right: -5px; }
+  /* As máscaras recortadas trazem o tamanho da referência no estilo; no celular, o do quadro. */
+  .personalidade-grupo__emblema .personalidade-icone--mascara { width: 52px !important; height: 52px !important; margin: 0 !important; }
+  .personalidade-linha__icone .personalidade-icone--mascara { width: 34px !important; height: 34px !important; margin: 0 !important; }
+  .personalidade-historia__icone .personalidade-icone--mascara { width: 40px !important; height: 40px !important; margin: 0 !important; }
+  .personalidade-historia__cabeca { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
+  .personalidade-historia__editar { grid-column: 1 / -1; justify-self: end; }
+  .folha-personalidade__topo { grid-template-columns: minmax(0, 1fr); padding-left: 0; min-height: 0; }
+  .folha-personalidade__haste { display: none; }
+  .folha-personalidade__destaques { grid-column: 1; padding-top: 16px; }
+  .folha-personalidade__titulo { font-size: 42px; }
+  .folha-personalidade__linha-titulo, .folha-personalidade__divisor { width: 100%; }
+  .personalidade-pintura--escrivaninha { top: -20px; right: -8px; width: 60%; height: 130px; opacity: .25; }
+  .personalidade-citacao { padding-left: 34px; padding-right: 40px; border-right: 1px solid var(--pers-filete); }
+  /* Sem espaço fora do desenho: os lápis da citação e das etiquetas entram no fluxo. */
+  .personalidade-citacao .editable-field > .popover { right: 6px; }
+  .personalidade-etiquetas-campo { flex-wrap: wrap; gap: 8px; }
+  .personalidade-etiquetas { flex-wrap: wrap; margin-left: 0; }
+  .personalidade-etiquetas-campo > .popover { position: static; margin-left: 0; }
+  .personalidade-grupos { margin-left: 0; }
+  .personalidade-grupo { padding: 10px 10px 12px; }
+  .personalidade-grupo__emblema { width: 52px; height: 52px; }
+  .personalidade-grupo__emblema svg { width: 52px; height: 52px; }
+  .personalidade-grupo__linhas { grid-template-columns: 38px minmax(0, 1fr) auto; }
+  .personalidade-linha__icone svg { width: 28px; height: 28px; }
+  /* Rótulo acima do valor, e o botão ao lado dos dois. */
+  .personalidade-linha .editable-field { grid-template-columns: minmax(0, 1fr) auto; grid-column: 2 / -1; column-gap: 8px; }
+  .personalidade-linha .editable-field > .eyebrow { grid-column: 1; grid-row: 1; margin: 8px 0 0 10px; }
+  .personalidade-linha .editable-field > strong { grid-column: 1; grid-row: 2; margin: 0 0 8px 10px; font-size: 18px; }
+  .personalidade-linha .editable-field > small,
+  .personalidade-linha .editable-field > p { grid-column: 1 / -1; }
+  .personalidade-linha .editable-field > .popover { grid-column: 2; grid-row: 1 / span 2; }
+  .personalidade-historia { padding: 22px 16px 18px; }
+  .personalidade-historia__corpo { max-width: none; }
+  .personalidade-historia__divisor { width: 100%; margin-left: 0; }
+  .personalidade-pintura--historia { display: none; }
+}

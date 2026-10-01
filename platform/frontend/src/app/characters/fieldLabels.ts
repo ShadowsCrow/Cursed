@@ -11,6 +11,8 @@ const DIRETOS: Record<string, string> = {
   "personalidade.pecado": "Pecado",
   "personalidade.meu_lema": "Lema",
   "personalidade.historia": "História",
+  "personalidade.frase": "Frase marcante",
+  "personalidade.tracos": "Traços",
   "personagem.ilustracao_ativo": "Ilustração",
 };
 

@@ -36,8 +36,16 @@ export interface FichaRascunho {
   };
   atributos: Valores;
   pericias: Valores;
-  /** Alinhamento, pecado e campos narrativos, pelas chaves da ficha. */
-  personalidade: Record<string, string>;
+  /** Alinhamento, pecado e campos narrativos, pelas chaves da ficha; os Traços são uma lista. */
+  personalidade: Record<string, ValorPersonalidade>;
+}
+
+/** Texto, ou lista de palavras curtas nos Traços (reformular-personalidade-da-ficha, D3). */
+export type ValorPersonalidade = string | string[];
+
+/** O campo tem algo escrito: texto não vazio ou lista com ao menos um traço. */
+export function preenchido(valor: ValorPersonalidade | undefined): boolean {
+  return Array.isArray(valor) ? valor.some((t) => t.trim()) : Boolean(valor?.trim());
 }
 
 export interface EstadoAssistente {
@@ -102,9 +110,10 @@ export function montarFicha(ficha: FichaRascunho): FichaContrato {
     const valor = ficha.pericias[nome];
     pericias[nome] = valor === undefined || Number.isNaN(valor) ? 0 : valor;
   }
-  const personalidade: Record<string, string> = {};
+  const personalidade: Record<string, ValorPersonalidade> = {};
   for (const [chave, valor] of Object.entries(ficha.personalidade)) {
-    if (valor.trim()) personalidade[chave] = valor.trim();
+    if (!preenchido(valor)) continue;
+    personalidade[chave] = Array.isArray(valor) ? valor.map((t) => t.trim()).filter(Boolean) : valor.trim();
   }
   return {
     personagem,

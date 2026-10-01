@@ -42,7 +42,11 @@ const LISTAS = {
   sexos: ["Masculino", "Feminino", "Outro"],
   alinhamentos: ["Leal | Bom", "Neutro | Bom"],
   pecados: [{ nome: "Orgulho", icone: "🦚", equivalentes: [] }],
-  campos_personalidade: [{ chave: "vivo_para", rotulo: "Vivo para", dica: "Ex: proteger os inocentes" }],
+  campos_personalidade: [
+    { chave: "tracos", rotulo: "Traços", dica: "Ex: Leal", tipo: "tracos", maximo: 6, limite: 24 },
+    { chave: "vivo_para", rotulo: "Vivo para", dica: "Ex: proteger os inocentes" },
+    { chave: "historia", rotulo: "História", dica: "", longo: true, limite: 4000 },
+  ],
   faixas_de_altura: FAIXAS,
 };
 const valor = (chave: string, rotulo: string, total: number | null, fontes: [string, number][] = [], motivo: string | null = null) => ({
@@ -519,6 +523,24 @@ describe("Rascunho no assistente (4.2)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continuar rascunho" }));
     expect(titulo().textContent).toBe("Atributos");
     expect((radioDe("Inteligência", "3") as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("os Traços voltam com o rascunho e seguem, com a História, para a ficha criada", async () => {
+    const { api, POST } = criarApi();
+    const armazenamento = new Memoria();
+    gravarRascunho(armazenamento, "mesa-1", "ana", estadoEm("personalidade", (e) => {
+      e.ficha.personalidade = { tracos: ["Leal", "Reservado"], historia: "Veio de terras antigas." };
+    }));
+    expect(lerRascunho(armazenamento, "mesa-1", "ana")?.ficha.personalidade.tracos).toEqual(["Leal", "Reservado"]);
+    montar({ api, armazenamento, url: "/mesas/mesa-1/criar-personagem?etapa=personalidade" });
+    expect(await screen.findByRole("button", { name: "Remover Reservado" })).toBeTruthy();
+    avancar();
+    expect(await screen.findByText("Leal · Reservado")).toBeTruthy();
+    await screen.findByText("14");
+    fireEvent.click(screen.getByRole("button", { name: "Criar personagem" }));
+    await waitFor(() => expect(POST.mock.calls.some(([c]) => c === "/mesas/{mesa_id}/personagens")).toBe(true));
+    const [, { body }] = POST.mock.calls.find(([c]) => c === "/mesas/{mesa_id}/personagens")! as [string, { body: { ficha: { personalidade: unknown } } }];
+    expect(body.ficha.personalidade).toEqual({ tracos: ["Leal", "Reservado"], historia: "Veio de terras antigas." });
   });
 
   it("descartar abre vazio em Conceito e apaga o rascunho", async () => {

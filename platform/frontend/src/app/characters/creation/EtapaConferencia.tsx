@@ -4,7 +4,7 @@ import type { ValorDerivadoResumo } from "../types";
 import { lerAltura } from "./altura";
 import { Resumo } from "./CamposDasEtapas";
 import { FORA_DO_ASSISTENTE, avisosDaConferencia, definicao, etapaDoCampo } from "./etapas";
-import { NOMES_ATRIBUTOS, NOMES_PERICIAS, exibir, type EstadoAssistente, type EtapaId } from "./modelo";
+import { NOMES_ATRIBUTOS, NOMES_PERICIAS, exibir, preenchido, type EstadoAssistente, type EtapaId } from "./modelo";
 import type { PreviaCriacao, ProblemaCampo } from "./api";
 
 const ORDEM_RECURSOS = ["recurso:pv_maximo", "recurso:escala_pv", "recurso:pp_maximo", "recurso:escala_pp"];
@@ -48,7 +48,9 @@ export function EtapaConferencia({ estado, classes, listas, previa, carregando, 
       .map(([nome, valor]) => `${exibir(nome)} ${valor ?? "—"}`)
       .join(", ") || "Todas em 0";
   };
-  const personalidade = Object.entries(estado.ficha.personalidade).filter(([, v]) => v.trim());
+  // Os Traços aparecem juntos, separados por " · ".
+  const personalidade = Object.entries(estado.ficha.personalidade).filter(([, v]) => preenchido(v))
+    .map(([chave, valor]) => [chave, Array.isArray(valor) ? valor.join(" · ") : valor] as const);
   const rotuloCampo = (chave: string) =>
     ({ alinhamento: "Alinhamento", pecado: "Pecado Capital" } as Record<string, string>)[chave]
     ?? listas?.campos_personalidade.find((c) => c.chave === chave)?.rotulo ?? chave;

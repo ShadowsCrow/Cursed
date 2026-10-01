@@ -1,29 +1,4 @@
-# Identidade e personalidade do personagem
-
-## Purpose
-
-Completar as informações básicas e a personalidade da ficha com os campos e as listas fixas da ficha original, validados no servidor, para que o personagem tenha a mesma identidade narrativa que tinha antes.
-
-## Requirements
-
-### Requirement: Informações básicas completas
-A ficha SHALL ter, além de nome, classe, arquétipo e raça:
-- **Idade**: inteiro maior ou igual a `0`, podendo ficar vazia.
-- **Sexo**: uma das opções `Masculino`, `Feminino` ou `Outro`, podendo ficar vazio. A lista vem do mesmo JSON de dados do sistema das listas de personalidade.
-
-A raça SHALL ser escolhida do catálogo de raças.
-
-#### Scenario: Jogador preenche idade e sexo
-- **WHEN** o jogador informa idade `27` e sexo `Feminino` e salva
-- **THEN** a ficha mostra os dois valores e o histórico registra a alteração
-
-#### Scenario: Idade negativa
-- **WHEN** alguém tenta gravar idade `-3`
-- **THEN** o sistema recusa a gravação e informa que a idade não pode ser negativa
-
-#### Scenario: Sexo fora da lista pela API
-- **WHEN** uma gravação tenta registrar o sexo "Indefinido"
-- **THEN** o sistema recusa a gravação e informa as opções válidas
+## MODIFIED Requirements
 
 ### Requirement: Alinhamento e Pecado Capital em listas fixas
 A personalidade SHALL ter:
@@ -112,19 +87,7 @@ A lista de campos, suas dicas, seus tipos (texto ou traços), qual deles é long
 - **WHEN** o jogador abre uma ficha criada antes desta mudança
 - **THEN** a Frase marcante e os Traços aparecem vazios, com a dica, e a ficha não recebe aviso de valor inválido
 
-### Requirement: Valores antigos fora das listas
-Fichas existentes com sexo, alinhamento ou pecado fora das listas SHALL continuar legíveis, com o valor original visível e sinalizado para correção. O sistema SHALL NOT trocar o valor automaticamente, e gravações que não alterem esse campo SHALL ser aceitas.
-
-#### Scenario: Alinhamento escrito à mão
-- **WHEN** uma ficha migrada tem o alinhamento "caótico e bondoso"
-- **THEN** a ficha mostra o texto original com o aviso de fora da lista e oferece escolher uma das 9 opções
-
-### Requirement: Permissões e histórico dos novos campos
-Os novos campos SHALL seguir as permissões de edição da mesa, incluindo campos bloqueados e campos que exigem aprovação, e SHALL ser registrados no histórico de auditoria com rótulos legíveis.
-
-#### Scenario: Campo que exige aprovação
-- **WHEN** a mesa exige aprovação para a idade e o jogador altera a idade
-- **THEN** a alteração vira um pedido pendente para o Narrador, como os demais campos
+## ADDED Requirements
 
 ### Requirement: Arrumação da aba Personalidade no JSON
 O JSON de dados do sistema das listas de personalidade SHALL definir a arrumação da aba Personalidade:

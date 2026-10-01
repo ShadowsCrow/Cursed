@@ -10,7 +10,9 @@ import {
 } from "./distribuicao";
 import { intervaloAplicavel, tamanhoVizinho, textoIntervalo, type FaixaAltura, type ForaDaMedia } from "./altura";
 import type { Erros } from "./etapas";
-import { NOMES_ATRIBUTOS, NOMES_PERICIAS, exibir, type FichaRascunho } from "./modelo";
+import { NOMES_ATRIBUTOS, NOMES_PERICIAS, exibir, type FichaRascunho, type ValorPersonalidade } from "./modelo";
+import { lerTracos } from "../sheet/personalidade/tracos";
+import { EditorDeTracos } from "../sheet/personalidade/TracosField";
 
 
 const NAO_INFORMADO = "não informado";
@@ -361,10 +363,10 @@ export function EtapaDistribuicao({ categoria, valores, foraDoPadrao, erros, onV
 
 export function EtapaPersonalidade({ listas, valores, onChange }: {
   listas: ListasFicha | undefined;
-  valores: Record<string, string>;
-  onChange: (chave: string, valor: string) => void;
+  valores: Record<string, ValorPersonalidade>;
+  onChange: (chave: string, valor: ValorPersonalidade) => void;
 }) {
-  const valor = (chave: string) => valores[chave] ?? "";
+  const valor = (chave: string) => { const v = valores[chave]; return typeof v === "string" ? v : ""; };
   return (
     <div className="assistente__campos">
       <label htmlFor={idCampo("personalidade.alinhamento")}>Alinhamento</label>
@@ -379,6 +381,15 @@ export function EtapaPersonalidade({ listas, valores, onChange }: {
       </select>
       {(listas?.campos_personalidade ?? []).map((campo) => {
         const id = idCampo(`personalidade.${campo.chave}`);
+        // Traços: o mesmo editor de etiquetas da ficha, aberto na própria etapa (reformular-personalidade-da-ficha, D3).
+        if (campo.tipo === "tracos") {
+          return (
+            <div key={campo.chave} className="assistente__campo">
+              <EditorDeTracos id={id} rotulo={`${campo.rotulo} (até ${campo.maximo ?? 6})`} valor={lerTracos(valores[campo.chave])}
+                maximo={campo.maximo ?? 6} limite={campo.limite} dica={campo.dica} onChange={(tracos) => onChange(campo.chave, tracos)} />
+            </div>
+          );
+        }
         const caracteres = contarCaracteres(valor(campo.chave));
         const passou = typeof campo.limite === "number" && caracteres > campo.limite;
         return (

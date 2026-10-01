@@ -7,7 +7,7 @@
  * jogador e é removido ao concluir e ao descartar.
  */
 
-import { ETAPAS, ehEtapa, indiceDa, type EstadoAssistente, type FichaRascunho } from "./modelo";
+import { ETAPAS, ehEtapa, indiceDa, type EstadoAssistente, type FichaRascunho, type ValorPersonalidade } from "./modelo";
 
 export const VERSAO_ESQUEMA = 1;
 
@@ -46,9 +46,11 @@ function fichaDe(bruta: unknown): FichaRascunho | null {
   if (!bruta || typeof bruta !== "object") return null;
   const ficha = bruta as Record<string, unknown>;
   const personagem = (ficha.personagem ?? {}) as Record<string, unknown>;
-  const personalidade: Record<string, string> = {};
+  const personalidade: Record<string, ValorPersonalidade> = {};
   for (const [chave, valor] of Object.entries((ficha.personalidade ?? {}) as Record<string, unknown>)) {
     if (typeof valor === "string") personalidade[chave] = valor;
+    // Traços: só os textos da lista.
+    else if (Array.isArray(valor)) personalidade[chave] = valor.filter((t): t is string => typeof t === "string");
   }
   return {
     personagem: {

@@ -2,7 +2,7 @@ import type { ClasseCatalogo, RacaCatalogo } from "../sheet/catalogoApi";
 import { problemaDeAltura, type FaixaAltura } from "./altura";
 import { acharPorNome } from "../sheet/catalogoApi";
 import { avaliar, mensagemDeLimite, problemas, type Categoria } from "./distribuicao";
-import { NOMES_ATRIBUTOS, NOMES_PERICIAS, lerIdade, type EstadoAssistente, type EtapaId } from "./modelo";
+import { NOMES_ATRIBUTOS, NOMES_PERICIAS, lerIdade, preenchido, type EstadoAssistente, type EtapaId } from "./modelo";
 
 /**
  * Textos de orientação de cada etapa (design D6). Apresentam, sem definir, o capítulo
@@ -186,6 +186,6 @@ export function avisosDaConferencia(estado: EstadoAssistente): string[] {
   const p = estado.ficha.personagem;
   const vazios = [!p.idade.trim() && "idade", !p.sexo && "sexo"].filter(Boolean);
   if (vazios.length) avisos.push(`Campos opcionais em branco na Identidade: ${vazios.join(" e ")}.`);
-  if (!Object.values(estado.ficha.personalidade).some((v) => v.trim())) avisos.push("A Personalidade ficou em branco; ela pode ser preenchida depois, na ficha.");
+  if (!Object.values(estado.ficha.personalidade).some(preenchido)) avisos.push("A Personalidade ficou em branco; ela pode ser preenchida depois, na ficha.");
   return avisos;
 }
