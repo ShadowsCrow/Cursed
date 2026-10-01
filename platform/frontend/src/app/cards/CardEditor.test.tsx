@@ -1,146 +1,324 @@
 // @vitest-environment jsdom
 import axe from "axe-core";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { CATALOGO_ITENS } from "../inventory/catalogoItensTeste";
 import { CardEditor } from "./CardEditor";
-import { apiSimulada, em, renderComQuery, versao } from "./testing";
-import type { CartaDefinicaoResumo } from "./types";
+import { apiSimulada, renderComQuery, versao } from "./testing";
+import type { CartaDefinicaoResumo, ValidacaoCarta } from "./types";
 
-const DEFINICAO: CartaDefinicaoResumo = {
-  id: "c1", tipo: "magia", versao: 0, rascunho: { tipo: "magia", titulo: "Bola de Fogo", texto: "Explode." },
-  procedencia_rascunho: { origem: "narrador" }, versao_publicada: null, publicada: null, arquivada: false,
-};
+/*
+ * Editor de cartas no grimório (simplificar-criacao-de-cartas): uma etapa só, salvamento automático,
+ * validação junto do campo e Publicar único. Os cenários seguem as specs `editor-de-cartas` e `inventario-em-grade`.
+ */
 
-function montar(rotas: Parameters<typeof apiSimulada>[0] = {}) {
-  const simulada = apiSimulada({
-    GET: { "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] } },
-    PUT: {
-      "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": ({ body }) => ({
-        data: { ...DEFINICAO, versao: (body as { versao_esperada: number }).versao_esperada + 1, rascunho: (body as { rascunho: unknown }).rascunho },
-      }),
-    },
-    POST: {
-      "/mesas/{mesa_id}/cartas/{carta_id}/validacao": { data: { valida: true, problemas: [], revisao_pendente: [] } },
-      "/mesas/{mesa_id}/cartas/{carta_id}/publicacao": { data: versao("v1", "magia", { titulo: "Bola de Fogo" }) },
-      ...rotas.POST,
-    },
-    ...(rotas.GET ? { GET: rotas.GET } : {}),
-  });
-  renderComQuery(<CardEditor api={simulada.api} mesaId="mesa" definicao={DEFINICAO} onClose={vi.fn()} />);
-  return simulada;
+const VALIDA: ValidacaoCarta = { valida: true, problemas: [], revisao_pendente: [] };
+
+function definicao(tipo: CartaDefinicaoResumo["tipo"], rascunho: Record<string, unknown>, extra: Partial<CartaDefinicaoResumo> = {}): CartaDefinicaoResumo {
+  return {
+    id: "c1", tipo, versao: 0, rascunho: { tipo, ...rascunho }, procedencia_rascunho: { origem: "narrador" },
+    versao_publicada: null, publicada: null, arquivada: false, ...extra,
+  };
 }
 
-describe("CardEditor — 9.3 rascunho, validação e publicação", () => {
-  afterEach(() => cleanup());
+type Rotas = Parameters<typeof apiSimulada>[0];
 
-  it("salva custos vazios como nulos e não copia o custo legado para eles", async () => {
-    const { PUT } = montar();
-    fireEvent.change(screen.getByLabelText("Custo de Aprendizado (PP)"), { target: { value: "3" } });
-    fireEvent.change(screen.getByLabelText(/Custo legado/), { target: { value: "2 PP + 1 PV" } });
-    fireEvent.change(screen.getByLabelText("Custo de Aprendizado (PP)"), { target: { value: "" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }));
-    await waitFor(() => expect(PUT).toHaveBeenCalled());
-    const corpo = em(PUT.mock.calls, 0)[1]?.body as { rascunho: Record<string, unknown>; versao_esperada: number };
-    expect(corpo.versao_esperada).toBe(0);
-    expect(corpo.rascunho.custo_aprendizado).toBeNull();
-    expect(corpo.rascunho.custo_legado).toBe("2 PP + 1 PV");
-    for (const campo of ["descansos_minimos", "potencia_uso", "custo_uso"]) expect(corpo.rascunho[campo]).toBeUndefined();
-    expect(screen.getByText("Custo legado (apenas histórico): 2 PP + 1 PV")).toBeTruthy();
-    expect(screen.getAllByText("Não definido").length).toBe(4);
+function montar(inicial: CartaDefinicaoResumo | null, rotas: Rotas = {}, onClose = vi.fn()) {
+  let versaoAtual = inicial?.versao ?? 0;
+  const simulada = apiSimulada({
+    GET: {
+      "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] },
+      "/mesas/{mesa_id}/cartas": { data: [] },
+      "/mesas/{mesa_id}/catalogos/itens": { data: CATALOGO_ITENS },
+      ...rotas.GET,
+    },
+    POST: {
+      "/mesas/{mesa_id}/cartas": ({ body }) => {
+        const { tipo, rascunho } = body as { tipo: CartaDefinicaoResumo["tipo"]; rascunho: Record<string, unknown> };
+        versaoAtual = 0;
+        return { data: definicao(tipo, rascunho, { id: "nova" }), status: 201 };
+      },
+      "/mesas/{mesa_id}/cartas/{carta_id}/validacao": { data: VALIDA },
+      "/mesas/{mesa_id}/cartas/{carta_id}/publicacao": { data: versao("v1", inicial?.tipo ?? "habilidade", { titulo: "x" }), status: 201 },
+      ...rotas.POST,
+    },
+    PUT: {
+      "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": ({ body }) => {
+        const pedido = body as { rascunho: Record<string, unknown>; versao_esperada: number; tipo?: CartaDefinicaoResumo["tipo"] };
+        versaoAtual = pedido.versao_esperada + 1;
+        return { data: definicao(pedido.tipo ?? inicial?.tipo ?? "habilidade", pedido.rascunho, { id: inicial?.id ?? "nova", versao: versaoAtual }) };
+      },
+      ...rotas.PUT,
+    },
+  });
+  renderComQuery(<CardEditor api={simulada.api} mesaId="mesa" definicao={inicial} onClose={onClose} />);
+  return { ...simulada, onClose };
+}
+
+const chamadas = (fn: ReturnType<typeof vi.fn>, caminho: string) => fn.mock.calls.filter(([c]) => c === caminho);
+const corpo = (fn: ReturnType<typeof vi.fn>, caminho: string, indice = -1) =>
+  chamadas(fn, caminho).at(indice)?.[1]?.body as Record<string, unknown> | undefined;
+const esperarSalvo = () => screen.findByText("Rascunho salvo", {}, { timeout: 3000 });
+
+afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+describe("CardEditor — criação numa etapa só", () => {
+  it("Narrador cria uma habilidade: o título na carta cria e salva o rascunho sem outro clique", async () => {
+    const { POST } = montar(null);
+    expect(screen.getByRole("dialog", { name: "Nova carta" })).toBeTruthy();
+    expect((screen.getByRole("radio", { name: "Habilidade" }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByText("Escreva o título para salvar o rascunho.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Passo Leve" } });
+    await esperarSalvo();
+    expect(corpo(POST, "/mesas/{mesa_id}/cartas")).toEqual({ tipo: "habilidade", rascunho: { titulo: "Passo Leve" } });
+    expect(chamadas(POST, "/mesas/{mesa_id}/cartas").length).toBe(1);
+    // Depois de salvar, o servidor valida.
+    await waitFor(() => expect(chamadas(POST, "/mesas/{mesa_id}/cartas/{carta_id}/validacao").length).toBe(1));
   });
 
-  it("mostra problemas de validação por campo e aviso de revisão", async () => {
-    montar({
+  it("Narrador desiste: trocar o tipo e fechar sem título não cria carta", async () => {
+    const { POST, onClose } = montar(null);
+    fireEvent.click(screen.getByRole("radio", { name: "Item" }));
+    expect((screen.getByRole("radio", { name: "Item" }) as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(chamadas(POST, "/mesas/{mesa_id}/cartas")).toEqual([]);
+  });
+
+  it("fechar logo depois de digitar salva antes de fechar", async () => {
+    const { PUT, onClose } = montar(definicao("habilidade", { titulo: "Golpe", texto: "Antigo." }));
+    fireEvent.change(screen.getByLabelText("Descrição"), { target: { value: "Novo texto." } });
+    fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(corpo(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho")).toMatchObject({ rascunho: { texto: "Novo texto." }, versao_esperada: 0 });
+  });
+
+  it("Narrador envia a arte: a carta ainda não salva é criada antes, e a imagem vai para ela", async () => {
+    const ordem: string[] = [];
+    const { POST } = montar(null, {
       POST: {
-        "/mesas/{mesa_id}/cartas/{carta_id}/validacao": {
-          data: { valida: false, problemas: [{ campo: "texto", mensagem: "Campo obrigatório" }], revisao_pendente: ["Custo legado sem cálculo validado"] },
+        "/mesas/{mesa_id}/cartas": ({ body }) => {
+          ordem.push("criar");
+          const { tipo, rascunho } = body as { tipo: CartaDefinicaoResumo["tipo"]; rascunho: Record<string, unknown> };
+          return { data: definicao(tipo, rascunho, { id: "nova" }), status: 201 };
         },
       },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Validar" }));
-    expect(await screen.findByText(/Campo obrigatório/)).toBeTruthy();
-    expect(screen.getByText("texto")).toBeTruthy();
-    expect(screen.getByText(/Custo legado sem cálculo validado/)).toBeTruthy();
-  });
-
-  it("publica com a versão do rascunho após confirmação e exibe os problemas do 422", async () => {
-    const { POST } = montar({
-      POST: {
-        "/mesas/{mesa_id}/cartas/{carta_id}/publicacao": {
-          error: { detail: { mensagem: "A carta tem problemas de validação.", problemas: [{ campo: "ativos.0", mensagem: "Ativo fora da mesa" }] } }, status: 422,
-        },
-      },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Publicar nova versão" }));
-    expect(POST).not.toHaveBeenCalledWith("/mesas/{mesa_id}/cartas/{carta_id}/publicacao", expect.anything());
-    fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
-    expect(await screen.findByText("A carta tem problemas de validação.")).toBeTruthy();
-    expect(screen.getByText(/Ativo fora da mesa/)).toBeTruthy();
-    const chamada = POST.mock.calls.find(([caminho]) => caminho === "/mesas/{mesa_id}/cartas/{carta_id}/publicacao");
-    expect(chamada?.[1]?.body).toEqual({ versao_esperada: 0, promover_ativos: false });
-  });
-
-  it("confirma a cópia de arte privada e mostra a imagem no rascunho", async () => {
-    const caminho = "mesas/mesa/narrador/legado/arte.png";
-    const simulada = apiSimulada({
-      GET: {
-        "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] },
-        "/mesas/{mesa_id}/ativos": { data: { tipo: "image/png", base64: "YWJj" } },
-      },
-      POST: { "/mesas/{mesa_id}/cartas/{carta_id}/publicacao": { data: versao("v1", "magia", { titulo: "Bola de Fogo" }) } },
-    });
-    renderComQuery(<CardEditor api={simulada.api} mesaId="mesa" definicao={{
-      ...DEFINICAO, rascunho: { ...DEFINICAO.rascunho, ativos_privados: [caminho] },
-    }} onClose={vi.fn()} />);
-    expect((await screen.findByRole("img", { name: "Arte de Bola de Fogo" })).getAttribute("src"))
-      .toBe("data:image/png;base64,YWJj");
-    fireEvent.click(screen.getByRole("button", { name: "Publicar nova versão" }));
-    expect(screen.getByText(/arte privada.*será copiada/i)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
-    await waitFor(() => expect(simulada.POST).toHaveBeenCalledWith(
-      "/mesas/{mesa_id}/cartas/{carta_id}/publicacao",
-      expect.objectContaining({ body: { versao_esperada: 0, promover_ativos: true } }),
-    ));
-  });
-
-  it("exibe conflito ao salvar rascunho desatualizado", async () => {
-    const simulada = apiSimulada({
-      GET: { "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] } },
-      PUT: { "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": { error: { detail: "Rascunho alterado por outra edição." }, status: 409 } },
-    });
-    renderComQuery(<CardEditor api={simulada.api} mesaId="mesa" definicao={DEFINICAO} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Outra" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }));
-    expect(await screen.findByText("Rascunho alterado por outra edição.")).toBeTruthy();
-  });
-
-  it("carta de item: o subtipo do formato define o tipo de item e o rascunho é salvo com o formato", async () => {
-    const simulada = apiSimulada({
-      GET: { "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] } },
       PUT: {
-        "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": ({ body }) => ({
-          data: { ...DEFINICAO, tipo: "item", versao: 1, rascunho: (body as { rascunho: unknown }).rascunho },
-        }),
+        "/mesas/{mesa_id}/imagens/{destino}": ({ params, body }) => {
+          const { destino, alvo } = (params as { path: { destino: string; alvo?: string } }).path;
+          ordem.push(`${destino}:${(body as FormData).get("alvo") ?? alvo}:${(body as FormData).get("versao_esperada")}`);
+          return { data: { destino, alvo: "nova", objeto: "mesas/mesa/narrador/cartas/nova/arte.png", versao: 1 } };
+        },
       },
     });
-    renderComQuery(<CardEditor api={simulada.api} mesaId="mesa" onClose={vi.fn()} definicao={{
-      ...DEFINICAO, tipo: "item", rascunho: { tipo: "item", titulo: "Escudo de carvalho", texto: "Robusto.", item_tipo: "outro" },
-    }} />);
-    expect(screen.getByLabelText("Peso aproximado (só descrição)")).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Tipo na grade"), { target: { value: "escudo" } });
-    expect((screen.getByLabelText("Tipo de item") as HTMLSelectElement).value).toBe("armadura");
-    expect((screen.getByLabelText("Tipo de item") as HTMLSelectElement).disabled).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }));
-    await waitFor(() => expect(simulada.PUT).toHaveBeenCalled());
-    const corpo = em(simulada.PUT.mock.calls, 0)[1]?.body as { rascunho: Record<string, unknown> };
-    expect(corpo.rascunho.item_tipo).toBe("armadura");
-    expect(corpo.rascunho.formato).toEqual({ subtipo: "escudo", largura: 2, altura: 2 });
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Olho Arcano" } });
+    fireEvent.change(screen.getByTestId("upload-carta"), { target: { files: [new File(["x"], "arte.png", { type: "image/png" })] } });
+    await waitFor(() => expect(ordem).toEqual(["criar", "carta:nova:0"]));
+    expect(chamadas(POST, "/mesas/{mesa_id}/cartas").length).toBe(1);
+    expect(await screen.findByRole("button", { name: "Trocar arte da carta" })).toBeTruthy();
+  });
+});
+
+describe("CardEditor — tipo trocável até a primeira publicação", () => {
+  it("de Magia para Habilidade: avisa do descarte e mantém o título e o texto", async () => {
+    const { PUT } = montar(definicao("magia", { titulo: "Bola de Fogo", texto: "Explode.", escola: "Evocação", grau: 2 }));
+    fireEvent.click(screen.getByRole("radio", { name: "Habilidade" }));
+    const confirmacao = screen.getByRole("dialog", { name: "Trocar para Habilidade?" });
+    expect(confirmacao.textContent).toMatch(/campos próprios de magia serão descartados/);
+    fireEvent.click(within(confirmacao).getByRole("button", { name: "Trocar o tipo" }));
+    await esperarSalvo();
+    expect(corpo(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho")).toEqual({
+      rascunho: { titulo: "Bola de Fogo", texto: "Explode." }, versao_esperada: 0, tipo: "habilidade",
+    });
+    expect(screen.queryByLabelText("Escola")).toBeNull();
+  });
+
+  it("carta já publicada: só o tipo atual fica selecionável", () => {
+    montar(definicao("magia", { titulo: "Bola de Fogo", texto: "Explode." }, { versao_publicada: 1 }));
+    expect((screen.getByRole("radio", { name: "Magia" }) as HTMLInputElement).disabled).toBe(false);
+    for (const outro of ["Habilidade", "Item", "Efeito"]) {
+      expect((screen.getByRole("radio", { name: outro }) as HTMLInputElement).disabled).toBe(true);
+    }
+  });
+});
+
+describe("CardEditor — salvamento, validação e publicação", () => {
+  it("conflito com outra edição: para de salvar e oferece recarregar", async () => {
+    const { PUT, GET } = montar(definicao("habilidade", { titulo: "Golpe", texto: "x" }), {
+      PUT: { "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": { error: { detail: "Rascunho alterado por outra edição." }, status: 409 } },
+      GET: { "/mesas/{mesa_id}/cartas": { data: [definicao("habilidade", { titulo: "Golpe de outro", texto: "x" }, { versao: 3 })] } },
+    });
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Outro" } });
+    expect(await screen.findByText(/A carta foi alterada em outro lugar/, {}, { timeout: 3000 })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Mais um" } });
+    await new Promise((r) => setTimeout(r, 1300));
+    expect(chamadas(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho").length).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: "Recarregar a carta" }));
+    await waitFor(() => expect((screen.getByLabelText("Título") as HTMLInputElement).value).toBe("Golpe de outro"));
+    expect(chamadas(GET, "/mesas/{mesa_id}/cartas").length).toBeGreaterThan(0);
+  });
+
+  it("problemas junto do campo, com o rótulo da tela e nunca o caminho do servidor", async () => {
+    montar(definicao("item", { titulo: "Lança", texto: "Longa.", item_tipo: "arma",
+      efeitos: [{ nome: "X", descricao: "Y", modificadores: [], ativacao: "manual" }] }), {
+      POST: {
+        "/mesas/{mesa_id}/cartas/{carta_id}/validacao": { data: { valida: false, revisao_pendente: [], problemas: [
+          { campo: "formato", mensagem: "Defina o tipo e a dimensão do item na grade antes de publicar." },
+          { campo: "efeitos.0.modificadores", mensagem: "Alvo inválido." },
+        ] } },
+      },
+    });
+    const oQueE = (await screen.findByRole("radiogroup", { name: "O que é?" })).parentElement!;
+    await waitFor(() => expect(oQueE.textContent).toMatch(/Defina o tipo e a dimensão/));
+    const efeito = screen.getByRole("group", { name: "Efeito 1" });
+    expect(efeito.textContent).toMatch(/Alvo inválido/);
+    expect(document.body.textContent).not.toMatch(/efeitos\.0|modificadores:/);
+    expect(screen.getByText("2 pendências")).toBeTruthy();
+  });
+
+  it("duas pendências: Publicar não abre a confirmação e leva o foco ao primeiro campo com problema", async () => {
+    montar(definicao("habilidade", { titulo: "Golpe", texto: "" }), {
+      POST: {
+        "/mesas/{mesa_id}/cartas/{carta_id}/validacao": { data: { valida: false, revisao_pendente: [], problemas: [
+          { campo: "texto", mensagem: "Preencha este campo." }, { campo: "custo_uso", mensagem: "Use um valor a partir de 0." },
+        ] } },
+      },
+    });
+    const publicar = await screen.findByRole("button", { name: /Publicar/ });
+    await screen.findByText("2 pendências");
+    expect(publicar.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(publicar);
+    expect(screen.queryByRole("dialog", { name: "Publicar nova versão?" })).toBeNull();
+    expect(document.activeElement).toBe(screen.getByLabelText("Descrição"));
+    expect(screen.getByLabelText("Descrição").getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("publicação com arte privada: a confirmação avisa da cópia e publica com a versão salva", async () => {
+    const { POST } = montar(definicao("magia", { titulo: "Bola de Fogo", texto: "Explode.",
+      ativos_privados: ["mesas/mesa/narrador/cartas/c1/arte.png"] }), {
+      GET: { "/mesas/{mesa_id}/ativos": { data: { tipo: "image/png", base64: "YWJj" } } },
+    });
+    await waitFor(() => expect(chamadas(POST, "/mesas/{mesa_id}/cartas/{carta_id}/validacao").length).toBe(1));
+    fireEvent.click(screen.getByRole("button", { name: "Publicar" }));
+    const confirmacao = await screen.findByRole("dialog", { name: "Publicar nova versão?" });
+    expect(confirmacao.textContent).toMatch(/arte privada.*será copiada/i);
+    fireEvent.click(within(confirmacao).getByRole("button", { name: "Publicar" }));
+    await waitFor(() => expect(corpo(POST, "/mesas/{mesa_id}/cartas/{carta_id}/publicacao")).toEqual({ versao_esperada: 0, promover_ativos: true }));
+    expect(await screen.findByText(/Versão 1 publicada/)).toBeTruthy();
+    // Depois de publicada, o tipo fica.
+    expect((screen.getByRole("radio", { name: "Habilidade" }) as HTMLInputElement).disabled).toBe(true);
+  });
+});
+
+describe("CardEditor — só os campos que se aplicam", () => {
+  it("custos de aprendizado com a marca \"só você vê\"; custo legado só quando existe", () => {
+    montar(definicao("habilidade", { titulo: "Golpe", texto: "x" }));
+    for (const rotulo of ["Custo de Aprendizado", "Descansos Mínimos"]) {
+      expect(screen.getByLabelText(rotulo).closest(".editor-quadro")?.textContent).toMatch(/só você vê/);
+    }
+    expect(screen.getByLabelText("Potência de Uso").closest(".editor-quadro")?.textContent).not.toMatch(/só você vê/);
+    expect(screen.queryByLabelText(/Custo legado/)).toBeNull();
+    cleanup();
+    montar(definicao("habilidade", { titulo: "Golpe", texto: "x", custo_legado: "2 PP + 1 PV" }));
+    expect((screen.getByLabelText(/Custo legado/) as HTMLInputElement).value).toBe("2 PP + 1 PV");
+  });
+
+  it("mochila sem campos de combate; a espada mostra os campos da regra; o capacete não tem Armadura", async () => {
+    montar(definicao("item", { titulo: "Mochila de Viajante", texto: "Couro.", item_tipo: "outro" }));
+    fireEvent.click(await screen.findByRole("radio", { name: "Mochila" }));
+    expect(await screen.findByRole("group", { name: "Espaço na bolsa" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Amplia a bolsa em" })).toBeTruthy();
+    expect(screen.getByLabelText("Requisito de Força")).toBeTruthy();
+    expect(screen.getByLabelText("Raridade")).toBeTruthy();
+    for (const ausente of ["Dano", "Armadura", "RDB", /Peso/]) expect(screen.queryByLabelText(ausente)).toBeNull();
+
+    fireEvent.click(screen.getByRole("radio", { name: "Uma mão" }));
+    for (const rotulo of ["Família de Proficiência", "Dano", "Tipo de Dano", "Alcance Normal", "Alcance Máximo", "Requisito de Força"]) {
+      expect(screen.getByLabelText(rotulo)).toBeTruthy();
+    }
+    const tipoDeDano = screen.getByLabelText("Tipo de Dano") as HTMLSelectElement;
+    expect(Array.from(tipoDeDano.options).slice(1, 4).map((o) => o.text)).toEqual(["Cortante", "Perfurante", "Contundente"]);
+    expect(screen.getByRole("group", { name: "Atributo de Ataque" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("radio", { name: "Capacete" }));
+    expect(screen.queryByLabelText("Armadura")).toBeNull();
+    expect(screen.queryByLabelText("RDB")).toBeNull();
+    expect(screen.getByRole("button", { name: "+ Adicionar efeito" })).toBeTruthy();
+  });
+
+  it("espada vira mochila: avisa que o Dano será descartado e salva sem ele", async () => {
+    const { PUT } = montar(definicao("item", { titulo: "Espada", texto: "Aço.", item_tipo: "arma",
+      formato: { subtipo: "uma_mao", largura: 1, altura: 3 }, dados: { dano: "1d8" } }));
+    expect(((await screen.findByLabelText("Dano")) as HTMLInputElement).value).toBe("1d8");
+    fireEvent.click(screen.getByRole("radio", { name: "Mochila" }));
+    const confirmacao = screen.getByRole("dialog", { name: "Trocar o que é o item?" });
+    expect(confirmacao.textContent).toMatch(/Dano não se aplica ao novo tipo e será descartado/);
+    fireEvent.click(within(confirmacao).getByRole("button", { name: "Trocar" }));
+    await esperarSalvo();
+    expect(corpo(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho")).toMatchObject({
+      rascunho: { item_tipo: "outro", dados: {}, formato: { subtipo: "mochila", largura: 2, altura: 2 } },
+    });
+  });
+
+  it("os valores dos campos vão para `dados` com o tipo do catálogo", async () => {
+    const { PUT } = montar(definicao("item", { titulo: "Espada", texto: "Aço.", item_tipo: "arma",
+      formato: { subtipo: "uma_mao", largura: 1, altura: 3 } }));
+    fireEvent.change(await screen.findByLabelText("Dano"), { target: { value: "1d8" } });
+    fireEvent.change(screen.getByLabelText("Tipo de Dano"), { target: { value: "Cortante" } });
+    fireEvent.change(screen.getByLabelText("Alcance Normal"), { target: { value: "6" } });
+    const atributos = screen.getByRole("group", { name: "Atributo de Ataque" });
+    fireEvent.click(within(atributos).getByRole("button", { name: "Destreza" }));
+    fireEvent.click(within(atributos).getByRole("button", { name: "Força" }));
+    const propriedades = screen.getByLabelText("Acrescentar a Propriedades");
+    fireEvent.change(propriedades, { target: { value: "Lâmina de família" } });
+    fireEvent.keyDown(propriedades, { key: "Enter" });
+    await esperarSalvo();
+    expect(corpo(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho")).toMatchObject({ rascunho: { dados: {
+      dano: "1d8", tipo_dano: "Cortante", alcance_normal: 6, atributo_ataque: ["Força", "Destreza"], propriedades: ["Lâmina de família"],
+    } } });
+  });
+
+  it("lista de campos alterada no catálogo: o campo novo do escudo aparece sem mudança de código", async () => {
+    const catalogo = {
+      ...CATALOGO_ITENS,
+      campos: [...(CATALOGO_ITENS.campos ?? []), { id: "bloqueio_area", rotulo: "Bloqueia área", tipo: "texto" as const, icone: "armadura", lista: null, exemplo: null, unidade: null }],
+      campos_por_subtipo: { ...CATALOGO_ITENS.campos_por_subtipo, escudo: [...(CATALOGO_ITENS.campos_por_subtipo?.escudo ?? []), { campo: "bloqueio_area", sugestoes: null }] },
+    };
+    montar(definicao("item", { titulo: "Escudo", texto: "Carvalho.", item_tipo: "armadura",
+      formato: { subtipo: "escudo", largura: 2, altura: 2 } }), { GET: { "/mesas/{mesa_id}/catalogos/itens": { data: catalogo } } });
+    expect(await screen.findByLabelText("Bloqueia área")).toBeTruthy();
+  });
+
+  it("o ícone da bolsa salva antes o que estiver pendente e usa a versão nova", async () => {
+    const ordem: string[] = [];
+    montar(definicao("item", { titulo: "Lança", texto: "Longa.", item_tipo: "arma" }), {
+      PUT: {
+        "/mesas/{mesa_id}/cartas/{carta_id}/rascunho": ({ body }) => {
+          ordem.push("rascunho");
+          const pedido = body as { rascunho: Record<string, unknown>; versao_esperada: number };
+          return { data: definicao("item", pedido.rascunho, { versao: pedido.versao_esperada + 1 }) };
+        },
+        "/mesas/{mesa_id}/imagens/{destino}": ({ params, body }) => {
+          const destino = (params as { path: { destino: string } }).path.destino;
+          ordem.push(`${destino}:${(body as FormData).get("versao_esperada")}`);
+          return { data: { destino, alvo: "carta:c1", objeto: `mesas/mesa/narrador/enviados/${destino}.png`, versao: 2 } };
+        },
+      },
+    });
+    fireEvent.click(await screen.findByRole("radio", { name: "Duas mãos" }));
+    expect(screen.getByRole("group", { name: "Ícone na bolsa" }).textContent).toMatch(/Ocupa 1 × 4 células.*256 × 1024 px/);
+    fireEvent.change(screen.getByTestId("upload-icone-grade"), { target: { files: [new File(["x"], "lanca.png", { type: "image/png" })] } });
+    await waitFor(() => expect(ordem).toEqual(["rascunho", "icone-grade:1"]));
+    expect(await screen.findByRole("button", { name: "Trocar ícone da bolsa" })).toBeTruthy();
   });
 
   it("não apresenta violações de acessibilidade detectáveis", async () => {
-    montar();
-    await screen.findByText("Nenhuma versão publicada ainda.");
+    vi.useRealTimers();
+    montar(definicao("item", { titulo: "Mochila", texto: "Couro.", item_tipo: "outro", formato: { subtipo: "mochila", largura: 2, altura: 2,
+      mochila: { linhas: 1, colunas: 0 } } }));
+    await screen.findByRole("group", { name: "Espaço na bolsa" });
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
     const resultado = await axe.run(document.body, { rules: { region: { enabled: false } } });
     expect(resultado.violations).toEqual([]);
   });

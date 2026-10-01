@@ -1,0 +1,501 @@
+/* ---------- Editor de cartas (simplificar-criacao-de-cartas; referencia/conceito-editor-mochila.png) ----------
+ * Cópia fiel do conceito aprovado. A geometria vem dele, em frações do diálogo (1536 × 1024 no conceito), e os
+ * tamanhos em `cqw` do diálogo: o editor escala com a janela sem mudar de desenho. Com a pintura
+ * `cartas-editor-livro` (o livro do conceito com as páginas em branco e sem os marcadores), ela é o fundo; sem
+ * ela, o livro é desenhado em CSS na mesma geometria (as regras do grimório em cartas.css). Marcadores e selo
+ * são pinturas opcionais com o texto por cima; sem elas, ficam em CSS.
+ */
+.dialog.grimorio.editor-carta {
+  width: min(92vw, 96rem, calc((100dvh - 2rem) * 1.5));
+  aspect-ratio: 1536 / 1024;
+  --editor-ouro: #d8b46c;
+  --editor-tinta: #1b140c;
+  --editor-sepia: #33271b;
+}
+
+/* Moldura de fora: o filete dourado do conceito, a 18 px das laterais e 30 px do alto. */
+.editor-carta .grimorio-moldura { inset: 2.9% 1.2% 2.8%; }
+.editor-carta .dialog__head { top: calc(8.5% - 1.8cqw); right: calc(4% - 1.8cqw); }
+
+/* Livro em CSS (sem a pintura), na posição do livro do conceito. */
+.editor-carta .grimorio-livro { left: 7.5%; top: 11%; width: 85%; height: 78%; }
+
+/* ---------- Marcadores de tipo: couro saindo do alto do livro ---------- */
+.editor-marcadores {
+  position: absolute;
+  z-index: 3;
+  left: 22.5%;
+  right: 23.4%;
+  bottom: 86.2%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.editor-marcador {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: .25cqw;
+  width: 11.6cqw;
+  height: 5cqw;
+  padding-top: .2cqw;
+  border: .14cqw solid #b98a3c;
+  border-bottom: 0;
+  border-radius: .9cqw .9cqw 0 0;
+  background: linear-gradient(180deg, #4a2c17, #2a170b);
+  color: #ead6ab;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 .2cqw #00000055, 0 -.2cqw .6cqw #0008;
+  transition: transform .15s ease, filter .15s ease;
+}
+.editor-marcador--ativo {
+  height: 6.3cqw;
+  border-color: #f3d488;
+  background: linear-gradient(180deg, #d9a24c, #8a531b);
+  color: #fff4d6;
+  box-shadow: 0 0 1.4cqw #f0a54a99, inset 0 0 0 .2cqw #ffe9a855;
+}
+.editor-marcador:hover:not(.editor-marcador--fixo) { filter: brightness(1.12); }
+.editor-marcador--fixo { cursor: not-allowed; opacity: .55; }
+.editor-marcador input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.editor-marcador:has(input:focus-visible) { outline: 2px solid #f3d488; outline-offset: 3px; }
+/* Com as pinturas, o couro é a imagem; a borda e o degradê saem. */
+.editor-marcadores--pintados .editor-marcador { border: 0; background: none; box-shadow: none; }
+.editor-marcadores--pintados .editor-marcador--ativo { filter: drop-shadow(0 0 .9cqw #f0a54aaa); }
+.editor-marcador__couro { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; z-index: -1; }
+.editor-marcador__emblema { display: grid; place-items: center; color: #f3d488; filter: drop-shadow(0 0 .3cqw #f0a54a); }
+.editor-marcador__emblema .icone-categoria { width: 2cqw; height: 2cqw; stroke-width: 1.8; }
+.editor-marcador--ativo .editor-marcador__emblema { color: #fff1c4; }
+.editor-marcador__nome {
+  font: 600 1.3cqw/1 var(--font-display);
+  letter-spacing: .02em;
+  text-shadow: 0 .1cqw .3cqw #000c;
+}
+
+/* ---------- Página esquerda: a carta ao vivo ---------- */
+.editor-carta .grimorio-pagina--esquerda.editor-pagina-esquerda {
+  left: 17.7%;
+  top: 17.9%;
+  width: 28.6%;
+  height: 60.2%;
+  justify-content: space-between;
+}
+.editor-carta .editor-arte { position: relative; width: 100%; height: calc(41.2 / 60.2 * 100%); }
+.editor-carta .editor-arte .grimorio-arte { height: 100%; }
+.editor-carta .grimorio-titulo { height: calc(17.6 / 60.2 * 100%); width: 100%; gap: .3cqw; }
+.editor-carta .grimorio-titulo__tipo { font-size: 1cqw; }
+
+/* Câmera no canto de baixo da arte, como no conceito. */
+.image-upload--camera { position: absolute; z-index: 3; right: 1.6cqw; bottom: 1.6cqw; display: flex; align-items: center; gap: .4cqw; }
+.image-upload__camera, .image-upload__remover {
+  display: grid;
+  place-items: center;
+  width: 3.4cqw;
+  height: 3.4cqw;
+  min-width: 32px;
+  min-height: 32px;
+  border: .14cqw solid #b08a45;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 35%, #f6e8c8, #d8c094);
+  color: #3a2412;
+  font-size: 1.7cqw;
+  cursor: pointer;
+  box-shadow: 0 .2cqw .6cqw #0008;
+}
+.image-upload__remover { width: 2.4cqw; height: 2.4cqw; font-size: 1.4cqw; }
+.image-upload__camera:focus-visible, .image-upload__remover:focus-visible { outline: 2px solid #f3d488; outline-offset: 2px; }
+.image-upload__camera:disabled { opacity: .6; cursor: progress; }
+.image-upload__mensagem {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + .4cqw);
+  width: max-content;
+  max-width: 22cqw;
+  margin: 0;
+  padding: .3cqw .6cqw;
+  border-radius: .3cqw;
+  background: #1b140ce6;
+  color: #f6e8c8;
+  font: 500 .85cqw/1.3 var(--font-display);
+}
+
+/* Título editável no cartucho: a mesma tipografia do título do grimório, com a pena ao lado. */
+.editor-titulo__linha { display: flex; align-items: center; justify-content: center; gap: .5cqw; width: 100%; }
+.editor-carta .editor-titulo__entrada {
+  height: auto;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0 .2cqw;
+  border: 0;
+  border-bottom: .1cqw dashed transparent;
+  background: transparent;
+  text-align: center;
+  font-size: calc(3cqw * var(--titulo-escala, 1));
+}
+.editor-carta .editor-titulo__entrada::placeholder { color: #7a6a52; font-style: italic; }
+.editor-carta .editor-titulo__entrada:hover, .editor-carta .editor-titulo__entrada:focus { border-bottom-color: #9a7438; outline: none; box-shadow: none; }
+.editor-carta .editor-titulo__entrada:focus-visible { outline: 2px solid #8a5f22; outline-offset: 3px; }
+.editor-titulo__pena { flex: none; width: 2.2cqw; height: 2.2cqw; color: #c9963c; filter: drop-shadow(0 0 .2cqw #f0a54a88); }
+.editor-titulo__pena svg { width: 100%; height: 100%; }
+/* O Girar mostra o ícone, não um caractere da fonte decorativa, e fica no eixo dos números. */
+.editor-girar .grimorio-icone { width: 62%; height: 62%; }
+.editor-girar:hover { background: #9a743818; }
+.editor-girar:focus-visible { outline: 2px solid #8a5f22; outline-offset: 2px; }
+.editor-titulo__raridade {
+  align-self: center;
+  padding: .15cqw 1.6cqw;
+  border: .12cqw solid #8a6a36;
+  border-radius: 999px;
+  color: #2a1f14;
+  font: 600 1cqw/1.3 var(--font-display);
+}
+.editor-titulo .editor-campo__mensagens { position: absolute; left: 0; right: 0; bottom: -2.4cqw; text-align: center; }
+
+/* ---------- Página direita: os campos em quadros ---------- */
+.editor-carta .grimorio-pagina--direita.editor-pagina-direita { left: 52.1%; top: 18.6%; width: 34.4%; height: 65.6%; }
+.editor-formulario {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 0 .5cqw .6cqw 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #9a7438 transparent;
+}
+.editor-formulario:focus-visible { outline: 2px solid #8a5f22; outline-offset: 3px; }
+
+/* "O que é?": a fila de subtipos em medalhões. */
+.editor-o-que-e { margin-bottom: 2.6cqw; }
+.seletor-subtipo { display: grid; gap: .9cqw; }
+.seletor-subtipo__rotulo {
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  color: var(--editor-sepia);
+  font: 700 .85cqw/1 var(--font-display);
+  letter-spacing: .32em;
+  text-transform: uppercase;
+}
+.seletor-subtipo__rotulo::after { content: ""; flex: 1; border-top: .08cqw solid #9a743888; }
+.seletor-subtipo__opcoes { display: flex; justify-content: space-between; gap: .3cqw; }
+.seletor-subtipo__opcao {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.1cqw;
+  height: 3.1cqw;
+  min-width: 26px;
+  min-height: 26px;
+  border: .14cqw solid #b08a45;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 35%, #5c3a1d, #2a1a0c);
+  color: #f0dfbd;
+  cursor: pointer;
+  box-shadow: 0 0 0 .08cqw #3b2608, inset 0 .1cqw .3cqw #0008;
+}
+.seletor-subtipo__opcao input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.seletor-subtipo__opcao .icone-subtipo { width: 1.9cqw; height: 1.9cqw; stroke-width: 1.7; }
+.seletor-subtipo__mais { font: 700 1.4cqw/1 var(--font-display); transform: translateY(-.3cqw); }
+.seletor-subtipo__opcao--escolhida {
+  border-color: #f3d488;
+  color: #fff1c4;
+  box-shadow: 0 0 0 .14cqw #f3d48866, 0 0 1cqw #f0a54acc, inset 0 .1cqw .3cqw #0008;
+}
+.seletor-subtipo__opcao:hover { filter: brightness(1.15); }
+.seletor-subtipo__opcao:has(input:focus-visible) { outline: 2px solid #8a5f22; outline-offset: 2px; }
+
+/* Quadros: o mesmo quadro de medalhão do grimório, com o controle no lugar do valor. */
+.editor-quadros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .9cqw .7cqw;
+  margin: 0 0 .9cqw;
+}
+.editor-quadro {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4cqw minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: 1cqw;
+  align-content: center;
+  min-height: 6.6cqw;
+  padding: .5cqw .8cqw .5cqw .6cqw;
+  border: .6cqw solid transparent;
+  border-image: url("../characters/sheet/cartas/molduras/quadro-grimorio.svg") 20 / 1.3cqw stretch;
+}
+.editor-quadro--largo { grid-column: 1 / -1; }
+.editor-quadro--problema { background: color-mix(in srgb, #a3281f 7%, transparent); }
+.editor-quadro__icone {
+  grid-row: 1 / 4;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 4cqw;
+  height: 4cqw;
+  border: .16cqw solid #b08a45;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 35%, #5c3a1d, #2a1a0c);
+  color: #f0dfbd;
+  box-shadow: 0 0 0 .08cqw #3b2608, inset 0 .1cqw .3cqw #0008;
+}
+.editor-quadro__icone .grimorio-icone { width: 2.1cqw; height: 2.1cqw; }
+.editor-quadro__rotulo {
+  align-self: end;
+  color: var(--editor-sepia);
+  font: 700 .72cqw/1.2 var(--font-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+/* O rótulo é <label>: o estilo global (grade com margem) poria os dois-pontos noutra linha. */
+.editor-carta .editor-quadro__rotulo { display: block; margin: 0; }
+.editor-quadro__rotulo::after { content: ":"; }
+.editor-quadro__so-voce {
+  position: absolute;
+  top: -.2cqw;
+  right: .6cqw;
+  padding: .05cqw .5cqw;
+  border-radius: 999px;
+  background: #3a2412;
+  color: #f3d488;
+  font: 600 .62cqw/1.4 var(--font-display);
+  letter-spacing: .04em;
+}
+.editor-quadro__controle { min-width: 0; color: var(--editor-tinta); font: 500 2.05cqw/1.15 var(--font-display); }
+/* `font:` zera os algarismos alinhados do grimório: sem eles, o "1" sai como um "I" da fonte decorativa. */
+.editor-carta :where(.editor-quadro__controle, .editor-quadro__controle input, .editor-quadro__controle select, .editor-titulo, .editor-pe) { font-variant-numeric: lining-nums; }
+
+/* Controles: sem caixa, só a tinta sobre o papel, com um filete ao passar ou focar. */
+.editor-numero { display: inline-flex; align-items: baseline; gap: .3cqw; }
+.editor-carta .editor-quadro input:not([type="checkbox"]):not([type="radio"]), .editor-carta .editor-quadro select,
+.editor-carta .editor-quadro textarea, .editor-carta .editor-efeito input, .editor-carta .editor-efeito textarea {
+  height: auto;
+  box-shadow: none;
+  min-width: 0;
+  max-width: 100%;
+  padding: .05cqw .2cqw;
+  border: 0;
+  border-bottom: .1cqw solid #9a743855;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.editor-quadro input[type="number"] { width: 5.5cqw; appearance: textfield; -moz-appearance: textfield; }
+.editor-quadro input[type="number"]::-webkit-inner-spin-button, .editor-quadro input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.editor-quadro .editor-texto--curto { width: 2cqw; padding: 0; text-align: center; }
+.editor-quadro input:hover, .editor-quadro select:hover, .editor-quadro textarea:hover { border-bottom-color: #9a7438; }
+.editor-quadro :where(input, select, textarea, button):focus-visible { outline: 2px solid #8a5f22; outline-offset: 2px; }
+.editor-quadro [aria-invalid="true"] { border-bottom-color: #a3281f; }
+.editor-texto, .editor-escolha { width: 100%; }
+.editor-numero__unidade { font-size: 1cqw; color: #5a4a36; }
+.editor-linha { display: flex; align-items: baseline; gap: .25cqw; }
+.editor-girar, .editor-remover {
+  display: grid;
+  flex: none;
+  place-items: center;
+  align-self: center;
+  margin-left: auto;
+  padding: 0;
+  line-height: 1;
+  width: 1.9cqw;
+  height: 1.9cqw;
+  min-width: 24px;
+  min-height: 24px;
+  border: .12cqw solid #9a7438;
+  border-radius: 50%;
+  background: transparent;
+  color: #5c3a1d;
+  font-size: 1.2cqw;
+  cursor: pointer;
+}
+
+/* Descrição: o quadro largo do conceito, com o texto livre. */
+.editor-quadro--descricao { margin-bottom: .9cqw; grid-template-columns: minmax(0, 1fr); padding: .9cqw 1.4cqw; }
+.editor-quadro--descricao .editor-quadro__icone { display: none; }
+.editor-quadro--descricao .editor-quadro__rotulo { display: flex; align-items: center; gap: 1cqw; font-size: .85cqw; letter-spacing: .32em; }
+.editor-quadro--descricao .editor-quadro__rotulo::after { content: ""; flex: 1; border-top: .08cqw solid #9a743888; }
+.editor-carta .editor-descricao { width: 100%; min-height: 5.4cqw; resize: vertical; font-size: 1.45cqw; line-height: 1.4; border-bottom: 0; }
+
+/* Várias escolhas e etiquetas. */
+.editor-escolhas { display: flex; flex-wrap: wrap; gap: .4cqw; }
+.editor-escolhas__opcao {
+  padding: .2cqw .8cqw;
+  border: .1cqw solid #9a7438;
+  border-radius: 999px;
+  background: transparent;
+  color: #3a2412;
+  font: 600 .95cqw/1.3 var(--font-display);
+  cursor: pointer;
+}
+.editor-escolhas__opcao[aria-pressed="true"] { background: #3a2412; border-color: #3a2412; color: #f6e8c8; }
+.editor-etiquetas { display: flex; flex-wrap: wrap; align-items: center; gap: .4cqw; }
+.editor-etiquetas__etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: .3cqw;
+  padding: .1cqw .3cqw .1cqw .7cqw;
+  border-radius: 999px;
+  background: #e7d3a8;
+  color: #2a1f14;
+  font: 600 .95cqw/1.4 var(--font-display);
+}
+.editor-etiquetas__etiqueta button { border: 0; background: none; color: #5c3a1d; font-size: 1.1cqw; line-height: 1; cursor: pointer; }
+.editor-quadro .editor-etiquetas__entrada { flex: 1 1 8cqw; font-size: 1.05cqw; }
+.editor-marcar { display: inline-flex; align-items: center; gap: .5cqw; font-size: 1.05cqw; }
+
+/* "+ Adicionar efeito": o filete tracejado do conceito. */
+.editor-acrescentar {
+  display: block;
+  width: 100%;
+  margin: 0 0 .9cqw;
+  padding: .75cqw;
+  border: .12cqw dashed #9a7438;
+  border-radius: .3cqw;
+  background: transparent;
+  color: #33271b;
+  font: 500 1.3cqw/1 var(--font-display);
+  cursor: pointer;
+}
+.editor-acrescentar:hover { background: #9a743814; }
+.editor-acrescentar:focus-visible { outline: 2px solid #8a5f22; outline-offset: 2px; }
+.editor-acrescentar--remover { margin: .6cqw 0 0; padding: .4cqw; font-size: .9cqw; }
+.editor-efeito { display: grid; gap: .5cqw; font-size: 1.1cqw; }
+.editor-efeito textarea { min-height: 3cqw; resize: vertical; }
+.editor-icone-bolsa { display: grid; gap: .5cqw; font-size: .95cqw; }
+.editor-icone-bolsa small { color: #5a4a36; font-size: .85cqw; }
+/* O envio e a prévia vêm do inventário, feitos para fundo escuro: no pergaminho, a tinta escura. */
+.editor-carta .editor-icone-bolsa :where(.text-action) { color: #5c2b0f; font-weight: 700; }
+.editor-carta .editor-icone-bolsa :where(figcaption, .image-upload__hint, .preview-note) { color: #5a4a36; }
+
+/* Mensagens de validação no quadro. */
+.editor-campo__mensagens { grid-column: 2 / -1; display: grid; gap: .1cqw; margin-top: .2cqw; font: 600 .82cqw/1.3 var(--font-display); }
+.editor-quadro--descricao .editor-campo__mensagens { grid-column: 1 / -1; }
+.editor-campo__problema { color: #8f1d14; }
+.editor-campo__aviso { color: #7a4f05; }
+.editor-o-que-e .editor-campo__mensagens { display: block; margin-top: .5cqw; }
+.editor-pendencias { margin: 0 0 .9cqw; padding: .6cqw .9cqw; border-left: .25cqw solid #8f1d14; background: #a3281f12; font: 500 .95cqw/1.4 var(--font-display); }
+.editor-pendencias p { margin: 0; }
+.editor-pendencias:focus-visible { outline: 2px solid #8a5f22; outline-offset: 2px; }
+
+.editor-versoes { margin: .4cqw 0 0; color: #3a2a1a; font: 500 .95cqw/1.4 var(--font-display); }
+.editor-versoes summary { cursor: pointer; font-weight: 700; }
+.editor-versoes ol { margin: .4cqw 0 0; padding-left: 1.4cqw; }
+
+/* ---------- Pé: estado do salvamento e selo de cera ---------- */
+.editor-pe {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 1cqw;
+  min-height: 8cqw;
+  padding-top: .6cqw;
+}
+.editor-pe__estado { grid-row: 1 / 3; margin: 0; padding-left: 1.3cqw; color: #4a3a28; font: 500 1.2cqw/1.35 var(--font-display); }
+.editor-pe__estado--falha, .editor-pe__estado--conflito { color: #8f1d14; }
+.editor-pe__check { margin-right: .3cqw; color: #3a2412; font-weight: 700; }
+.editor-pe__acao { padding: 0; border: 0; background: none; color: #5c2b0f; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.editor-pe__aviso { grid-column: 1 / -1; grid-row: 3; margin: .3cqw 0 0; color: #3a2a1a; font: 500 .9cqw/1.3 var(--font-display); }
+.editor-pe__aviso--erro { color: #8f1d14; }
+.editor-selo {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 12cqw;
+  height: 4.6cqw;
+  padding: 0;
+  border: .18cqw solid #d8b46c;
+  border-radius: 2.3cqw;
+  background: radial-gradient(ellipse at 50% 40%, #b3261e, #6e0f0b);
+  color: #fff1c4;
+  cursor: pointer;
+  box-shadow: 0 .25cqw .7cqw #0009, inset 0 0 0 .25cqw #00000033;
+}
+.editor-selo--pintado { border: 0; background: none; box-shadow: none; filter: drop-shadow(0 .25cqw .5cqw #0009); }
+.editor-selo__cera { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+.editor-selo__rotulo { position: relative; font: 600 1.55cqw/1 var(--font-display); text-shadow: 0 .1cqw .3cqw #000a; }
+.editor-selo__pendencias {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% .2cqw;
+  white-space: nowrap;
+  color: #8f1d14;
+  font: 700 .82cqw/1.2 var(--font-display);
+}
+.editor-selo[aria-disabled="true"] { filter: grayscale(.45) brightness(.85); cursor: help; }
+.editor-selo:hover:not([aria-disabled="true"]) { filter: brightness(1.1) drop-shadow(0 .25cqw .5cqw #0009); }
+.editor-selo:focus-visible { outline: 2px solid #8a5f22; outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) { .editor-marcador { transition: none; } }
+
+/* ---------- Celular: o mesmo conteúdo em fluxo, como o detalhe da carta ---------- */
+@media (max-width: 760px) {
+  .dialog.grimorio.editor-carta { width: calc(100vw - 2rem); aspect-ratio: auto; }
+  .editor-carta .grimorio-moldura { inset: 6px; }
+  .editor-marcadores {
+    position: static;
+    display: flex;
+    gap: 6px;
+    margin: 0 0 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .editor-marcador { flex: 1 0 auto; width: auto; min-width: 5.2rem; height: 3.4rem; padding: 4px 8px; }
+  .editor-marcador--ativo { height: 3.8rem; }
+  .editor-marcador__emblema .icone-categoria { width: 20px; height: 20px; }
+  .editor-marcador__nome { font-size: .9rem; }
+  .editor-carta .grimorio-pagina--esquerda.editor-pagina-esquerda,
+  .editor-carta .grimorio-pagina--direita.editor-pagina-direita { position: static; width: auto; height: auto; }
+  .editor-carta .editor-arte { width: min(100%, 20rem); height: auto; margin: 0 auto; }
+  .editor-carta .editor-arte .grimorio-arte { aspect-ratio: 1; height: auto; }
+  .editor-carta .grimorio-titulo { width: min(100%, 20rem); height: auto; margin: 20px auto 0; padding: 22px 14px 24px; }
+  .editor-titulo__entrada { font-size: 1.8rem; }
+  .editor-titulo__pena { width: 22px; height: 22px; }
+  .editor-titulo__raridade { font-size: .9rem; padding: 2px 14px; }
+  .editor-carta .grimorio-pagina--direita.editor-pagina-direita { margin-top: 26px; }
+  .editor-formulario { overflow: visible; padding: 0; }
+  .image-upload--camera { right: 14px; bottom: 14px; }
+  .image-upload__camera { width: 40px; height: 40px; font-size: 20px; }
+  .image-upload__remover { width: 32px; height: 32px; font-size: 18px; }
+  .image-upload__mensagem { max-width: 16rem; font-size: .8rem; }
+  .seletor-subtipo { gap: 8px; }
+  .seletor-subtipo__rotulo { font-size: .72rem; }
+  .seletor-subtipo__opcoes { flex-wrap: wrap; justify-content: flex-start; gap: 6px; }
+  .seletor-subtipo__opcao { width: 40px; height: 40px; }
+  .seletor-subtipo__opcao .icone-subtipo { width: 22px; height: 22px; }
+  .seletor-subtipo__mais { font-size: 1.2rem; }
+  .editor-quadros { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 10px; }
+  .editor-quadro { grid-template-columns: 40px minmax(0, 1fr); column-gap: 10px; min-height: 64px; padding: 4px 8px; border-width: 10px; border-image-width: 14px; }
+  .editor-quadro__icone { width: 40px; height: 40px; }
+  .editor-quadro__icone .grimorio-icone { width: 22px; height: 22px; }
+  .editor-quadro__rotulo { font-size: .66rem; }
+  .editor-quadro__so-voce { font-size: .62rem; }
+  .editor-quadro__controle { font-size: 1.05rem; }
+  .editor-quadro input[type="number"] { width: 4.5rem; }
+  .editor-quadro .editor-texto--curto { width: 3rem; }
+  .editor-girar, .editor-remover { width: 30px; height: 30px; font-size: 16px; }
+  .editor-quadro--descricao { grid-template-columns: minmax(0, 1fr); padding: 12px 14px; }
+  .editor-quadro--descricao .editor-quadro__rotulo { font-size: .7rem; }
+  .editor-descricao { min-height: 6rem; font-size: 1rem; }
+  .editor-escolhas__opcao, .editor-etiquetas__etiqueta { font-size: .85rem; }
+  .editor-etiquetas__etiqueta button { font-size: 1rem; }
+  .editor-quadro .editor-etiquetas__entrada, .editor-marcar { font-size: .95rem; }
+  .editor-acrescentar { padding: 10px; font-size: .95rem; margin-bottom: 10px; }
+  .editor-acrescentar--remover { font-size: .85rem; }
+  .editor-efeito { font-size: .95rem; }
+  .editor-icone-bolsa, .editor-icone-bolsa small, .editor-versoes, .editor-pendencias { font-size: .85rem; }
+  .editor-campo__mensagens { font-size: .78rem; }
+  .editor-pe { min-height: 0; margin-top: 18px; gap: 12px; }
+  .editor-pe__estado { padding-left: 0; font-size: .9rem; }
+  .editor-pe__aviso { font-size: .85rem; }
+  .editor-selo { width: 9.5rem; height: 3.6rem; border-radius: 1.8rem; }
+  .editor-selo__rotulo { font-size: 1.15rem; }
+  .editor-selo__pendencias { font-size: .75rem; }
+}

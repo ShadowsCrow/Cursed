@@ -1,299 +1,677 @@
-import { useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { Confirmation, Dialog } from "../../ui/primitives";
+import { Confirmation } from "../../ui/primitives";
 import { ModifiersEditor } from "../characters/sheet/EffectsPanel";
 import { ImageUpload } from "../assets/ImageUpload";
-import { ItemFormatEditor, type FormatoItem } from "../inventory/ItemFormatEditor";
+import { useCatalogoItens, type CatalogoItens } from "../characters/sheet/catalogoApi";
+import { categoriaDaCarta } from "../characters/sheet/cartas/apresentacao";
+import { ArteDoGrimorio, CantosDoGrimorio, MolduraDoGrimorio } from "../characters/sheet/cartas/DetalheDaCarta";
+import { EstrelaDoGrimorio } from "../characters/sheet/cartas/grimorio";
+import {
+  ARTE_DO_EDITOR, ARTE_DO_MARCADOR, ARTE_DO_MARCADOR_ATIVO, ARTE_DO_SELO, usePintura,
+} from "../characters/sheet/cartas/pinturasDasCartas";
+import "../characters/sheet/cartas/cartas.css";
+import { Previa, SeletorDeSubtipo } from "../inventory/ItemFormatEditor";
+import { formatoDoSubtipo, type FormatoItem, type SubtipoCriavel } from "../inventory/formatoDoItem";
+import { IconeCategoria } from "../inventory/iconesItem";
 import type { ApiClient, ModificadorResumo } from "../characters/types";
-import { usePublicarCarta, useSalvarRascunho, useValidarCarta, useVersoesCarta } from "./api";
-import { inteiroOuNulo } from "./cardFormat";
-import { CardFace } from "./cardView";
-import { ROTULO_TIPO, type CartaDefinicaoResumo, type ProblemaValidacao, type TipoCarta, type ValidacaoCarta } from "./types";
+import { cardKeys, useCatalogo, usePublicarCarta, useVersoesCarta } from "./api";
+import {
+  CampoEscolha, CampoEscolhas, CampoEtiquetas, CampoInteiro, CampoTexto, Quadro, type PropsDoControle,
+} from "./camposDoEditor";
+import { IconeDoCampo } from "./iconesDosCampos";
+import { MensagensDoCampo, ProvedorDeProblemas } from "./problemasDoEditor";
+import { useProblemasDoCampo, useProblemasDoEditor } from "./usoDosProblemas";
+import { useSalvamentoAutomatico, type SalvamentoAutomatico } from "./useSalvamentoAutomatico";
+import { ROTULO_TIPO, TIPOS_CARTA, erroDaApi, type CartaDefinicaoResumo, type ProblemaValidacao, type TipoCarta } from "./types";
+import "./editor.css";
+
+/*
+ * Editor de cartas do Narrador (simplificar-criacao-de-cartas): cópia fiel do conceito aprovado
+ * (`referencia/conceito-editor-mochila.png`). Uma etapa só: o tipo nos marcadores do topo do livro, a carta ao
+ * vivo na página esquerda (título editável e câmera na arte), os campos que se aplicam em quadros na direita e,
+ * no pé, o estado do salvamento automático e o selo Publicar.
+ */
 
 type Rascunho = Record<string, unknown>;
 
-const CAMPOS_CUSTO: [string, string][] = [
-  ["custo_aprendizado", "Custo de Aprendizado (PP)"],
-  ["descansos_minimos", "Descansos Mínimos"],
-  ["potencia_uso", "Potência de Uso"],
-  ["custo_uso", "Custo de Uso"],
-];
-const DADOS_ITEM: [string, string][] = [["dano", "Dano"], ["armadura", "Armadura"], ["rdb", "RDB"], ["peso", "Peso aproximado (só descrição)"]];
-
-const CATEGORIA_POR_SUBTIPO: Record<FormatoItem["subtipo"], "arma" | "armadura" | "outro"> = {
+/** Campos que todos os tipos têm: ficam ao trocar o tipo (D3). */
+const CAMPOS_COMUNS = new Set(["titulo", "texto", "requisitos", "tags", "ativos", "ativos_privados"]);
+const EMBLEMA_DO_TIPO: Record<TipoCarta, string> = { habilidade: "habilidades", magia: "magias", item: "acessorios", efeito: "efeitos" };
+const CATEGORIA_POR_SUBTIPO: Record<SubtipoCriavel, "arma" | "armadura" | "outro"> = {
   uma_mao: "arma", duas_maos: "arma",
   peitoral: "armadura", capacete: "armadura", luvas: "armadura", botas: "armadura", escudo: "armadura",
-  mochila: "outro", aljava: "outro", moedas: "outro", outro: "outro",
+  mochila: "outro", aljava: "outro", outro: "outro",
 };
 
-function texto(valor: unknown): string {
-  return typeof valor === "string" ? valor : "";
+const texto = (valor: unknown) => (typeof valor === "string" ? valor : "");
+const lista = (valor: unknown) => (Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : []);
+const vazio = (valor: unknown) => valor === null || valor === undefined || valor === "" || (Array.isArray(valor) && valor.length === 0);
+const objeto = (valor: unknown): Rascunho => (valor && typeof valor === "object" && !Array.isArray(valor) ? valor as Rascunho : {});
+
+/** Os valores preenchidos que deixam de valer ao trocar o tipo da carta. */
+function descartesDoTipo(rascunho: Rascunho): string[] {
+  return Object.entries(rascunho).filter(([chave, valor]) => !CAMPOS_COMUNS.has(chave) && !vazio(valor)
+    && !(chave === "quantidade" && valor === 1)).map(([chave]) => chave);
 }
 
-function numeroOuVazio(valor: unknown): string {
-  return typeof valor === "number" ? String(valor) : "";
+/** Os campos preenchidos de `dados` que o subtipo novo não declara (D7). */
+function descartesDoSubtipo(dados: Rascunho, subtipo: SubtipoCriavel, catalogo: CatalogoItens | undefined): string[] {
+  const declarados = new Set((catalogo?.campos_por_subtipo?.[subtipo] ?? []).map((c) => c.campo));
+  return Object.entries(dados).filter(([chave, valor]) => !declarados.has(chave) && !vazio(valor)).map(([chave]) => chave);
 }
 
-function lista(valor: unknown): string[] {
-  return Array.isArray(valor) ? valor.filter((item): item is string => typeof item === "string") : [];
-}
-
-function Problemas({ validacao, erro }: { validacao?: ValidacaoCarta | null; erro?: { message: string; problemas: ProblemaValidacao[] } | null }) {
-  const problemas = erro?.problemas.length ? erro.problemas : validacao?.problemas ?? [];
-  return (
-    <>
-      {erro && <p role="alert">{erro.message}</p>}
-      {problemas.length > 0 && (
-        <div role="status" className="card-editor__problems">
-          <strong>Corrija antes de publicar:</strong>
-          <ul>{problemas.map((p) => <li key={`${p.campo}-${p.mensagem}`}><code>{p.campo}</code>: {p.mensagem}</li>)}</ul>
-        </div>
-      )}
-      {validacao?.valida && problemas.length === 0 && <p role="status">A carta está pronta para publicação.</p>}
-      {(validacao?.revisao_pendente ?? []).map((aviso) => <p key={aviso} className="card-editor__review" role="note">⚠ {aviso}</p>)}
-    </>
-  );
-}
-
-function CamposPorTipo({ tipo, rascunho, alterar, api, mesaId }: {
-  tipo: TipoCarta; rascunho: Rascunho; alterar: (patch: Rascunho) => void; api: ApiClient; mesaId: string;
-}) {
-  if (tipo === "habilidade" || tipo === "magia") {
-    const adicionais = Array.isArray(rascunho.custos_adicionais) ? (rascunho.custos_adicionais as Rascunho[]) : [];
-    return (
-      <>
-        {tipo === "magia" && (
-          <div className="form-row">
-            <label>Escola<input value={texto(rascunho.escola)} onChange={(e) => alterar({ escola: e.target.value || null })} /></label>
-            <label>Grau<input type="number" min={0} value={numeroOuVazio(rascunho.grau)} onChange={(e) => alterar({ grau: inteiroOuNulo(e.target.value) })} /></label>
-          </div>
-        )}
-        <label>Ativação
-          <select value={texto(rascunho.ativacao)} onChange={(e) => alterar({ ativacao: e.target.value || null })}>
-            <option value="">Não definida</option><option value="ativa">Ativa</option><option value="passiva">Passiva</option>
-          </select>
-        </label>
-        <fieldset className="card-editor__costs">
-          <legend>Custos (deixe em branco o que ainda não foi definido)</legend>
-          {CAMPOS_CUSTO.map(([campo, rotulo]) => (
-            <label key={campo}>{rotulo}
-              <input type="number" min={0} value={numeroOuVazio(rascunho[campo])} onChange={(e) => alterar({ [campo]: inteiroOuNulo(e.target.value) })} />
-            </label>
-          ))}
-          {adicionais.map((adicional, indice) => (
-            <div key={indice} className="form-row">
-              <label>Recurso adicional<input value={texto(adicional.recurso)} onChange={(e) => alterar({
-                custos_adicionais: adicionais.map((a, i) => (i === indice ? { ...a, recurso: e.target.value } : a)),
-              })} /></label>
-              <label>Valor<input type="number" min={0} value={numeroOuVazio(adicional.valor)} onChange={(e) => alterar({
-                custos_adicionais: adicionais.map((a, i) => (i === indice ? { ...a, valor: inteiroOuNulo(e.target.value) } : a)),
-              })} /></label>
-              <button type="button" className="button button--ghost" onClick={() => alterar({ custos_adicionais: adicionais.filter((_, i) => i !== indice) })}>Remover</button>
-            </div>
-          ))}
-          <button type="button" className="button button--secondary" onClick={() => alterar({ custos_adicionais: [...adicionais, { recurso: "", valor: null }] })}>
-            Adicionar custo adicional
-          </button>
-        </fieldset>
-        <label>Custo legado (texto histórico; não preenche os campos acima)
-          <input value={texto(rascunho.custo_legado)} onChange={(e) => alterar({ custo_legado: e.target.value || null })} />
-        </label>
-      </>
-    );
-  }
-  if (tipo === "item") {
-    const dados = rascunho.dados && typeof rascunho.dados === "object" ? (rascunho.dados as Rascunho) : {};
-    const efeitos = Array.isArray(rascunho.efeitos) ? (rascunho.efeitos as Rascunho[]) : [];
-    const formato = (rascunho.formato ?? null) as FormatoItem | null;
-    const arte = lista(rascunho.ativos_privados)[0] ?? lista(rascunho.ativos)[0] ?? null;
-    return (
-      <>
-        <ItemFormatEditor
-          valor={formato}
-          onChange={(proximo) => alterar(proximo
-            ? { formato: proximo, item_tipo: CATEGORIA_POR_SUBTIPO[proximo.subtipo] }
-            : { formato: null })}
-          nome={texto(rascunho.titulo)}
-          idPrefix="carta-item"
-          api={api}
-          mesaId={mesaId}
-          arte={arte}
-        />
-        <div className="form-row">
-          <label>Tipo de item
-            <select value={texto(rascunho.item_tipo)} disabled={formato !== null}
-              onChange={(e) => alterar({ item_tipo: e.target.value })}>
-              <option value="">Escolha…</option><option value="arma">Arma</option><option value="armadura">Armadura</option><option value="outro">Outro</option>
-            </select>
-          </label>
-          <label>Quantidade<input type="number" min={1} value={numeroOuVazio(rascunho.quantidade) || "1"} onChange={(e) => alterar({ quantidade: inteiroOuNulo(e.target.value) ?? 1 })} /></label>
-        </div>
-        <div className="form-row">
-          {DADOS_ITEM.map(([campo, rotulo]) => (
-            <label key={campo}>{rotulo}
-              <input value={dados[campo] === undefined ? "" : String(dados[campo])} onChange={(e) => {
-                const valor = e.target.value.trim();
-                const numero = Number(valor);
-                const proximo = { ...dados };
-                if (!valor) delete proximo[campo];
-                else proximo[campo] = campo === "dano" || Number.isNaN(numero) ? valor : numero;
-                alterar({ dados: proximo });
-              }} />
-            </label>
-          ))}
-        </div>
-        {efeitos.map((efeito, indice) => (
-          <fieldset key={indice} className="card-editor__effect">
-            <legend>Efeito do item {indice + 1}</legend>
-            <label>Nome<input value={texto(efeito.nome)} onChange={(e) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, nome: e.target.value } : x)) })} /></label>
-            <label>Descrição<textarea value={texto(efeito.descricao)} onChange={(e) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, descricao: e.target.value } : x)) })} /></label>
-            <label>Ativação
-              <select value={texto(efeito.ativacao) || "enquanto_equipado"} onChange={(e) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, ativacao: e.target.value } : x)) })}>
-                <option value="enquanto_equipado">Enquanto equipado</option><option value="manual">Manual</option>
-              </select>
-            </label>
-            <ModifiersEditor
-              idPrefix={`item-efeito-${indice}`}
-              value={(efeito.modificadores as ModificadorResumo[] | undefined) ?? []}
-              onChange={(modificadores) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, modificadores } : x)) })}
-            />
-            <button type="button" className="button button--ghost" onClick={() => alterar({ efeitos: efeitos.filter((_, i) => i !== indice) })}>Remover efeito</button>
-          </fieldset>
-        ))}
-        <button type="button" className="button button--secondary" onClick={() => alterar({ efeitos: [...efeitos, { nome: "", descricao: "", modificadores: [], ativacao: "enquanto_equipado" }] })}>
-          Adicionar efeito ao item
-        </button>
-      </>
-    );
-  }
-  return (
-    <>
-      <label>Duração (rodadas)<input type="number" min={1} value={numeroOuVazio(rascunho.duracao_rodadas)} onChange={(e) => alterar({ duracao_rodadas: inteiroOuNulo(e.target.value) })} /></label>
-      <ModifiersEditor idPrefix="efeito" value={(rascunho.modificadores as ModificadorResumo[] | undefined) ?? []} onChange={(modificadores) => alterar({ modificadores })} />
-    </>
-  );
+function rotuloDoCampo(chave: string, catalogo: CatalogoItens | undefined): string {
+  return catalogo?.campos?.find((c) => c.id === chave)?.rotulo ?? chave.replaceAll("_", " ");
 }
 
 export interface CardEditorProps {
   api: ApiClient;
   mesaId: string;
-  definicao: CartaDefinicaoResumo;
+  /** A carta a editar; `null` abre uma carta nova, criada só no primeiro salvamento. */
+  definicao: CartaDefinicaoResumo | null;
   onClose: () => void;
 }
 
-/** Editor do Narrador (9.3): rascunho, validação, publicação e prévia fiel ao que os jogadores verão. */
+/** Recarregar depois de um conflito remonta o editor com a carta como está no servidor. */
 export function CardEditor({ api, mesaId, definicao, onClose }: CardEditorProps) {
-  const tipo = definicao.tipo;
+  const [atual, setAtual] = useState({ definicao, chave: 0 });
+  const queryClient = useQueryClient();
+  async function recarregar(id: string) {
+    const { data, error } = await api.GET("/mesas/{mesa_id}/cartas", { params: { path: { mesa_id: mesaId } } });
+    if (error) throw erroDaApi(error, "Não foi possível recarregar a carta.");
+    void queryClient.invalidateQueries({ queryKey: cardKeys.catalogo(mesaId) });
+    const nova = (data ?? []).find((d) => d.id === id) ?? null;
+    setAtual((a) => ({ definicao: nova, chave: a.chave + 1 }));
+  }
+  return <EditorDeCarta key={atual.chave} api={api} mesaId={mesaId} definicao={atual.definicao} onClose={onClose} onRecarregar={recarregar} />;
+}
+
+function EditorDeCarta({ api, mesaId, definicao, onClose, onRecarregar }: CardEditorProps & { onRecarregar: (id: string) => Promise<void> }) {
+  const [tipo, setTipo] = useState<TipoCarta>(definicao?.tipo ?? "habilidade");
   const [rascunho, setRascunho] = useState<Rascunho>(() => {
-    const { tipo: _tipo, ...resto } = (definicao.rascunho ?? {}) as Rascunho;
+    const { tipo: _tipo, ...resto } = objeto(definicao?.rascunho);
     void _tipo;
     return resto;
   });
-  const [versao, setVersao] = useState(definicao.versao);
-  const [alterado, setAlterado] = useState(false);
-  const [confirmarPublicacao, setConfirmarPublicacao] = useState(false);
-  const salvar = useSalvarRascunho(api, mesaId);
-  const validar = useValidarCarta(api, mesaId);
+  const estadoRef = useRef({ tipo, rascunho });
+  const catalogo = useCatalogoItens(api, mesaId).data;
+  const cartasDaMesa = useCatalogo(api, mesaId).data;
+  const salvamento = useSalvamentoAutomatico({ api, mesaId, inicial: definicao, ler: () => estadoRef.current });
   const publicar = usePublicarCarta(api, mesaId);
-  const versoes = useVersoesCarta(api, mesaId, definicao.id);
-  const artesPrivadas = lista(rascunho.ativos_privados);
+  const versoes = useVersoesCarta(api, mesaId, salvamento.definicao?.id ?? null);
+  const [publicouAgora, setPublicouAgora] = useState(false);
+  const [confirmar, setConfirmar] = useState<null | { titulo: string; descricao: string; rotulo: string; acao: () => void }>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   function alterar(patch: Rascunho) {
-    setRascunho((atual) => ({ ...atual, ...patch }));
-    setAlterado(true);
+    const novo = { ...estadoRef.current.rascunho, ...patch };
+    estadoRef.current = { ...estadoRef.current, rascunho: novo };
+    setRascunho(novo);
+    setAviso(null);
+    salvamento.marcarAlteracao();
+  }
+  /** Mudança vinda do servidor (imagem gravada direto no rascunho): não marca alteração. */
+  function sincronizar(patch: Rascunho) {
+    const novo = { ...estadoRef.current.rascunho, ...patch };
+    estadoRef.current = { ...estadoRef.current, rascunho: novo };
+    setRascunho(novo);
+  }
+  function aplicarTipo(novoTipo: TipoCarta) {
+    const comuns = Object.fromEntries(Object.entries(estadoRef.current.rascunho).filter(([chave]) => CAMPOS_COMUNS.has(chave)));
+    estadoRef.current = { tipo: novoTipo, rascunho: comuns };
+    setTipo(novoTipo);
+    setRascunho(comuns);
+    salvamento.marcarAlteracao();
+  }
+  function trocarTipo(novoTipo: TipoCarta) {
+    if (novoTipo === tipo) return;
+    const descartes = descartesDoTipo(rascunho);
+    if (!descartes.length) return aplicarTipo(novoTipo);
+    setConfirmar({
+      titulo: `Trocar para ${ROTULO_TIPO[novoTipo]}?`,
+      descricao: `Os campos próprios de ${ROTULO_TIPO[tipo].toLowerCase()} serão descartados. O título, a descrição, os requisitos, as marcações e a arte ficam.`,
+      rotulo: "Trocar o tipo",
+      acao: () => aplicarTipo(novoTipo),
+    });
   }
 
-  async function salvarRascunho(): Promise<number> {
-    const salvo = await salvar.mutateAsync({ cartaId: definicao.id, rascunho, versao });
-    setVersao(salvo.versao);
-    setAlterado(false);
-    return salvo.versao;
-  }
-
-  async function validarAgora() {
-    if (alterado) await salvarRascunho();
-    await validar.mutateAsync(definicao.id);
-  }
-
-  async function publicarAgora() {
-    setConfirmarPublicacao(false);
-    const atual = alterado ? await salvarRascunho() : versao;
-    const publicada = await publicar.mutateAsync({ cartaId: definicao.id, versao: atual,
-      promoverAtivos: artesPrivadas.length > 0 });
-    setVersao(atual + 1);
-    return publicada;
-  }
-
+  const tipoFixo = Boolean(salvamento.definicao?.versao_publicada) || publicouAgora;
+  const validacao = salvamento.validacao;
   const erroPublicacao = publicar.error as (Error & { problemas?: ProblemaValidacao[] }) | null;
+  const problemas = erroPublicacao?.problemas?.length ? erroPublicacao.problemas : validacao?.problemas ?? [];
+  const uso = useProblemasDoEditor(problemas, validacao?.revisao_pendente ?? []);
+  const formato = (rascunho.formato ?? null) as FormatoItem | null;
+  const artesPrivadas = lista(rascunho.ativos_privados);
+  const tags = useMemo(() => [...new Set((cartasDaMesa ?? []).flatMap((d) => lista(objeto(d.rascunho).tags)))].sort(), [cartasDaMesa]);
+
+  async function aoPublicar() {
+    if (uso.total > 0) {
+      if (!uso.focarPrimeiro()) document.getElementById("editor-pendencias")?.focus();
+      return;
+    }
+    const salva = await salvamento.salvarAgora();
+    if (!salva) {
+      setAviso(salvamento.definicao ? "Salve o rascunho antes de publicar." : "Escreva o título da carta antes de publicar.");
+      return;
+    }
+    setConfirmar({
+      titulo: "Publicar nova versão?",
+      descricao: artesPrivadas.length > 0
+        ? `A arte privada (${artesPrivadas.length} imagem(ns)) será copiada para o espaço compartilhado da mesa. A versão publicada não pode ser alterada.`
+        : "A versão publicada não pode ser alterada. Personagens que já possuem a carta continuam na versão atual até uma migração explícita.",
+      rotulo: "Publicar",
+      acao: () => void publicar.mutateAsync({ cartaId: salva.id, versao: salva.versao, promoverAtivos: artesPrivadas.length > 0 })
+        .then((versao) => {
+          salvamento.ajustarVersao(salva.versao + 1);
+          setPublicouAgora(true);
+          setAviso(`Versão ${versao.numero} publicada. Personagens existentes continuam na versão que já possuem.`);
+        }).catch(() => undefined),
+    });
+  }
+
+  async function fechar() {
+    if (salvamento.pendente) {
+      const salva = await salvamento.salvarAgora();
+      // Carta nova sem título não tem o que salvar; o resto que não salvou pede confirmação.
+      if (!salva && (salvamento.definicao !== null || texto(rascunho.titulo).trim())) {
+        setConfirmar({
+          titulo: "Fechar sem salvar?",
+          descricao: "As últimas alterações não foram salvas e serão perdidas.",
+          rotulo: "Descartar e fechar",
+          acao: onClose,
+        });
+        return;
+      }
+    }
+    onClose();
+  }
+
+  const prepararEnvio = async () => {
+    const salva = await salvamento.garantirSalva();
+    return { versao: salva.versao, alvo: salva.id };
+  };
+  const prepararIcone = async () => {
+    const salva = await salvamento.garantirSalva();
+    return { versao: salva.versao, alvo: `carta:${salva.id}` };
+  };
+  const idCarta = salvamento.definicao?.id ?? "";
+  const categoria = categoriaDaCarta({ id: idCarta || "nova", tipo, concedida_por: null, carta: { conteudo: rascunho } }, catalogo);
+  const tituloDoDialogo = definicao ? `Editar ${ROTULO_TIPO[tipo].toLowerCase()}` : "Nova carta";
+
   return (
-    <Dialog open title={`Editar ${ROTULO_TIPO[tipo].toLowerCase()}`} onClose={onClose} className="card-editor">
-      <div className="card-editor__layout">
-        <form className="card-editor__form" onSubmit={(e) => { e.preventDefault(); void salvarRascunho().catch(() => undefined); }}>
-          {definicao.origem_sistema && (
-            <p className="field-warning" role="note">
-              Carta do catálogo do sistema ({definicao.origem_sistema}). O JSON do catálogo prevalece: o que você editar aqui
-              será substituído na próxima atualização dele.
-            </p>
-          )}
-          <label>Título<input value={texto(rascunho.titulo)} onChange={(e) => alterar({ titulo: e.target.value })} /></label>
-          <label>Texto<textarea value={texto(rascunho.texto)} onChange={(e) => alterar({ texto: e.target.value })} /></label>
-          <label>Requisitos (um por linha)
-            <textarea value={lista(rascunho.requisitos).join("\n")} onChange={(e) => alterar({ requisitos: e.target.value.split("\n").map((r) => r.trim()).filter(Boolean) })} />
-          </label>
-          <label>Tags (separadas por vírgula)
-            <input value={lista(rascunho.tags).join(", ")} onChange={(e) => alterar({ tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) })} />
-          </label>
-          <CamposPorTipo tipo={tipo} rascunho={rascunho} alterar={alterar} api={api} mesaId={mesaId} />
-          {!definicao.origem_sistema && (
-            <div className="card-editor__images">
-              <ImageUpload api={api} mesaId={mesaId} destino="carta" alvo={definicao.id} versao={versao} rotulo="arte da carta"
-                temImagem={lista(rascunho.ativos).length + lista(rascunho.ativos_privados).length > 0}
+    <MolduraDoGrimorio titulo={tituloDoDialogo} onFechar={() => void fechar()} pintura={ARTE_DO_EDITOR} className="editor-carta">
+      <ProvedorDeProblemas valor={uso.contexto}>
+        <MarcadoresDeTipo tipo={tipo} fixo={tipoFixo} onTrocar={trocarTipo} />
+
+        <div className="grimorio-pagina grimorio-pagina--esquerda editor-pagina-esquerda">
+          <div className="editor-arte">
+            <ArteDoGrimorio tipo={tipo} conteudo={rascunho} categoria={categoria} catalogo={catalogo} api={api} mesaId={mesaId} />
+            {!definicao?.origem_sistema && (
+              <ImageUpload api={api} mesaId={mesaId} destino="carta" alvo={idCarta} versao={salvamento.definicao?.versao}
+                rotulo={tipo === "item" ? "foto do item" : "arte da carta"} aparencia="camera"
+                temImagem={lista(rascunho.ativos).length + artesPrivadas.length > 0} prepararEnvio={prepararEnvio}
                 onConcluido={(resposta) => {
-                  // A imagem já foi gravada no rascunho do servidor; o rascunho local acompanha sem perder o que está em edição.
-                  if (resposta.versao != null) setVersao(resposta.versao);
-                  setRascunho((atual) => ({ ...atual, ativos: [], ativos_privados: resposta.objeto ? [resposta.objeto] : [] }));
+                  if (resposta.versao != null) salvamento.ajustarVersao(resposta.versao);
+                  sincronizar({ ativos: [], ativos_privados: resposta.objeto ? [resposta.objeto] : [] });
                 }} />
-              {tipo === "item" && Boolean(rascunho.formato) && (
-                <ImageUpload api={api} mesaId={mesaId} destino="icone-grade" alvo={`carta:${definicao.id}`} versao={versao}
-                  rotulo="ícone de grade" temImagem={Boolean((rascunho.formato as { icone_grade?: string } | undefined)?.icone_grade)}
-                  onConcluido={(resposta) => {
-                    if (resposta.versao != null) setVersao(resposta.versao);
-                    setRascunho((atual) => ({ ...atual, formato: { ...(atual.formato as object), icone_grade: resposta.objeto ?? null } }));
-                  }} />
-              )}
-              <p className="preview-note">A imagem fica só com o Narrador até a publicação, que a copia para a mesa.</p>
-            </div>
-          )}
-          {salvar.isError && <p role="alert">{salvar.error.message}</p>}
-          <div className="dialog__actions">
-            <button type="submit" className="button button--secondary" disabled={salvar.isPending}>{alterado ? "Salvar rascunho" : "Rascunho salvo"}</button>
-            <button type="button" className="button button--ghost" onClick={() => void validarAgora().catch(() => undefined)} disabled={validar.isPending}>Validar</button>
-            <button type="button" className="button" onClick={() => setConfirmarPublicacao(true)} disabled={publicar.isPending}>Publicar nova versão</button>
+            )}
           </div>
-          <Problemas validacao={validar.data} erro={erroPublicacao ? { message: erroPublicacao.message, problemas: erroPublicacao.problemas ?? [] } : null} />
-          {publicar.isSuccess && <p role="status">Versão {publicar.data.numero} publicada. Personagens existentes continuam na versão que já possuem.</p>}
-        </form>
-        <aside className="card-editor__preview" aria-label="Prévia da carta">
-          <span className="eyebrow">COMO OS JOGADORES VERÃO</span>
-          <CardFace tipo={tipo} conteudo={rascunho} api={api} mesaId={mesaId} />
-          <h3>Versões publicadas</h3>
-          {versoes.data && versoes.data.length > 0 ? (
-            <ol className="card-editor__versions">
-              {versoes.data.map((v) => <li key={v.id}>Versão {v.numero} — {new Date(v.publicado_em).toLocaleString("pt-BR")}{v.revisao_pendente?.length ? " · revisão pendente" : ""}</li>)}
-            </ol>
-          ) : <p>Nenhuma versão publicada ainda.</p>}
-        </aside>
-      </div>
+          <TituloEditavel tipo={tipo} titulo={texto(rascunho.titulo)} onMudar={(titulo) => alterar({ titulo })}
+            raridade={tipo === "item" ? catalogo?.raridades.find((r) => r.id === (formato?.raridade ?? "comum"))?.rotulo : undefined} />
+        </div>
+
+        <div className="grimorio-pagina grimorio-pagina--direita editor-pagina-direita">
+          <div className="editor-formulario" role="region" aria-label="Campos da carta" tabIndex={-1}>
+            {(uso.soltos.length > 0 || uso.avisosSoltos.length > 0) && (
+              <div id="editor-pendencias" className="editor-pendencias" role="status" tabIndex={-1}>
+                {uso.soltos.map((p) => <p key={`${p.rotulo}-${p.mensagem}`}><strong>{p.rotulo}:</strong> {p.mensagem}</p>)}
+                {uso.avisosSoltos.map((a) => <p key={a} className="editor-campo__aviso">⚠ {a}</p>)}
+              </div>
+            )}
+            {tipo === "item" && (
+              <CamposDoItem api={api} mesaId={mesaId} rascunho={rascunho} alterar={alterar} catalogo={catalogo}
+                pedirConfirmacao={setConfirmar} idCarta={idCarta} versao={salvamento.definicao?.versao}
+                prepararIcone={prepararIcone} origemSistema={Boolean(definicao?.origem_sistema)}
+                aoEnviarIcone={(versao, objetoIcone) => {
+                  if (versao != null) salvamento.ajustarVersao(versao);
+                  sincronizar({ formato: { ...objeto(estadoRef.current.rascunho.formato), icone_grade: objetoIcone } });
+                }} />
+            )}
+            {(tipo === "habilidade" || tipo === "magia") && <CamposDeHabilidade tipo={tipo} rascunho={rascunho} alterar={alterar} />}
+            {tipo === "efeito" && <CamposDeEfeito rascunho={rascunho} alterar={alterar} />}
+            <CamposComuns rascunho={rascunho} alterar={alterar} tags={tags} />
+            {salvamento.definicao && (
+              <details className="editor-versoes">
+                <summary>Versões publicadas ({versoes.data?.length ?? 0})</summary>
+                {versoes.data && versoes.data.length > 0 ? (
+                  <ol>
+                    {versoes.data.map((v) => <li key={v.id}>Versão {v.numero} — {new Date(v.publicado_em).toLocaleString("pt-BR")}{v.revisao_pendente?.length ? " · revisão pendente" : ""}</li>)}
+                  </ol>
+                ) : <p>Nenhuma versão publicada ainda.</p>}
+              </details>
+            )}
+          </div>
+
+          <PeDoEditor salvamento={salvamento} pendencias={uso.total} publicando={publicar.isPending} aviso={aviso}
+            erro={erroPublicacao && !erroPublicacao.problemas?.length ? erroPublicacao.message : null}
+            onPublicar={() => void aoPublicar()} onRecarregar={() => idCarta && void onRecarregar(idCarta)} />
+        </div>
+      </ProvedorDeProblemas>
+
       <Confirmation
-        open={confirmarPublicacao}
-        title="Publicar nova versão?"
-        description={artesPrivadas.length > 0
-          ? `A arte privada (${artesPrivadas.length} imagem(ns)) será copiada para o espaço compartilhado da mesa. A versão publicada não pode ser alterada.`
-          : "A versão publicada não pode ser alterada. Personagens que já possuem a carta continuam na versão atual até uma migração explícita."}
-        confirmLabel="Publicar"
-        onConfirm={() => void publicarAgora().catch(() => undefined)}
-        onCancel={() => setConfirmarPublicacao(false)}
+        open={confirmar !== null}
+        title={confirmar?.titulo ?? ""}
+        description={confirmar?.descricao}
+        confirmLabel={confirmar?.rotulo}
+        onConfirm={() => { const acao = confirmar?.acao; setConfirmar(null); acao?.(); }}
+        onCancel={() => setConfirmar(null)}
       />
-    </Dialog>
+    </MolduraDoGrimorio>
+  );
+}
+
+/** Os quatro marcadores de couro do topo do livro: o tipo da carta (D1). Depois de publicada, o tipo fica. */
+function MarcadoresDeTipo({ tipo, fixo, onTrocar }: { tipo: TipoCarta; fixo: boolean; onTrocar: (tipo: TipoCarta) => void }) {
+  const comum = usePintura(ARTE_DO_MARCADOR) === "pronta";
+  const ativo = usePintura(ARTE_DO_MARCADOR_ATIVO) === "pronta";
+  return (
+    <div className={`editor-marcadores${comum && ativo ? " editor-marcadores--pintados" : ""}`} role="radiogroup" aria-label="Tipo da carta">
+      {TIPOS_CARTA.map((opcao) => {
+        const escolhido = opcao === tipo;
+        return (
+          <label key={opcao} className={`editor-marcador${escolhido ? " editor-marcador--ativo" : ""}${fixo && !escolhido ? " editor-marcador--fixo" : ""}`}>
+            <input type="radio" name="editor-tipo" value={opcao} checked={escolhido} disabled={fixo && !escolhido}
+              onChange={() => onTrocar(opcao)} />
+            {comum && ativo && <img className="editor-marcador__couro" src={escolhido ? ARTE_DO_MARCADOR_ATIVO : ARTE_DO_MARCADOR} alt="" />}
+            <span className="editor-marcador__emblema" aria-hidden="true"><IconeCategoria icone={EMBLEMA_DO_TIPO[opcao]} /></span>
+            <span className="editor-marcador__nome">{ROTULO_TIPO[opcao]}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+/** O cartucho do título, editável no lugar, como no conceito (a pena indica a edição). */
+function TituloEditavel({ tipo, titulo, onMudar, raridade }: { tipo: TipoCarta; titulo: string; onMudar: (titulo: string) => void; raridade?: string }) {
+  const { id, descricao, mensagens, avisos } = useProblemasDoCampo("titulo", "Título");
+  // O título do conceito ("Mochila de Viajante") cabe numa linha no tamanho cheio; mais longo, diminui.
+  const escala = Math.max(.55, Math.min(1, 18 / Math.max(titulo.length, 1)));
+  return (
+    <div id={id} className={`grimorio-titulo editor-titulo${mensagens.length ? " editor-quadro--problema" : ""}`}>
+      <span className="grimorio-cantos" aria-hidden="true"><CantosDoGrimorio /></span>
+      <span className="grimorio-titulo__estrela grimorio-titulo__estrela--alto" aria-hidden="true"><EstrelaDoGrimorio /></span>
+      <p className="grimorio-titulo__tipo">{ROTULO_TIPO[tipo]}</p>
+      <span className="editor-titulo__linha">
+        <input className="grimorio-titulo__nome editor-titulo__entrada" value={titulo} aria-label="Título" placeholder="Título da carta"
+          aria-describedby={descricao} aria-invalid={mensagens.length > 0 || undefined}
+          style={{ "--titulo-escala": escala } as CSSProperties} onChange={(e) => onMudar(e.target.value)} />
+        <span className="editor-titulo__pena" aria-hidden="true"><IconePena /></span>
+      </span>
+      {raridade && <span className="editor-titulo__raridade">{raridade}</span>}
+      <MensagensDoCampo id={descricao} mensagens={mensagens} avisos={avisos} />
+      <span className="grimorio-titulo__estrela grimorio-titulo__estrela--pe" aria-hidden="true"><EstrelaDoGrimorio /></span>
+    </div>
+  );
+}
+
+/** Pena do Lucide (feather, licença ISC). */
+function IconePena() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M12.67 19a2 2 0 0 0 1.416-.588l6.154-6.172a6 6 0 0 0-8.49-8.49L5.586 9.914A2 2 0 0 0 5 11.328V18a1 1 0 0 0 1 1z" />
+      <path d="M16 8 2 22" /><path d="M17.5 15H9" />
+    </svg>
+  );
+}
+
+/** Pé da página direita: o estado do salvamento à esquerda e o selo de cera de Publicar à direita. */
+function PeDoEditor({ salvamento, pendencias, publicando, aviso, erro, onPublicar, onRecarregar }: {
+  salvamento: SalvamentoAutomatico; pendencias: number; publicando: boolean; aviso: string | null; erro: string | null;
+  onPublicar: () => void; onRecarregar: () => void;
+}) {
+  const selo = usePintura(ARTE_DO_SELO) === "pronta";
+  const { estado, definicao, pendente } = salvamento;
+  let mensagem: ReactNode;
+  if (estado === "conflito") {
+    mensagem = <>A carta foi alterada em outro lugar. <button type="button" className="editor-pe__acao" onClick={onRecarregar}>Recarregar a carta</button></>;
+  } else if (estado === "falha") {
+    mensagem = <>{salvamento.erro ?? "Não foi possível salvar."} <button type="button" className="editor-pe__acao" onClick={() => void salvamento.salvarAgora()}>Tentar de novo</button></>;
+  } else if (estado === "salvando") mensagem = "Salvando…";
+  else if (!definicao) mensagem = "Escreva o título para salvar o rascunho.";
+  else if (pendente) mensagem = "Alterações a salvar…";
+  else mensagem = <><span className="editor-pe__check" aria-hidden="true">✓</span> Rascunho salvo</>;
+  const rotulo = publicando ? "Publicando…" : "Publicar";
+  return (
+    <div className="editor-pe">
+      <p className={`editor-pe__estado editor-pe__estado--${estado}`} role="status">{mensagem}</p>
+      {(aviso || erro) && <p className={`editor-pe__aviso${erro ? " editor-pe__aviso--erro" : ""}`} role={erro ? "alert" : "status"}>{erro ?? aviso}</p>}
+      <button type="button" className={`editor-selo${selo ? " editor-selo--pintado" : ""}`} onClick={onPublicar}
+        aria-disabled={pendencias > 0 || publicando || undefined} aria-describedby={pendencias > 0 ? "editor-selo-pendencias" : undefined}>
+        {selo && <img className="editor-selo__cera" src={ARTE_DO_SELO} alt="" />}
+        <span className="editor-selo__rotulo">{rotulo}</span>
+        {pendencias > 0 && <span id="editor-selo-pendencias" className="editor-selo__pendencias">{pendencias === 1 ? "1 pendência" : `${pendencias} pendências`}</span>}
+      </button>
+    </div>
+  );
+}
+
+function Descricao({ rascunho, alterar }: { rascunho: Rascunho; alterar: (patch: Rascunho) => void }) {
+  return (
+    <Quadro ancora="texto" rotulo="Descrição" icone="texto" largo className="editor-quadro--descricao">
+      {(c) => <textarea id={c.id} className="editor-descricao" value={texto(rascunho.texto)} aria-describedby={c.descricao}
+        aria-invalid={c.invalido || undefined} placeholder="O que a carta faz, na ficção e na mesa." onChange={(e) => alterar({ texto: e.target.value })} />}
+    </Quadro>
+  );
+}
+
+function CamposComuns({ rascunho, alterar, tags }: { rascunho: Rascunho; alterar: (patch: Rascunho) => void; tags: string[] }) {
+  return (
+    <div className="editor-quadros">
+      <Quadro ancora="requisitos" rotulo="Requisitos" icone="requisitos" largo grupo>
+        {(c) => <CampoEtiquetas controle={c} rotulo="Requisitos" valor={rascunho.requisitos} onMudar={(requisitos) => alterar({ requisitos })} />}
+      </Quadro>
+      <Quadro ancora="tags" rotulo="Marcações" icone="marcacoes" largo grupo>
+        {(c) => <CampoEtiquetas controle={c} rotulo="Marcações" valor={rascunho.tags} sugestoes={tags} onMudar={(t) => alterar({ tags: t })} />}
+      </Quadro>
+    </div>
+  );
+}
+
+const CUSTOS: Array<[string, string, string, boolean]> = [
+  ["potencia_uso", "Potência de Uso", "potencia", false],
+  ["custo_uso", "Custo de Uso", "custo", false],
+  ["custo_aprendizado", "Custo de Aprendizado", "aprendizado", true],
+  ["descansos_minimos", "Descansos Mínimos", "descansos", true],
+];
+
+function CamposDeHabilidade({ tipo, rascunho, alterar }: { tipo: TipoCarta; rascunho: Rascunho; alterar: (patch: Rascunho) => void }) {
+  const adicionais = Array.isArray(rascunho.custos_adicionais) ? (rascunho.custos_adicionais as Rascunho[]) : [];
+  const ativacao = texto(rascunho.ativacao);
+  return (
+    <>
+      <Descricao rascunho={rascunho} alterar={alterar} />
+      <div className="editor-quadros">
+        <Quadro ancora="ativacao" rotulo="Ativação" icone="ativacao" grupo>
+          {(c) => (
+            <span className="editor-escolhas" aria-describedby={c.descricao}>
+              {(["ativa", "passiva"] as const).map((valor) => (
+                <button key={valor} type="button" className="editor-escolhas__opcao" aria-pressed={ativacao === valor}
+                  onClick={() => alterar({ ativacao: ativacao === valor ? null : valor })}>
+                  {valor === "ativa" ? "Ativa" : "Passiva"}
+                </button>
+              ))}
+            </span>
+          )}
+        </Quadro>
+        {tipo === "magia" && (
+          <>
+            <Quadro ancora="escola" rotulo="Escola" icone="escola">
+              {(c) => <CampoTexto controle={c} valor={rascunho.escola} onMudar={(escola) => alterar({ escola })} />}
+            </Quadro>
+            <Quadro ancora="grau" rotulo="Grau" icone="grau">
+              {(c) => <CampoInteiro controle={c} valor={rascunho.grau} onMudar={(grau) => alterar({ grau })} />}
+            </Quadro>
+          </>
+        )}
+        {CUSTOS.map(([campo, rotulo, icone, soVoce]) => (
+          <Quadro key={campo} ancora={campo} rotulo={rotulo} icone={icone} soVoce={soVoce}>
+            {(c) => <CampoInteiro controle={c} valor={rascunho[campo]} onMudar={(valor) => alterar({ [campo]: valor })} />}
+          </Quadro>
+        ))}
+        {adicionais.map((adicional, indice) => (
+          <Quadro key={indice} ancora={`custos_adicionais.${indice}`} rotulo={`Custo adicional ${indice + 1}`} icone="custo" largo grupo>
+            {(c) => (
+              <span className="editor-linha">
+                <input className="editor-texto" aria-label={`Recurso do custo adicional ${indice + 1}`} placeholder="Recurso" value={texto(adicional.recurso)}
+                  aria-describedby={c.descricao} onChange={(e) => alterar({ custos_adicionais: adicionais.map((a, i) => (i === indice ? { ...a, recurso: e.target.value } : a)) })} />
+                <input className="editor-texto editor-texto--curto" type="number" min={0} aria-label={`Valor do custo adicional ${indice + 1}`} placeholder="—"
+                  value={typeof adicional.valor === "number" ? String(adicional.valor) : ""}
+                  onChange={(e) => {
+                    const numero = Number(e.target.value);
+                    const valor = e.target.value.trim() && Number.isInteger(numero) ? numero : null;
+                    alterar({ custos_adicionais: adicionais.map((a, i) => (i === indice ? { ...a, valor } : a)) });
+                  }} />
+                <button type="button" className="editor-remover" aria-label={`Remover o custo adicional ${indice + 1}`}
+                  onClick={() => alterar({ custos_adicionais: adicionais.filter((_, i) => i !== indice) })}>×</button>
+              </span>
+            )}
+          </Quadro>
+        ))}
+      </div>
+      <button type="button" className="editor-acrescentar" onClick={() => alterar({ custos_adicionais: [...adicionais, { recurso: "", valor: null }] })}>
+        + Adicionar custo adicional
+      </button>
+      {texto(rascunho.custo_legado) && (
+        <div className="editor-quadros">
+          <Quadro ancora="custo_legado" rotulo="Custo legado (só histórico)" icone="legado" largo soVoce>
+            {(c) => <CampoTexto controle={c} valor={rascunho.custo_legado} onMudar={(custo_legado) => alterar({ custo_legado })} />}
+          </Quadro>
+        </div>
+      )}
+    </>
+  );
+}
+
+function CamposDeEfeito({ rascunho, alterar }: { rascunho: Rascunho; alterar: (patch: Rascunho) => void }) {
+  return (
+    <>
+      <Descricao rascunho={rascunho} alterar={alterar} />
+      <div className="editor-quadros">
+        <Quadro ancora="duracao_rodadas" rotulo="Duração (rodadas)" icone="duracao">
+          {(c) => <CampoInteiro controle={c} min={1} valor={rascunho.duracao_rodadas} onMudar={(duracao_rodadas) => alterar({ duracao_rodadas })} />}
+        </Quadro>
+        <Quadro ancora="modificadores" rotulo="Modificadores" icone="modificadores" largo grupo>
+          {() => <ModifiersEditor idPrefix="efeito" value={(rascunho.modificadores as ModificadorResumo[] | undefined) ?? []}
+            onChange={(modificadores) => alterar({ modificadores })} />}
+        </Quadro>
+      </div>
+    </>
+  );
+}
+
+function CamposDoItem({
+  api, mesaId, rascunho, alterar, catalogo, pedirConfirmacao, idCarta, versao, prepararIcone, origemSistema, aoEnviarIcone,
+}: {
+  api: ApiClient; mesaId: string; rascunho: Rascunho; alterar: (patch: Rascunho) => void; catalogo: CatalogoItens | undefined;
+  pedirConfirmacao: (pedido: { titulo: string; descricao: string; rotulo: string; acao: () => void }) => void;
+  idCarta: string; versao: number | undefined; origemSistema: boolean;
+  prepararIcone: () => Promise<{ versao: number; alvo: string }>;
+  aoEnviarIcone: (versao: number | null | undefined, objeto: string | null) => void;
+}) {
+  const formato = (rascunho.formato ?? null) as FormatoItem | null;
+  const dados = objeto(rascunho.dados);
+  const efeitos = Array.isArray(rascunho.efeitos) ? (rascunho.efeitos as Rascunho[]) : [];
+  const { id: idSubtipo, descricao: descricaoSubtipo, mensagens, avisos } = useProblemasDoCampo("formato", "O que é?");
+  const alterarFormato = (patch: Partial<FormatoItem>) => formato && alterar({ formato: { ...formato, ...patch } });
+  const alterarDado = (chave: string, valor: unknown) => {
+    const proximo = { ...dados };
+    if (vazio(valor)) delete proximo[chave];
+    else proximo[chave] = valor;
+    alterar({ dados: proximo });
+  };
+
+  function escolherSubtipo(subtipo: SubtipoCriavel) {
+    const novo = formatoDoSubtipo(subtipo, formato);
+    const descartes = descartesDoSubtipo(dados, subtipo, catalogo);
+    const aplicar = () => alterar({
+      formato: novo, item_tipo: CATEGORIA_POR_SUBTIPO[subtipo],
+      dados: Object.fromEntries(Object.entries(dados).filter(([chave]) => !descartes.includes(chave))),
+    });
+    if (!descartes.length) return aplicar();
+    pedirConfirmacao({
+      titulo: "Trocar o que é o item?",
+      descricao: `${descartes.map((c) => rotuloDoCampo(c, catalogo)).join(", ")} não se aplica${descartes.length > 1 ? "m" : ""} ao novo tipo e será${descartes.length > 1 ? "ão" : ""} descartado${descartes.length > 1 ? "s" : ""}.`,
+      rotulo: "Trocar",
+      acao: aplicar,
+    });
+  }
+
+  const subtipo = formato?.subtipo as SubtipoCriavel | undefined;
+  const campos = subtipo ? (catalogo?.campos_por_subtipo?.[subtipo] ?? []) : [];
+  const listas = catalogo?.listas ?? {};
+  // Como no conceito: os quadros curtos ficam no alto, junto do formato; as listas (propriedades) vão para
+  // depois da descrição e dos efeitos.
+  const ehLista = (chave: string) => ["escolhas", "etiquetas"].includes(catalogo?.campos?.find((c) => c.id === chave)?.tipo ?? "");
+  const curtos = campos.filter((c) => !ehLista(c.campo));
+  const longos = campos.filter((c) => ehLista(c.campo));
+  const quadroDoCampo = ({ campo: chave, sugestoes }: { campo: string; sugestoes?: string | null }) => {
+    const campo = catalogo?.campos?.find((c) => c.id === chave);
+    if (!campo) return null;
+    const largo = campo.tipo === "escolhas" || campo.tipo === "etiquetas";
+    return (
+      <Quadro key={chave} ancora={`dados.${chave}`} rotulo={campo.rotulo} icone={campo.icone} largo={largo} grupo={largo}>
+        {(c: PropsDoControle) => {
+          const valor = dados[chave];
+          if (campo.tipo === "inteiro") return <CampoInteiro controle={c} valor={valor} unidade={campo.unidade} onMudar={(v) => alterarDado(chave, v)} />;
+          if (campo.tipo === "texto") return <CampoTexto controle={c} valor={valor} exemplo={campo.exemplo} onMudar={(v) => alterarDado(chave, v)} />;
+          if (campo.tipo === "escolha") return <CampoEscolha controle={c} valor={valor} opcoes={listas[campo.lista ?? ""] ?? []} onMudar={(v) => alterarDado(chave, v)} />;
+          if (campo.tipo === "escolhas") return <CampoEscolhas controle={c} valor={valor} opcoes={listas[campo.lista ?? ""] ?? []} onMudar={(v) => alterarDado(chave, v)} />;
+          return <CampoEtiquetas controle={c} rotulo={campo.rotulo} valor={valor} sugestoes={listas[sugestoes ?? ""] ?? []} onMudar={(v) => alterarDado(chave, v)} />;
+        }}
+      </Quadro>
+    );
+  };
+  return (
+    <>
+      <div id={idSubtipo} className={`editor-o-que-e${mensagens.length ? " editor-quadro--problema" : ""}`}>
+        <SeletorDeSubtipo valor={subtipo} rotulo="O que é?" idPrefix="editor-item" descricao={descricaoSubtipo} onEscolher={escolherSubtipo} />
+        <MensagensDoCampo id={descricaoSubtipo} mensagens={mensagens} avisos={avisos} />
+      </div>
+      {formato && (
+        <div className="editor-quadros">
+          <Quadro ancora="formato.dimensao" rotulo="Espaço na bolsa" icone="grade" grupo>
+            {(c) => (
+              <span className="editor-linha">
+                <input className="editor-texto editor-texto--curto" type="number" min={1} max={12} aria-label="Largura" aria-describedby={c.descricao}
+                  value={formato.largura} onChange={(e) => alterarFormato({ largura: Math.min(12, Math.max(1, Math.trunc(Number(e.target.value)) || 1)) })} />
+                <span aria-hidden="true">×</span>
+                <input className="editor-texto editor-texto--curto" type="number" min={1} max={12} aria-label="Altura"
+                  value={formato.altura} onChange={(e) => alterarFormato({ altura: Math.min(12, Math.max(1, Math.trunc(Number(e.target.value)) || 1)) })} />
+                <button type="button" className="editor-girar" aria-label="Girar" title="Girar"
+                  onClick={() => alterarFormato({ largura: formato.altura, altura: formato.largura })}><IconeDoCampo nome="girar" /></button>
+              </span>
+            )}
+          </Quadro>
+          {formato.subtipo === "mochila" && formato.mochila && (
+            <>
+              <Quadro ancora="formato.mochila" rotulo="Amplia a bolsa em" icone="grade_mais" grupo>
+                {(c) => (
+                  <span className="editor-linha">
+                    <input className="editor-texto editor-texto--curto" type="number" min={0} max={4} aria-label="Linhas a mais" aria-describedby={c.descricao}
+                      value={formato.mochila?.linhas ?? 0} onChange={(e) => alterarFormato({ mochila: { ...formato.mochila!, linhas: Math.min(4, Math.max(0, Math.trunc(Number(e.target.value)) || 0)) } })} />
+                    <span aria-hidden="true">×</span>
+                    <input className="editor-texto editor-texto--curto" type="number" min={0} max={4} aria-label="Colunas a mais"
+                      value={formato.mochila?.colunas ?? 0} onChange={(e) => alterarFormato({ mochila: { ...formato.mochila!, colunas: Math.min(4, Math.max(0, Math.trunc(Number(e.target.value)) || 0)) } })} />
+                  </span>
+                )}
+              </Quadro>
+              <Quadro ancora="formato.mochila.requisito_forca" rotulo="Requisito de Força" icone="forca">
+                {(c) => <CampoInteiro controle={c} max={10} valor={formato.mochila?.requisito_forca}
+                  onMudar={(requisito_forca) => alterarFormato({ mochila: { ...formato.mochila!, requisito_forca } })} />}
+              </Quadro>
+            </>
+          )}
+          {formato.subtipo === "aljava" && formato.aljava && (
+            <Quadro ancora="formato.aljava" rotulo="Capacidade de flechas" icone="flechas">
+              {(c) => <CampoInteiro controle={c} min={1} max={200} valor={formato.aljava?.capacidade_flechas}
+                onMudar={(v) => alterarFormato({ aljava: { capacidade_flechas: Math.min(200, Math.max(1, v ?? 1)) } })} />}
+            </Quadro>
+          )}
+          {formato.subtipo === "outro" && catalogo && (
+            <>
+              <Quadro ancora="formato.categoria" rotulo="Categoria" icone="categoria">
+                {(c) => <CampoEscolha controle={c} valor={formato.categoria ?? catalogo.categorias.find((x) => x.padrao_outros)?.id}
+                  opcoes={catalogo.categorias.filter((x) => x.escolha_em_outros).map((x) => ({ id: x.id, rotulo: x.rotulo }))}
+                  onMudar={(categoria) => alterarFormato({ categoria })} />}
+              </Quadro>
+              <Quadro ancora="formato.maos" rotulo="Ocupa mãos" icone="maos">
+                {(c) => <CampoEscolha controle={c} valor={String(formato.maos ?? 0)}
+                  opcoes={[{ id: "0", rotulo: "Nenhuma" }, { id: "1", rotulo: "1 mão" }, { id: "2", rotulo: "2 mãos" }]}
+                  onMudar={(maos) => alterarFormato({ maos: Number(maos ?? 0) })} />}
+              </Quadro>
+              <Quadro ancora="formato.pilha_max" rotulo="Empilha até" icone="pilha">
+                {(c) => <CampoInteiro controle={c} min={1} max={999} valor={formato.pilha_max ?? 1}
+                  onMudar={(v) => alterarFormato({ pilha_max: Math.min(999, Math.max(1, v ?? 1)) })} />}
+              </Quadro>
+            </>
+          )}
+          {formato.subtipo === "uma_mao" && (
+            <Quadro ancora="formato.versatil" rotulo="Versátil" icone="versatil" grupo>
+              {(c) => (
+                <label className="editor-marcar">
+                  <input type="checkbox" checked={formato.versatil === true} aria-describedby={c.descricao}
+                    onChange={(e) => alterarFormato({ versatil: e.target.checked })} />
+                  Uma ou duas mãos
+                </label>
+              )}
+            </Quadro>
+          )}
+          {catalogo && (
+            <Quadro ancora="raridade" rotulo="Raridade" icone="raridade">
+              {(c) => <CampoEscolha controle={c} valor={formato.raridade ?? catalogo.raridades[0]?.id}
+                opcoes={catalogo.raridades.map((r) => ({ id: r.id, rotulo: r.rotulo }))}
+                onMudar={(raridade) => alterarFormato({ raridade: raridade ?? catalogo.raridades[0]?.id })} />}
+            </Quadro>
+          )}
+          {curtos.map(quadroDoCampo)}
+        </div>
+      )}
+      <Descricao rascunho={rascunho} alterar={alterar} />
+      {efeitos.map((efeito, indice) => (
+        <div key={indice} className="editor-quadros">
+          <Quadro ancora={`efeitos.${indice}`} rotulo={`Efeito ${indice + 1}`} icone="efeito" largo grupo className="editor-quadro--efeito">
+            {() => (
+              <span className="editor-efeito">
+                <input className="editor-texto" aria-label={`Nome do efeito ${indice + 1}`} placeholder="Nome" value={texto(efeito.nome)}
+                  onChange={(e) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, nome: e.target.value } : x)) })} />
+                <textarea className="editor-texto" aria-label={`Descrição do efeito ${indice + 1}`} placeholder="Descrição" value={texto(efeito.descricao)}
+                  onChange={(e) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, descricao: e.target.value } : x)) })} />
+                <select className="editor-escolha" aria-label={`Ativação do efeito ${indice + 1}`} value={texto(efeito.ativacao) || "enquanto_equipado"}
+                  onChange={(e) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, ativacao: e.target.value } : x)) })}>
+                  <option value="enquanto_equipado">Enquanto equipado</option><option value="manual">Manual</option>
+                </select>
+                <ModifiersEditor idPrefix={`item-efeito-${indice}`} value={(efeito.modificadores as ModificadorResumo[] | undefined) ?? []}
+                  onChange={(modificadores) => alterar({ efeitos: efeitos.map((x, i) => (i === indice ? { ...x, modificadores } : x)) })} />
+                <button type="button" className="editor-acrescentar editor-acrescentar--remover"
+                  onClick={() => alterar({ efeitos: efeitos.filter((_, i) => i !== indice) })}>Remover efeito</button>
+              </span>
+            )}
+          </Quadro>
+        </div>
+      ))}
+      <button type="button" className="editor-acrescentar"
+        onClick={() => alterar({ efeitos: [...efeitos, { nome: "", descricao: "", modificadores: [], ativacao: "enquanto_equipado" }] })}>
+        + Adicionar efeito
+      </button>
+      {formato && (
+        <div className="editor-quadros">
+          {longos.map(quadroDoCampo)}
+          <Quadro ancora="quantidade" rotulo="Quantidade" icone="quantidade">
+            {(c) => <CampoInteiro controle={c} min={1} valor={typeof rascunho.quantidade === "number" ? rascunho.quantidade : 1}
+              onMudar={(quantidade) => alterar({ quantidade: quantidade ?? 1 })} />}
+          </Quadro>
+        </div>
+      )}
+      {formato && !origemSistema && (
+        <div className="editor-quadros">
+          <Quadro ancora="icone" rotulo="Ícone na bolsa" icone="icone" largo grupo>
+            {() => (
+              <span className="editor-icone-bolsa">
+                <Previa formato={formato} nome={texto(rascunho.titulo)} api={api} mesaId={mesaId}
+                  arte={lista(rascunho.ativos_privados)[0] ?? lista(rascunho.ativos)[0] ?? null} />
+                <small>Ocupa {formato.largura} × {formato.altura} célula{formato.largura * formato.altura > 1 ? "s" : ""}: use essa proporção
+                  (ex.: {formato.largura * 256} × {formato.altura * 256} px), de preferência com fundo transparente. Sem ícone, a bolsa usa a foto.</small>
+                <ImageUpload api={api} mesaId={mesaId} destino="icone-grade" alvo={`carta:${idCarta}`} versao={versao}
+                  rotulo="ícone da bolsa" temImagem={Boolean(formato.icone_grade)} prepararEnvio={prepararIcone}
+                  onConcluido={(resposta) => aoEnviarIcone(resposta.versao, resposta.objeto ?? null)} />
+              </span>
+            )}
+          </Quadro>
+        </div>
+      )}
+    </>
   );
 }
