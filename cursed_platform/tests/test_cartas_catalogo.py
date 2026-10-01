@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from cursed_platform import cartas, cartas_catalogo, cartas_ciclo, catalogos
 from cursed_platform.catalogos import Habilidade
+from cursed_platform.tests import test_api_recipientes as base_api
 from cursed_platform.persistence import (
     Base, CartaDefinicaoRegistro, CartaPersonagemRegistro, CartaVersaoRegistro, MesaRegistro, PersonagemRegistro,
 )
@@ -173,6 +174,27 @@ class SincronizacaoTest(_Base):
             select(CartaVersaoRegistro).where(CartaVersaoRegistro.definicao_id == definicao.id))}
         self.assertEqual(textos[2], "Versão da mesa.")
 
+    def test_custo_informado_no_json_gera_nova_versao(self):
+        """cartas-do-catalogo-somente-leitura 2.1: os custos vêm do JSON e entram na conferência."""
+        self.conceder()
+        nome = CATALOGO.classe("Druida").habilidades[0].nome
+        classes = tuple(
+            replace(c, habilidades=(replace(c.habilidades[0], custos=(("custo_aprendizado", 3),)), *c.habilidades[1:]))
+            if c.nome == "Druida" else c for c in CATALOGO.classes
+        )
+        resultado = self.conceder(replace(CATALOGO, classes=classes))
+        self.assertEqual(resultado.atualizadas, [nome])
+        definicao = next(d for d in self.definicoes() if d.origem_sistema.endswith(f"/{nome}"))
+        vigente = cartas.versao_publicada(self.session, definicao)
+        self.assertEqual(vigente.numero, 2)
+        self.assertEqual([vigente.conteudo.get(c) for c in cartas.CUSTOS], [3, None, None, None])
+
+    def test_custo_legado_nao_preenche_os_custos(self):
+        legado = Habilidade("Golpe Antigo", "Texto.", "Ativa", custo_legado="2 PP")
+        conteudo = cartas_catalogo._conteudo(legado, "classe:Druida")
+        self.assertEqual(conteudo["custo_legado"], "2 PP")
+        self.assertTrue(all(c not in conteudo for c in cartas.CUSTOS))
+
     def test_habilidade_removida_do_json_e_arquivada_e_retirada(self):
         self.conceder()
         nome = CATALOGO.classe("Druida").habilidades[0].nome
@@ -198,6 +220,38 @@ class SincronizacaoTest(_Base):
         cartas_catalogo.sincronizar_mesa(self.session, "mesa", CATALOGO)
         cartas_catalogo.sincronizar_mesa(self.session, "mesa", CATALOGO)
         self.assertEqual(self.session.query(CartaVersaoRegistro).count(), antes)
+
+
+
+class EdicaoPelaApiTest(unittest.TestCase):
+    """cartas-do-catalogo-somente-leitura 3.1: a mesa não edita as cartas do catálogo do sistema."""
+
+    tearDown = base_api.ApiRecipientesTest.tearDown
+    as_ = base_api.ApiRecipientesTest.as_
+
+    def setUp(self):
+        base_api.ApiRecipientesTest.setUp(self)
+        with Session(self.engine) as session:
+            cartas_catalogo.materializar(session, "mesa", cartas_catalogo._da_classe(CATALOGO, "Druida"))
+            session.commit()
+
+    def carta_do_catalogo(self):
+        resposta = self.as_("mestre").get("/mesas/mesa/cartas")
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        return next(d for d in resposta.json() if d.get("origem_sistema"))
+
+    def test_rascunho_e_publicacao_recusados_sem_nova_versao(self):
+        carta = self.carta_do_catalogo()
+        rascunho = self.as_("mestre").put(f"/mesas/mesa/cartas/{carta['id']}/rascunho", json={
+            "rascunho": {**carta["rascunho"], "texto": "Versão da mesa."}, "versao_esperada": carta["versao"]})
+        self.assertEqual(rascunho.status_code, 409)
+        self.assertIn("catálogo do sistema", rascunho.json()["detail"])
+        publicada = self.as_("mestre").post(f"/mesas/mesa/cartas/{carta['id']}/publicacao",
+                                            json={"versao_esperada": carta["versao"]})
+        self.assertEqual(publicada.status_code, 409)
+        depois = self.carta_do_catalogo()
+        self.assertEqual((depois["publicada"]["numero"], depois["publicada"]["conteudo"]["texto"]),
+                         (1, carta["publicada"]["conteudo"]["texto"]))
 
 
 if __name__ == "__main__":

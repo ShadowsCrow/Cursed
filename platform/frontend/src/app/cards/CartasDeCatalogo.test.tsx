@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { CardEditor } from "./CardEditor";
+import { CartasFicha } from "../characters/sheet/cartas/CartasFicha";
 import { CatalogStatusNotice } from "./CatalogStatusNotice";
-import { CharacterCardsPanel } from "./CharacterCardsPanel";
-import { apiSimulada, renderComQuery, visivel } from "./testing";
+import { NarratorLibrary } from "./NarratorLibrary";
+import { apiSimulada, renderComQuery, versao, visivel } from "./testing";
 
 describe("Cartas de classe, arquétipo e raça (7.6)", () => {
   afterEach(() => cleanup());
@@ -20,19 +20,32 @@ describe("Cartas de classe, arquétipo e raça (7.6)", () => {
       posse("c2", "Laço Animal", "arquetipo:Druida/Animalista"),
       posse("c3", "Truque do Templo", null),
     ] } } });
-    renderComQuery(<CharacterCardsPanel api={api} mesaId="mesa" personagemId="lia" versao={1} papel="jogador" podeEditar />);
-    expect(await screen.findByText("Classe: Druida · habilidade automática")).toBeTruthy();
-    expect(screen.getByText("Arquétipo: Animalista · habilidade automática")).toBeTruthy();
+    renderComQuery(<CartasFicha api={api} mesaId="mesa" personagemId="lia" versao={1} papel="jogador" podeEditar />);
+    expect(await screen.findByText("Classe: Druida - automática")).toBeTruthy();
+    expect(screen.getByText("Arquétipo: Animalista - automática")).toBeTruthy();
     expect(screen.getByText("Concedida como aprendida (exceção)")).toBeTruthy();
   });
 
-  it("o editor avisa que o JSON do catálogo prevalece sobre edições", () => {
-    const { api } = apiSimulada({ GET: { "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] } } });
-    renderComQuery(<CardEditor api={api} mesaId="mesa" onClose={() => undefined} definicao={{
-      id: "sis-1", tipo: "habilidade", versao: 1, rascunho: { titulo: "Forma Selvagem", texto: "Vira um animal." },
-      procedencia_rascunho: {}, versao_publicada: 1, arquivada: false, origem_sistema: "classes/Druida/habilidades/Forma Selvagem",
-    }} />);
-    expect(screen.getByRole("note").textContent).toContain("O JSON do catálogo prevalece");
+  it("a biblioteca não oferece editar as cartas do catálogo do sistema (cartas-do-catalogo-somente-leitura 4.1)", async () => {
+    const publicada = (id: string, titulo: string) => ({ ...versao(`v-${id}`, "habilidade", { titulo, texto: "Texto." }) });
+    const { api } = apiSimulada({ GET: {
+      "/mesas/{mesa_id}/cartas": { data: [
+        { id: "sis-1", tipo: "habilidade", versao: 1, rascunho: {}, procedencia_rascunho: { origem: "sistema" }, versao_publicada: 1,
+          arquivada: false, origem_sistema: "classes/Gatuno/arquetipos/Ladrão/habilidades/Mãos Leves", publicada: publicada("sis-1", "Mãos Leves") },
+        { id: "d1", tipo: "habilidade", versao: 1, rascunho: {}, procedencia_rascunho: {}, versao_publicada: 1, arquivada: false,
+          origem_sistema: null, publicada: publicada("d1", "Golpe da Mesa") },
+      ] },
+      "/mesas/{mesa_id}/ofertas": { data: [] },
+      "/mesas/{mesa_id}/personagens": { data: [] },
+    } });
+    renderComQuery(<NarratorLibrary api={api} mesaId="mesa" />);
+    expect(await screen.findByRole("button", { name: "Editar Golpe da Mesa" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Editar Mãos Leves" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Habilidade: Mãos Leves" }));
+    const grimorio = screen.getByRole("dialog", { name: "Mãos Leves" });
+    expect(within(grimorio).getByText("Arquétipo: Ladrão")).toBeTruthy();
+    expect(within(grimorio).getByRole("button", { name: "Enviar" })).toBeTruthy();
+    expect(within(grimorio).queryByRole("button", { name: "Editar" })).toBeNull();
   });
 
   it("o Narrador vê o erro de recarga do catálogo", async () => {

@@ -6,8 +6,9 @@
 - **Concessão:** a escolha de classe, arquétipo ou raça concede as cartas já aprendidas
   (``excecao_aprendizado``), marcadas com ``concedida_por`` (ex.: ``classe:Druida``). Numa troca, só
   as cartas concedidas pela escolha anterior saem; cartas obtidas por oferta não são tocadas.
-- **Sincronização:** o JSON do catálogo prevalece. Texto ou ativação diferente gera nova versão,
-  mesmo que o Narrador tenha editado a carta; as posses concedidas passam para ela. Habilidade nova
+- **Sincronização:** o JSON do catálogo é a única fonte, inclusive dos custos; a mesa não edita essas cartas
+  (cartas-do-catalogo-somente-leitura). Texto, ativação ou custo diferente gera nova versão; as posses
+  concedidas passam para ela. Habilidade nova
   é concedida a quem tem a escolha; habilidade removida é arquivada e retirada.
 
 Nenhuma função confirma a transação.
@@ -23,7 +24,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from cursed_platform import auditoria, cartas
-from cursed_platform.catalogos import Catalogos, Habilidade
+from cursed_platform.catalogos import CUSTOS_DE_HABILIDADE, Catalogos, Habilidade
 from cursed_platform.persistence import (
     CartaDefinicaoRegistro, CartaPersonagemRegistro, CartaVersaoRegistro, PersonagemRegistro,
 )
@@ -50,6 +51,7 @@ def _conteudo(habilidade: Habilidade, tag: str) -> dict[str, Any]:
     conteudo: dict[str, Any] = {"titulo": habilidade.nome, "texto": habilidade.descricao, "ativacao": ativacao, "tags": tags}
     if habilidade.custo_legado:
         conteudo["custo_legado"] = habilidade.custo_legado
+    conteudo.update(habilidade.custos)
     return conteudo
 
 
@@ -122,7 +124,7 @@ def _definicao(session: Session, mesa_id: str, origem: str) -> CartaDefinicaoReg
 
 def _comparavel(conteudo: Mapping[str, Any]) -> tuple[Any, ...]:
     return (conteudo.get("titulo"), conteudo.get("texto"), conteudo.get("ativacao"), tuple(conteudo.get("tags") or ()),
-            conteudo.get("custo_legado"))
+            conteudo.get("custo_legado"), *(conteudo.get(campo) for campo in CUSTOS_DE_HABILIDADE))
 
 
 @dataclass
