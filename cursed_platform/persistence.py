@@ -567,6 +567,8 @@ class ApresentacaoCartaRegistro(Base):
     )
     versao_id: Mapped[str] = mapped_column(String(100), ForeignKey("card_versions.id"), nullable=False)
     destinatarios: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    # Participantes que já viram e fecharam a carta: para eles ela não aparece de novo (apresentada uma vez).
+    vistas: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list, server_default="[]")
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="apresentada")
     apresentada_por: Mapped[str] = mapped_column(String(100), nullable=False)
     apresentada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

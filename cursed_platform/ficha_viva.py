@@ -8,7 +8,7 @@ Um modificador contribui para um valor derivado somente quando seu alvo,
 normalizado sem acentos e em minúsculas, é igual à chave do valor:
 `atributo:<nome>`, `pericia:<nome>`, `defesa:esquiva`, `defesa:armadura`,
 ou `rdb:armadura`. Alvos de rolagem, como `ataque` ou `teste:percepcao`, não
-alteram totais. O peso de um item é só descrição: a carga é a grade.
+alteram totais. Itens não têm peso: a carga é a grade.
 """
 
 from __future__ import annotations
@@ -26,10 +26,13 @@ from cursed_platform import catalogos
 from cursed_platform.domain.efeitos import indexar_catalogo
 from cursed_platform.domain.efeitos_codec import decode_effect
 from cursed_platform.domain.equip_codec import decode_equipment
+from cursed_platform.domain.grade import sem_peso
 from cursed_platform.persistence import (
     EfeitoAplicadoRegistro, FonteEfeitoRegistro, ItemInventarioRegistro,
     OperacaoEfeitoRegistro, PersonagemRegistro,
 )
+
+SUBTIPOS_DE_ARMADURA = frozenset({"peitoral", "escudo"})
 
 
 def _slug(texto: str) -> str:
@@ -227,7 +230,9 @@ def calcular_valores_derivados(
         Fonte("atributo", "Destreza", total("atributo", "Destreza")),
         Fonte("pericia", "Esquiva", total("pericia", "Esquiva")),
     ], [], minimo_zero=True)
-    armaduras = [i for i in inventario if i.tipo == "armadura" and i.equipado]
+    # Só o peitoral e o escudo equipados dão Armadura e RDB; capacete, luvas e botas só carregam
+    # efeitos. Item sem subtipo (fora da grade) não conta: o subtipo não é inferido.
+    armaduras = [i for i in inventario if i.subtipo in SUBTIPOS_DE_ARMADURA and i.equipado]
     armadura = ValorDerivado("defesa:armadura", "Defesa (Armadura)", "status", [
         Fonte("atributo", "Vigor", total("atributo", "Vigor")),
         *(
@@ -359,7 +364,7 @@ def preparar_importacao(codigo: str, catalogo: list[Mapping[str, Any]] | None = 
         raise ValueError("Código não reconhecido. Use um código de efeito (E1/E2) ou de equipamento (EQ1/EQ2).")
     equipamento = decode_equipment(texto)
     indice = indexar_catalogo(catalogo if catalogo is not None else catalogos.obter().efeitos_default)
-    item = _sem_imagem(equipamento["item"], avisos, "o item")
+    item = sem_peso(_sem_imagem(equipamento["item"], avisos, "o item"))
     if not str(item.get("nome") or "").strip():
         raise ValueError("O equipamento precisa ter nome.")
     atuais = _inteiro_opcional(item.get("cargas_atuais"))
@@ -401,9 +406,13 @@ def aplicar_formato(item: ItemInventarioRegistro, formato: Mapping[str, Any]) ->
         item.maos = None
     item.pilha_max = formato.get("pilha_max") if subtipo == "outro" else None
     dados = {k: v for k, v in (item.dados or {}).items()
-             if k not in {"ampliacao", "requisito_forca", "capacidade_flechas", "icone_grade", "versatil"}}
+             if k not in {"ampliacao", "requisito_forca", "capacidade_flechas", "icone_grade", "versatil", "raridade", "categoria"}}
     if versatil:
         dados["versatil"] = True
+    # Catálogo de itens (reformular-visual-da-ficha): a categoria só é escolhida em Outros.
+    dados["raridade"] = str(formato.get("raridade") or "comum")
+    if subtipo == "outro" and formato.get("categoria"):
+        dados["categoria"] = str(formato["categoria"])
     mochila = formato.get("mochila")
     if subtipo == "mochila" and mochila:
         dados["ampliacao"] = {"linhas": int(mochila.get("linhas", 0)), "colunas": int(mochila.get("colunas", 0))}

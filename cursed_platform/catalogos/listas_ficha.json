@@ -50,58 +50,119 @@
   ],
   "campos_personalidade": [
     {
+      "chave": "frase",
+      "rotulo": "Frase marcante",
+      "dica": "Ex: Conhecimento é a única arma que nunca podem me tirar.",
+      "limite": 160
+    },
+    {
+      "chave": "tracos",
+      "rotulo": "Traços",
+      "dica": "Ex: Leal, Disciplinado",
+      "tipo": "tracos",
+      "maximo": 6,
+      "limite": 24
+    },
+    {
       "chave": "coisa_favorita",
       "rotulo": "Coisa favorita",
-      "dica": "Ex: runas antigas"
+      "dica": "Ex: runas antigas",
+      "icone": "livro_aberto"
     },
     {
       "chave": "odeia",
       "rotulo": "O que odeia",
-      "dica": "Ex: traição"
+      "dica": "Ex: traição",
+      "icone": "espadas"
     },
     {
       "chave": "quando_me_veem",
       "rotulo": "Quando me veem pensam que",
-      "dica": "Ex: um sábio distante"
+      "dica": "Ex: um sábio distante",
+      "icone": "olho"
     },
     {
       "chave": "manias",
       "rotulo": "Manias ou hábitos",
-      "dica": "Ex: roer unha"
+      "dica": "Ex: roer unha",
+      "icone": "mao"
     },
     {
       "chave": "vivo_para",
       "rotulo": "Vivo para",
-      "dica": "Ex: proteger os inocentes"
+      "dica": "Ex: proteger os inocentes",
+      "icone": "louros"
     },
     {
       "chave": "meu_lema",
       "rotulo": "Meu lema",
-      "dica": "Ex: O dever acima de tudo"
+      "dica": "Ex: O dever acima de tudo",
+      "icone": "ampulheta"
     },
     {
       "chave": "medo",
       "rotulo": "Medo ou fobia",
-      "dica": "Ex: aranhas gigantes"
+      "dica": "Ex: aranhas gigantes",
+      "icone": "aranha"
     },
     {
       "chave": "valor_inquebravel",
       "rotulo": "Valor inquebrável",
-      "dica": "Ex: lealdade"
+      "dica": "Ex: lealdade",
+      "icone": "estrela"
     },
     {
       "chave": "religiao",
       "rotulo": "Religião ou crença",
-      "dica": "Ex: Deusa da Lua"
+      "dica": "Ex: Deusa da Lua",
+      "icone": "lua_estrela"
     },
     {
       "chave": "historia",
       "rotulo": "História",
       "dica": "Ex: de onde veio, o que perdeu e o que o fez partir",
       "longo": true,
-      "limite": 4000
+      "limite": 4000,
+      "icone": "livro_fechado"
     }
   ],
+  "personalidade_topo": {
+    "citacao": "frase",
+    "etiquetas": "tracos"
+  },
+  "grupos_personalidade": [
+    {
+      "id": "essencia",
+      "titulo": "Traços e essência",
+      "subtitulo": "O que o move, o que acredita e o que o define.",
+      "emblema": "rosa_dos_ventos",
+      "campos": [
+        "alinhamento",
+        "coisa_favorita",
+        "quando_me_veem",
+        "vivo_para",
+        "medo"
+      ]
+    },
+    {
+      "id": "sombras",
+      "titulo": "Convicções e sombras",
+      "subtitulo": "O que teme, o que rejeita e aquilo que nunca abandona.",
+      "emblema": "lua_solar",
+      "campos": [
+        "pecado",
+        "odeia",
+        "manias",
+        "meu_lema",
+        "valor_inquebravel",
+        "religiao"
+      ]
+    }
+  ],
+  "icones_personalidade": {
+    "alinhamento": "balanca",
+    "pecado": "caveira"
+  },
   "faixas_de_altura": [
     {
       "tamanho": "Minúsculo",

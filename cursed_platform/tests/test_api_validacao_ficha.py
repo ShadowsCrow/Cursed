@@ -98,6 +98,43 @@ class ApiValidacaoFichaTest(_ApiFicha):
         self.assertEqual(resposta.status_code, 200, resposta.text)
         self.assertEqual(self.ficha("lia")["personalidade"]["historia"], "Primeiro.\n\nSegundo.")
 
+    def test_tracos_gravados_na_ordem_e_recusas(self):
+        """Traços (reformular-personalidade-da-ficha, D3): até 6, sem vazio, sem repetição."""
+        tracos = ["Leal", "Disciplinado", "Reservado", "Idealista"]
+        resposta = self.gravar("lia", lambda f: f["personalidade"].update(tracos=tracos, frase="Conhecimento é a única arma."))
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        self.assertEqual(self.ficha("lia")["personalidade"]["tracos"], tracos)
+        casos = [
+            (["Leal", "Calmo", "Frio", "Justo", "Sábio", "Bravo", "Firme"], "no máximo 6 traços"),
+            (["Leal", "leal"], "está repetido"),
+            (["Ágil", "agil"], "está repetido"),
+            (["Leal", "  "], "vazio"),
+            (["a" * 25], "passa de 24 caracteres"),
+            ("Leal, Calmo", "lista"),
+        ]
+        for valor, trecho in casos:
+            with self.subTest(valor=valor):
+                resposta = self.gravar("lia", lambda f: f["personalidade"].update(tracos=valor), versao=1)
+                self.assertEqual(resposta.status_code, 422, resposta.text)
+                [problema] = resposta.json()["detail"]["problemas"]
+                self.assertEqual(problema["campo"], "personalidade.tracos")
+                self.assertIn(trecho, problema["mensagem"])
+        self.assertEqual(self.ficha("lia")["personalidade"]["tracos"], tracos)
+
+    def test_frase_acima_do_limite_e_recusada(self):
+        resposta = self.gravar("lia", lambda f: f["personalidade"].update(frase="a" * 161))
+        self.assertEqual(resposta.status_code, 422)
+        [problema] = resposta.json()["detail"]["problemas"]
+        self.assertEqual(problema["campo"], "personalidade.frase")
+        self.assertIn("160 caracteres", problema["mensagem"])
+
+    def test_ficha_antiga_sem_frase_e_tracos_nao_tem_aviso(self):
+        self.assertNotIn("frase", FICHA.get("personalidade", {}))
+        resposta = self.client.get(f"{BASE}/lia/ficha")
+        self.assertEqual(resposta.status_code, 200)
+        avisos = [a["campo"] for a in resposta.json().get("avisos", [])]
+        self.assertFalse([c for c in avisos if c in ("personalidade.frase", "personalidade.tracos")])
+
     def test_historia_segue_aprovacao_e_bloqueio_da_mesa(self):
         with Session(self.engine) as session:
             session.get(MesaRegistro, "mesa").campos_exigem_aprovacao = ["personalidade.historia"]
@@ -216,6 +253,23 @@ class CamposExclusivosDoNarradorTest(_ApiFicha):
         confirmada = self.gravar("lia", lambda f: f["personagem"].update(nivel_pela_migracao=False))
         self.assertEqual(confirmada.status_code, 200, confirmada.text)
         self.assertNotIn("nivel_pela_migracao", self.ficha("lia")["personagem"])
+        self.assertEqual(confirmada.json()["avisos"], [])
+
+    def test_platina_retirada_avisa_ate_o_narrador_confirmar(self):
+        with Session(self.engine) as session:
+            lia = session.get(PersonagemRegistro, "lia")
+            lia.ficha = {**lia.ficha, "inventario": {"platina_retirada": 5}}
+            session.commit()
+        avisos = {a["campo"]: a["mensagem"] for a in self.client.get(f"{BASE}/lia/ficha").json()["avisos"]}
+        self.assertIn("5 moeda(s) de platina", avisos["inventario.platina_retirada"])
+        # Gravar outro campo não mexe no aviso; o jogador não pode confirmá-lo.
+        self.assertEqual(self.gravar("lia", lambda f: f["personagem"].update(idade=30)).status_code, 200)
+        self.assertEqual(self.ficha("lia")["inventario"], {"platina_retirada": 5})
+        self.assertEqual(self.gravar("lia", lambda f: f["inventario"].update(platina_retirada=False), versao=1).status_code, 403)
+        self.ator = "mestre"
+        confirmada = self.gravar("lia", lambda f: f["inventario"].update(platina_retirada=False), versao=1)
+        self.assertEqual(confirmada.status_code, 200, confirmada.text)
+        self.assertNotIn("inventario", self.ficha("lia"))
         self.assertEqual(confirmada.json()["avisos"], [])
 
     def test_troca_de_raca_exige_limpar_ou_reconfirmar_o_tamanho(self):

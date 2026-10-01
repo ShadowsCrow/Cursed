@@ -134,14 +134,15 @@ test("inventário em grade: colocar, girar e equipar", async ({ browser }) => {
     const painel = jogador.pagina.getByRole("tabpanel", { name: "Inventário" });
     const grade = painel.getByRole("region", { name: "Inventário em grade" });
     await expect(grade).toBeVisible();
-    await grade.getByRole("region", { name: "Fora da grade" }).getByRole("button", { name: /Lâmina Rúnica/ }).click();
+    // "Fora da grade" e o painel do item ficam fora da bolsa, no rodapé e na lateral da aba (visual-da-ficha).
+    await painel.getByRole("region", { name: "Fora da grade" }).getByRole("button", { name: /Lâmina Rúnica/ }).click();
     await grade.locator(".grade-inventario__celula").nth(0).click();
     const lamina = grade.getByRole("button", { name: /^Lâmina Rúnica, arma de uma mão, 1 por 3, coluna 1, linha 1/ });
     await expect(lamina).toBeVisible();
     await expect(lamina).toHaveAttribute("aria-pressed", "true");
-    await grade.getByRole("button", { name: "Girar" }).click();
+    await painel.getByRole("button", { name: "Girar", exact: true }).click();
     await expect(grade.getByRole("button", { name: /^Lâmina Rúnica, arma de uma mão, 3 por 1, coluna 1, linha 1/ })).toBeVisible();
-    await grade.getByRole("button", { name: "Equipar" }).click();
+    await painel.getByRole("button", { name: "Equipar", exact: true }).click();
     await expect(grade.getByRole("button", { name: /^Lâmina Rúnica.*, equipado/ })).toBeVisible();
     await verificarAxe(jogador.pagina, "inventário em grade");
     await expect.poll(async () => {
@@ -168,15 +169,16 @@ test("corpos padrão: o Narrador concede e o jogador carrega o que cabe", async 
   try {
     await conceder("Corpo Médio (Item, v1)");
     await jogador.pagina.reload();
-    const grade = jogador.pagina.getByRole("region", { name: "Inventário em grade" });
-    const fora = grade.getByRole("region", { name: "Fora da grade" });
+    const painel = jogador.pagina.getByRole("tabpanel", { name: "Inventário" });
+    const grade = painel.getByRole("region", { name: "Inventário em grade" });
+    const fora = painel.getByRole("region", { name: "Fora da grade" });
     // Lia é Média com Força 1: 4 colunas e 3 linhas, mais a linha vermelha. O corpo inteiro (4 x 5) não cabe.
     await fora.getByRole("button", { name: "Corpo Médio (4 x 5)" }).click();
     await grade.locator(".grade-inventario__celula").nth(0).click();
     await expect(grade.getByText(/Não dá para soltar Corpo Médio aí: fica fora da grade/)).toBeVisible();
     await conceder("Corpo Médio (com ajuda) (Item, v1)");
     await jogador.pagina.reload();
-    await grade.getByRole("region", { name: "Fora da grade" }).getByRole("button", { name: "Corpo Médio (com ajuda) (4 x 3)" }).click();
+    await painel.getByRole("region", { name: "Fora da grade" }).getByRole("button", { name: "Corpo Médio (com ajuda) (4 x 3)" }).click();
     await grade.locator(".grade-inventario__celula").nth(0).click();
     await expect(grade.getByRole("button", { name: /^Corpo Médio \(com ajuda\), item, 4 por 3, coluna 1, linha 1/ })).toBeVisible();
     await expect.poll(async () => {

@@ -37,7 +37,7 @@ with patch.dict("os.environ", {"CURSED_PLATFORM_DATABASE_URL": "sqlite:///:memor
 
 BOLA = {"titulo": "Bola de Fogo", "texto": "Explosão em área.", "escola": "Evocação", "grau": 2,
         "custo_aprendizado": 3, "descansos_minimos": 1, "potencia_uso": 4, "custo_uso": 2}
-ESPADA = {"titulo": "Espada Rúnica", "texto": "Lâmina antiga.", "item_tipo": "arma", "dados": {"dano": "1d8", "peso": 2},
+ESPADA = {"titulo": "Espada Rúnica", "texto": "Lâmina antiga.", "item_tipo": "arma", "dados": {"dano": "1d8", "tipo_dano": "Cortante"},
           "formato": {"subtipo": "uma_mao", "largura": 1, "altura": 3},
           "efeitos": [{"nome": "Runas", "descricao": "+1 em Arcanismo.",
                        "modificadores": [{"alvo": "pericia:arcanismo", "valor": 1}]}]}
@@ -222,7 +222,7 @@ class CartasTest(unittest.TestCase):
         codigos = [
             ("E1", encode_effect_e1({"nome": "Foco", "descricao": "+1 em Arcanismo.",
                 "modificadores": [{"alvo": "pericia:arcanismo", "valor": 1}]}), "efeito"),
-            ("EQ1", encode_equipment_eq1("arma", {"nome": "Lança", "dano": "1d6"}, []), "item"),
+            ("EQ1", encode_equipment_eq1("arma", {"nome": "Lança", "dano": "1d6", "peso": 4}, []), "item"),
         ]
         for formato, codigo, tipo in codigos:
             with self.subTest(formato=formato):
@@ -232,6 +232,8 @@ class CartasTest(unittest.TestCase):
                 self.assertEqual(definicao["tipo"], tipo)
                 self.assertEqual(definicao["procedencia_rascunho"]["formato"], formato)
                 if tipo == "item":
+                    # O peso do código antigo é descartado (simplificar-criacao-de-cartas, D7a).
+                    self.assertEqual(definicao["rascunho"]["dados"], {"dano": "1d6"})
                     # Código antigo não traz dimensão: publicar exige o formato na grade.
                     sem_formato = self.as_("mestre").post(
                         f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
@@ -259,6 +261,7 @@ class CartasTest(unittest.TestCase):
     def test_item_concedido_chega_com_o_formato_da_grade(self):
         mochila = self.publicar("item", {
             "titulo": "Mochila de viagem", "texto": "Mais espaço.", "item_tipo": "outro",
+            "ativos": ["mesas/mesa/mesa/cartas/mochila-foto.png"],
             "formato": {"subtipo": "mochila", "largura": 2, "altura": 2,
                         "mochila": {"linhas": 1, "requisito_forca": 2}, "icone_grade": "mesas/mesa/mesa/mochila.png"},
         })
@@ -268,9 +271,29 @@ class CartasTest(unittest.TestCase):
             self.assertEqual((item.tipo, item.subtipo, item.largura, item.altura, item.coluna), ("outro", "mochila", 2, 2, None))
             self.assertEqual(item.dados["ampliacao"], {"linhas": 1, "colunas": 0})
             self.assertEqual((item.dados["requisito_forca"], item.dados["icone_grade"]), (2, "mesas/mesa/mesa/mochila.png"))
+            # A arte da carta vira a foto do item (painel "Item selecionado"); o ícone da bolsa vem do formato.
+            self.assertEqual(item.dados["imagem_ativo"], "mesas/mesa/mesa/cartas/mochila-foto.png")
+
+    def test_item_concedido_traz_raridade_categoria_e_descricao(self):
+        chave = self.publicar("item", {
+            "titulo": "Chave de Ferro", "texto": "Abre a porta da cripta.", "item_tipo": "outro",
+            "formato": {"subtipo": "outro", "largura": 1, "altura": 1, "raridade": "incomum", "categoria": "chaves"},
+        })
+        espada = self.publicar("item", ESPADA)
+        self.assertEqual(self.conceder(chave["id"]).status_code, 201)
+        self.assertEqual(self.conceder(espada["id"]).status_code, 201)
+        itens = {i["nome"]: i for i in self.as_("ana").get("/mesas/mesa/personagens/lia/inventario").json()}
+        self.assertEqual((itens["Chave de Ferro"]["raridade"], itens["Chave de Ferro"]["categoria"]), ("incomum", "chaves"))
+        self.assertEqual(itens["Chave de Ferro"]["descricao"], "Abre a porta da cripta.")
+        self.assertNotIn("imagem_ativo", itens["Chave de Ferro"]["dados"])
+        # Sem escolha: raridade padrão e categoria pelo subtipo.
+        self.assertEqual((itens[ESPADA["titulo"]]["raridade"], itens[ESPADA["titulo"]]["categoria"]), ("comum", "armas"))
 
     def test_formato_incoerente_ou_ausente_impede_publicar(self):
         invalidos = {
+            "categoria em arma": {"subtipo": "uma_mao", "largura": 1, "altura": 3, "categoria": "chaves"},
+            "raridade desconhecida": {"subtipo": "uma_mao", "largura": 1, "altura": 3, "raridade": "mitica"},
+            "categoria fora do catálogo": {"subtipo": "outro", "largura": 1, "altura": 1, "categoria": "armas"},
             "mãos em arma": {"subtipo": "uma_mao", "largura": 1, "altura": 3, "maos": 1},
             "mochila sem ampliação": {"subtipo": "mochila", "largura": 2, "altura": 2},
             "moedas como item": {"subtipo": "moedas", "largura": 1, "altura": 1},
@@ -292,6 +315,60 @@ class CartasTest(unittest.TestCase):
         definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={"tipo": "item", "rascunho": armadura_como_arma}).json()
         resposta = self.client.post(f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
         self.assertEqual(resposta.status_code, 422)
+
+    def test_tipo_trocavel_ate_a_primeira_publicacao(self):
+        base = "/mesas/mesa/cartas"
+        definicao = self.as_("mestre").post(base, json={"tipo": "magia", "rascunho": BOLA}).json()
+        comum = {"titulo": "Passo Leve", "texto": BOLA["texto"]}
+        trocada = self.client.put(f"{base}/{definicao['id']}/rascunho", json={
+            "rascunho": comum, "versao_esperada": 0, "tipo": "habilidade"})
+        self.assertEqual(trocada.status_code, 200, trocada.text)
+        self.assertEqual((trocada.json()["tipo"], trocada.json()["rascunho"]["titulo"]), ("habilidade", "Passo Leve"))
+        # Sem o tipo no pedido, o comportamento de antes: o tipo continua.
+        mantida = self.client.put(f"{base}/{definicao['id']}/rascunho", json={"rascunho": comum, "versao_esperada": 1})
+        self.assertEqual(mantida.json()["tipo"], "habilidade")
+        conflito = self.client.put(f"{base}/{definicao['id']}/rascunho", json={
+            "rascunho": comum, "versao_esperada": 0, "tipo": "efeito"})
+        self.assertEqual(conflito.status_code, 409)
+        publicada = self.client.post(f"{base}/{definicao['id']}/publicacao", json={"versao_esperada": 2})
+        self.assertEqual((publicada.status_code, publicada.json()["tipo"]), (201, "habilidade"))
+        recusa = self.client.put(f"{base}/{definicao['id']}/rascunho", json={
+            "rascunho": comum, "versao_esperada": 3, "tipo": "magia"})
+        self.assertEqual(recusa.status_code, 409)
+        self.assertIn("tipo de uma carta publicada", recusa.text)
+        # Mandar o mesmo tipo depois de publicar não é troca.
+        igual = self.client.put(f"{base}/{definicao['id']}/rascunho", json={
+            "rascunho": comum, "versao_esperada": 3, "tipo": "habilidade"})
+        self.assertEqual(igual.status_code, 200, igual.text)
+
+    def test_dados_do_item_seguem_os_campos_do_subtipo(self):
+        mochila = {"subtipo": "mochila", "largura": 2, "altura": 2, "mochila": {"linhas": 1, "colunas": 0}}
+        casos = {
+            "tipo de dano fora da lista": ({**ESPADA, "dados": {"tipo_dano": "Gelatinoso"}}, {"dados.tipo_dano"}),
+            "armadura negativa": ({**ESPADA, "item_tipo": "armadura", "formato": {"subtipo": "peitoral", "largura": 2, "altura": 3},
+                                   "dados": {"armadura": -1}}, {"dados.armadura"}),
+            "dano em mochila": ({**ESPADA, "item_tipo": "outro", "formato": mochila, "dados": {"dano": "1d4"}}, {"dados.dano"}),
+            "peso em qualquer subtipo": ({**ESPADA, "dados": {"dano": "1d8", "peso": 2}}, {"dados.peso"}),
+        }
+        for nome, (rascunho, campos) in casos.items():
+            with self.subTest(nome):
+                definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={"tipo": "item", "rascunho": rascunho}).json()
+                resposta = self.client.post(f"/mesas/mesa/cartas/{definicao['id']}/publicacao", json={"versao_esperada": 0})
+                self.assertEqual(resposta.status_code, 422, resposta.text)
+                problemas = resposta.json()["detail"]["problemas"]
+                self.assertEqual({p["campo"] for p in problemas}, campos)
+                if nome == "dano em mochila":
+                    self.assertEqual(problemas[0]["mensagem"], "Não se aplica a este tipo de item.")
+        # Sem formato, os dados ainda não são conferidos: a falta do formato é a pendência.
+        sem_formato = {k: v for k, v in ESPADA.items() if k != "formato"}
+        definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={"tipo": "item", "rascunho": {
+            **sem_formato, "dados": {"dano": "1d4", "armadura": 3}}}).json()
+        validacao = self.client.post(f"/mesas/mesa/cartas/{definicao['id']}/validacao").json()
+        self.assertEqual({p["campo"] for p in validacao["problemas"]}, {"formato"})
+        espada = self.publicar("item", {**ESPADA, "dados": {
+            "dano": "1d8", "tipo_dano": "Cortante", "atributo_ataque": ["Força", "Destreza"], "alcance_normal": 0,
+            "propriedades": ["Versátil", "Lâmina de família"]}})
+        self.assertEqual(espada["conteudo"]["dados"]["atributo_ataque"], ["Força", "Destreza"])
 
     def test_concessao_direta_por_tipo_e_excecao(self):
         bola, espada, bencao = self.publicar("magia", BOLA), self.publicar("item", ESPADA), self.publicar("efeito", BENCAO)
@@ -375,6 +452,72 @@ class CartasTest(unittest.TestCase):
             self.assertEqual(session.scalar(select(func.count()).select_from(CartaPersonagemRegistro)), 0)
 
     # ------------------------------------------------------------- 9.7
+
+    def test_apresentacao_vista_uma_vez_por_participante(self):
+        bola = self.publicar("magia", BOLA)
+        apresentacao = self.as_("mestre").post("/mesas/mesa/apresentacoes", json={
+            "versao_id": bola["id"], "destinatarios": []}).json()
+        caminho = f"/mesas/mesa/apresentacoes/{apresentacao['id']}/visualizacao"
+        self.assertEqual(len(self.as_("ana").get("/mesas/mesa/apresentacoes").json()), 1)
+        # Ana fecha a carta: ao recarregar, ela não volta; Bruno ainda não viu e continua recebendo.
+        self.assertEqual(self.as_("ana").post(caminho).status_code, 204)
+        self.assertEqual(self.as_("ana").post(caminho).status_code, 204)
+        self.assertEqual(self.as_("ana").get("/mesas/mesa/apresentacoes").json(), [])
+        self.assertEqual(len(self.as_("bruno").get("/mesas/mesa/apresentacoes").json()), 1)
+        [narrador] = self.as_("mestre").get("/mesas/mesa/apresentacoes").json()
+        self.assertEqual(narrador["vista_por"], ["ana"])
+        # Recolhida, não se marca mais; e quem não é destinatário não marca.
+        restrita = self.as_("mestre").post("/mesas/mesa/apresentacoes", json={
+            "versao_id": bola["id"], "destinatarios": ["ana"]}).json()
+        self.assertEqual(self.as_("bruno").post(f"/mesas/mesa/apresentacoes/{restrita['id']}/visualizacao").status_code, 404)
+        self.as_("mestre").post(f"/mesas/mesa/apresentacoes/{apresentacao['id']}/recolhimento")
+        self.assertEqual(self.as_("bruno").post(caminho).status_code, 404)
+
+    # ------------------------------------------------------- redesenhar-aba-cartas
+
+    def test_custos_de_aprendizado_so_para_o_narrador(self):
+        reservados = {"custo_aprendizado", "descansos_minimos", "custo_legado"}
+        adicional = [{"recurso": "Exaustão", "valor": 1}]
+        magia = self.publicar("magia", {**BOLA, "custo_legado": "3 PP e 1 descanso", "custos_adicionais": adicional})
+        outra = self.publicar("magia", {**BOLA, "titulo": "Raio"})
+
+        def conferir(conteudo, narrador):
+            with self.subTest(narrador=narrador, titulo=conteudo["titulo"]):
+                if narrador:
+                    self.assertEqual((conteudo["custo_aprendizado"], conteudo["descansos_minimos"]), (3, 1))
+                else:
+                    self.assertFalse(reservados & set(conteudo), conteudo)
+                self.assertEqual((conteudo["potencia_uso"], conteudo["custo_uso"]), (4, 2))
+
+        # Ficha: lista e transição.
+        carta = self.conceder(magia["id"]).json()["cartas"][0]
+        conferir(carta["carta"]["conteudo"], narrador=True)
+        [minha] = self.cartas("ana", "lia")
+        conferir(minha["carta"]["conteudo"], narrador=False)
+        self.assertEqual(minha["carta"]["conteudo"]["custos_adicionais"], [{**adicional[0], "descricao": None}])
+        conferir(self.cartas("mestre", "lia")[0]["carta"]["conteudo"], narrador=True)
+        iniciada = self.transicao("ana", "lia", carta["id"], "iniciar_aprendizado").json()["cartas"][0]
+        conferir(iniciada["carta"]["conteudo"], narrador=False)
+        concluida = self.transicao("mestre", "lia", carta["id"], "concluir_aprendizado").json()["cartas"][0]
+        self.assertEqual(concluida["estado"], "aprendida")
+        conferir(concluida["carta"]["conteudo"], narrador=True)
+        self.assertEqual(self.cartas("mestre", "lia")[0]["carta"]["conteudo"]["custo_legado"], "3 PP e 1 descanso")
+
+        # Oferta: candidatas e resposta.
+        oferta = self.criar_oferta([outra["id"]], ["bram"], minimo=1, maximo=1).json()
+        conferir(oferta["candidatas"][0]["conteudo"], narrador=True)
+        [vista] = self.as_("bruno").get("/mesas/mesa/ofertas").json()
+        conferir(vista["candidatas"][0]["conteudo"], narrador=False)
+        conferir(self.as_("mestre").get("/mesas/mesa/ofertas").json()[0]["candidatas"][0]["conteudo"], narrador=True)
+        resposta = self.as_("bruno").post(f"/mesas/mesa/ofertas/{oferta['id']}/respostas/bram",
+                                          json={"escolhas": [outra["id"]], "versao_esperada": 0})
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        conferir(resposta.json()["cartas"][0]["carta"]["conteudo"], narrador=False)
+
+        # Apresentação.
+        self.as_("mestre").post("/mesas/mesa/apresentacoes", json={"versao_id": outra["id"], "destinatarios": []})
+        conferir(self.as_("ana").get("/mesas/mesa/apresentacoes").json()[0]["carta"]["conteudo"], narrador=False)
+        conferir(self.as_("mestre").get("/mesas/mesa/apresentacoes").json()[0]["carta"]["conteudo"], narrador=True)
 
     def test_ciclos_de_item_efeito_e_apresentacao(self):
         espada, bencao, bola = self.publicar("item", ESPADA), self.publicar("efeito", BENCAO), self.publicar("magia", BOLA)

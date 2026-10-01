@@ -464,8 +464,10 @@ type DialogState =
  * suspender, retomar e encerrar efeitos. O jogador nunca recebe `admin`, então
  * nenhum desses controles chega a ser renderizado para ele.
  */
-export function EffectsPanel({ efeitos, admin, api, mesaId }: {
+export function EffectsPanel({ efeitos, admin, api, mesaId, semTitulo = false }: {
   efeitos: EfeitoResumo[]; admin?: EffectsAdmin; api?: ApiClient; mesaId?: string;
+  /** Dentro da moldura da seção, que já traz o título. */
+  semTitulo?: boolean;
 }) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const queryClient = useQueryClient();
@@ -508,9 +510,9 @@ export function EffectsPanel({ efeitos, admin, api, mesaId }: {
   }
 
   return (
-    <section className="panel">
+    <section className="panel" aria-label="Efeitos">
       <div className="section-heading">
-        <div><span className="eyebrow">ESTADO ATIVO</span><h2>Efeitos</h2></div>
+        {semTitulo ? <div /> : <div><span className="eyebrow">ESTADO ATIVO</span><h2>Efeitos</h2></div>}
         {admin && (
           <button type="button" className="button button--primary" onClick={() => setDialog({ kind: "aplicar" })}>
             <Glyph name="spark" size={16} /> {narrador ? "Aplicar efeito" : "Aplicar condição"}

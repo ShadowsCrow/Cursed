@@ -6,6 +6,7 @@ As matrizes ficam fora do Git (`platform/frontend/arte-original/`); sem elas o t
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 import shutil
 import tempfile
@@ -28,10 +29,35 @@ ESPERADO = {
     # Pinturas do Resumo da ficha: opcionais, só existem quando a matriz foi gerada.
     **{nome: tamanho for nome, (_, tamanho, *_) in preparar_arte.ARTES_DO_RESUMO.items()
        if (preparar_arte.ORIGEM / f"{nome}.png").exists()},
+    # Pinturas de Informações básicas (redesenhar-informacoes-basicas): opcionais por matriz.
+    **{nome: tamanho for nome, (_, tamanho, *_) in preparar_arte.ARTES_DAS_INFORMACOES.items()
+       if (preparar_arte.ORIGEM / f"{nome}.png").exists()},
+    # Pinturas das abas Atributos e Perícias (redesenhar-aba-atributos e redesenhar-aba-pericias): opcionais por matriz.
+    **{nome: tamanho for artes in (preparar_arte.ARTES_DOS_ATRIBUTOS, preparar_arte.ARTES_DAS_PERICIAS,
+                                   preparar_arte.ARTES_DA_PERSONALIDADE)
+       for nome, (_, tamanho, *_) in artes.items() if (preparar_arte.ORIGEM / f"{nome}.png").exists()},
     # Arte da navegação inicial (navegacao-inicial-e-perfil): também opcional por matriz.
     **{saida: tamanho for matriz, recortes in preparar_arte.ARTES_DA_NAVEGACAO.items()
        for saida, _, tamanho, _ in recortes if (preparar_arte.ORIGEM / f"{matriz}.png").exists()},
     preparar_arte.RETRATO_JOGADOR_QUADRADO[0]: preparar_arte.RETRATO_JOGADOR_QUADRADO[2],
+    # Pinturas da aba Cartas e do editor (redesenhar-aba-cartas e simplificar-criacao-de-cartas): opcionais por
+    # matriz; cada arte quadrada de categoria gera também o medalhão recortado.
+    **{nome: tamanho for nome, (_, tamanho, *_) in preparar_arte.artes_das_cartas().items()
+       if (preparar_arte.ORIGEM / f"{nome}.png").exists()},
+    **{nome.replace("cartas-arte-", "cartas-medalhao-"): (preparar_arte.LADO_DO_MEDALHAO,) * 2
+       for nome in preparar_arte.artes_das_cartas()
+       if nome.startswith("cartas-arte-") and (preparar_arte.ORIGEM / f"{nome}.png").exists()},
+    **{nome: (largura, None) for nome, largura in preparar_arte.PECAS_DO_EDITOR.items()
+       if (preparar_arte.ORIGEM / f"{nome}.png").exists()},
+    # Couro e peças da bolsa do Inventário (reformular-visual-da-ficha): opcionais por matriz.
+    **({"inventario-couro": (preparar_arte.LADO_TEXTURA, preparar_arte.LADO_TEXTURA)}
+       if (preparar_arte.ORIGEM / "inventario-couro.png").exists() else {}),
+    # Laterais, tampa e base: uma das medidas depende da pintura (None = não conferida).
+    **{f"{nome}-{parte}": (preparar_arte.LARGURA_LADO, None) for nome in preparar_arte.LADOS_DO_INVENTARIO
+       if (preparar_arte.ORIGEM / f"{nome}.png").exists() for parte in preparar_arte.PARTES_DO_LADO},
+    **({"inventario-tampa": (preparar_arte.LARGURA_TAMPA, None)} if (preparar_arte.ORIGEM / "inventario-tampa.png").exists() else {}),
+    **({f"inventario-base-{parte}": (None, preparar_arte.ALTURA_BASE) for parte in preparar_arte.PARTES_DA_BASE}
+       if (preparar_arte.ORIGEM / "inventario-base.png").exists() else {}),
 }
 
 
@@ -94,6 +120,175 @@ class ArteDoResumoTest(unittest.TestCase):
             self.assertNotIn("A", imagem.getbands())
 
 
+class ArteDasInformacoesTest(unittest.TestCase):
+    """Paisagem e natureza-morta de Informações básicas: opcionais, no formato das pinturas do Resumo."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.pasta, True)
+
+    def test_sem_matrizes_nada_e_gerado(self):
+        self.assertEqual(preparar_arte.preparar_arte_das_informacoes(self.pasta, self.pasta / "arte"), [])
+
+    def test_paisagem_mantem_o_fundo_e_natureza_morta_perde(self):
+        fundo = (244, 232, 206)
+        paisagem = Image.new("RGB", (1800, 1000), fundo)
+        ImageDraw.Draw(paisagem).rectangle((1100, 300, 1500, 800), fill=(110, 80, 50))
+        paisagem.save(self.pasta / "informacoes-paisagem.png")
+        natureza = Image.new("RGB", (900, 1000), (255, 255, 255))
+        ImageDraw.Draw(natureza).rectangle((400, 500, 900, 1000), fill=(40, 50, 110))
+        natureza.save(self.pasta / "informacoes-conceito-direita.png")
+
+        saidas = {p.stem: p for p in preparar_arte.preparar_arte_das_informacoes(self.pasta, self.pasta / "arte")}
+
+        with Image.open(saidas["informacoes-paisagem"]) as imagem:
+            self.assertEqual((imagem.format, imagem.size), ("WEBP", (1536, 1024)))
+            self.assertNotIn("A", imagem.getbands())
+            # A metade esquerda, só de papel, fica fora: o objeto desenhado passa a ocupar o centro.
+            self.assertLess(sum(imagem.getpixel((800, 500))), 400)
+            self.assertGreater(sum(imagem.getpixel((20, 20))), 600)
+        with Image.open(saidas["informacoes-conceito-direita"]) as imagem:
+            self.assertEqual((imagem.format, imagem.size), ("WEBP", (512, 512)))
+            alfa = imagem.getchannel("A")
+            self.assertEqual(alfa.getpixel((10, 10)), 0)
+            self.assertEqual(alfa.getpixel((500, 500)), 255)
+
+
+class ArteDosAtributosTest(unittest.TestCase):
+    """Gravura e faixas da aba Atributos (redesenhar-aba-atributos): opcionais, na pasta `atributos/`."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.pasta, True)
+
+    def test_sem_matrizes_nada_e_gerado(self):
+        self.assertEqual(preparar_arte.preparar_arte_dos_atributos(self.pasta, self.pasta / "arte"), [])
+        self.assertFalse((self.pasta / "arte" / "atributos").exists())
+
+    def test_gravura_e_faixas_nos_tamanhos_e_com_o_papel(self):
+        for nome in preparar_arte.ARTES_DOS_ATRIBUTOS:
+            Image.new("RGB", (1536, 1024), (244, 232, 206)).save(self.pasta / f"{nome}.png")
+
+        saidas = preparar_arte.preparar_arte_dos_atributos(self.pasta, self.pasta / "arte")
+
+        tamanhos = {}
+        for caminho in saidas:
+            self.assertEqual(caminho.parent, self.pasta / "arte" / "atributos")
+            with Image.open(caminho) as imagem:
+                self.assertEqual(imagem.format, "WEBP")
+                # O papel da gravura fica: na tela ela é multiplicada sobre o pergaminho.
+                self.assertNotIn("A", imagem.getbands())
+                tamanhos[caminho.stem] = imagem.size
+        self.assertEqual(tamanhos, {
+            "atributos-gravura": (1440, 524),
+            "atributos-faixa-fisicos": (1200, 400),
+            "atributos-faixa-sociais": (1200, 400),
+            "atributos-faixa-mentais": (1200, 400),
+        })
+
+
+class ArteDasPericiasTest(unittest.TestCase):
+    """Paisagem e estandartes da aba Perícias (redesenhar-aba-pericias, D7): opcionais, na pasta `pericias/`."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.pasta, True)
+
+    def test_sem_matrizes_nada_e_gerado(self):
+        self.assertEqual(preparar_arte.preparar_arte_das_pericias(self.pasta, self.pasta / "arte"), [])
+        self.assertFalse((self.pasta / "arte" / "pericias").exists())
+
+    def test_paisagem_e_estandartes_nos_tamanhos_e_com_o_papel(self):
+        for nome in preparar_arte.ARTES_DAS_PERICIAS:
+            Image.new("RGB", (2048, 768), (244, 232, 206)).save(self.pasta / f"{nome}.png")
+
+        saidas = preparar_arte.preparar_arte_das_pericias(self.pasta, self.pasta / "arte")
+
+        tamanhos = {}
+        for caminho in saidas:
+            self.assertEqual(caminho.parent, self.pasta / "arte" / "pericias")
+            with Image.open(caminho) as imagem:
+                self.assertEqual(imagem.format, "WEBP")
+                # O papel da paisagem fica: na tela ela é multiplicada sobre o pergaminho.
+                self.assertNotIn("A", imagem.getbands())
+                tamanhos[caminho.stem] = imagem.size
+        self.assertEqual(tamanhos, {
+            "pericias-cena": (1536, 384),
+            "pericias-talentos": (1200, 400),
+            "pericias-tecnicas": (1200, 400),
+            "pericias-conhecimentos": (1200, 400),
+        })
+
+
+class ArteDasCartasTest(unittest.TestCase):
+    """Gravura e faixas da aba Cartas (redesenhar-aba-cartas, D9): opcionais, na pasta `cartas/`."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.pasta, True)
+
+    def test_sem_matrizes_nada_e_gerado(self):
+        self.assertEqual(preparar_arte.preparar_arte_das_cartas(self.pasta, self.pasta / "arte"), [])
+        self.assertFalse((self.pasta / "arte" / "cartas").exists())
+
+    def test_medalhao_recortado_da_arte_com_fundo_transparente(self):
+        arte = Image.new("RGB", (1000, 1000), (20, 30, 70))
+        ImageDraw.Draw(arte).ellipse((170, 170, 830, 830), outline=(230, 180, 80), width=20)
+        medalhao = preparar_arte.recortar_medalhao(arte)
+        self.assertEqual(medalhao.size, (400, 400))
+        self.assertEqual(medalhao.mode, "RGBA")
+        self.assertEqual(medalhao.getpixel((0, 0))[3], 0)  # fora do círculo
+        self.assertEqual(medalhao.getpixel((200, 200))[3], 255)  # centro
+        # O aro (raio de 33% do lado) cabe inteiro no recorte (36%): o pixel do aro, à direita, é opaco.
+        self.assertGreater(medalhao.getpixel((200 + round(.33 / .36 * 200), 200))[3], 200)
+
+    def test_uma_faixa_por_categoria_do_catalogo(self):
+        catalogo = json.loads(preparar_arte.CATALOGO_DE_ITENS.read_text(encoding="utf-8"))
+        categorias = preparar_arte.categorias_das_cartas()
+        self.assertEqual(set(categorias), {"habilidades", "magias", "efeitos", *(c["id"] for c in catalogo["categorias"])})
+        self.assertEqual((categorias[:2], categorias[-1]), (["habilidades", "magias"], "efeitos"))
+        self.assertIn("cartas-faixa-itens-de-missao", preparar_arte.artes_das_cartas())
+        self.assertIn("cartas-arte-itens-de-missao", preparar_arte.artes_das_cartas())
+
+    def test_gravura_e_faixas_nos_tamanhos_sem_recorte(self):
+        artes = preparar_arte.artes_das_cartas()
+        for nome in artes:
+            Image.new("RGB", (1536, 1024), (244, 232, 206)).save(self.pasta / f"{nome}.png")
+
+        saidas = preparar_arte.preparar_arte_das_cartas(self.pasta, self.pasta / "arte")
+
+        medalhoes = {f"cartas-medalhao-{n.removeprefix('cartas-arte-')}" for n in artes if n.startswith("cartas-arte-")}
+        self.assertEqual({c.stem for c in saidas}, set(artes) | medalhoes)
+        for caminho in [s for s in saidas if not s.stem.startswith("cartas-medalhao-")]:
+            self.assertEqual(caminho.parent, self.pasta / "arte" / "cartas")
+            with Image.open(caminho) as imagem:
+                self.assertEqual(imagem.format, "WEBP")
+                # Cenas inteiras: o fundo fica (a gravura é multiplicada sobre o papel).
+                self.assertNotIn("A", imagem.getbands())
+                tamanhos = {"cartas-gravura": (1536, 256), "cartas-detalhe-livro": (1600, 906),
+                            "cartas-editor-livro": (1536, 1024)}
+                padrao = (800, 800) if caminho.stem.startswith("cartas-arte-") else (1024, 304)
+                self.assertEqual(imagem.size, tamanhos.get(caminho.stem, padrao))
+
+
+    def test_pecas_do_editor_sem_fundo_e_recortadas(self):
+        """simplificar-criacao-de-cartas, D9: marcador e selo sobre pergaminho liso perdem o fundo."""
+        for nome in preparar_arte.PECAS_DO_EDITOR:
+            matriz = Image.new("RGB", (1536, 1024), (233, 220, 192))
+            ImageDraw.Draw(matriz).rounded_rectangle((300, 380, 1236, 680), radius=40, fill=(70, 35, 20))
+            matriz.save(self.pasta / f"{nome}.png")
+        saidas = preparar_arte.preparar_arte_das_cartas(self.pasta, self.pasta / "arte")
+        self.assertEqual({s.stem for s in saidas}, set(preparar_arte.PECAS_DO_EDITOR))
+        for caminho in saidas:
+            with Image.open(caminho) as imagem:
+                self.assertEqual(imagem.mode, "RGBA")
+                self.assertEqual(imagem.width, 480)
+                # Recortada rente ao retângulo (936 × 300): a proporção se mantém.
+                self.assertAlmostEqual(imagem.height, round(480 * 301 / 937), delta=3)
+                self.assertGreater(imagem.getpixel((imagem.width // 2, imagem.height // 2))[3], 250)
+                self.assertLess(imagem.getpixel((0, 0))[3], 255)
+
+
 @unittest.skipUnless((preparar_arte.ORIGEM / "emblema-cursed.png").exists(), "matrizes da arte ausentes (fora do Git)")
 class PrepararArteTest(unittest.TestCase):
     @classmethod
@@ -110,10 +305,178 @@ class PrepararArteTest(unittest.TestCase):
         for nome, dimensoes in ESPERADO.items():
             with Image.open(self.saidas[nome]) as imagem:
                 formato = "PNG" if nome.startswith("favicon") else "WEBP"
-                self.assertEqual((imagem.format, imagem.size), (formato, dimensoes), nome)
+                conferidas = tuple(real if esperada is None else esperada for real, esperada in zip(imagem.size, dimensoes))
+                self.assertEqual((imagem.format, imagem.size), (formato, conferidas), nome)
 
     def test_total_abaixo_de_6_mb(self):
-        self.assertLess(sum(p.stat().st_size for p in self.saidas.values()), 6 * 1024 * 1024)
+        """A arte comum a todas as telas; a da aba Cartas tem orçamento próprio, abaixo."""
+        comuns = [p for p in self.saidas.values() if p.parent.name != "cartas"]
+        self.assertLess(sum(p.stat().st_size for p in comuns), 6 * 1024 * 1024)
+
+    def test_cartas_abaixo_de_4_mb(self):
+        """As pinturas da aba Cartas só carregam nela, por categoria; somadas, ficam abaixo de 4 MB."""
+        cartas = [p for p in self.saidas.values() if p.parent.name == "cartas"]
+        self.assertLess(sum(p.stat().st_size for p in cartas), 4 * 1024 * 1024)
+
+
+FUNDO_PERGAMINHO = (230, 193, 140)
+
+
+def lateral_sintetica(miolo_so_de_couro: bool = True) -> Image.Image:
+    """Lateral esquerda de mentira: tira vertical encostada na direita, com degradê de cima a baixo
+    (uma emenda apareceria), um "mapa" no alto e um "tecido" embaixo, ambos avançando para a esquerda."""
+    imagem = Image.new("RGB", (1024, 1536), FUNDO_PERGAMINHO)
+    desenho = ImageDraw.Draw(imagem)
+    for y in range(100, 1436):
+        tom = 40 + (y - 100) * 80 // 1336
+        desenho.line((720, y, 950, y), fill=(tom + 50, tom, 20))
+    desenho.ellipse((340, 160, 760, 460), fill=(150, 105, 55))     # mapa, preso à tira
+    desenho.rectangle((420, 1120, 740, 1400), fill=(110, 20, 30))  # tecido, preso à tira
+    if not miolo_so_de_couro:
+        for y in range(500, 1100, 120):
+            desenho.rectangle((600, y, 740, y + 70), fill=(90, 90, 90))
+    return imagem
+
+
+def _diferenca_linhas(imagem: Image.Image, a: int, b: int) -> float:
+    linha_a = imagem.convert("RGB").crop((0, a, imagem.width, a + 1))
+    linha_b = imagem.convert("RGB").crop((0, b, imagem.width, b + 1))
+    return _media(ImageChops.difference(linha_a, linha_b))
+
+
+def tampa_sintetica() -> Image.Image:
+    imagem = Image.new("RGB", (1536, 1024), FUNDO_PERGAMINHO)
+    ImageDraw.Draw(imagem).polygon([(300, 250), (1236, 250), (1100, 800), (436, 800)], fill=(90, 50, 25))
+    return imagem
+
+
+def base_sintetica(miolo_so_de_couro: bool = True) -> Image.Image:
+    """Base de mentira: faixa deitada com degradê da esquerda para a direita e pontas mais altas."""
+    imagem = Image.new("RGB", (1536, 1024), FUNDO_PERGAMINHO)
+    desenho = ImageDraw.Draw(imagem)
+    for x in range(100, 1436):
+        tom = 40 + (x - 100) * 80 // 1336
+        desenho.line((x, 440, x, 600), fill=(tom + 50, tom, 20))
+    desenho.rectangle((100, 360, 300, 680), fill=(70, 45, 25))
+    desenho.rectangle((1236, 360, 1436, 680), fill=(70, 45, 25))
+    if not miolo_so_de_couro:
+        for x in range(420, 1150, 150):
+            desenho.ellipse((x, 380, x + 80, 660), fill=(160, 120, 40))
+    return imagem
+
+
+class ArteDoInventarioTest(unittest.TestCase):
+    """Couro e laterais da bolsa (reformular-visual-da-ficha, 8.1 e 8.3): opcionais, em public/arte/inventario."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.pasta, True)
+
+    def test_sem_matrizes_nada_e_gerado(self):
+        self.assertEqual(preparar_arte.preparar_arte_do_inventario(self.pasta, self.pasta / "arte"), [])
+        self.assertFalse((self.pasta / "arte" / "inventario").exists())
+
+    def test_couro_e_as_tres_partes_de_cada_lateral(self):
+        Image.new("RGB", (1024, 1024), (90, 55, 30)).save(self.pasta / "inventario-couro.png")
+        lateral_sintetica().save(self.pasta / "inventario-lado-esquerdo.png")
+        lateral_sintetica().transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(self.pasta / "inventario-lado-direito.png")
+        saidas = {p.stem: p for p in preparar_arte.preparar_arte_do_inventario(self.pasta, self.pasta / "arte")}
+        esperado = {"inventario-couro"} | {f"inventario-lado-{lado}-{parte}" for lado in ("esquerdo", "direito")
+                                           for parte in ("topo", "miolo", "base")}
+        self.assertEqual(set(saidas), esperado)
+        self.assertTrue(all(p.parent.name == "inventario" for p in saidas.values()))
+        with Image.open(saidas["inventario-couro"]) as couro:
+            self.assertEqual((couro.format, couro.size), ("WEBP", (512, 512)))
+        for lado in ("esquerdo", "direito"):
+            for parte in ("topo", "miolo", "base"):
+                with Image.open(saidas[f"inventario-lado-{lado}-{parte}"]) as imagem:
+                    self.assertEqual((imagem.format, imagem.width), ("WEBP", preparar_arte.LARGURA_LADO))
+                    self.assertIn("A", imagem.getbands())
+
+    def test_recorte_rente_e_fundo_transparente(self):
+        partes = preparar_arte.preparar_lateral(lateral_sintetica(), "direita")
+        topo = partes["topo"]
+        # Rente ao objeto: o mapa encosta na borda esquerda e a tira na direita; o canto de cima, acima do mapa, é fundo.
+        self.assertEqual(topo.getchannel("A").getpixel((2, 2)), 0)
+        self.assertGreater(topo.getchannel("A").getpixel((topo.width - 3, topo.height - 3)), 245)
+
+    def test_miolo_so_com_a_tira_e_topo_e_base_com_os_objetos(self):
+        partes = preparar_arte.preparar_lateral(lateral_sintetica(), "direita")
+        largura_tira = partes["miolo"].getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
+        # A tira ocupa a borda de dentro (direita) e bem menos da metade da largura; mapa e tecido ficaram fora do miolo.
+        self.assertGreaterEqual(largura_tira[2], preparar_arte.LARGURA_LADO - 2)
+        self.assertLess(largura_tira[2] - largura_tira[0], preparar_arte.LARGURA_LADO * .5)
+        for parte in ("topo", "base"):
+            caixa = partes[parte].getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
+            # O objeto avança bem além da tira, para o lado de fora.
+            self.assertLess(caixa[0], largura_tira[0] - 50, parte)
+
+    def test_miolo_repete_sem_emenda_e_emenda_no_topo(self):
+        partes = preparar_arte.preparar_lateral(lateral_sintetica(), "direita")
+        miolo, topo = partes["miolo"], partes["topo"]
+        vizinhos = max(_diferenca_linhas(miolo, y, y + 1) for y in range(miolo.height - 1))
+        self.assertLessEqual(_diferenca_linhas(miolo, miolo.height - 1, 0), max(vizinhos * 1.5, 1))
+        junto = Image.new("RGBA", (miolo.width, 2))
+        junto.paste(topo.crop((0, topo.height - 1, topo.width, topo.height)), (0, 0))
+        junto.paste(miolo.crop((0, 0, miolo.width, 1)), (0, 1))
+        self.assertLessEqual(_diferenca_linhas(junto, 0, 1), max(vizinhos * 1.5, 1))
+
+    def test_objetos_no_meio_da_pintura_sao_recusados(self):
+        with self.assertRaises(ValueError):
+            preparar_arte.preparar_lateral(lateral_sintetica(miolo_so_de_couro=False), "direita")
+
+
+class TampaEBaseTest(unittest.TestCase):
+    """Tampa e base da bolsa (reformular-visual-da-ficha, 8.4)."""
+
+    def test_tampa_sem_fundo_rente_ao_objeto(self):
+        tampa = preparar_arte.preparar_tampa(tampa_sintetica())
+        self.assertEqual(tampa.width, preparar_arte.LARGURA_TAMPA)
+        alfa = tampa.getchannel("A")
+        self.assertEqual(alfa.getpixel((2, tampa.height - 3)), 0)       # fora do trapézio, embaixo à esquerda
+        self.assertGreater(alfa.getpixel((tampa.width // 2, tampa.height // 2)), 245)
+
+    def test_base_em_tres_partes_com_as_pontas_mais_altas(self):
+        partes = preparar_arte.preparar_base(base_sintetica())
+        self.assertEqual({parte: imagem.height for parte, imagem in partes.items()},
+                         {parte: preparar_arte.ALTURA_BASE for parte in preparar_arte.PARTES_DA_BASE})
+        altura_opaca = lambda imagem: (lambda c: c[3] - c[1])(imagem.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox())
+        self.assertLess(altura_opaca(partes["miolo"]), altura_opaca(partes["esquerda"]) * .7)
+        self.assertLess(altura_opaca(partes["miolo"]), altura_opaca(partes["direita"]) * .7)
+
+    def test_miolo_da_base_repete_sem_emenda_e_emenda_na_ponta_esquerda(self):
+        partes = preparar_arte.preparar_base(base_sintetica())
+        # Girando, as colunas viram linhas e a mesma medida das laterais vale.
+        miolo = partes["miolo"].transpose(Image.Transpose.ROTATE_270)
+        esquerda = partes["esquerda"].transpose(Image.Transpose.ROTATE_270)
+        vizinhos = max(_diferenca_linhas(miolo, y, y + 1) for y in range(miolo.height - 1))
+        self.assertLessEqual(_diferenca_linhas(miolo, miolo.height - 1, 0), max(vizinhos * 1.5, 1))
+        junto = Image.new("RGBA", (miolo.width, 2))
+        junto.paste(esquerda.crop((0, esquerda.height - 1, esquerda.width, esquerda.height)), (0, 0))
+        junto.paste(miolo.crop((0, 0, miolo.width, 1)), (0, 1))
+        self.assertLessEqual(_diferenca_linhas(junto, 0, 1), max(vizinhos * 1.5, 1))
+
+    def test_faixa_do_miolo_informada_em_fracoes_da_largura(self):
+        partes = preparar_arte.preparar_base(base_sintetica(miolo_so_de_couro=False), (.1, .25))
+        self.assertLess(partes["miolo"].width, partes["direita"].width)
+
+    def test_objeto_cortado_na_borda_da_pintura_esmaece_desse_lado(self):
+        imagem = Image.new("RGBA", (200, 50), (120, 60, 30, 255))
+        esmaecida = preparar_arte.esmaecer_bordas_cortadas(imagem, (0, 10, 150, 40), (300, 100))
+        alfa = esmaecida.getchannel("A")
+        self.assertLess(alfa.getpixel((0, 25)), 30)       # encostava na borda esquerda: esmaece
+        self.assertEqual(alfa.getpixel((100, 25)), 255)
+        self.assertEqual(alfa.getpixel((199, 25)), 255)   # à direita havia fundo: fica inteira
+        intacta = preparar_arte.esmaecer_bordas_cortadas(imagem, (5, 10, 150, 40), (300, 100))
+        self.assertEqual(intacta.getchannel("A").getpixel((0, 25)), 255)
+
+    def test_arquivos_da_tampa_e_da_base(self):
+        pasta = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, pasta, True)
+        tampa_sintetica().save(pasta / "inventario-tampa.png")
+        base_sintetica().save(pasta / "inventario-base.png")
+        nomes = {p.stem for p in preparar_arte.preparar_arte_do_inventario(pasta, pasta / "arte")}
+        self.assertEqual(nomes, {"inventario-tampa", "inventario-base-esquerda", "inventario-base-miolo", "inventario-base-direita"})
 
 
 class NavegacaoSemMatrizesTest(unittest.TestCase):
@@ -234,3 +597,64 @@ class ContrasteCabecalhoDaFichaTest(unittest.TestCase):
         fundo = _pior_fundo(pixels)
         self.assertGreaterEqual(_razao(TEXTO, fundo), 4.5)
         self.assertGreaterEqual(_razao(DESTAQUE, fundo), 4.5)
+
+
+class IconesDaPersonalidadeTest(unittest.TestCase):
+    """Ícones recortados da referência como máscaras (reformular-personalidade-da-ficha, D7)."""
+
+    def test_mascara_opaca_na_tinta_e_transparente_no_pergaminho(self):
+        imagem = Image.new("RGB", (100, 100), (242, 220, 180))
+        ImageDraw.Draw(imagem).ellipse((40, 40, 60, 60), fill=(90, 56, 22))
+        # Mancha clara do papel: não pode virar tinta.
+        ImageDraw.Draw(imagem).rectangle((20, 70, 30, 80), fill=(225, 200, 160))
+        mascara = preparar_arte.mascara_do_icone(imagem, (30, 30, 70, 70), 48)
+        self.assertEqual(mascara.size, (48 * preparar_arte.ESCALA_DOS_ICONES,) * 2)
+        alfa = mascara.getchannel("A")
+        centro = mascara.width // 2
+        self.assertEqual(alfa.getpixel((centro, centro)), 255)
+        self.assertEqual(alfa.getpixel((2, 2)), 0)
+        # O quadrado vai de 26 a 74 (centro da tinta em 50); a mancha, em (28, 72), fica transparente.
+        self.assertEqual(alfa.getpixel(((28 - 26) * 4, (72 - 26) * 4)), 0)
+
+    def test_regiao_sem_desenho_e_recusada(self):
+        imagem = Image.new("RGB", (60, 60), (242, 220, 180))
+        with self.assertRaises(ValueError):
+            preparar_arte.mascara_do_icone(imagem, (0, 0, 60, 60), 48)
+
+    def test_os_14_icones_da_referencia(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            saidas = preparar_arte.preparar_icones_da_personalidade(destino=Path(pasta))
+            self.assertEqual(sorted(p.stem for p in saidas), sorted(preparar_arte.ICONES_DA_PERSONALIDADE))
+            for caminho in saidas:
+                lado = preparar_arte.ICONES_DA_PERSONALIDADE[caminho.stem][1]
+                with Image.open(caminho) as mascara:
+                    self.assertEqual(mascara.size, (lado * preparar_arte.ESCALA_DOS_ICONES,) * 2, caminho.stem)
+                    alfa = mascara.getchannel("A")
+                    # Desenho no meio e cantos transparentes: o ícone ficou inteiro dentro do quadrado.
+                    self.assertGreater(ImageStat.Stat(alfa).mean[0], 20, caminho.stem)
+                    self.assertEqual(alfa.getpixel((0, 0)), 0, caminho.stem)
+
+
+class ArteDaPersonalidadeTest(unittest.TestCase):
+    """Escrivaninha e natureza-morta da História (reformular-personalidade-da-ficha, D6), na pasta `personalidade/`."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.pasta, True)
+
+    def test_sem_matrizes_nada_e_gerado(self):
+        self.assertEqual(preparar_arte.preparar_arte_da_personalidade(self.pasta, self.pasta / "arte"), [])
+
+    def test_as_duas_pinturas_nos_tamanhos_e_com_o_papel(self):
+        for nome in preparar_arte.ARTES_DA_PERSONALIDADE:
+            Image.new("RGB", (1672, 941), (242, 220, 180)).save(self.pasta / f"{nome}.png")
+        saidas = preparar_arte.preparar_arte_da_personalidade(self.pasta, self.pasta / "arte")
+        tamanhos = {}
+        for caminho in saidas:
+            self.assertEqual(caminho.parent, self.pasta / "arte" / "personalidade")
+            with Image.open(caminho) as imagem:
+                self.assertEqual(imagem.format, "WEBP")
+                self.assertNotIn("A", imagem.getbands())
+                tamanhos[caminho.stem] = imagem.size
+        self.assertEqual(tamanhos, {"personalidade-escrivaninha": (1280, 720), "personalidade-historia": (1280, 640)})
+

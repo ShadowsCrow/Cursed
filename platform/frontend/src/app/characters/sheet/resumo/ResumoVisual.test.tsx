@@ -102,7 +102,7 @@ describe("ResumoVisual", () => {
     render(<ResumoVisual modelo={MODELO} onAbrir={onAbrir} />);
     const esperado = {
       "Abrir Informações básicas": "informacoes", "Abrir Status": "status", "Abrir Atributos": "atributos",
-      "Abrir Perícias": "pericias", "Abrir Equipamentos": "equipamentos", "Abrir Habilidades e cartas": "cartas",
+      "Abrir Perícias": "pericias", "Abrir Equipamentos": "equipamentos", "Abrir Cartas": "cartas",
       "Abrir Personalidade": "personalidade",
     };
     for (const [rotulo, secao] of Object.entries(esperado)) {

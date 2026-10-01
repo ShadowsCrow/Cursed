@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, ficha_viva, recipientes, sala, trocas
+from cursed_platform import auditoria, catalogos, ficha_viva, recipientes, sala, trocas
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     AceitarOfertaRequest, ColocarCartaRequest, CriarBauRequest, ItemInventarioResumo, ItemRecipienteResumo,
@@ -201,6 +201,7 @@ def _item_inventario(session: Session, personagem: PersonagemRegistro, item: Ite
         efeitos=[e.id for e in ficha_viva.efeitos(session, personagem.mesa_id, personagem.id) if e.equipamento_id == item.id],
         subtipo=item.subtipo, largura=item.largura, altura=item.altura, coluna=item.coluna, linha=item.linha,
         girado=item.girado, maos=item.maos, pilha_max=item.pilha_max,
+        **catalogos.obter().itens.descritivos(item.subtipo, item.tipo, item.dados),
     )
 
 

@@ -137,7 +137,9 @@ class MigracaoJsonTest(unittest.TestCase):
                 session.commit()
                 sabre = session.scalar(select(CartaDefinicaoRegistro).where(
                     CartaDefinicaoRegistro.rascunho["conteudo"]["titulo"].as_string() == "Sabre"))
-                self.assertEqual(sabre.rascunho["conteudo"]["dados"], {"dano": "1d6", "peso": 2.5})
+                # O peso é descartado (simplificar-criacao-de-cartas, D7a); a procedência guarda o original.
+                self.assertEqual(sabre.rascunho["conteudo"]["dados"], {"dano": "1d6"})
+                self.assertEqual(sabre.rascunho["procedencia"]["dados_originais"]["peso"], 2.5)
                 # carga-por-espacos 7.2: nenhum formato é inferido; o Narrador define tipo e dimensão.
                 self.assertNotIn("formato", sabre.rascunho["conteudo"])
                 _, validacao = cartas.validar("item", sabre.rascunho["conteudo"], "mesa")

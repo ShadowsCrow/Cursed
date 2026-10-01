@@ -1,51 +1,89 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
+import { Icone } from "../../ui/Ornamentos";
 import { Confirmation, Dialog } from "../../ui/primitives";
 import { useParticipantes, usePersonagens } from "../characters/api";
 import type { ApiClient } from "../characters/types";
+import { useCatalogoItens, type CatalogoItens } from "../characters/sheet/catalogoApi";
+import { BuscaInventario } from "../characters/sheet/InventarioFicha";
 import {
-  useApresentacoes, useApresentarCarta, useCancelarOferta, useCatalogo, useCriarCarta, useCriarOferta,
-  useImportarCarta, useOfertas, usePreviaImportacaoCarta, useRecolherCarta,
+  filtrarCartas, ORIGENS, SEM_FILTROS, type CartaFiltravel, type Filtros, type OpcaoDeOrigem,
+} from "../characters/sheet/cartas/apresentacao";
+import { FiltrosDasCartas } from "../characters/sheet/cartas/FiltrosDasCartas";
+import "../characters/sheet/cartas/cartas.css";
+import {
+  useApresentarCarta, useCancelarOferta, useCatalogo, useCriarOferta,
+  ofertaAceita, useEnviarCarta, useImportarCarta, useOfertas, usePreviaImportacaoCarta,
 } from "./api";
 import { CardEditor } from "./CardEditor";
 import { CatalogStatusNotice } from "./CatalogStatusNotice";
 import { EffectIconsPanel } from "./EffectIconsPanel";
+import { Grimorio } from "../characters/sheet/cartas/DetalheDaCarta";
+import { dadosDoConteudo, dataDoQuadro, marcacoesDoConteudo } from "../characters/sheet/cartas/dadosDoGrimorio";
+import { categoriaDoConteudo } from "./cardFormat";
 import { CardFace } from "./cardView";
 import {
-  ROTULO_TIPO, TIPOS_CARTA, type CartaDefinicaoResumo, type CartaVersaoResumo, type ProblemaValidacao, type TipoCarta,
+  ROTULO_TIPO, type CartaDefinicaoResumo, type CartaVersaoResumo, type ProblemaValidacao, type TipoCarta,
 } from "./types";
 
-function estadoCarta(definicao: CartaDefinicaoResumo): string {
-  if (!definicao.publicada) return "Rascunho, ainda não publicada";
-  return definicao.publicada.revisao_pendente?.length ? "Publicada · revisão pendente" : "Publicada";
+/** No catálogo, o que não veio de classe nem de raça é da própria mesa: criado pelo Narrador ou corpo padrão. */
+const ORIGENS_DO_CATALOGO: readonly OpcaoDeOrigem[] = ORIGENS.map((o) => (o.id === "concedidas" ? { ...o, rotulo: "Outras" } : o));
+
+type CartaDoCatalogo = CartaFiltravel & { definicao: CartaDefinicaoResumo; conteudo: Record<string, unknown>; padrao: boolean };
+
+/** Lê a definição como a aba Cartas lê a carta do personagem: "classes/X/…" é da classe, "racas/X/…", da raça. */
+function comoCartaFiltravel(definicao: CartaDefinicaoResumo): CartaDoCatalogo {
+  const conteudo = (definicao.publicada?.conteudo ?? definicao.rascunho ?? {}) as Record<string, unknown>;
+  const [pasta, nome = ""] = (definicao.origem_sistema ?? "").split("/");
+  const concedida = pasta === "classes" ? `classe:${nome}` : pasta === "racas" ? `raca:${nome}` : null;
+  // Corpos padrão: vêm do sistema sem ser do catálogo de classes e raças.
+  const padrao = definicao.procedencia_rascunho?.origem === "sistema" && !definicao.origem_sistema;
+  return { id: definicao.id, tipo: definicao.tipo, concedida_por: concedida, carta: { conteudo }, definicao, conteudo, padrao };
 }
 
-function NovaCartaDialog({ api, mesaId, onCriada, onClose }: {
-  api: ApiClient; mesaId: string; onCriada: (definicao: CartaDefinicaoResumo) => void; onClose: () => void;
+/** Origem da carta no catálogo da mesa, para o quadro do grimório. */
+function origemNoCatalogo(definicao: CartaDefinicaoResumo, padrao: boolean): string {
+  if (padrao) return "Padrão do sistema";
+  const partes = (definicao.origem_sistema ?? "").split("/");
+  if (partes[0] === "racas") return `Raça: ${partes[1]}`;
+  if (partes[0] === "classes") return partes[2] === "arquetipos" ? `Arquétipo: ${partes[3]}` : `Classe: ${partes[1]}`;
+  return "Criada na mesa";
+}
+
+/** O grimório da ficha para a carta do catálogo: os mesmos quadros e, no pé, as ações da biblioteca. */
+function DetalheDoCatalogo({ api, mesaId, carta, catalogo, onEditar, onEnviar, onApresentar, onFechar }: {
+  api: ApiClient; mesaId: string; carta: CartaDoCatalogo; catalogo: CatalogoItens | undefined;
+  onEditar?: () => void; onEnviar: () => void; onApresentar: () => void; onFechar: () => void;
 }) {
-  const [tipo, setTipo] = useState<TipoCarta>("habilidade");
-  const [titulo, setTitulo] = useState("");
-  const criar = useCriarCarta(api, mesaId);
+  const { definicao, conteudo, padrao } = carta;
+  const publicada = definicao.publicada;
+  const dados = [
+    marcacoesDoConteudo(conteudo),
+    { icone: "origem", rotulo: "Origem", valor: origemNoCatalogo(definicao, padrao) } as const,
+    { icone: "versao", rotulo: "Versão", valor: publicada ? String(publicada.numero) : "Rascunho, sem versão publicada" } as const,
+    { icone: "recebida", rotulo: "Publicada em", valor: publicada ? dataDoQuadro(publicada.publicado_em) : "—" } as const,
+    ...dadosDoConteudo(definicao.tipo, conteudo, true),
+  ];
   return (
-    <Dialog open title="Nova carta" onClose={onClose}>
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        criar.mutate({ tipo, rascunho: { titulo: titulo.trim() } }, { onSuccess: onCriada });
-      }}>
-        <label>Tipo
-          <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoCarta)}>
-            {TIPOS_CARTA.map((t) => <option key={t} value={t}>{ROTULO_TIPO[t]}</option>)}
-          </select>
-        </label>
-        <label>Título<input value={titulo} onChange={(e) => setTitulo(e.target.value)} /></label>
-        {criar.isError && <p role="alert">{criar.error.message}</p>}
-        <div className="dialog__actions">
-          <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="button" disabled={criar.isPending}>Criar rascunho</button>
-        </div>
-      </form>
-    </Dialog>
+    <Grimorio
+      tipo={definicao.tipo} conteudo={conteudo} titulo={String(conteudo.titulo ?? "") || "Sem título"}
+      categoria={categoriaDoConteudo(definicao.tipo, conteudo, catalogo)} catalogo={catalogo} dados={dados}
+      api={api} mesaId={mesaId} onFechar={onFechar}
+    >
+      <div className="grimorio-acoes">
+        {publicada && <button type="button" className="grimorio-acao grimorio-acao--principal" onClick={onEnviar}>Enviar</button>}
+        {publicada && <button type="button" className="grimorio-acao" onClick={onApresentar}>Apresentar</button>}
+        {onEditar && <button type="button" className="grimorio-acao" onClick={onEditar}>Editar</button>}
+      </div>
+    </Grimorio>
   );
+}
+
+/** Selo no canto da carta: só o que foge do caso comum (carta publicada e editável). */
+function seloDaCarta(definicao: CartaDefinicaoResumo, padrao: boolean): string | undefined {
+  if (padrao) return "Padrão do sistema";
+  if (!definicao.publicada) return "Rascunho";
+  return definicao.publicada.revisao_pendente?.length ? "Revisão pendente" : undefined;
 }
 
 function ImportarCartaDialog({ api, mesaId, onClose }: { api: ApiClient; mesaId: string; onClose: () => void }) {
@@ -67,7 +105,7 @@ function ImportarCartaDialog({ api, mesaId, onClose }: { api: ApiClient; mesaId:
       {erro?.problemas?.length ? <ul>{erro.problemas.map((p) => <li key={p.campo}>{p.campo}: {p.mensagem}</li>)}</ul> : null}
       {previa.data && (
         <div className="import-preview">
-          <CardFace tipo={previa.data.tipo} conteudo={previa.data.rascunho} api={api} mesaId={mesaId} />
+          <CardFace tipo={previa.data.tipo} conteudo={previa.data.rascunho} api={api} mesaId={mesaId} narrador />
           {!previa.data.validacao.valida && (
             <ul role="status">{previa.data.validacao.problemas?.map((p) => <li key={p.campo}>{p.campo}: {p.mensagem}</li>)}</ul>
           )}
@@ -170,73 +208,138 @@ function ApresentarDialog({ api, mesaId, versao, onClose }: { api: ApiClient; me
   );
 }
 
-/** Biblioteca do Narrador: catálogo, ofertas e apresentações. A aplicação não decide quando oferecer. */
+const DESTINO_DO_ENVIO: Record<TipoCarta, string> = {
+  item: "O item entra no inventário do personagem fora da grade; o jogador o arruma quando quiser.",
+  habilidade: "A habilidade entra nas cartas do personagem como disponível para aprender.",
+  magia: "A magia entra nas cartas do personagem como disponível para aprender.",
+  efeito: "O efeito é aplicado ao personagem na hora.",
+};
+
+function EnviarCartaDialog({ api, mesaId, versao, onEnviada, onClose }: {
+  api: ApiClient; mesaId: string; versao: CartaVersaoResumo; onEnviada: (aviso: string) => void; onClose: () => void;
+}) {
+  const personagens = usePersonagens(api, mesaId, false);
+  const enviar = useEnviarCarta(api, mesaId);
+  const [personagemId, setPersonagemId] = useState("");
+  const titulo = String(versao.conteudo.titulo ?? "");
+  return (
+    <Dialog open title={`Enviar “${titulo}”`} onClose={onClose}>
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        const nome = personagens.data?.find((p) => p.id === personagemId)?.nome ?? "o personagem";
+        enviar.mutate({ personagemId, versaoId: versao.id }, { onSuccess: () => onEnviada(`“${titulo}” enviada para ${nome}.`) });
+      }}>
+        <p>{DESTINO_DO_ENVIO[versao.tipo]}</p>
+        <fieldset>
+          <legend>Personagem</legend>
+          {personagens.isSuccess && personagens.data.length === 0 && <p>Nenhum personagem na mesa ainda.</p>}
+          {(personagens.data ?? []).map((p) => (
+            <label key={p.id} className="checkbox-row">
+              <input type="radio" name="personagem" value={p.id} checked={personagemId === p.id} onChange={() => setPersonagemId(p.id)} />
+              {p.nome}
+            </label>
+          ))}
+        </fieldset>
+        {enviar.isError && <p role="alert">{enviar.error.message}</p>}
+        <div className="dialog__actions">
+          <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="button" disabled={!personagemId || enviar.isPending}>Enviar</button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+/** Biblioteca do Narrador: catálogo e ofertas; apresentar uma carta parte do catálogo. A aplicação não decide quando oferecer. */
 export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: string }) {
   const catalogo = useCatalogo(api, mesaId);
   const ofertas = useOfertas(api, mesaId);
-  const apresentacoes = useApresentacoes(api, mesaId);
   const personagens = usePersonagens(api, mesaId, false);
   const cancelar = useCancelarOferta(api, mesaId);
-  const recolher = useRecolherCarta(api, mesaId);
-  const [editando, setEditando] = useState<CartaDefinicaoResumo | null>(null);
-  const [dialogo, setDialogo] = useState<"nova" | "importar" | "oferta" | null>(null);
+  const [editando, setEditando] = useState<CartaDefinicaoResumo | "nova" | null>(null);
+  const [dialogo, setDialogo] = useState<"importar" | "oferta" | null>(null);
   const [apresentando, setApresentando] = useState<CartaVersaoResumo | null>(null);
+  const [enviando, setEnviando] = useState<CartaVersaoResumo | null>(null);
+  const [aberta, setAberta] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<string | null>(null);
+  const [filtros, setFiltros] = useState<Filtros>(SEM_FILTROS);
+  const catalogoItens = useCatalogoItens(api, mesaId).data;
 
-  const definicoes = catalogo.data ?? [];
+  const definicoes = useMemo(() => catalogo.data ?? [], [catalogo.data]);
+  const cartas = useMemo(() => definicoes.map(comoCartaFiltravel), [definicoes]);
+  const visiveis = useMemo(() => filtrarCartas(cartas, filtros, catalogoItens), [cartas, filtros, catalogoItens]);
+  const cartaAberta = cartas.find((c) => c.id === aberta) ?? null;
+  const comFiltro = filtros.origem !== null || filtros.tipo !== null || filtros.busca.trim() !== "";
   const publicadas = definicoes.map((d) => d.publicada).filter((v): v is CartaVersaoResumo => Boolean(v));
   const nomes = new Map((personagens.data ?? []).map((p) => [p.id, p.nome]));
+  const enviadas = (ofertas.data ?? []).filter((oferta) => !ofertaAceita(oferta));
 
   return (
     <div className="screen-content card-library">
       <CatalogStatusNotice api={api} mesaId={mesaId} />
-      <section className="panel">
+      <section className="panel biblioteca-painel">
         <div className="section-heading">
           <div><span className="eyebrow">CATÁLOGO</span><h2>Suas cartas</h2></div>
           <div className="section-heading__actions">
-            <button type="button" className="button" onClick={() => setDialogo("nova")}>Nova carta</button>
+            <button type="button" className="button" onClick={() => setEditando("nova")}>Nova carta</button>
             <button type="button" className="button button--secondary" onClick={() => setDialogo("importar")}>Importar código</button>
             <button type="button" className="button button--secondary" disabled={!publicadas.length} onClick={() => setDialogo("oferta")}>Nova oferta</button>
+            <BuscaInventario valor={filtros.busca} onChange={(busca) => setFiltros({ ...filtros, busca })}
+              rotulo="Buscar cartas" exemplo="Buscar cartas…" />
           </div>
         </div>
+        {aviso && <p role="status" className="biblioteca-aviso">{aviso}</p>}
         {catalogo.isError && <p role="alert">{catalogo.error.message}</p>}
         {catalogo.isSuccess && definicoes.length === 0 && <p>Nenhuma carta no catálogo ainda.</p>}
-        <ul className="card-catalog">
-          {definicoes.map((definicao) => {
-            const conteudo = (definicao.publicada?.conteudo ?? definicao.rascunho ?? {}) as Record<string, unknown>;
-            // Corpos padrão não se editam; cartas do catálogo de classes se editam, mas o JSON prevalece.
-            const padrao = definicao.procedencia_rascunho?.origem === "sistema" && !definicao.origem_sistema;
-            return (
-              <li key={definicao.id} className="card-catalog__item">
-                <CardFace tipo={definicao.tipo} conteudo={conteudo} numero={definicao.publicada?.numero} api={api} mesaId={mesaId} />
-                <p className="card-catalog__state">
-                  {padrao ? "Padrão do sistema · não se edita"
-                    : definicao.origem_sistema ? `Catálogo do sistema · ${estadoCarta(definicao)}` : estadoCarta(definicao)}
-                </p>
-                <div className="card-catalog__actions">
-                  {!padrao && (
-                    <button type="button" className="button button--ghost" onClick={() => setEditando(definicao)}
-                      aria-label={`Editar ${String(conteudo.titulo ?? "")}`}>
-                      Editar
-                    </button>
-                  )}
-                  {definicao.publicada && (
-                    <button type="button" className="button button--ghost" onClick={() => setApresentando(definicao.publicada ?? null)}>
-                      Apresentar
-                    </button>
-                  )}
+        {cartas.length > 0 && (
+          <div className="cartas-corpo">
+            <aside className="cartas-corpo__lateral" aria-label="Filtros das cartas">
+              <FiltrosDasCartas cartas={cartas} catalogo={catalogoItens} filtros={filtros} onMudar={setFiltros} origens={ORIGENS_DO_CATALOGO} />
+            </aside>
+            <div className="cartas-corpo__grade">
+              {visiveis.length === 0 && comFiltro && (
+                <div className="cartas-vazio" role="status">
+                  <p>Nenhuma carta atende os filtros escolhidos.</p>
+                  <button type="button" className="button button--secondary" onClick={() => setFiltros(SEM_FILTROS)}>Limpar filtros</button>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
+              )}
+              <ul className="card-catalog">
+                {visiveis.map(({ definicao, conteudo, padrao }) => {
+                  // Corpos padrão e cartas do catálogo de classes e raças não se editam: a fonte delas é o sistema
+                  // (cartas-do-catalogo-somente-leitura).
+                  const editavel = !padrao && !definicao.origem_sistema;
+                  return (
+                    <li key={definicao.id} className="card-catalog__item">
+                      <div className="carta-biblioteca">
+                        <CardFace tipo={definicao.tipo} conteudo={conteudo} numero={definicao.publicada?.numero} api={api} mesaId={mesaId} narrador
+                          selo={seloDaCarta(definicao, padrao)}
+                          rodape={definicao.publicada
+                            ? `Versão ${definicao.publicada.numero}${definicao.origem_sistema ? " · Catálogo do sistema" : ""}`
+                            : undefined}
+                          onAbrir={() => setAberta(definicao.id)}
+                          rotulo={`${ROTULO_TIPO[definicao.tipo]}: ${String(conteudo.titulo ?? "") || "Sem título"}`} />
+                        {editavel && (
+                          <button type="button" className="carta-biblioteca__editar" onClick={() => setEditando(definicao)}
+                            aria-label={`Editar ${String(conteudo.titulo ?? "")}`} title="Editar">
+                            <Icone nome="lapis" tamanho={20} />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="panel">
         <div className="section-heading"><div><span className="eyebrow">OFERTAS</span><h2>Ofertas enviadas</h2></div></div>
-        {(ofertas.data ?? []).length === 0 && <p>Nenhuma oferta enviada.</p>}
+        {enviadas.length === 0 && <p>Nenhuma oferta aguardando resposta.</p>}
         <ul className="offer-list">
-          {(ofertas.data ?? []).map((oferta) => (
+          {enviadas.map((oferta) => (
             <li key={oferta.id} className="offer-list__item">
               <strong>{oferta.titulo}</strong>{" "}
               <span>escolher {oferta.min_escolhas === oferta.max_escolhas ? oferta.max_escolhas : `${oferta.min_escolhas}–${oferta.max_escolhas}`} de {oferta.candidatas.length}</span>
@@ -254,26 +357,24 @@ export function NarratorLibrary({ api, mesaId }: { api: ApiClient; mesaId: strin
         </ul>
       </section>
 
-      <section className="panel">
-        <div className="section-heading"><div><span className="eyebrow">NA MESA</span><h2>Cartas apresentadas</h2></div></div>
-        {(apresentacoes.data ?? []).length === 0 && <p>Nenhuma carta apresentada agora.</p>}
-        <ul>
-          {(apresentacoes.data ?? []).map((a) => (
-            <li key={a.id}>
-              {String(a.carta.conteudo.titulo)} — {a.destinatarios?.length ? `${a.destinatarios.length} destinatário(s)` : "toda a mesa"}{" "}
-              <button type="button" className="button button--ghost" onClick={() => recolher.mutate(a.id)}>Recolher</button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {dialogo === "nova" && (
-        <NovaCartaDialog api={api} mesaId={mesaId} onClose={() => setDialogo(null)} onCriada={(d) => { setDialogo(null); setEditando(d); }} />
-      )}
       {dialogo === "importar" && <ImportarCartaDialog api={api} mesaId={mesaId} onClose={() => setDialogo(null)} />}
       {dialogo === "oferta" && <NovaOfertaDialog api={api} mesaId={mesaId} publicadas={publicadas} onClose={() => setDialogo(null)} />}
       <EffectIconsPanel api={api} mesaId={mesaId} />
-      {editando && <CardEditor api={api} mesaId={mesaId} definicao={editando} onClose={() => setEditando(null)} />}
+      {editando && (
+        // "Nova carta" abre direto o editor; a carta só é criada no primeiro salvamento (simplificar-criacao-de-cartas).
+        <CardEditor api={api} mesaId={mesaId} definicao={editando === "nova" ? null : editando} onClose={() => setEditando(null)} />
+      )}
+      {cartaAberta && (
+        <DetalheDoCatalogo api={api} mesaId={mesaId} carta={cartaAberta} catalogo={catalogoItens} onFechar={() => setAberta(null)}
+          onEditar={!cartaAberta.padrao && !cartaAberta.definicao.origem_sistema
+            ? () => { setAberta(null); setEditando(cartaAberta.definicao); } : undefined}
+          onEnviar={() => { setAberta(null); setAviso(null); setEnviando(cartaAberta.definicao.publicada ?? null); }}
+          onApresentar={() => { setAberta(null); setApresentando(cartaAberta.definicao.publicada ?? null); }} />
+      )}
+      {enviando && (
+        <EnviarCartaDialog api={api} mesaId={mesaId} versao={enviando} onClose={() => setEnviando(null)}
+          onEnviada={(texto) => { setEnviando(null); setAviso(texto); }} />
+      )}
       {apresentando && <ApresentarDialog api={api} mesaId={mesaId} versao={apresentando} onClose={() => setApresentando(null)} />}
       <Confirmation
         open={cancelando !== null}

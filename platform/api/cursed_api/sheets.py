@@ -16,7 +16,8 @@ from cursed_platform.domain import validacao_ficha
 from cursed_platform.domain.ficha import FichaDraft
 from cursed_platform.persistence import MesaRegistro, MembroRegistro, PedidoAlteracaoRegistro, PersonagemRegistro
 from cursed_platform.policies import (
-    avaliar_campos, campos_alterados, campos_exclusivos_do_narrador, normalizar_confirmacao_de_nivel,
+    avaliar_campos, campos_alterados, campos_exclusivos_do_narrador, normalizar_aviso_de_platina,
+    normalizar_confirmacao_de_nivel,
     normalizar_excecao_de_tamanho,
 )
 from cursed_platform.repositories import FichaRepository
@@ -115,6 +116,7 @@ def gravar_ficha(
     anterior = FichaDraft.de_payload(personagem.ficha).para_payload()
     normalizar_excecao_de_tamanho(anterior, payload)
     normalizar_confirmacao_de_nivel(anterior, payload)
+    normalizar_aviso_de_platina(payload)
     alterados = campos_alterados(anterior, payload)
     if not alterados:
         # Confirmação sem diferença não é uma alteração: sem nova versão nem evento.

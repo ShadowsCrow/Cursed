@@ -127,6 +127,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/visualizacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar Apresentacao Vista
+         * @description O participante fechou a carta: ela é apresentada uma vez e não volta ao recarregar a página.
+         */
+        post: operations["marcar_apresentacao_vista_mesas__mesa_id__apresentacoes__apresentacao_id__visualizacao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/ativos": {
         parameters: {
             query?: never;
@@ -376,6 +396,23 @@ export interface paths {
          * @description Versão carregada e último erro de recarga do JSON, para o Narrador.
          */
         get: operations["estado_do_catalogo_mesas__mesa_id__catalogos_estado_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/catalogos/itens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Catalogo De Itens */
+        get: operations["listar_catalogo_de_itens_mesas__mesa_id__catalogos_itens_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1918,6 +1955,11 @@ export interface components {
             estado: "apresentada" | "recolhida";
             /** Id */
             id: string;
+            /**
+             * Vista Por
+             * @description Somente para o Narrador: quem já viu e fechou a carta.
+             */
+            vista_por?: string[] | null;
         };
         /** ApresentarCartaRequest */
         ApresentarCartaRequest: {
@@ -2036,6 +2078,42 @@ export interface components {
              */
             visibilidade: "mesa" | "narrador";
         };
+        /** CampoDoSubtipoResumo */
+        CampoDoSubtipoResumo: {
+            /** Campo */
+            campo: string;
+            /**
+             * Sugestoes
+             * @description Lista de sugestões, nos campos de etiquetas.
+             */
+            sugestoes?: string | null;
+        };
+        /**
+         * CampoItemResumo
+         * @description Campo de item, guardado em ``dados[id]`` (simplificar-criacao-de-cartas).
+         */
+        CampoItemResumo: {
+            /** Exemplo */
+            exemplo?: string | null;
+            /** Icone */
+            icone: string;
+            /** Id */
+            id: string;
+            /**
+             * Lista
+             * @description Lista de escolhas, nos campos de escolha.
+             */
+            lista?: string | null;
+            /** Rotulo */
+            rotulo: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "inteiro" | "texto" | "escolha" | "escolhas" | "etiquetas";
+            /** Unidade */
+            unidade?: string | null;
+        };
         /** CampoPersonalidadeResumo */
         CampoPersonalidadeResumo: {
             /** Chave */
@@ -2043,8 +2121,13 @@ export interface components {
             /** Dica */
             dica: string;
             /**
+             * Icone
+             * @description Ícone da linha na aba Personalidade.
+             */
+            icone?: string | null;
+            /**
              * Limite
-             * @description Máximo de caracteres aceito; vazio = sem limite.
+             * @description Máximo de caracteres aceito; vazio = sem limite. Nos traços, o de cada traço.
              */
             limite?: number | null;
             /**
@@ -2053,8 +2136,18 @@ export interface components {
              * @default false
              */
             longo: boolean;
+            /**
+             * Maximo
+             * @description Quantidade máxima de traços; só no tipo tracos.
+             */
+            maximo?: number | null;
             /** Rotulo */
             rotulo: string;
+            /**
+             * Tipo
+             * @description Texto (vazio também é texto) ou lista de palavras curtas (traços).
+             */
+            tipo?: ("texto" | "tracos") | null;
         };
         /** CanalPrivado */
         CanalPrivado: {
@@ -2199,6 +2292,53 @@ export interface components {
             tipo: "habilidade" | "magia" | "item" | "efeito";
             /** Versao Id */
             versao_id: string;
+        };
+        /**
+         * CatalogoItensResumo
+         * @description Raridades e categorias de item (reformular-visual-da-ficha), só etiqueta e organização, e os campos de
+         *     cada subtipo, tirados de Equipamentos.md (simplificar-criacao-de-cartas).
+         */
+        CatalogoItensResumo: {
+            /** Campos */
+            campos?: components["schemas"]["CampoItemResumo"][];
+            /** Campos Por Subtipo */
+            campos_por_subtipo?: {
+                [key: string]: components["schemas"]["CampoDoSubtipoResumo"][];
+            };
+            /** Categorias */
+            categorias: components["schemas"]["CategoriaItemResumo"][];
+            /** Listas */
+            listas?: {
+                [key: string]: string[];
+            };
+            /** Raridades */
+            raridades: components["schemas"]["RaridadeResumo"][];
+        };
+        /** CategoriaItemResumo */
+        CategoriaItemResumo: {
+            /**
+             * Escolha Em Outros
+             * @description Escolhida pelo Narrador em itens do tipo Outros.
+             * @default false
+             */
+            escolha_em_outros: boolean;
+            /** Icone */
+            icone: string;
+            /** Id */
+            id: string;
+            /**
+             * Padrao Outros
+             * @description Categoria dos itens Outros sem escolha.
+             * @default false
+             */
+            padrao_outros: boolean;
+            /** Rotulo */
+            rotulo: string;
+            /**
+             * Subtipos
+             * @description Subtipos que caem nesta categoria sem escolha.
+             */
+            subtipos?: string[];
         };
         /** CenaResumoSala */
         CenaResumoSala: {
@@ -2922,6 +3062,11 @@ export interface components {
             /** Altura */
             altura: number;
             /**
+             * Categoria
+             * @description Só itens do tipo Outros, entre as escolhas do catálogo; nos demais, a categoria vem do subtipo.
+             */
+            categoria?: string | null;
+            /**
              * Icone Grade
              * @description Imagem na proporção da dimensão.
              */
@@ -2939,6 +3084,12 @@ export interface components {
              * @description Só itens do tipo Outros.
              */
             pilha_max?: number | null;
+            /**
+             * Raridade
+             * @description Id do catálogo de itens; só etiqueta, sem efeito mecânico.
+             * @default comum
+             */
+            raridade: string;
             /**
              * Subtipo
              * @enum {string}
@@ -2998,6 +3149,25 @@ export interface components {
             tamanho_origem: "ficha" | "raca";
             /** Versao */
             versao: number;
+        };
+        /** GrupoPersonalidadeResumo */
+        GrupoPersonalidadeResumo: {
+            /**
+             * Campos
+             * @description Chaves dos campos, na ordem das linhas; inclui alinhamento e pecado.
+             */
+            campos: string[];
+            /**
+             * Emblema
+             * @description Ícone do medalhão do quadro.
+             */
+            emblema: string;
+            /** Id */
+            id: string;
+            /** Subtitulo */
+            subtitulo: string;
+            /** Titulo */
+            titulo: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -3100,12 +3270,23 @@ export interface components {
             cargas_atuais?: number | null;
             /** Cargas Maximas */
             cargas_maximas?: number | null;
+            /**
+             * Categoria
+             * @description Id da categoria no catálogo de itens.
+             * @default diversos
+             */
+            categoria: string;
             /** Coluna */
             coluna?: number | null;
             /** Dados */
             dados?: {
                 [key: string]: unknown;
             };
+            /**
+             * Descricao
+             * @description Texto da carta de origem ou descrição importada.
+             */
+            descricao?: string | null;
             /**
              * Efeitos
              * @description Efeitos cuja fonte é este item.
@@ -3132,6 +3313,12 @@ export interface components {
             pilha_max?: number | null;
             /** Quantidade */
             quantidade: number;
+            /**
+             * Raridade
+             * @description Id da raridade no catálogo de itens.
+             * @default comum
+             */
+            raridade: string;
             /** Subtipo */
             subtipo?: ("peitoral" | "capacete" | "luvas" | "botas" | "uma_mao" | "duas_maos" | "escudo" | "mochila" | "aljava" | "moedas" | "outro") | null;
             /**
@@ -3217,14 +3404,28 @@ export interface components {
              */
             faixas_de_altura?: components["schemas"]["FaixaAlturaResumo"][];
             /**
+             * Grupos Personalidade
+             * @description Quadros da aba Personalidade, na ordem de exibição.
+             */
+            grupos_personalidade?: components["schemas"]["GrupoPersonalidadeResumo"][];
+            /**
              * Icones Ficha
              * @description Ícone do Resumo por nome de atributo, perícia ou grupo, como gravado na ficha.
              */
             icones_ficha?: {
                 [key: string]: string;
             };
+            /**
+             * Icones Personalidade
+             * @description Ícone dos campos com lista própria (alinhamento e pecado).
+             */
+            icones_personalidade?: {
+                [key: string]: string;
+            };
             /** Pecados */
             pecados: components["schemas"]["PecadoResumo"][];
+            /** @description Campos do topo da aba Personalidade; vazio sem arrumação no catálogo. */
+            personalidade_topo?: components["schemas"]["TopoPersonalidadeResumo"] | null;
             /** Sexos */
             sexos: string[];
         };
@@ -3622,11 +3823,6 @@ export interface components {
              */
             ouro: number;
             /**
-             * Platina
-             * @default 0
-             */
-            platina: number;
-            /**
              * Prata
              * @default 0
              */
@@ -3847,6 +4043,15 @@ export interface components {
             /** Tamanho */
             tamanho?: string | null;
         };
+        /** RaridadeResumo */
+        RaridadeResumo: {
+            /** Cor */
+            cor: string;
+            /** Id */
+            id: string;
+            /** Rotulo */
+            rotulo: string;
+        };
         /** RecipienteResumo */
         RecipienteResumo: {
             /** Colunas */
@@ -3988,6 +4193,11 @@ export interface components {
             rascunho: {
                 [key: string]: unknown;
             };
+            /**
+             * Tipo
+             * @description Troca o tipo da carta; só antes da primeira publicação.
+             */
+            tipo?: ("habilidade" | "magia" | "item" | "efeito") | null;
             /** Versao Esperada */
             versao_esperada: number;
         };
@@ -4037,6 +4247,19 @@ export interface components {
             x: number;
             /** Y */
             y: number;
+        };
+        /** TopoPersonalidadeResumo */
+        TopoPersonalidadeResumo: {
+            /**
+             * Citacao
+             * @description Campo mostrado como citação no topo da aba.
+             */
+            citacao?: string | null;
+            /**
+             * Etiquetas
+             * @description Campo de traços mostrado como etiquetas no topo da aba.
+             */
+            etiquetas?: string | null;
         };
         /** TransferirPersonagemRequest */
         TransferirPersonagemRequest: {
@@ -4480,6 +4703,36 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApresentacaoResumo"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    marcar_apresentacao_vista_mesas__mesa_id__apresentacoes__apresentacao_id__visualizacao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                apresentacao_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -4984,6 +5237,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EstadoCatalogoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_catalogo_de_itens_mesas__mesa_id__catalogos_itens_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogoItensResumo"];
                 };
             };
             /** @description Validation Error */

@@ -42,6 +42,9 @@ def _editavel(session: Session, mesa_id: str, carta_id: str) -> CartaDefinicaoRe
     definicao = _definicao(session, mesa_id, carta_id)
     if corpos.eh_padrao(definicao):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Os corpos padrão do sistema não se editam.")
+    if definicao.origem_sistema:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="As cartas do catálogo do sistema não se editam: mude o JSON de classes e raças.")
     return definicao
 
 
@@ -100,10 +103,13 @@ def salvar_rascunho(
     _exigir_narrador(session, mesa_id, ator)
     definicao = _editavel(session, mesa_id, carta_id)
     try:
-        cartas.salvar_rascunho(session, definicao, pedido.rascunho, pedido.versao_esperada)
+        cartas.salvar_rascunho(session, definicao, pedido.rascunho, pedido.versao_esperada, pedido.tipo)
     except cartas.ConflitoRascunho:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Rascunho alterado por outra edição.") from None
+    except cartas.TipoFixo:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="O tipo de uma carta publicada não muda.") from None
     session.commit()
     return _resumo(session, definicao)
 

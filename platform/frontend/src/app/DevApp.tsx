@@ -91,13 +91,6 @@ export function DevApp({ apiUrl }: { apiUrl: string }) {
     );
   }
 
-  return (
-    <>
-      <div className="dev-banner" role="status">
-        Modo dev · você é <strong>{identidade}</strong>
-        <button type="button" className="button button--ghost" onClick={sair}>Sair</button>
-      </div>
-      <AppRoutes api={api} userId={identidade} onSignOut={sair} />
-    </>
-  );
+  // Sem faixa de "modo dev": a tela fica igual à do site; sair fica no menu da conta, como lá.
+  return <AppRoutes api={api} userId={identidade} onSignOut={sair} />;
 }

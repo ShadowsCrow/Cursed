@@ -16,6 +16,7 @@ from uuid import NAMESPACE_URL, uuid5
 from sqlalchemy import Engine, MetaData, Table, select
 from sqlalchemy.orm import Session
 
+from cursed_platform.domain.grade import sem_peso
 from cursed_platform.narrador import modificadores_validos
 from cursed_platform.persistence import (
     EfeitoAplicadoRegistro, ItemInventarioRegistro, MesaRegistro, MigracaoLegadaRegistro,
@@ -155,7 +156,7 @@ def migrar_tabelas(origem_engine: Engine, destino_session: Session, *, origem: s
                         destino_session.add(ItemInventarioRegistro(
                             id=item_id, mesa_id=mesa_id, personagem_id=personagem_id,
                             tipo=tipo, nome=dados["nome"], quantidade=quantidade,
-                            equipado=dados.get("equipado") is True, dados=dados,
+                            equipado=dados.get("equipado") is True, dados=sem_peso(dados),
                         ))
                     elif destino_session.get(ItemInventarioRegistro, item_id) is None:
                         raise DivergenciaMigracao(f"{tabela}#{item['id']}: destino não encontrado.")

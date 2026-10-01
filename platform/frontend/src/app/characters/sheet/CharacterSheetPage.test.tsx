@@ -131,6 +131,87 @@ describe("CharacterSheetPage — 6.3 navegação modular preservando contexto", 
     expect(GET.mock.calls.length).toBe(callsAfterLoad);
   });
 
+  it("abas com ícone decorativo; quando não cabem, a aba ativa é trazida à vista", async () => {
+    const rolar = vi.fn();
+    const original = { rolar: HTMLElement.prototype.scrollIntoView,
+      largura: Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollWidth"),
+      visivel: Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth") };
+    HTMLElement.prototype.scrollIntoView = rolar;
+    Object.defineProperty(HTMLElement.prototype, "scrollWidth", { configurable: true, get() { return this.getAttribute("role") === "tablist" ? 1600 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get() { return this.getAttribute("role") === "tablist" ? 375 : 0; } });
+    try {
+      const { api } = createFakeApi();
+      renderPage(api);
+      const inventario = await screen.findByRole("tab", { name: "Inventário" });
+      expect(inventario.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+      fireEvent.click(inventario);
+      await waitFor(() => expect(rolar.mock.contexts.at(-1)).toBe(screen.getByRole("tab", { name: "Inventário", selected: true })));
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original.rolar;
+      if (original.largura) Object.defineProperty(HTMLElement.prototype, "scrollWidth", original.largura);
+      if (original.visivel) Object.defineProperty(HTMLElement.prototype, "clientWidth", original.visivel);
+    }
+  });
+
+  it("cada seção fica na moldura com o título uma única vez", async () => {
+    const { api } = createFakeApi();
+    for (const [secao, titulo] of [["efeitos", "Efeitos"]] as const) {
+      const { unmount } = renderPage(api, `/ficha?secao=${secao}`);
+      const painel = await screen.findByRole("tabpanel");
+      await waitFor(() => expect(within(painel).getAllByRole("heading", { name: titulo })).toHaveLength(1));
+      expect(painel.querySelector(".moldura-secao__medalhao")?.getAttribute("aria-hidden")).toBe("true");
+      unmount();
+    }
+  });
+
+  it("Personalidade usa a folha própria, sem a moldura comum, com o título uma única vez", async () => {
+    const { api } = createFakeApi();
+    renderPage(api, "/ficha?secao=personalidade");
+    const painel = await screen.findByRole("tabpanel");
+    await waitFor(() => expect(within(painel).getAllByRole("heading", { name: "Personalidade" })).toHaveLength(1));
+    expect(painel.querySelector(".folha-personalidade")).toBeTruthy();
+    expect(painel.querySelector(".moldura-secao")).toBeNull();
+  });
+
+  it("Atributos usa a folha própria com os três cartões, sem a moldura comum, com o título uma única vez", async () => {
+    const { api } = createFakeApi();
+    renderPage(api, "/ficha?secao=atributos");
+    const painel = await screen.findByRole("tabpanel");
+    await waitFor(() => expect(within(painel).getAllByRole("heading", { name: "Atributos" })).toHaveLength(1));
+    expect(painel.querySelector(".atributos-folha")).toBeTruthy();
+    expect(painel.querySelector(".moldura-secao")).toBeNull();
+    for (const grupo of ["Físicos", "Sociais", "Mentais"]) expect(within(painel).getByRole("table", { name: grupo })).toBeTruthy();
+  });
+
+  it("Perícias usa a folha própria com os três quadros, sem a moldura comum, com o título uma única vez", async () => {
+    const { api } = createFakeApi();
+    renderPage(api, "/ficha?secao=pericias");
+    const painel = await screen.findByRole("tabpanel");
+    await waitFor(() => expect(within(painel).getAllByRole("heading", { name: "Perícias" })).toHaveLength(1));
+    expect(painel.querySelector(".pericias-folha")).toBeTruthy();
+    expect(painel.querySelector(".moldura-secao")).toBeNull();
+    for (const grupo of ["Talentos", "Técnicas", "Conhecimentos"]) expect(within(painel).getByRole("table", { name: grupo })).toBeTruthy();
+  });
+
+  it("Cartas usa a folha própria, sem a moldura comum, com o título uma única vez", async () => {
+    const { api } = createFakeApi();
+    renderPage(api, "/ficha?secao=cartas");
+    const painel = await screen.findByRole("tabpanel");
+    await waitFor(() => expect(within(painel).getAllByRole("heading", { name: "Habilidades, magias, itens e efeitos" })).toHaveLength(1));
+    expect(painel.querySelector(".cartas-folha")).toBeTruthy();
+    expect(painel.querySelector(".moldura-secao")).toBeNull();
+    expect(await within(painel).findByText("Este personagem ainda não possui cartas.")).toBeTruthy();
+  });
+
+  it("Informações básicas usa a folha do Resumo, sem a moldura comum, com o título uma única vez", async () => {
+    const { api } = createFakeApi();
+    renderPage(api, "/ficha?secao=informacoes");
+    const painel = await screen.findByRole("tabpanel");
+    await waitFor(() => expect(within(painel).getAllByRole("heading", { name: "Informações básicas" })).toHaveLength(1));
+    expect(painel.querySelector(".info-folha")).toBeTruthy();
+    expect(painel.querySelector(".moldura-secao")).toBeNull();
+  });
+
   it("estado local de uma seção (popover aberto) sobrevive à troca para outra seção e volta", async () => {
     const { api } = createFakeApi();
     renderPage(api);
@@ -175,7 +256,7 @@ describe("CharacterSheetPage — aba Resumo", () => {
     expect(await screen.findByRole("tab", { name: "Perícias", selected: true })).toBeTruthy();
     cleanup();
     renderPage(createFakeApi().api, "/ficha?secao=habilidades");
-    expect(await screen.findByRole("tab", { name: "Habilidades e cartas", selected: true })).toBeTruthy();
+    expect(await screen.findByRole("tab", { name: "Cartas", selected: true })).toBeTruthy();
   });
 
   it("atalho de um quadro abre a aba dele e muda o endereço, sem buscar os dados de novo", async () => {
@@ -194,7 +275,7 @@ describe("CharacterSheetPage — aba Resumo", () => {
     // Mesma validade de cache do app (main.tsx): o painel que monta depois reaproveita a consulta.
     renderPage(api, "/ficha", 30_000);
     await screen.findByRole("heading", { level: 1, name: "Nara Exemplo" });
-    fireEvent.click(screen.getByRole("tab", { name: "Habilidades e cartas" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Cartas" }));
     fireEvent.click(screen.getByRole("tab", { name: "Resumo" }));
     await waitFor(() => expect(GET.mock.calls.filter(([caminho]) => String(caminho).endsWith("/cartas"))).toHaveLength(1));
   });

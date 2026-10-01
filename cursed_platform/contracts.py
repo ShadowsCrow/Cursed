@@ -5,6 +5,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from cursed_platform import catalogos
+
 
 class FichaContrato(BaseModel):
     """Representação compatível de uma ficha transportada pela API."""
@@ -293,6 +295,10 @@ class ItemInventarioResumo(BaseModel):
     girado: bool = False
     maos: int | None = None
     pilha_max: int | None = None
+    # Catálogo de itens (reformular-visual-da-ficha): já resolvidos com os padrões.
+    raridade: str = Field(default="comum", description="Id da raridade no catálogo de itens.")
+    categoria: str = Field(default="diversos", description="Id da categoria no catálogo de itens.")
+    descricao: str | None = Field(default=None, description="Texto da carta de origem ou descrição importada.")
 
 
 class AmpliacaoGradeResumo(BaseModel):
@@ -342,7 +348,6 @@ class PilhaMoedas(BaseModel):
     cobre: int = Field(default=0, ge=0)
     prata: int = Field(default=0, ge=0)
     ouro: int = Field(default=0, ge=0)
-    platina: int = Field(default=0, ge=0)
 
 
 class MoedasRequest(BaseModel):
@@ -829,6 +834,22 @@ class FormatoItemGrade(BaseModel):
     aljava: AljavaFormato | None = None
     icone_grade: str | None = Field(default=None, max_length=500, description="Imagem na proporção da dimensão.")
     versatil: bool = Field(default=False, description="Só armas de uma mão: podem ser empunhadas com uma ou duas mãos.")
+    raridade: str = Field(default="comum", max_length=40, description="Id do catálogo de itens; só etiqueta, sem efeito mecânico.")
+    categoria: str | None = Field(
+        default=None, max_length=40,
+        description="Só itens do tipo Outros, entre as escolhas do catálogo; nos demais, a categoria vem do subtipo.",
+    )
+
+    @model_validator(mode="after")
+    def _catalogo(self) -> "FormatoItemGrade":
+        itens = catalogos.obter().itens
+        if itens.raridade(self.raridade) is None:
+            raise ValueError(f"Raridade desconhecida: {self.raridade}.")
+        if self.subtipo != "outro" and self.categoria is not None:
+            raise ValueError("Só itens do tipo Outros escolhem a categoria; nos demais, ela vem do tipo.")
+        if self.categoria is not None and self.categoria not in itens.escolhas_em_outros():
+            raise ValueError(f"Categoria desconhecida para itens Outros: {self.categoria}.")
+        return self
 
     @model_validator(mode="after")
     def _coerente(self) -> "FormatoItemGrade":
@@ -848,7 +869,7 @@ class FormatoItemGrade(BaseModel):
 class ConteudoItem(_ConteudoBase):
     tipo: Literal["item"] = "item"
     item_tipo: Literal["arma", "armadura", "outro"]
-    dados: dict[str, Any] = Field(default_factory=dict, description="Dano, armadura, rdb, peso e demais atributos.")
+    dados: dict[str, Any] = Field(default_factory=dict, description="Campos do subtipo, como dano, armadura e rdb, conforme o catálogo de itens.")
     quantidade: int = Field(default=1, ge=1)
     efeitos: list[EfeitoDeclarado] = Field(default_factory=list, max_length=10)
     formato: FormatoItemGrade | None = Field(default=None, description="Obrigatório para publicar (carga em grade).")
@@ -877,6 +898,9 @@ class CriarCartaRequest(BaseModel):
 class SalvarRascunhoRequest(BaseModel):
     rascunho: dict[str, Any]
     versao_esperada: int = Field(ge=0)
+    tipo: Literal["habilidade", "magia", "item", "efeito"] | None = Field(
+        default=None, description="Troca o tipo da carta; só antes da primeira publicação.",
+    )
 
 
 class PublicarCartaRequest(BaseModel):
@@ -1026,6 +1050,7 @@ class ApresentacaoResumo(BaseModel):
     apresentada_em: datetime
     carta: CartaVisivel
     destinatarios: list[str] | None = Field(default=None, description="Somente para o Narrador.")
+    vista_por: list[str] | None = Field(default=None, description="Somente para o Narrador: quem já viu e fechou a carta.")
 
 
 class DiferencaCarta(BaseModel):
@@ -1377,7 +1402,23 @@ class CampoPersonalidadeResumo(BaseModel):
     rotulo: str
     dica: str
     longo: bool = Field(default=False, description="Texto longo (ex.: História): área de texto maior.")
-    limite: int | None = Field(default=None, description="Máximo de caracteres aceito; vazio = sem limite.")
+    limite: int | None = Field(default=None, description="Máximo de caracteres aceito; vazio = sem limite. Nos traços, o de cada traço.")
+    tipo: Literal["texto", "tracos"] | None = Field(default=None, description="Texto (vazio também é texto) ou lista de palavras curtas (traços).")
+    maximo: int | None = Field(default=None, description="Quantidade máxima de traços; só no tipo tracos.")
+    icone: str | None = Field(default=None, description="Ícone da linha na aba Personalidade.")
+
+
+class GrupoPersonalidadeResumo(BaseModel):
+    id: str
+    titulo: str
+    subtitulo: str
+    emblema: str = Field(description="Ícone do medalhão do quadro.")
+    campos: list[str] = Field(description="Chaves dos campos, na ordem das linhas; inclui alinhamento e pecado.")
+
+
+class TopoPersonalidadeResumo(BaseModel):
+    citacao: str | None = Field(default=None, description="Campo mostrado como citação no topo da aba.")
+    etiquetas: str | None = Field(default=None, description="Campo de traços mostrado como etiquetas no topo da aba.")
 
 
 class ListasFichaResumo(BaseModel):
@@ -1389,6 +1430,55 @@ class ListasFichaResumo(BaseModel):
         default_factory=list, description="Faixa de altura de cada Tamanho, do menor ao maior (fora da média).")
     icones_ficha: dict[str, str] = Field(
         default_factory=dict, description="Ícone do Resumo por nome de atributo, perícia ou grupo, como gravado na ficha.")
+    personalidade_topo: TopoPersonalidadeResumo | None = Field(
+        default=None, description="Campos do topo da aba Personalidade; vazio sem arrumação no catálogo.")
+    grupos_personalidade: list[GrupoPersonalidadeResumo] = Field(
+        default_factory=list, description="Quadros da aba Personalidade, na ordem de exibição.")
+    icones_personalidade: dict[str, str] = Field(
+        default_factory=dict, description="Ícone dos campos com lista própria (alinhamento e pecado).")
+
+
+class RaridadeResumo(BaseModel):
+    id: str
+    rotulo: str
+    cor: str
+
+
+class CategoriaItemResumo(BaseModel):
+    id: str
+    rotulo: str
+    icone: str
+    subtipos: list[str] = Field(default_factory=list, description="Subtipos que caem nesta categoria sem escolha.")
+    escolha_em_outros: bool = Field(default=False, description="Escolhida pelo Narrador em itens do tipo Outros.")
+    padrao_outros: bool = Field(default=False, description="Categoria dos itens Outros sem escolha.")
+
+
+class CampoItemResumo(BaseModel):
+    """Campo de item, guardado em ``dados[id]`` (simplificar-criacao-de-cartas)."""
+
+    id: str
+    rotulo: str
+    tipo: Literal["inteiro", "texto", "escolha", "escolhas", "etiquetas"]
+    icone: str
+    lista: str | None = Field(default=None, description="Lista de escolhas, nos campos de escolha.")
+    exemplo: str | None = None
+    unidade: str | None = None
+
+
+class CampoDoSubtipoResumo(BaseModel):
+    campo: str
+    sugestoes: str | None = Field(default=None, description="Lista de sugestões, nos campos de etiquetas.")
+
+
+class CatalogoItensResumo(BaseModel):
+    """Raridades e categorias de item (reformular-visual-da-ficha), só etiqueta e organização, e os campos de
+    cada subtipo, tirados de Equipamentos.md (simplificar-criacao-de-cartas)."""
+
+    raridades: list[RaridadeResumo]
+    categorias: list[CategoriaItemResumo]
+    listas: dict[str, list[str]] = Field(default_factory=dict)
+    campos: list[CampoItemResumo] = Field(default_factory=list)
+    campos_por_subtipo: dict[str, list[CampoDoSubtipoResumo]] = Field(default_factory=dict)
 
 
 class ModificadorCatalogoResumo(BaseModel):

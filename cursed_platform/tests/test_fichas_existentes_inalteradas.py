@@ -90,10 +90,16 @@ class FichasExistentesTest(unittest.TestCase):
             self.skipTest("git indisponível")
         self.assertEqual(migracoes.stdout.strip(), "")
         # Alterações de catálogo aprovadas pelo usuário: os dados de altura (seção 8, design D12) e, em
-        # aba-resumo-da-ficha, o campo narrativo História e os ícones do Resumo. Nenhum valor mecânico.
+        # aba-resumo-da-ficha, o campo narrativo História e os ícones do Resumo; em reformular-personalidade-da-ficha
+        # (2026-09-29), Frase marcante, Traços, o ícone de cada campo e a arrumação da aba. Nenhum valor mecânico.
+        aprovadas = ("faixas_de_altura", "icones_ficha", "personalidade_topo", "grupos_personalidade", "icones_personalidade")
+
         def listas_sem_aprovadas(d):
-            limpas = {k: v for k, v in d.items() if k not in ("faixas_de_altura", "icones_ficha")}
-            limpas["campos_personalidade"] = [c for c in d.get("campos_personalidade", []) if c.get("chave") != "historia"]
+            limpas = {k: v for k, v in d.items() if k not in aprovadas}
+            limpas["campos_personalidade"] = [
+                {k: v for k, v in c.items() if k != "icone"} for c in d.get("campos_personalidade", [])
+                if c.get("chave") not in ("historia", "frase", "tracos")
+            ]
             return limpas
 
         sem_altura = {

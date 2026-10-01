@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import axe from "axe-core";
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { NarratorLibrary } from "./NarratorLibrary";
@@ -14,17 +14,22 @@ const OFERTA = {
   destinatarios: [{ personagem_id: "lia", estado: "pendente", escolhas: [], respondido_em: null }],
 };
 
-function narrador() {
+const ANEL = { id: "d1", tipo: "item", versao: 1, rascunho: {}, procedencia_rascunho: {}, versao_publicada: 1, arquivada: false,
+  publicada: versao("va", "item", { titulo: "Anel", texto: "Brilha." }) };
+
+function definicao(id: string, tipo: "habilidade" | "magia" | "efeito", titulo: string, origem_sistema: string | null = null) {
+  return { id, tipo, versao: 1, rascunho: {}, procedencia_rascunho: {}, versao_publicada: 1, arquivada: false, origem_sistema,
+    publicada: versao(`v-${id}`, tipo, { titulo, texto: `Texto de ${titulo}` }) };
+}
+
+function narrador(ofertas: unknown[] = [OFERTA], cartas: unknown[] = [ANEL]) {
   const simulada = apiSimulada({
     GET: {
-      "/mesas/{mesa_id}/cartas": { data: [
-        { id: "d1", tipo: "item", versao: 1, rascunho: {}, procedencia_rascunho: {}, versao_publicada: 1, arquivada: false,
-          publicada: versao("va", "item", { titulo: "Anel", texto: "Brilha." }) },
-      ] },
-      "/mesas/{mesa_id}/ofertas": { data: [OFERTA] },
-      "/mesas/{mesa_id}/apresentacoes": { data: [{ id: "a1", estado: "apresentada", apresentada_em: "2026-09-25T12:00:00Z", carta: visivel("va", "item", "Anel"), destinatarios: [] }] },
+      "/mesas/{mesa_id}/cartas": { data: cartas },
+      "/mesas/{mesa_id}/ofertas": { data: ofertas },
       "/mesas/{mesa_id}/personagens": { data: PERSONAGENS },
       "/mesas/{mesa_id}/participantes": { data: [{ usuario_id: "ana", papel: "jogador", nome: "Ana" }] },
+      "/mesas/{mesa_id}/personagens/{personagem_id}/ficha": { data: { mesa_id: "mesa", personagem_id: "lia", versao: 7, ficha: {} } },
     },
     POST: {
       "/mesas/{mesa_id}/cartas/importacoes/previa": { data: { tipo: "efeito", rascunho: { titulo: "Luz", texto: "Ilumina." }, validacao: { valida: true, problemas: [], revisao_pendente: [] }, avisos: ["A imagem não foi importada."] } },
@@ -32,14 +37,16 @@ function narrador() {
       "/mesas/{mesa_id}/ofertas": { data: OFERTA },
       "/mesas/{mesa_id}/ofertas/{oferta_id}/cancelamento": { data: { ...OFERTA, estado: "cancelada" } },
       "/mesas/{mesa_id}/apresentacoes": { data: {} },
-      "/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/recolhimento": { data: {} },
+      // O editor aberto pelo grimório valida o rascunho ao abrir (salvamento automático).
+      "/mesas/{mesa_id}/cartas/{carta_id}/validacao": { data: { valida: true, problemas: [], revisao_pendente: [] } },
+      "/mesas/{mesa_id}/personagens/{personagem_id}/cartas": { data: { cartas: [], versao: 8 } },
     },
   });
   renderComQuery(<NarratorLibrary api={simulada.api} mesaId="mesa" />);
   return simulada;
 }
 
-describe("NarratorLibrary — catálogo, ofertas e apresentações", () => {
+describe("NarratorLibrary — catálogo e ofertas", () => {
   afterEach(() => cleanup());
 
   it("importa com prévia antes de criar o rascunho", async () => {
@@ -68,19 +75,116 @@ describe("NarratorLibrary — catálogo, ofertas e apresentações", () => {
     });
   });
 
-  it("acompanha destinatários, cancela oferta e recolhe carta apresentada", async () => {
+  it("acompanha destinatários e cancela oferta", async () => {
     const { POST } = narrador();
     expect(await screen.findByText("Lia: pendente")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Cancelar oferta" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Cancelar oferta" }).at(-1) as HTMLElement);
     await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/ofertas/{oferta_id}/cancelamento", expect.anything()));
-    fireEvent.click(screen.getByRole("button", { name: "Recolher" }));
-    await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/recolhimento", expect.anything()));
+  });
+
+  it("não tem seção de cartas apresentadas", async () => {
+    narrador();
+    expect(await screen.findByText("Ofertas enviadas")).toBeTruthy();
+    expect(screen.queryByText("Cartas apresentadas")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Recolher" })).toBeNull();
+  });
+
+  it("oferta aceita por todos os destinatários sai da lista de ofertas enviadas", async () => {
+    const respondida = { personagem_id: "lia", estado: "respondida", escolhas: ["va"], respondido_em: "2026-09-25T13:00:00Z" };
+    narrador([
+      { ...OFERTA, id: "o-aceita", titulo: "Aceita", destinatarios: [respondida] },
+      { ...OFERTA, id: "o-parcial", titulo: "Parcial", destinatarios: [respondida, { ...OFERTA.destinatarios[0], personagem_id: "bram" }] },
+    ]);
+    expect(await screen.findByText("Parcial")).toBeTruthy();
+    expect(screen.queryByText("Aceita")).toBeNull();
+  });
+
+  it("sem ofertas aguardando resposta, avisa que a lista está vazia", async () => {
+    narrador([{ ...OFERTA, destinatarios: [{ personagem_id: "lia", estado: "respondida", escolhas: ["va"], respondido_em: null }] }]);
+    expect(await screen.findByText("Nenhuma oferta aguardando resposta.")).toBeTruthy();
+    expect(screen.queryByText("Tesouro")).toBeNull();
+  });
+
+  it("filtra o catálogo por origem, tipo e busca, como a aba Cartas da ficha", async () => {
+    narrador([], [
+      definicao("c1", "habilidade", "Forma Selvagem", "classes/Druida/habilidades/Forma Selvagem"),
+      definicao("c2", "habilidade", "Fúria Animal", "classes/Druida/arquetipos/Animalista/habilidades/Fúria Animal"),
+      definicao("r1", "habilidade", "Visão no Escuro", "racas/Elfo/habilidades/Visão no Escuro"),
+      definicao("n1", "magia", "Bola de Fogo"),
+      definicao("n2", "efeito", "Envenenado"),
+    ]);
+    const filtros = await screen.findByRole("complementary", { name: "Filtros das cartas" });
+    const origem = within(filtros).getByRole("navigation", { name: "Origem" });
+    const tipo = within(filtros).getByRole("navigation", { name: "Tipo" });
+    const titulos = () => screen.getAllByRole("button", { name: /^(Habilidade|Magia|Item|Efeito): / })
+      .map((b) => b.getAttribute("aria-label")?.split(": ")[1]);
+    expect(within(origem).getByRole("button", { name: /Da classe/ }).textContent).toContain("2");
+    expect(within(origem).getByRole("button", { name: /Outras/ }).textContent).toContain("2");
+
+    fireEvent.click(within(origem).getByRole("button", { name: /Da classe/ }));
+    expect(titulos()).toEqual(["Forma Selvagem", "Fúria Animal"]);
+
+    fireEvent.click(within(origem).getByRole("button", { name: /Outras/ }));
+    fireEvent.click(within(tipo).getByRole("button", { name: /Magias/ }));
+    expect(titulos()).toEqual(["Bola de Fogo"]);
+
+    fireEvent.click(within(origem).getByRole("button", { name: /Todas/ }));
+    fireEvent.click(within(tipo).getByRole("button", { name: /Todos/ }));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar cartas" }), { target: { value: "visao" } });
+    expect(titulos()).toEqual(["Visão no Escuro"]);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar cartas" }), { target: { value: "nada disso" } });
+    expect(screen.getByText("Nenhuma carta atende os filtros escolhidos.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    expect(titulos()).toHaveLength(5);
+  });
+
+  it("editar fica no selo do lápis, no canto da carta", async () => {
+    narrador();
+    const editar = await screen.findByRole("button", { name: "Editar Anel" });
+    expect(editar.className).toBe("carta-biblioteca__editar");
+    expect(editar.querySelector("svg")).toBeTruthy();
+  });
+
+  it("envia a carta ao personagem escolhido, na versão atual da ficha dele", async () => {
+    const { GET, POST } = narrador();
+    fireEvent.click(await screen.findByRole("button", { name: "Item: Anel" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Anel" })).getByRole("button", { name: "Enviar" }));
+    expect(screen.getByText(/fora da grade/)).toBeTruthy();
+    const enviar = screen.getByRole("button", { name: "Enviar" }) as HTMLButtonElement;
+    expect(enviar.disabled).toBe(true);
+    fireEvent.click(await screen.findByRole("radio", { name: "Lia" }));
+    fireEvent.click(enviar);
+    await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/personagens/{personagem_id}/cartas", {
+      params: { path: { mesa_id: "mesa", personagem_id: "lia" } },
+      body: { versao_id: "va", excecao_aprendizado: false, motivo: null, versao_esperada: 7 },
+    }));
+    expect(GET).toHaveBeenCalledWith("/mesas/{mesa_id}/personagens/{personagem_id}/ficha",
+      { params: { path: { mesa_id: "mesa", personagem_id: "lia" } } });
+    expect(await screen.findByText("“Anel” enviada para Lia.")).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("clicar na carta abre o grimório da ficha, com os dados do catálogo e as ações da biblioteca", async () => {
+    narrador();
+    fireEvent.click(await screen.findByRole("button", { name: "Item: Anel" }));
+    const grimorio = screen.getByRole("dialog", { name: "Anel" });
+    expect(grimorio.className).toContain("grimorio");
+    expect(within(grimorio).getByRole("region", { name: "Texto da carta" }).textContent).toBe("Brilha.");
+    expect(within(grimorio).getByText("Criada na mesa")).toBeTruthy();
+    expect(within(grimorio).getByText("Publicada em")).toBeTruthy();
+    expect(within(grimorio).getAllByRole("button").map((b) => b.textContent)).toEqual(
+      expect.arrayContaining(["Enviar", "Apresentar", "Editar"]));
+    fireEvent.click(within(grimorio).getByRole("button", { name: "Editar" }));
+    expect(await screen.findByRole("dialog", { name: "Editar item" })).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "Anel" })).toBeNull();
   });
 
   it("apresenta uma carta publicada aos destinatários escolhidos", async () => {
     const { POST } = narrador();
-    fireEvent.click(await screen.findByRole("button", { name: "Apresentar" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Item: Anel" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Anel" })).getByRole("button", { name: "Apresentar" }));
     fireEvent.click(await screen.findByLabelText("Ana"));
     fireEvent.click(screen.getAllByRole("button", { name: "Apresentar" }).at(-1) as HTMLElement);
     await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/apresentacoes", expect.objectContaining({
@@ -106,9 +210,10 @@ describe("Visão do jogador — ofertas e apresentação temporária", () => {
     expect(GET).not.toHaveBeenCalledWith("/mesas/{mesa_id}/cartas", expect.anything());
   });
 
-  it("mostra a carta apresentada sem nenhuma escrita na ficha e fecha localmente", async () => {
+  it("mostra a carta apresentada sem escrever na ficha; fechar registra que foi vista, para não voltar ao recarregar", async () => {
     const simulada = apiSimulada({
       GET: { "/mesas/{mesa_id}/apresentacoes": { data: [{ id: "a1", estado: "apresentada", apresentada_em: "2026-09-25T12:00:00Z", carta: visivel("va", "item", "Anel Antigo") }] } },
+      POST: { "/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/visualizacao": { data: undefined, status: 204 } },
     });
     renderComQuery(<PresentationOverlay api={simulada.api} mesaId="mesa" />);
     expect(await screen.findByText("Anel Antigo")).toBeTruthy();
@@ -117,7 +222,9 @@ describe("Visão do jogador — ofertas e apresentação temporária", () => {
     expect(resultado.violations).toEqual([]);
     fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
     await waitFor(() => expect(screen.queryByText("Anel Antigo")).toBeNull());
-    expect(simulada.POST).not.toHaveBeenCalled();
+    await waitFor(() => expect(simulada.POST).toHaveBeenCalledTimes(1));
+    expect(simulada.POST).toHaveBeenCalledWith("/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/visualizacao",
+      { params: { path: { mesa_id: "mesa", apresentacao_id: "a1" } } });
     expect(simulada.PUT).not.toHaveBeenCalled();
   });
 });

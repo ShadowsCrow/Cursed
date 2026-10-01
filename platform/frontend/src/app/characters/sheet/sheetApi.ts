@@ -644,11 +644,12 @@ export async function gravarMoedas(
 /** O Narrador define tipo e dimensão de um item; se o formato muda, o item sai da grade para ser recolocado. */
 export async function definirFormatoItem(
   api: ApiClient, mesaId: string, personagemId: string, itemId: string, versaoEsperada: number,
-  formato: components["schemas"]["FormatoItemGrade"],
+  formato: Omit<components["schemas"]["FormatoItemGrade"], "raridade"> & { raridade?: string },
 ): Promise<number> {
   const { data, error } = await api.PUT("/mesas/{mesa_id}/personagens/{personagem_id}/inventario/{item_id}/formato", {
     params: { path: { mesa_id: mesaId, personagem_id: personagemId, item_id: itemId } },
-    body: { formato, versao_esperada: versaoEsperada },
+    // Sem raridade, o servidor grava a padrão do catálogo.
+    body: { formato: formato as components["schemas"]["FormatoItemGrade"], versao_esperada: versaoEsperada },
   });
   if (error) throw new Error(extractErrorMessage(error, "Não foi possível definir o formato."));
   return data.versao;

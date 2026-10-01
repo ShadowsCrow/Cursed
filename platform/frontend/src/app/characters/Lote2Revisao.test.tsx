@@ -59,7 +59,7 @@ describe("Contadores de pendências na navegação", () => {
   });
 });
 
-describe("Habilidades e cartas numa aba só", () => {
+describe("Cartas numa aba só", () => {
   afterEach(() => cleanup());
 
   it("link antigo abre a aba unificada, com o registro legado rotulado", async () => {
@@ -70,7 +70,7 @@ describe("Habilidades e cartas numa aba só", () => {
         transferir: false, campos_bloqueados: [], campos_exigem_aprovacao: [] },
     });
     comQuery(<CharacterSheetPage api={api} mesaId="m" personagemId="p" userId="ana" onBack={vi.fn()} />, "/?secao=habilidades");
-    const aba = await screen.findByRole("tab", { name: "Habilidades e cartas" });
+    const aba = await screen.findByRole("tab", { name: "Cartas" });
     expect(aba.getAttribute("aria-selected")).toBe("true");
     expect(screen.queryByRole("tab", { name: "Habilidades" })).toBeNull();
     const legado = await screen.findByRole("region", { name: "Habilidades registradas na ficha antiga" });

@@ -10,6 +10,8 @@ import { ComponentCatalog } from "./app/ComponentCatalog";
 import { PreviewApp } from "./app/PreviewApp";
 import { ProvaDoTema } from "./app/ProvaDoTema";
 import { ProvaDoResumo } from "./app/ProvaDoResumo";
+import { ProvaDaFicha } from "./app/ProvaDaFicha";
+import { ProvaDoEditor } from "./app/ProvaDoEditor";
 import { ProvaDaPlataforma } from "./app/plataforma/ProvaDaPlataforma";
 import { InventoryPrototype } from "./app/inventory/InventoryPrototype";
 import { ErrorBoundary } from "./app/ErrorBoundary";
@@ -21,6 +23,9 @@ import "./app/characters/sheet/resumo/resumo.css";
 import "./design/preview.css";
 import "./design/tema-telas.css";
 import "./app/plataforma/plataforma.css";
+import "./app/characters/sheet/ficha.css";
+import "./app/characters/sheet/inventario.css";
+import "./app/characters/sheet/informacoes/informacoes.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Elemento raiz da aplicação não encontrado.");
@@ -51,6 +56,8 @@ if (window.location.pathname.startsWith("/preview/plataforma")) {
             <Route path="/preview/componentes" element={<ComponentCatalog />} />
             <Route path="/preview/tema" element={<ProvaDoTema />} />
             <Route path="/preview/resumo" element={<ProvaDoResumo />} />
+            <Route path="/preview/ficha" element={<ProvaDaFicha />} />
+            <Route path="/preview/editor" element={<ProvaDoEditor />} />
             <Route path="/preview/inventario" element={<InventoryPrototype />} />
             <Route path="*" element={<PreviewApp />} />
           </Routes>

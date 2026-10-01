@@ -93,6 +93,7 @@ def _item_resumo(item: ItemInventarioRegistro, efeitos: list[ficha_viva.EfeitoAt
         efeitos=[e.id for e in efeitos if e.equipamento_id == item.id],
         subtipo=item.subtipo, largura=item.largura, altura=item.altura, coluna=item.coluna, linha=item.linha,
         girado=item.girado, maos=item.maos, pilha_max=item.pilha_max,
+        **catalogos.obter().itens.descritivos(item.subtipo, item.tipo, item.dados),
     )
 
 

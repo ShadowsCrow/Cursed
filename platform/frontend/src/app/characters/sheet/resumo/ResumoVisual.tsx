@@ -43,7 +43,7 @@ const ROTULO_SECAO: Record<SecaoDoResumo, string> = {
   atributos: "Atributos",
   pericias: "Perícias",
   equipamentos: "Equipamentos",
-  cartas: "Habilidades e cartas",
+  cartas: "Cartas",
   personalidade: "Personalidade",
 };
 
@@ -187,7 +187,7 @@ function Figura({ modelo, acaoImagem, primeiroPlano }: { modelo: ModeloDoResumo;
 }
 
 /** Pintura decorativa opcional; avisa se carregou para a folha abrir espaço, e some se faltar. */
-function Pintura({ src, className, onCarregada }: { src?: string; className: string; onCarregada?: (ok: boolean) => void }) {
+export function Pintura({ src, className, onCarregada }: { src?: string; className: string; onCarregada?: (ok: boolean) => void }) {
   const [falhou, setFalhou] = useState(false);
   if (!src || falhou) return null;
   return (

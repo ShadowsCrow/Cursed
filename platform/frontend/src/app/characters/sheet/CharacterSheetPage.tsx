@@ -1,14 +1,15 @@
-import { useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 
 import { Glyph } from "../../../ui/Display";
 import { useCartasDoPersonagem } from "../../cards/api";
-import { CharacterCardsPanel } from "../../cards/CharacterCardsPanel";
+import { CartasFicha } from "./cartas/CartasFicha";
 import { useConnectivityStatus } from "../../connectivity/useConnectivityStatus";
 import type { ApiClient } from "../types";
 import { ActiveStateStrip } from "./ActiveStateStrip";
-import { AttributeTable, type Alteracao } from "./AttributeTable";
+import type { Alteracao } from "./useEdicaoEmLote";
+import { AtributosFicha } from "./atributos/AtributosFicha";
 import { DerivedValueGroup } from "./DerivedValueGroup";
 import { ConsequencesPanel } from "./ConsequencesPanel";
 import { EffectsPanel } from "./EffectsPanel";
@@ -16,7 +17,9 @@ import { campoEditavel } from "../fieldPolicy";
 import { useClasses, useListasFicha, useRacas } from "./catalogoApi";
 import { personagemInfo } from "./fichaAccess";
 import { IdentityPanel } from "./IdentityPanel";
+import { IconeSecao, MolduraSecao } from "./MolduraSecao";
 import { PersonalityPanel } from "./PersonalityPanel";
+import { PericiasFicha } from "./pericias/PericiasFicha";
 import type { AlteracaoCampo } from "./SelectField";
 import { ImportDialog } from "./ImportDialog";
 import { EquippedItemsPanel } from "./InventoryPanel";
@@ -46,7 +49,7 @@ const SECTIONS = [
   { id: "inventario", label: "Inventário" },
   { id: "status", label: "Status" },
   { id: "efeitos", label: "Efeitos" },
-  { id: "cartas", label: "Habilidades e cartas" },
+  { id: "cartas", label: "Cartas" },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -99,6 +102,16 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
   // Na página, e não só no painel de cartas: o Resumo e o painel dividem a mesma consulta.
   const cartasQuery = useCartasDoPersonagem(api, mesaId, personagemId);
   const abas = useRef<(HTMLButtonElement | null)[]>([]);
+  const barraAbas = useRef<HTMLDivElement | null>(null);
+  // A barra rola dentro de si quando as abas não cabem: a aba ativa é trazida à vista.
+  useEffect(() => {
+    const indice = SECTIONS.findIndex((s) => s.id === secao);
+    const aba = abas.current[indice];
+    const barra = barraAbas.current;
+    if (!aba || !barra || barra.scrollWidth <= barra.clientWidth) return;
+    aba.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    // As abas só existem depois que a ficha carrega: a aba pedida pela URL também é trazida à vista.
+  }, [secao, fichaQuery.isSuccess]);
   const salvarCampo = useSalvarCampoFicha(api, mesaId, personagemId, userId);
   const classesQuery = useClasses(api, mesaId);
   const racasQuery = useRacas(api, mesaId);
@@ -207,7 +220,7 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         } : undefined}
       />
 
-      <div className="sheet-tabs" role="tablist" aria-label="Seções da ficha">
+      <div className="sheet-tabs" role="tablist" aria-label="Seções da ficha" ref={barraAbas}>
         {SECTIONS.map((section, indice) => (
           <button
             key={section.id}
@@ -221,7 +234,8 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
             onClick={() => goTo(section.id)}
             onKeyDown={(event) => navegarAbas(event, indice)}
           >
-            {section.label}
+            <IconeSecao nome={section.id} />
+            <span>{section.label}</span>
           </button>
         ))}
       </div>
@@ -240,108 +254,99 @@ export function CharacterSheetPage({ api, mesaId, personagemId, userId, onBack }
         )}
       </div>
 
-      <div hidden={secao !== "informacoes"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-informacoes" aria-labelledby="aba-informacoes" tabIndex={0}>
+      <div hidden={secao !== "informacoes"} role="tabpanel" className="ficha-secao ficha-secao--moldura" id="painel-informacoes" aria-labelledby="aba-informacoes" tabIndex={0}>
+        {/* Folha própria, a do Resumo, no lugar da moldura comum (redesenhar-informacoes-basicas, D1). */}
         <IdentityPanel ficha={ficha} permissoes={permissoes} classes={classesQuery.data ?? []} racas={racasQuery.data ?? []}
           listas={listasQuery.data} avisos={avisos} onSave={saveCampos} />
       </div>
 
-      <div hidden={secao !== "personalidade"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-personalidade" aria-labelledby="aba-personalidade" tabIndex={0}>
+      <div hidden={secao !== "personalidade"} role="tabpanel" className="ficha-secao ficha-secao--moldura" id="painel-personalidade" aria-labelledby="aba-personalidade" tabIndex={0}>
+        {/* Folha própria, cópia fiel da referência, no lugar da moldura comum (reformular-personalidade-da-ficha, D1). */}
         <PersonalityPanel nome={info.nome} ficha={ficha} permissoes={permissoes} listas={listasQuery.data}
           avisos={avisos} onSave={saveCampos} />
       </div>
 
-      <div hidden={secao !== "atributos"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-atributos" aria-labelledby="aba-atributos" tabIndex={0}>
+      <div hidden={secao !== "atributos"} role="tabpanel" className="ficha-secao ficha-secao--atributos" id="painel-atributos" aria-labelledby="aba-atributos" tabIndex={0}>
         {valoresQuery.isPending && <p>Carregando atributos…</p>}
         {valoresQuery.isError && <p role="alert">{valoresQuery.error.message}</p>}
         {valoresQuery.isSuccess && (
-          <AttributeTable
-            categoria="atributo" eyebrow="BASE MECÂNICA" titulo="Atributos" grupos={GRUPOS_ATRIBUTOS}
-            ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
+          <AtributosFicha
+            grupos={GRUPOS_ATRIBUTOS} ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
             aplicarLimites={fichaQuery.data.tipo === "personagem"}
           />
         )}
       </div>
 
-      <div hidden={secao !== "pericias"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-pericias" aria-labelledby="aba-pericias" tabIndex={0}>
+      <div hidden={secao !== "pericias"} role="tabpanel" className="ficha-secao ficha-secao--pericias" id="painel-pericias" aria-labelledby="aba-pericias" tabIndex={0}>
+        {valoresQuery.isPending && <p>Carregando perícias…</p>}
+        {valoresQuery.isError && <p role="alert">{valoresQuery.error.message}</p>}
         {valoresQuery.isSuccess && (
-          <AttributeTable
-            categoria="pericia" eyebrow="ESPECIALIDADES" titulo="Perícias" grupos={GRUPOS_PERICIAS}
-            ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
+          <PericiasFicha
+            grupos={GRUPOS_PERICIAS} ficha={ficha} valores={valoresQuery.data} permissoes={permissoes} onSave={saveMany}
             aplicarLimites={fichaQuery.data.tipo === "personagem"}
           />
         )}
       </div>
 
-      <div hidden={secao !== "equipamentos"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-equipamentos" aria-labelledby="aba-equipamentos" tabIndex={0}>
-        {inventarioQuery.isPending && <p>Carregando equipamentos…</p>}
-        {inventarioQuery.isError && <p role="alert">{inventarioQuery.error.message}</p>}
-        {inventarioQuery.isSuccess && (
-          <EquippedItemsPanel api={api} mesaId={mesaId} personagemId={personagemId} itens={inventarioQuery.data} versao={versao} permissoes={permissoes} online={online} onVersaoConfirmada={bumpVersao} />
-        )}
+      <div hidden={secao !== "equipamentos"} role="tabpanel" className="ficha-secao ficha-secao--moldura" id="painel-equipamentos" aria-labelledby="aba-equipamentos" tabIndex={0}>
+        <MolduraSecao nome="equipamentos" titulo="Equipamentos" subtitulo="O que está vestido e empunhado agora.">
+          {inventarioQuery.isPending && <p>Carregando equipamentos…</p>}
+          {inventarioQuery.isError && <p role="alert">{inventarioQuery.error.message}</p>}
+          {inventarioQuery.isSuccess && (
+            <EquippedItemsPanel api={api} mesaId={mesaId} personagemId={personagemId} itens={inventarioQuery.data} versao={versao} permissoes={permissoes} online={online} onVersaoConfirmada={bumpVersao} />
+          )}
+        </MolduraSecao>
       </div>
 
-      <div hidden={secao !== "inventario"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-inventario" aria-labelledby="aba-inventario" tabIndex={0}>
-        <div className="section-heading"><div /><ImportDialog api={api} mesaId={mesaId} personagemId={personagemId} versao={versao} permissoes={permissoes} onImported={(resultado) => {
-          bumpVersao(resultado.versao);
-          void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
-          void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
-          void queryClient.invalidateQueries({ queryKey: sheetKeys.efeitos(mesaId, personagemId) });
-          void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
-        }} /></div>
-        <InventoryGridPanel api={api} mesaId={mesaId} personagemId={personagemId} permissoes={permissoes} versao={versao} online={online} onVersaoConfirmada={bumpVersao} />
+      <div hidden={secao !== "inventario"} role="tabpanel" className="ficha-secao ficha-secao--moldura" id="painel-inventario" aria-labelledby="aba-inventario" tabIndex={0}>
+        <InventoryGridPanel api={api} mesaId={mesaId} personagemId={personagemId} permissoes={permissoes} versao={versao} online={online}
+          onVersaoConfirmada={bumpVersao} efeitos={efeitosQuery.data}
+          ferramentas={<ImportDialog api={api} mesaId={mesaId} personagemId={personagemId} versao={versao} permissoes={permissoes} onImported={(resultado) => {
+            bumpVersao(resultado.versao);
+            void queryClient.invalidateQueries({ queryKey: sheetKeys.inventario(mesaId, personagemId) });
+            void queryClient.invalidateQueries({ queryKey: sheetKeys.grade(mesaId, personagemId) });
+            void queryClient.invalidateQueries({ queryKey: sheetKeys.efeitos(mesaId, personagemId) });
+            void queryClient.invalidateQueries({ queryKey: sheetKeys.valoresDerivados(mesaId, personagemId) });
+          }} />} />
       </div>
 
-      <div hidden={secao !== "status"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-status" aria-labelledby="aba-status" tabIndex={0}>
-        {valoresQuery.isSuccess && (
-          <>
-            <DerivedValueGroup eyebrow="REGRAS DA CLASSE" title="Recursos" valores={valoresQuery.data} grupo="recurso" emptyMessage="Nenhum recurso calculado." />
-            <DerivedValueGroup eyebrow="ESTADO" title="Status" valores={valoresQuery.data} grupo="status" emptyMessage="Nenhum status calculado." />
-          </>
-        )}
+      <div hidden={secao !== "status"} role="tabpanel" className="ficha-secao ficha-secao--moldura" id="painel-status" aria-labelledby="aba-status" tabIndex={0}>
+        <MolduraSecao nome="status" titulo="Status" subtitulo="Recursos e valores calculados pelas regras.">
+          {valoresQuery.isSuccess && (
+            <>
+              <DerivedValueGroup eyebrow="REGRAS DA CLASSE" title="Recursos" valores={valoresQuery.data} grupo="recurso" emptyMessage="Nenhum recurso calculado." />
+              <DerivedValueGroup eyebrow="ESTADO" title="Status" valores={valoresQuery.data} grupo="status" emptyMessage="Nenhum status calculado." />
+            </>
+          )}
+        </MolduraSecao>
       </div>
 
-      <div hidden={secao !== "efeitos"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-efeitos" aria-labelledby="aba-efeitos" tabIndex={0}>
-        {efeitosQuery.isPending && <p>Carregando efeitos…</p>}
-        {efeitosQuery.isError && <p role="alert">{efeitosQuery.error.message}</p>}
-        {efeitosQuery.isSuccess && (
-          <EffectsPanel
-            efeitos={efeitosQuery.data} api={api} mesaId={mesaId}
-            admin={permissoes?.papel === "narrador" || permissoes?.editar
-              ? { api, mesaId, personagemId, versao, onVersaoConfirmada: bumpVersao, papel: narrador ? "narrador" : "jogador" }
-              : undefined}
-          />
-        )}
-        {consequenciasQuery.isError && <p role="alert">{consequenciasQuery.error.message}</p>}
-        {consequenciasQuery.isSuccess && (
-          <ConsequencesPanel consequencias={consequenciasQuery.data}
-            admin={narrador ? { api, mesaId, personagemId, versao } : undefined} />
-        )}
+      <div hidden={secao !== "efeitos"} role="tabpanel" className="ficha-secao ficha-secao--moldura" id="painel-efeitos" aria-labelledby="aba-efeitos" tabIndex={0}>
+        <MolduraSecao nome="efeitos" titulo="Efeitos" subtitulo="Condições, efeitos e consequências em curso.">
+          {efeitosQuery.isPending && <p>Carregando efeitos…</p>}
+          {efeitosQuery.isError && <p role="alert">{efeitosQuery.error.message}</p>}
+          {efeitosQuery.isSuccess && (
+            <EffectsPanel
+              efeitos={efeitosQuery.data} api={api} mesaId={mesaId} semTitulo
+              admin={permissoes?.papel === "narrador" || permissoes?.editar
+                ? { api, mesaId, personagemId, versao, onVersaoConfirmada: bumpVersao, papel: narrador ? "narrador" : "jogador" }
+                : undefined}
+            />
+          )}
+          {consequenciasQuery.isError && <p role="alert">{consequenciasQuery.error.message}</p>}
+          {consequenciasQuery.isSuccess && (
+            <ConsequencesPanel consequencias={consequenciasQuery.data}
+              admin={narrador ? { api, mesaId, personagemId, versao } : undefined} />
+          )}
+        </MolduraSecao>
       </div>
 
-      <div hidden={secao !== "cartas"} role="tabpanel" className="ficha-secao tema-pergaminho" id="painel-cartas" aria-labelledby="aba-cartas" tabIndex={0}>
+      <div hidden={secao !== "cartas"} role="tabpanel" className="ficha-secao ficha-secao--cartas" id="painel-cartas" aria-labelledby="aba-cartas" tabIndex={0}>
         {permissoes && (
-          <CharacterCardsPanel
-            api={api} mesaId={mesaId} personagemId={personagemId} versao={versao}
-            papel={permissoes.papel} podeEditar={permissoes.editar}
+          <CartasFicha
+            key={personagemId} api={api} mesaId={mesaId} personagemId={personagemId} versao={versao}
+            papel={permissoes.papel} podeEditar={permissoes.editar} habilidadesLegadas={info.habilidades}
           />
-        )}
-        {info.habilidades.length > 0 && (
-          <section className="panel legacy-skills" aria-label="Habilidades registradas na ficha antiga">
-            <div className="section-heading"><div><span className="eyebrow">REGISTRO DA FICHA ANTIGA</span><h2>Habilidades anotadas</h2></div></div>
-            <p className="preview-note">Anotações trazidas da ficha anterior. Não fazem parte do sistema de cartas e serão revisadas na migração de dados.</p>
-            <div className="feature-list">
-              {info.habilidades.map((habilidade, index) => (
-                <div key={index}>
-                  <span className="feature-list__icon"><Glyph name="book" size={20} /></span>
-                  <div>
-                    <strong>{String(habilidade.nome ?? "Sem nome")}</strong>
-                    {habilidade.tipo !== undefined && <small>{String(habilidade.tipo)}</small>}
-                  </div>
-                  {habilidade.dano !== undefined && <b>{String(habilidade.dano)}</b>}
-                </div>
-              ))}
-            </div>
-          </section>
         )}
       </div>
 

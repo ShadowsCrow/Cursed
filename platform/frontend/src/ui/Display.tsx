@@ -196,13 +196,17 @@ export interface ContentCardProps {
    * Só é exibido quando fornecido — nenhum valor é presumido a partir de `meta`.
    */
   costs?: CardCost[];
+  /** Imagem da carta (ex.: a foto do item), dentro do quadro de arte; sem ela, o emblema. */
+  image?: string | null;
 }
 
 /** Carta base compartilhada por habilidades, magias, itens e efeitos. */
-export function ContentCard({ kind, title, description, meta, emblem, type, costs }: ContentCardProps) {
+export function ContentCard({ kind, title, description, meta, emblem, type, costs, image }: ContentCardProps) {
   return (
     <article className={`content-card ${type ? `content-card--${type}` : ""}`.trim()}>
-      <div className="content-card__art" aria-hidden="true"><span>{emblem}</span></div>
+      <div className={`content-card__art${image ? " content-card__art--imagem" : ""}`} aria-hidden="true">
+        {image ? <img src={image} alt="" /> : <span>{emblem}</span>}
+      </div>
       <div className="content-card__body">
         <span className="eyebrow">{kind}</span>
         <h3>{title}</h3>

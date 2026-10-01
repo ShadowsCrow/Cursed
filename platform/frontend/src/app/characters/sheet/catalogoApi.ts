@@ -9,6 +9,7 @@ export type ListasFicha = components["schemas"]["ListasFichaResumo"];
 export type EfeitoDefault = components["schemas"]["EfeitoDefaultResumo"];
 export type EstadoCatalogo = components["schemas"]["EstadoCatalogoResumo"];
 export type IconeResumo = components["schemas"]["IconeResumo"];
+export type CatalogoItens = components["schemas"]["CatalogoItensResumo"];
 
 /** Catálogos do sistema (JSON da plataforma); a leitura passa pela mesa. */
 export const catalogoKeys = {
@@ -17,7 +18,25 @@ export const catalogoKeys = {
   listas: (mesaId: string) => ["catalogo", mesaId, "listas-ficha"] as const,
   efeitosDefault: (mesaId: string) => ["catalogo", mesaId, "efeitos-default"] as const,
   estado: (mesaId: string) => ["catalogo", mesaId, "estado"] as const,
+  itens: (mesaId: string) => ["catalogo", mesaId, "itens"] as const,
 };
+
+/** Raridades e categorias de item (reformular-visual-da-ficha); vêm do JSON do sistema, nunca do código. */
+export function useCatalogoItens(api: ApiClient | undefined, mesaId: string | undefined): UseQueryResult<CatalogoItens, Error> {
+  return useQuery({
+    queryKey: catalogoKeys.itens(mesaId ?? ""),
+    enabled: Boolean(api && mesaId),
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await api!.GET("/mesas/{mesa_id}/catalogos/itens", { params: { path: { mesa_id: mesaId! } } });
+      // Sem as duas listas, a tela segue sem raridade e categorias em vez de quebrar.
+      if (error || !data || !Array.isArray(data.raridades) || !Array.isArray(data.categorias)) {
+        throw new Error(extractErrorMessage(error, "Não foi possível carregar o catálogo de itens."));
+      }
+      return data;
+    },
+  });
+}
 
 export function useClasses(api: ApiClient, mesaId: string): UseQueryResult<ClasseCatalogo[], Error> {
   return useQuery({

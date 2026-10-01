@@ -8,6 +8,7 @@ irregularidades, usadas como avisos na leitura. Nenhum valor é corrigido aqui.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import unicodedata
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Mapping
 
 from cursed_platform.catalogos import chave
@@ -87,6 +88,33 @@ def _texto_limitado(rotulo: str, limite: int) -> Callable[[Any], str | None]:
     def verificar(valor: Any) -> str | None:
         if isinstance(valor, str) and len(valor) > limite:
             return f"{rotulo} passa do limite de {limite:,} caracteres.".replace(",", ".")
+        return None
+    return verificar
+
+
+def _sem_acento(texto: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c)).casefold()
+
+
+def _tracos(rotulo: str, maximo: int, limite: int | None) -> Callable[[Any], str | None]:
+    """Traços da personalidade: lista de palavras curtas, sem repetição (reformular-personalidade-da-ficha, D3)."""
+    def verificar(valor: Any) -> str | None:
+        if valor is None or valor == "" or valor == []:
+            return None
+        if not isinstance(valor, list):
+            return f"{rotulo} precisa ser uma lista de palavras curtas."
+        if len(valor) > maximo:
+            return f"{rotulo}: no máximo {maximo} traços."
+        vistos: set[str] = set()
+        for traco in valor:
+            if not isinstance(traco, str) or not traco.strip():
+                return f"{rotulo}: um traço está vazio."
+            if limite is not None and len(traco.strip()) > limite:
+                return f"{rotulo}: o traço \"{traco.strip()}\" passa de {limite} caracteres."
+            normal = _sem_acento(traco.strip())
+            if normal in vistos:
+                return f"{rotulo}: o traço \"{traco.strip()}\" está repetido."
+            vistos.add(normal)
         return None
     return verificar
 
@@ -216,8 +244,11 @@ def _campos(ficha: Mapping[str, Any], catalogo: "Catalogos") -> dict[str, list[s
         "Pecado Capital", [p.nome for p in listas.pecados], lambda t: listas.pecado(t) is not None,
     )(personalidade.get("pecado")))
     for campo in listas.campos_personalidade:
-        if campo.limite is not None:
-            registrar(f"personalidade.{campo.chave}", _texto_limitado(campo.rotulo, campo.limite)(personalidade.get(campo.chave)))
+        caminho = f"personalidade.{campo.chave}"
+        if campo.tipo == "tracos" and campo.maximo is not None:
+            registrar(caminho, _tracos(campo.rotulo, campo.maximo, campo.limite)(personalidade.get(campo.chave)))
+        elif campo.limite is not None:
+            registrar(caminho, _texto_limitado(campo.rotulo, campo.limite)(personalidade.get(campo.chave)))
 
     classe_nome = personagem.get("classe")
     classe = None if _vazio(classe_nome) else catalogo.classe(classe_nome)
@@ -247,7 +278,16 @@ def verificar(ficha: Mapping[str, Any], catalogo: "Catalogos") -> list[ErroCampo
     # Aviso informativo, nunca motivo de recusa: some quando o Narrador confirma ou troca o nível.
     if _secao(ficha, "personagem").get("nivel_pela_migracao"):
         avisos.append(ErroCampo("personagem.nivel", AVISO_NIVEL_MIGRADO))
+    platina = _secao(ficha, "inventario").get("platina_retirada")
+    if isinstance(platina, int) and not isinstance(platina, bool) and platina > 0:
+        avisos.append(ErroCampo("inventario.platina_retirada", aviso_platina_retirada(platina)))
     return avisos
+
+
+def aviso_platina_retirada(quantidade: int) -> str:
+    """Aviso deixado pela retirada da platina (reformular-visual-da-ficha, D7)."""
+    return (f"A platina deixou de existir: {quantidade} moeda(s) de platina foram retiradas deste personagem, "
+            "sem conversão. O Narrador pode compensar, se quiser, e confirmar o aviso.")
 
 
 def _valor(ficha: Mapping[str, Any], caminho: str) -> Any:

@@ -27,10 +27,6 @@ function detalhe(item: ItemInventarioResumo): string | undefined {
   if (item.efeitos && item.efeitos.length > 0) {
     partes.push(item.equipado ? "Efeito ativo enquanto equipado" : "Efeito suspenso até equipar");
   }
-  const peso = item.dados?.peso;
-  if (typeof peso === "number" || (typeof peso === "string" && peso.trim())) {
-    partes.push(`Peso: ${String(peso)} (só descrição)`);
-  }
   return partes.length > 0 ? partes.join(" · ") : undefined;
 }
 

@@ -63,6 +63,18 @@ function apiDaFila(decisao: { data?: unknown; error?: unknown } = { data: {} }) 
   return { api: { GET, POST } as unknown as ApiClient, POST };
 }
 
+describe("Faixa de estado — visual-da-ficha", () => {
+  afterEach(() => cleanup());
+
+  it("placas com ícone decorativo, valor e faixa escrita; sem efeitos mostra Nenhum", () => {
+    render(<ActiveStateStrip desgaste={[{ ...DESGASTE[1]!, atual: 5, faixa: { ...DESGASTE[1]!.faixa, nome: "Pressionado", min: 5 } }]} efeitos={[]} />);
+    const estresse = screen.getByRole("button", { name: "Estresse: 5 de 10, Pressionado" });
+    expect(estresse.textContent).toMatch(/Estresse5\/10Pressionado/);
+    expect(estresse.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(screen.getByText("Nenhum")).toBeTruthy();
+  });
+});
+
 describe("Fila de aprovação do Narrador", () => {
   afterEach(() => cleanup());
 
@@ -115,8 +127,8 @@ describe("Abas da ficha", () => {
     expect(document.activeElement).toBe(segunda);
     expect(primeira.getAttribute("tabindex")).toBe("-1");
     fireEvent.keyDown(segunda, { key: "End" });
-    await waitFor(() => expect(screen.getByRole("tab", { name: "Habilidades e cartas" }).getAttribute("aria-selected")).toBe("true"));
-    fireEvent.keyDown(screen.getByRole("tab", { name: "Habilidades e cartas" }), { key: "ArrowRight" });
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Cartas" }).getAttribute("aria-selected")).toBe("true"));
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Cartas" }), { key: "ArrowRight" });
     await waitFor(() => expect(primeira.getAttribute("aria-selected")).toBe("true"));
   });
 });

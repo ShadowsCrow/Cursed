@@ -108,6 +108,19 @@ class ConteudoTest(unittest.TestCase):
                 converter_base(valor, arquivo="classes.json", onde="Mago, PV")
         self.assertIsNone(converter_base(None, arquivo="classes.json", onde="Mago, PV"))
 
+    def test_custos_de_habilidade_opcionais_no_json(self):
+        """cartas-do-catalogo-somente-leitura 1.1."""
+        bruta = {"nome": "Forma", "descricao": "Texto.", "tipo": "Ativa", "custo": "2 PP", "custo_aprendizado": 3, "custo_uso": 0}
+        habilidade, = catalogos._habilidades([bruta], arquivo="classes.json", onde="Druida")
+        self.assertEqual(dict(habilidade.custos), {"custo_aprendizado": 3, "custo_uso": 0})
+        self.assertEqual(habilidade.custo_legado, "2 PP")
+        sem, = catalogos._habilidades([{"nome": "Outra", "descricao": "Texto."}], arquivo="classes.json", onde="Druida")
+        self.assertEqual(sem.custos, ())
+        for valor in (-1, "3", 1.5, True):
+            with self.subTest(valor=valor), self.assertRaises(CatalogoInvalido) as erro:
+                catalogos._habilidades([{**bruta, "potencia_uso": valor}], arquivo="classes.json", onde="Druida")
+            self.assertIn("potencia_uso", str(erro.exception))
+
     def test_arquetipos_da_classe(self):
         self.assertEqual([a.nome for a in self.catalogo.classe("Gatuno").arquetipos], ["Ladrão", "Assassino", "Psionico"])
         self.assertTrue(self.catalogo.classe("mago").arquetipo("mutante  arcano"))
@@ -133,7 +146,7 @@ class ConteudoTest(unittest.TestCase):
                          ["Ira", "Gula", "Ganância", "Luxúria", "Inveja", "Preguiça", "Orgulho"])
         self.assertEqual(listas.pecado("Ganancia").nome, "Ganância")
         self.assertIsNone(listas.pecado("Soberba"))
-        self.assertEqual(len(listas.campos_personalidade), 10)
+        self.assertEqual(len(listas.campos_personalidade), 12)
 
     def test_historia_e_campo_longo_com_limite(self):
         campos = {c.chave: c for c in self.catalogo.listas.campos_personalidade}
@@ -150,8 +163,12 @@ class ConteudoTest(unittest.TestCase):
 
     def test_campo_de_personalidade_e_icones_invalidos(self):
         base = {"chave": "historia", "rotulo": "História", "dica": ""}
+        # Sem a arrumação da aba: o erro precisa vir do campo, e não de um grupo que cita campos ausentes.
+        sem_arrumacao = {k: v for k, v in self.listas_brutas.items()
+                         if k not in ("personalidade_topo", "grupos_personalidade", "icones_personalidade")}
+        catalogos.converter_listas({**sem_arrumacao, "campos_personalidade": [base]})
         for extra in ({"limite": 0}, {"limite": -5}, {"limite": "4000"}, {"limite": True}, {"longo": "sim"}):
-            dados = {**self.listas_brutas, "campos_personalidade": [{**base, **extra}]}
+            dados = {**sem_arrumacao, "campos_personalidade": [{**base, **extra}]}
             with self.subTest(extra=extra), self.assertRaises(CatalogoInvalido):
                 catalogos.converter_listas(dados)
         for icones in ([], {"Força": "Forca"}, {"Força": ""}, {" ": "forca"}, {"Força": 3}):
@@ -161,6 +178,193 @@ class ConteudoTest(unittest.TestCase):
     def test_icones_ausentes_sao_aceitos(self):
         dados = {k: v for k, v in self.listas_brutas.items() if k != "icones_ficha"}
         self.assertEqual(catalogos.converter_listas(dados).icones_ficha, ())
+
+
+class PersonalidadeTest(unittest.TestCase):
+    """Frase marcante, Traços e a arrumação da aba Personalidade (reformular-personalidade-da-ficha)."""
+
+    def setUp(self):
+        self.brutas = json.loads((catalogos.DIRETORIO / "listas_ficha.json").read_text(encoding="utf-8"))
+        self.listas = catalogos.converter_listas(self.brutas)
+
+    def _com(self, **mudancas) -> dict:
+        return json.loads(json.dumps({**self.brutas, **mudancas}))
+
+    def _grupos(self) -> list[dict]:
+        return json.loads(json.dumps(self.brutas["grupos_personalidade"]))
+
+    def _campos(self) -> list[dict]:
+        return json.loads(json.dumps(self.brutas["campos_personalidade"]))
+
+    def test_frase_e_tracos(self):
+        frase = self.listas.campo_personalidade("frase")
+        tracos = self.listas.campo_personalidade("tracos")
+        self.assertEqual((frase.rotulo, frase.tipo, frase.limite), ("Frase marcante", "texto", 160))
+        self.assertEqual((tracos.rotulo, tracos.tipo, tracos.maximo, tracos.limite), ("Traços", "tracos", 6, 24))
+
+    def test_arrumacao_da_referencia(self):
+        self.assertEqual(self.listas.personalidade_topo, catalogos.TopoPersonalidade("frase", "tracos"))
+        essencia, sombras = self.listas.grupos_personalidade
+        self.assertEqual((essencia.titulo, essencia.subtitulo, essencia.emblema),
+                         ("Traços e essência", "O que o move, o que acredita e o que o define.", "rosa_dos_ventos"))
+        self.assertEqual(essencia.campos, ("alinhamento", "coisa_favorita", "quando_me_veem", "vivo_para", "medo"))
+        self.assertEqual((sombras.titulo, sombras.emblema), ("Convicções e sombras", "lua_solar"))
+        self.assertEqual(sombras.campos, ("pecado", "odeia", "manias", "meu_lema", "valor_inquebravel", "religiao"))
+        self.assertEqual(dict(self.listas.icones_personalidade), {"alinhamento": "balanca", "pecado": "caveira"})
+        self.assertEqual(self.listas.campo_personalidade("medo").icone, "aranha")
+        self.assertEqual(self.listas.campo_personalidade("historia").icone, "livro_fechado")
+
+    def test_campo_trocado_de_grupo(self):
+        grupos = self._grupos()
+        grupos[0]["campos"].remove("medo")
+        grupos[1]["campos"].append("medo")
+        listas = catalogos.converter_listas(self._com(grupos_personalidade=grupos))
+        self.assertEqual(listas.grupos_personalidade[1].campos[-1], "medo")
+
+    def test_sem_arrumacao_e_aceito(self):
+        dados = {k: v for k, v in self.brutas.items() if k not in ("personalidade_topo", "grupos_personalidade")}
+        listas = catalogos.converter_listas(dados)
+        self.assertEqual((listas.personalidade_topo, listas.grupos_personalidade), (None, ()))
+
+    def test_recusas_nomeiam_o_campo(self):
+        grupos_dois = self._grupos()
+        grupos_dois[1]["campos"].append("coisa_favorita")
+        grupos_inexistente = self._grupos()
+        grupos_inexistente[0]["campos"].append("sonho")
+        grupos_longo = self._grupos()
+        grupos_longo[0]["campos"].append("historia")
+        grupos_sem = self._grupos()
+        grupos_sem[1]["campos"].remove("meu_lema")
+        grupos_emblema = self._grupos()
+        grupos_emblema[0]["emblema"] = "dragao"
+        campos_icone = self._campos()
+        campos_icone[3]["icone"] = "dragao"
+        campos_maximo = self._campos()
+        campos_maximo[0]["maximo"] = 3
+        campos_novo = self._campos() + [{"chave": "sonho", "rotulo": "Sonho", "dica": ""}]
+        casos = [
+            ("em dois grupos", self._com(grupos_personalidade=grupos_dois), "coisa_favorita"),
+            ("campo inexistente", self._com(grupos_personalidade=grupos_inexistente), "sonho"),
+            ("longo num grupo", self._com(grupos_personalidade=grupos_longo), "historia"),
+            ("campo curto sem lugar", self._com(grupos_personalidade=grupos_sem), "meu_lema"),
+            ("campo novo sem lugar", self._com(campos_personalidade=campos_novo), "sonho"),
+            ("emblema desconhecido", self._com(grupos_personalidade=grupos_emblema), "dragao"),
+            ("ícone desconhecido", self._com(campos_personalidade=campos_icone), "dragao"),
+            ("máximo num campo de texto", self._com(campos_personalidade=campos_maximo), "frase"),
+            ("citação em traços", self._com(personalidade_topo={"citacao": "tracos", "etiquetas": "frase"}), "tracos"),
+            ("ícone de campo inexistente", self._com(icones_personalidade={"sonho": "olho"}), "sonho"),
+        ]
+        for caso, dados, nome in casos:
+            with self.subTest(caso), self.assertRaises(CatalogoInvalido) as erro:
+                catalogos.converter_listas(dados)
+            self.assertIn(nome, str(erro.exception))
+
+    def test_icones_iguais_aos_desenhos_da_tela(self):
+        """Todo ícone aceito no JSON tem desenho no frontend, e vice-versa (D7)."""
+        fonte = (RAIZ / "platform" / "frontend" / "src" / "app" / "characters" / "sheet" / "personalidade"
+                 / "nomesDosIcones.ts").read_text(encoding="utf-8")
+        bloco = fonte[fonte.index("NOMES_ICONES_PERSONALIDADE = ["):fonte.index("] as const")]
+        import re
+        self.assertEqual(sorted(re.findall(r'"([a-z_]+)"', bloco)), sorted(catalogos.ICONES_PERSONALIDADE))
+
+    def test_tracos_sem_maximo_e_chave_reservada(self):
+        campos = self._campos()
+        del campos[1]["maximo"]
+        with self.assertRaises(CatalogoInvalido):
+            catalogos.converter_listas(self._com(campos_personalidade=campos))
+        campos = self._campos() + [{"chave": "pecado", "rotulo": "Pecado", "dica": ""}]
+        with self.assertRaises(CatalogoInvalido) as erro:
+            catalogos.converter_listas(self._com(campos_personalidade=campos))
+        self.assertIn("reservada", str(erro.exception))
+
+
+class ItensTest(unittest.TestCase):
+    def setUp(self):
+        self.brutos = json.loads((catalogos.DIRETORIO / "itens.json").read_text(encoding="utf-8"))
+
+    def _com(self, **mudancas) -> dict:
+        return {**json.loads(json.dumps(self.brutos)), **mudancas}
+
+    def test_raridades_e_categorias_da_decisao_do_usuario(self):
+        itens = catalogos.ler().itens
+        self.assertEqual([r.rotulo for r in itens.raridades], ["Comum", "Incomum", "Raro", "Épico", "Lendário"])
+        self.assertEqual(itens.raridade_padrao, "comum")
+        self.assertEqual(itens.escolhas_em_outros(), ("consumiveis", "materiais", "chaves", "itens_de_missao", "diversos"))
+        self.assertEqual(itens.categoria_padrao_outros, "diversos")
+
+    def test_categoria_efetiva(self):
+        itens = catalogos.ler().itens
+        self.assertEqual(itens.categoria_efetiva("uma_mao", None), "armas")
+        # Nos tipos que não são Outros, a categoria vem do subtipo, mesmo que outra tenha sido gravada.
+        self.assertEqual(itens.categoria_efetiva("escudo", "chaves"), "escudos")
+        self.assertEqual(itens.categoria_efetiva("moedas", None), "moedas")
+        self.assertEqual(itens.categoria_efetiva("outro", "chaves"), "chaves")
+        self.assertEqual(itens.categoria_efetiva("outro", None), "diversos")
+        self.assertEqual(itens.categoria_efetiva("outro", "armas"), "diversos")
+
+    def test_catalogo_de_itens_invalido(self):
+        categorias = self.brutos["categorias"]
+        armas = next(c for c in categorias if c["id"] == "armas")
+        casos = {
+            "id repetido": self._com(raridades=[*self.brutos["raridades"], self.brutos["raridades"][0]]),
+            "cor inválida": self._com(raridades=[{**self.brutos["raridades"][0], "cor": "verde"}]),
+            "sem raridades": self._com(raridades=[]),
+            "subtipo sem categoria": self._com(categorias=[c for c in categorias if c["id"] != "escudos"]),
+            "subtipo em duas": self._com(categorias=[*categorias, {**armas, "id": "armas_2"}]),
+            "dois padrões": self._com(categorias=[{**c, "padrao_outros": True} if c.get("escolha_em_outros") else c
+                                                  for c in categorias]),
+            "sem padrão": self._com(categorias=[{k: v for k, v in c.items() if k != "padrao_outros"} for c in categorias]),
+            "subtipo desconhecido": self._com(categorias=[{**armas, "subtipos": ["uma_mao", "lanca"]}, *categorias[1:]]),
+            "subtipos e escolha": self._com(categorias=[{**armas, "escolha_em_outros": True}, *categorias[1:]]),
+        }
+        for nome, dados in casos.items():
+            with self.subTest(caso=nome), self.assertRaises(CatalogoInvalido):
+                catalogos.converter_itens(dados)
+
+    def test_campos_por_subtipo_seguem_equipamentos(self):
+        itens = catalogos.ler().itens
+        ids = lambda subtipo: [c.id for c in itens.campos_do_subtipo(subtipo)]  # noqa: E731
+        # Capacete, luvas, botas e acessórios não dão Armadura nem RDB, e nenhum subtipo pede peso.
+        for subtipo in ("capacete", "luvas", "botas", "mochila", "aljava", "outro"):
+            with self.subTest(subtipo=subtipo):
+                self.assertEqual(ids(subtipo), ["propriedades"])
+        for subtipo in ("peitoral", "escudo"):
+            self.assertTrue({"armadura", "rdb", "requisito_forca"} <= set(ids(subtipo)))
+        self.assertEqual(ids("uma_mao"), ids("duas_maos"))
+        self.assertTrue({"dano", "tipo_dano", "alcance_normal", "alcance_maximo"} <= set(ids("uma_mao")))
+        self.assertNotIn("peso", itens.campos)
+        self.assertEqual(itens.listas["tipos_dano"][:3], ("Cortante", "Perfurante", "Contundente"))
+
+    def test_problemas_dos_dados_do_item(self):
+        itens = catalogos.ler().itens
+        self.assertEqual(itens.problemas_dos_dados("uma_mao", {
+            "dano": "1d8", "tipo_dano": "Cortante", "atributo_ataque": ["Força", "Destreza"], "alcance_normal": 0,
+            "propriedades": ["Leve", "Feita de osso"], "familia_proficiencia": None, "categoria_arma": "",
+        }), [])
+        problemas = dict(itens.problemas_dos_dados("uma_mao", {
+            "tipo_dano": "Gelatinoso", "alcance_normal": -1, "requisito_forca": True, "atributo_ataque": ["Sorte"],
+            "armadura": 2, "peso": 3,
+        }))
+        self.assertEqual(set(problemas), {"tipo_dano", "alcance_normal", "requisito_forca", "atributo_ataque", "armadura", "peso"})
+        self.assertEqual(problemas["armadura"], "Não se aplica a este tipo de item.")
+        self.assertEqual(itens.problemas_dos_dados("mochila", {"dano": "1d4"}), [("dano", "Não se aplica a este tipo de item.")])
+
+    def test_campos_por_subtipo_invalidos(self):
+        campos = self.brutos["campos"]
+        por_subtipo = self.brutos["campos_por_subtipo"]
+        casos = {
+            "campo inexistente": self._com(campos_por_subtipo={**por_subtipo, "escudo": ["escudo_magico"]}),
+            "lista inexistente": self._com(campos={**campos, "tipo_dano": {**campos["tipo_dano"], "lista": "cores"}}),
+            "subtipo desconhecido": self._com(campos_por_subtipo={**por_subtipo, "lanca": ["dano"]}),
+            "subtipo faltando": self._com(campos_por_subtipo={k: v for k, v in por_subtipo.items() if k != "aljava"}),
+            "tipo de campo inválido": self._com(campos={**campos, "dano": {**campos["dano"], "tipo": "dado"}}),
+            "sugestões fora de etiquetas": self._com(campos_por_subtipo={**por_subtipo,
+                                                                         "escudo": [{"campo": "armadura", "sugestoes": "tipos_dano"}]}),
+            "campo repetido": self._com(campos_por_subtipo={**por_subtipo, "capacete": ["propriedades", "propriedades"]}),
+        }
+        for nome, dados in casos.items():
+            with self.subTest(caso=nome), self.assertRaises(CatalogoInvalido):
+                catalogos.converter_itens(dados)
 
 
 class RecargaTest(unittest.TestCase):

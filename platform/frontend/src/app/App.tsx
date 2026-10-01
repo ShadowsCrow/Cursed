@@ -60,7 +60,7 @@ function CharacterPage({ api, userId, realtime }: { api: ApiClient; userId: stri
     return <main className="page"><h1>Personagem indisponível</h1><VoltarAsCampanhas /></main>;
   }
   return (
-    <main className="page">
+    <main className="page page--ficha">
       {realtime && <TableEvents api={api} mesaId={mesaId} realtime={realtime} />}
       <p><Link to={routes.campanha(mesaId)}>Campanhas</Link></p>
       <CharacterSheetPage

@@ -8,8 +8,11 @@ export type PersonagemResumo = components["schemas"]["PersonagemResumo"];
 export type FichaSnapshot = components["schemas"]["FichaSnapshot"];
 export type FichaContrato = components["schemas"]["FichaContrato"];
 export type PermissoesFicha = components["schemas"]["PermissoesFicha"];
-export type ItemInventarioResumo = components["schemas"]["ItemInventarioResumo"];
-export type GradeInventario = components["schemas"]["GradeInventario"];
+// O servidor sempre resolve raridade e categoria (reformular-visual-da-ficha); aqui ficam opcionais
+// para dados antigos e objetos de teste, e a tela aplica os padrões do catálogo.
+export type ItemInventarioResumo = Omit<components["schemas"]["ItemInventarioResumo"], "raridade" | "categoria">
+  & { raridade?: string; categoria?: string };
+export type GradeInventario = Omit<components["schemas"]["GradeInventario"], "itens"> & { itens: ItemInventarioResumo[] };
 export type EfeitoResumo = components["schemas"]["EfeitoResumo"];
 export type ModificadorResumo = components["schemas"]["ModificadorResumo"];
 export type FonteEfeitoResumo = components["schemas"]["FonteEfeitoResumo"];

@@ -63,7 +63,7 @@ class ApiInventarioGradeTest(unittest.TestCase):
                 item("elmo", "Elmo", "capacete", 2, 2, 1, 2, equipado=True),
                 item("capuz", "Capuz", "capacete", 1, 1, 3, 0),
                 item("tocha", "Tocha", "outro", 1, 2, 0, 3, maos=1),
-                item("antigo", "Espada antiga", None, None, None, dados={"peso": 3}),
+                item("antigo", "Espada antiga", None, None, None, dados={"dano": "1d6"}),
             ])
             session.commit()
         settings = PlatformSettings(environment="test", database_url="sqlite:///:memory:", api_host="127.0.0.1",
@@ -245,7 +245,7 @@ class ApiInventarioGradeTest(unittest.TestCase):
         item = resposta.json()["item"]
         self.assertEqual((item["tipo"], item["subtipo"], item["largura"], item["altura"], item["coluna"]),
                          ("arma", "uma_mao", 1, 3, None))
-        self.assertEqual(item["dados"]["peso"], 3)
+        self.assertEqual(item["dados"]["dano"], "1d6")
 
     def test_mudar_formato_tira_da_grade_e_desequipa_se_mudar_subtipo(self):
         self.actor = "mestre"
@@ -255,6 +255,28 @@ class ApiInventarioGradeTest(unittest.TestCase):
         self.assertEqual(resposta.status_code, 200, resposta.text)
         item = resposta.json()["item"]
         self.assertEqual((item["coluna"], item["equipado"], item["tipo"]), (None, False, "outro"))
+
+    def test_formato_com_raridade_e_categoria(self):
+        self.actor = "mestre"
+        resposta = self.client.put(f"{BASE}/inventario/antigo/formato", json={
+            "versao_esperada": self.grade()["versao"],
+            "formato": {"subtipo": "outro", "largura": 1, "altura": 1, "maos": 0, "raridade": "raro", "categoria": "materiais"}})
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        item = resposta.json()["item"]
+        self.assertEqual((item["raridade"], item["categoria"]), ("raro", "materiais"))
+        # Trocar para arma descarta a categoria escolhida: ela passa a vir do tipo.
+        resposta = self.client.put(f"{BASE}/inventario/antigo/formato", json={
+            "versao_esperada": self.grade()["versao"], "formato": {"subtipo": "uma_mao", "largura": 1, "altura": 3}})
+        item = resposta.json()["item"]
+        self.assertEqual((item["raridade"], item["categoria"], "categoria" in item["dados"]), ("comum", "armas", False))
+        recusada = self.client.put(f"{BASE}/inventario/antigo/formato", json={
+            "versao_esperada": self.grade()["versao"],
+            "formato": {"subtipo": "outro", "largura": 1, "altura": 1, "categoria": "reliquias"}})
+        self.assertEqual(recusada.status_code, 422)
+
+    def test_item_antigo_sem_raridade_e_categoria(self):
+        item = next(i for i in self.grade()["itens"] if i["id"] == "antigo")
+        self.assertEqual((item["raridade"], item["categoria"]), ("comum", "diversos"))
 
     def test_jogador_nao_define_formato(self):
         resposta = self.client.put(f"{BASE}/inventario/antigo/formato", json={
@@ -273,7 +295,7 @@ class ApiInventarioGradeTest(unittest.TestCase):
 
     @staticmethod
     def pilhas(grade: dict) -> list[dict]:
-        return [{k: i["dados"][k] for k in ("cobre", "prata", "ouro", "platina")}
+        return [{k: i["dados"][k] for k in ("cobre", "prata", "ouro")}
                 for i in sorted((i for i in grade["itens"] if i["subtipo"] == "moedas"),
                                 key=lambda i: (i["linha"] is None, i["linha"] or 0, i["coluna"] or 0))]
 
@@ -281,8 +303,8 @@ class ApiInventarioGradeTest(unittest.TestCase):
         resposta = self.moedas(bolsa={"cobre": 40, "prata": 95, "ouro": 12})
         self.assertEqual(resposta.status_code, 200, resposta.text)
         self.assertEqual(self.pilhas(resposta.json()), [
-            {"cobre": 40, "prata": 60, "ouro": 0, "platina": 0},
-            {"cobre": 0, "prata": 35, "ouro": 12, "platina": 0},
+            {"cobre": 40, "prata": 60, "ouro": 0},
+            {"cobre": 0, "prata": 35, "ouro": 12},
         ])
         self.assertTrue(all(i["coluna"] is not None for i in resposta.json()["itens"] if i["subtipo"] == "moedas"))
         with Session(self.engine) as session:
@@ -298,8 +320,8 @@ class ApiInventarioGradeTest(unittest.TestCase):
         resposta = self.moedas(adicionar={"prata": 50, "ouro": 12})
         self.assertEqual(resposta.status_code, 200, resposta.text)
         self.assertEqual(self.pilhas(resposta.json()), [
-            {"cobre": 40, "prata": 60, "ouro": 0, "platina": 0},
-            {"cobre": 0, "prata": 20, "ouro": 12, "platina": 0},
+            {"cobre": 40, "prata": 60, "ouro": 0},
+            {"cobre": 0, "prata": 20, "ouro": 12},
         ])
         self.assertEqual({k: v for k, v in self.lugares().items() if k in lugares}, lugares, "a pilha antiga não muda de lugar")
         with Session(self.engine) as session:
@@ -312,7 +334,7 @@ class ApiInventarioGradeTest(unittest.TestCase):
         primeira = min(self.lugares().items(), key=lambda kv: (kv[1][1], kv[1][0]))
         resposta = self.moedas(retirar={"prata": 40, "ouro": 12})
         self.assertEqual(resposta.status_code, 200, resposta.text)
-        self.assertEqual(self.pilhas(resposta.json()), [{"cobre": 40, "prata": 55, "ouro": 0, "platina": 0}])
+        self.assertEqual(self.pilhas(resposta.json()), [{"cobre": 40, "prata": 55, "ouro": 0}])
         self.assertEqual(self.lugares(), dict([primeira]), "a primeira pilha fica onde estava")
 
     def test_retirar_mais_do_que_ha_e_recusado_sem_gravar(self):
@@ -320,11 +342,16 @@ class ApiInventarioGradeTest(unittest.TestCase):
         resposta = self.moedas(retirar={"ouro": 6})
         self.assertEqual(resposta.status_code, 422)
         self.assertIn("há só 5", resposta.json()["detail"])
-        self.assertEqual(self.pilhas(self.grade()), [{"cobre": 0, "prata": 0, "ouro": 5, "platina": 0}])
+        self.assertEqual(self.pilhas(self.grade()), [{"cobre": 0, "prata": 0, "ouro": 5}])
 
     def test_pedido_de_moedas_sem_quantidade_ou_com_dois_modos_e_recusado(self):
         self.assertEqual(self.moedas(adicionar={}).status_code, 422)
         self.assertEqual(self.moedas(adicionar={"ouro": 1}, retirar={"ouro": 1}).status_code, 422)
+
+    def test_platina_nao_existe(self):
+        # Moedas em três tipos (reformular-visual-da-ficha, decisão do usuário de 2026-09-28).
+        self.assertEqual(self.moedas(adicionar={"platina": 5}).status_code, 422)
+        self.assertEqual(self.moedas(bolsa={"ouro": 1, "platina": 0}).status_code, 422)
 
     def test_reduzir_o_limite_reorganiza_sem_perder_moedas(self):
         self.moedas(bolsa={"cobre": 40, "prata": 95, "ouro": 12})
@@ -336,8 +363,8 @@ class ApiInventarioGradeTest(unittest.TestCase):
         pilhas = self.pilhas(self.grade())
         self.assertEqual(len(pilhas), 3)
         self.assertTrue(all(sum(p.values()) <= 50 for p in pilhas))
-        self.assertEqual({t: sum(p[t] for p in pilhas) for t in ("cobre", "prata", "ouro", "platina")},
-                         {"cobre": 40, "prata": 95, "ouro": 12, "platina": 0})
+        self.assertEqual({t: sum(p[t] for p in pilhas) for t in ("cobre", "prata", "ouro")},
+                         {"cobre": 40, "prata": 95, "ouro": 12})
         sem_campo = {k: v for k, v in politica.items() if k != "moedas_por_pilha"}
         self.client.put("/mesas/mesa-1/politicas", json=sem_campo)
         self.assertEqual(self.client.get("/mesas/mesa-1/politicas").json()["moedas_por_pilha"], 50)

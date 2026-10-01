@@ -450,12 +450,11 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 /* ---- Cartas (9.3, 9.8) -------------------------------------------------- */
 .card-library { display: grid; gap: var(--space-6); }
 .section-heading__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.card-catalog, .card-group__list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.card-catalog, .card-group__list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
 .card-catalog__item, .card-group__item { display: grid; gap: var(--space-2); align-content: start; }
 .card-catalog__state { color: var(--muted); font-size: .85rem; margin: 0; }
 .card-catalog__actions, .card-group__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .card-face { display: grid; gap: var(--space-2); }
-.card-face__art { display: block; width: 100%; max-height: 12rem; object-fit: contain; border-radius: var(--radius-md); }
 .card-face__legacy { font-size: .8rem; color: var(--quiet); margin: 0; }
 .card-group { margin-top: var(--space-6); }
 .card-group__note { color: var(--muted); margin-top: 0; }
@@ -501,7 +500,6 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 }
 
 /* ---- Modo de desenvolvimento e entrada em mesas ------------------------- */
-.dev-banner { display: flex; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--violet-soft); color: var(--text); font-size: .9rem; }
 .dev-login__choices { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-4); }
 .table-forms { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); margin-top: var(--space-6); }
 .table-forms form { display: grid; gap: var(--space-2); }
@@ -509,12 +507,15 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 .invite-tools code { word-break: break-all; background: var(--surface-soft); padding: var(--space-2); border-radius: var(--radius-sm); }
 
 /* ---- Atributos e perícias editáveis ------------------------------------- */
+/* Grupos lado a lado no computador (três colunas quando cabem); uma coluna só no celular. */
+.attribute-table__grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--space-2) var(--space-6); align-items: start; }
+@media (max-width: 760px) { .attribute-table__grupos { grid-template-columns: minmax(0, 1fr); } }
 .attribute-table__wrap { overflow-x: auto; margin-top: var(--space-4); }
 .attribute-table { width: 100%; border-collapse: collapse; }
 .attribute-table caption { text-align: left; font-weight: 700; color: var(--gold); padding-bottom: var(--space-2); }
 .attribute-table th, .attribute-table td { text-align: left; padding: var(--space-2); border-bottom: 1px solid var(--border-subtle); }
 .attribute-table thead th { color: var(--muted); font-size: .8rem; font-weight: 600; }
-.attribute-table__input { width: 5rem; }
+.attribute-table__input { width: 100%; max-width: 5rem; min-width: 0; box-sizing: border-box; }
 .attribute-table__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
 
 /* ---- Estado ativo e fila de aprovação ----------------------------------- */
@@ -566,7 +567,7 @@ label input[type="checkbox"], label input[type="radio"] { width: auto; }
 .editable-field .text-action { justify-self: start; min-height: 32px; padding: .2rem .6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--gold); }
 .effect-chip { display: inline-flex; align-items: center; gap: var(--space-2); padding-right: var(--space-3); border: 1px solid var(--border); border-radius: 999px; background: var(--surface-raised); font-size: .85rem; }
 .attribute-table { table-layout: fixed; }
-.attribute-table th:first-child { width: 40%; }
+.attribute-table th:first-child { width: 36%; }
 .dialog.card-editor { width: min(64rem, 100%); max-height: 92vh; }
 .dialog.offer-dialog, .dialog.presentation-dialog { width: min(60rem, 100%); max-height: 92vh; }
 .offer-chooser__footer { position: sticky; bottom: calc(-1 * var(--space-6)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin: 0 calc(-1 * var(--space-6)) calc(-1 * var(--space-6)); padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border); background: var(--surface-raised); }
@@ -645,3 +646,6 @@ textarea, input, select { font: inherit; }
 .prova-resumo__estados legend { padding: 0 .3rem; color: var(--accent); font-size: .75rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .prova-resumo__estados label { display: inline-flex; align-items: center; gap: .4rem; }
 .prova-resumo__aviso { min-height: 1.3em; margin: 0; color: var(--accent-strong); }
+/* Arte da carta (ex.: foto do item) dentro do quadro, no lugar do emblema; a imagem inteira aparece. */
+.content-card__art--imagem::before, .content-card__art--imagem::after { display: none; }
+.content-card__art--imagem img { position: absolute; inset: .6rem; width: calc(100% - 1.2rem); height: calc(100% - 1.2rem); object-fit: contain; filter: drop-shadow(0 6px 10px #0009); }

@@ -59,6 +59,7 @@ def avaliar_campos(
 CAMPOS_EXCLUSIVOS_NARRADOR: tuple[str, ...] = (
     "personagem.nivel",
     "personagem.nivel_pela_migracao",
+    "inventario.platina_retirada",
     "personagem.tamanho",
     "personagem.tamanho_raca",
     "recursos.ajustes",
@@ -69,6 +70,7 @@ CAMPOS_EXCLUSIVOS_NARRADOR: tuple[str, ...] = (
 ROTULOS_EXCLUSIVOS = {
     "personagem.nivel": "nível",
     "personagem.nivel_pela_migracao": "nível",
+    "inventario.platina_retirada": "aviso da platina retirada",
     "personagem.tamanho": "Tamanho atual",
     "personagem.tamanho_raca": "Tamanho atual",
     "recursos.ajustes": "ajustes de PV e PP",
@@ -107,6 +109,15 @@ def normalizar_confirmacao_de_nivel(anterior: Mapping[str, Any] | None, nova: di
     antes = (anterior or {}).get("personagem") or {}
     if antes.get("nivel") != personagem.get("nivel") or personagem.get("nivel_pela_migracao") is False:
         personagem.pop("nivel_pela_migracao", None)
+
+
+def normalizar_aviso_de_platina(nova: dict[str, Any]) -> None:
+    """Confirmar o aviso da platina (valor ``false``) apaga a marca; a seção vazia some."""
+    inventario = nova.get("inventario")
+    if isinstance(inventario, dict) and inventario.get("platina_retirada") is False:
+        inventario.pop("platina_retirada")
+        if not inventario:
+            nova.pop("inventario")
 
 
 def normalizar_excecao_de_tamanho(anterior: Mapping[str, Any] | None, nova: dict[str, Any]) -> None:

@@ -1,4 +1,4 @@
-import type { ItemGrade, ParametrosGrade, Subtipo, Tamanho } from "../../inventory/gridEngine";
+import { TIPOS_MOEDA, type ItemGrade, type ParametrosGrade, type Subtipo, type Tamanho } from "../../inventory/gridEngine";
 import type { GradeInventario, ItemInventarioResumo } from "../types";
 
 export function paraGrade(item: ItemInventarioResumo): ItemGrade {
@@ -18,7 +18,13 @@ export function paraGrade(item: ItemInventarioResumo): ItemGrade {
     ...(dados.versatil === true ? { versatil: true } : {}),
     ...(typeof dados.requisito_forca === "number" ? { requisitoForca: dados.requisito_forca } : {}),
     ...(ampliacao ? { ampliacao: { linhas: ampliacao.linhas ?? 0, colunas: ampliacao.colunas ?? 0 } } : {}),
+    quantidade: item.subtipo === "moedas" ? totalDaPilha(dados) : item.quantidade,
   };
+}
+
+/** Moedas de uma pilha, somando os tipos (cobre, prata e ouro). */
+export function totalDaPilha(dados: Record<string, unknown>): number {
+  return TIPOS_MOEDA.reduce((total, tipo) => total + (typeof dados[tipo] === "number" ? (dados[tipo] as number) : 0), 0);
 }
 
 export const temFormato = (item: ItemInventarioResumo) => item.subtipo != null && item.largura != null;
@@ -30,4 +36,9 @@ export function parametrosDaGrade(grade: GradeInventario): ParametrosGrade {
     tamanho: grade.tamanho as Tamanho,
     ampliacoes: (grade.ampliacoes ?? []).filter((a) => a.fonte !== "mochila"),
   };
+}
+
+/** Largura da grade em faixas: define a disposição da aba (a bolsa larga empurra as categorias para cima). */
+export function faixaDaGrade(colunas: number): "compacta" | "media" | "larga" {
+  return colunas <= 6 ? "compacta" : colunas <= 8 ? "media" : "larga";
 }

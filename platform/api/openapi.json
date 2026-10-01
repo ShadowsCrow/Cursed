@@ -620,6 +620,21 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "vista_por": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Somente para o Narrador: quem já viu e fechou a carta.",
+            "title": "Vista Por"
           }
         },
         "required": [
@@ -953,6 +968,101 @@
         "title": "CamadaSala",
         "type": "object"
       },
+      "CampoDoSubtipoResumo": {
+        "properties": {
+          "campo": {
+            "title": "Campo",
+            "type": "string"
+          },
+          "sugestoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lista de sugestões, nos campos de etiquetas.",
+            "title": "Sugestoes"
+          }
+        },
+        "required": [
+          "campo"
+        ],
+        "title": "CampoDoSubtipoResumo",
+        "type": "object"
+      },
+      "CampoItemResumo": {
+        "description": "Campo de item, guardado em ``dados[id]`` (simplificar-criacao-de-cartas).",
+        "properties": {
+          "exemplo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exemplo"
+          },
+          "icone": {
+            "title": "Icone",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lista": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lista de escolhas, nos campos de escolha.",
+            "title": "Lista"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "inteiro",
+              "texto",
+              "escolha",
+              "escolhas",
+              "etiquetas"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "unidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidade"
+          }
+        },
+        "required": [
+          "id",
+          "rotulo",
+          "tipo",
+          "icone"
+        ],
+        "title": "CampoItemResumo",
+        "type": "object"
+      },
       "CampoPersonalidadeResumo": {
         "properties": {
           "chave": {
@@ -963,6 +1073,18 @@
             "title": "Dica",
             "type": "string"
           },
+          "icone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ícone da linha na aba Personalidade.",
+            "title": "Icone"
+          },
           "limite": {
             "anyOf": [
               {
@@ -972,7 +1094,7 @@
                 "type": "null"
               }
             ],
-            "description": "Máximo de caracteres aceito; vazio = sem limite.",
+            "description": "Máximo de caracteres aceito; vazio = sem limite. Nos traços, o de cada traço.",
             "title": "Limite"
           },
           "longo": {
@@ -981,9 +1103,37 @@
             "title": "Longo",
             "type": "boolean"
           },
+          "maximo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Quantidade máxima de traços; só no tipo tracos.",
+            "title": "Maximo"
+          },
           "rotulo": {
             "title": "Rotulo",
             "type": "string"
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "enum": [
+                  "texto",
+                  "tracos"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Texto (vazio também é texto) ou lista de palavras curtas (traços).",
+            "title": "Tipo"
           }
         },
         "required": [
@@ -1328,6 +1478,101 @@
           "conteudo"
         ],
         "title": "CartaVisivel",
+        "type": "object"
+      },
+      "CatalogoItensResumo": {
+        "description": "Raridades e categorias de item (reformular-visual-da-ficha), só etiqueta e organização, e os campos de\ncada subtipo, tirados de Equipamentos.md (simplificar-criacao-de-cartas).",
+        "properties": {
+          "campos": {
+            "items": {
+              "$ref": "#/components/schemas/CampoItemResumo"
+            },
+            "title": "Campos",
+            "type": "array"
+          },
+          "campos_por_subtipo": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/CampoDoSubtipoResumo"
+              },
+              "type": "array"
+            },
+            "title": "Campos Por Subtipo",
+            "type": "object"
+          },
+          "categorias": {
+            "items": {
+              "$ref": "#/components/schemas/CategoriaItemResumo"
+            },
+            "title": "Categorias",
+            "type": "array"
+          },
+          "listas": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Listas",
+            "type": "object"
+          },
+          "raridades": {
+            "items": {
+              "$ref": "#/components/schemas/RaridadeResumo"
+            },
+            "title": "Raridades",
+            "type": "array"
+          }
+        },
+        "required": [
+          "raridades",
+          "categorias"
+        ],
+        "title": "CatalogoItensResumo",
+        "type": "object"
+      },
+      "CategoriaItemResumo": {
+        "properties": {
+          "escolha_em_outros": {
+            "default": false,
+            "description": "Escolhida pelo Narrador em itens do tipo Outros.",
+            "title": "Escolha Em Outros",
+            "type": "boolean"
+          },
+          "icone": {
+            "title": "Icone",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "padrao_outros": {
+            "default": false,
+            "description": "Categoria dos itens Outros sem escolha.",
+            "title": "Padrao Outros",
+            "type": "boolean"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "subtipos": {
+            "description": "Subtipos que caem nesta categoria sem escolha.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Subtipos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "rotulo",
+          "icone"
+        ],
+        "title": "CategoriaItemResumo",
         "type": "object"
       },
       "CenaResumoSala": {
@@ -3370,6 +3615,19 @@
             "title": "Altura",
             "type": "integer"
           },
+          "categoria": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só itens do tipo Outros, entre as escolhas do catálogo; nos demais, a categoria vem do subtipo.",
+            "title": "Categoria"
+          },
           "icone_grade": {
             "anyOf": [
               {
@@ -3426,6 +3684,13 @@
             ],
             "description": "Só itens do tipo Outros.",
             "title": "Pilha Max"
+          },
+          "raridade": {
+            "default": "comum",
+            "description": "Id do catálogo de itens; só etiqueta, sem efeito mecânico.",
+            "maxLength": 40,
+            "title": "Raridade",
+            "type": "string"
           },
           "subtipo": {
             "enum": [
@@ -3562,6 +3827,44 @@
           "itens"
         ],
         "title": "GradeInventario",
+        "type": "object"
+      },
+      "GrupoPersonalidadeResumo": {
+        "properties": {
+          "campos": {
+            "description": "Chaves dos campos, na ordem das linhas; inclui alinhamento e pecado.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Campos",
+            "type": "array"
+          },
+          "emblema": {
+            "description": "Ícone do medalhão do quadro.",
+            "title": "Emblema",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "subtitulo": {
+            "title": "Subtitulo",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "subtitulo",
+          "emblema",
+          "campos"
+        ],
+        "title": "GrupoPersonalidadeResumo",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -3833,6 +4136,12 @@
             ],
             "title": "Cargas Maximas"
           },
+          "categoria": {
+            "default": "diversos",
+            "description": "Id da categoria no catálogo de itens.",
+            "title": "Categoria",
+            "type": "string"
+          },
           "coluna": {
             "anyOf": [
               {
@@ -3848,6 +4157,18 @@
             "additionalProperties": true,
             "title": "Dados",
             "type": "object"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Texto da carta de origem ou descrição importada.",
+            "title": "Descricao"
           },
           "efeitos": {
             "description": "Efeitos cuja fonte é este item.",
@@ -3921,6 +4242,12 @@
           "quantidade": {
             "title": "Quantidade",
             "type": "integer"
+          },
+          "raridade": {
+            "default": "comum",
+            "description": "Id da raridade no catálogo de itens.",
+            "title": "Raridade",
+            "type": "string"
           },
           "subtipo": {
             "anyOf": [
@@ -4181,6 +4508,14 @@
             "title": "Faixas De Altura",
             "type": "array"
           },
+          "grupos_personalidade": {
+            "description": "Quadros da aba Personalidade, na ordem de exibição.",
+            "items": {
+              "$ref": "#/components/schemas/GrupoPersonalidadeResumo"
+            },
+            "title": "Grupos Personalidade",
+            "type": "array"
+          },
           "icones_ficha": {
             "additionalProperties": {
               "type": "string"
@@ -4189,12 +4524,31 @@
             "title": "Icones Ficha",
             "type": "object"
           },
+          "icones_personalidade": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Ícone dos campos com lista própria (alinhamento e pecado).",
+            "title": "Icones Personalidade",
+            "type": "object"
+          },
           "pecados": {
             "items": {
               "$ref": "#/components/schemas/PecadoResumo"
             },
             "title": "Pecados",
             "type": "array"
+          },
+          "personalidade_topo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TopoPersonalidadeResumo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Campos do topo da aba Personalidade; vazio sem arrumação no catálogo."
           },
           "sexos": {
             "items": {
@@ -5280,12 +5634,6 @@
             "title": "Ouro",
             "type": "integer"
           },
-          "platina": {
-            "default": 0,
-            "minimum": 0.0,
-            "title": "Platina",
-            "type": "integer"
-          },
           "prata": {
             "default": 0,
             "minimum": 0.0,
@@ -5904,6 +6252,29 @@
         "title": "RacaCatalogoResumo",
         "type": "object"
       },
+      "RaridadeResumo": {
+        "properties": {
+          "cor": {
+            "title": "Cor",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rotulo",
+          "cor"
+        ],
+        "title": "RaridadeResumo",
+        "type": "object"
+      },
       "RecipienteResumo": {
         "properties": {
           "colunas": {
@@ -6317,6 +6688,24 @@
             "title": "Rascunho",
             "type": "object"
           },
+          "tipo": {
+            "anyOf": [
+              {
+                "enum": [
+                  "habilidade",
+                  "magia",
+                  "item",
+                  "efeito"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Troca o tipo da carta; só antes da primeira publicação.",
+            "title": "Tipo"
+          },
           "versao_esperada": {
             "minimum": 0.0,
             "title": "Versao Esperada",
@@ -6454,6 +6843,36 @@
           "controlavel"
         ],
         "title": "TokenSala",
+        "type": "object"
+      },
+      "TopoPersonalidadeResumo": {
+        "properties": {
+          "citacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Campo mostrado como citação no topo da aba.",
+            "title": "Citacao"
+          },
+          "etiquetas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Campo de traços mostrado como etiquetas no topo da aba.",
+            "title": "Etiquetas"
+          }
+        },
+        "title": "TopoPersonalidadeResumo",
         "type": "object"
       },
       "TransferirPersonagemRequest": {
@@ -7332,6 +7751,56 @@
           }
         ],
         "summary": "Recolher Carta",
+        "tags": [
+          "Cartas"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/visualizacao": {
+      "post": {
+        "description": "O participante fechou a carta: ela é apresentada uma vez e não volta ao recarregar a página.",
+        "operationId": "marcar_apresentacao_vista_mesas__mesa_id__apresentacoes__apresentacao_id__visualizacao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "apresentacao_id",
+            "required": true,
+            "schema": {
+              "title": "Apresentacao Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Marcar Apresentacao Vista",
         "tags": [
           "Cartas"
         ]
@@ -8308,6 +8777,53 @@
           }
         ],
         "summary": "Estado Do Catalogo",
+        "tags": [
+          "Catálogos"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/catalogos/itens": {
+      "get": {
+        "operationId": "listar_catalogo_de_itens_mesas__mesa_id__catalogos_itens_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoItensResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Catalogo De Itens",
         "tags": [
           "Catálogos"
         ]

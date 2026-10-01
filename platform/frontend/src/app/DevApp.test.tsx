@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,7 +30,8 @@ describe("entrada do modo de desenvolvimento", () => {
     fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "Iris.Souza@exemplo.com" } });
     fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "qualquer" } });
     fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
-    await screen.findByText("iris-souza");
+    // Entrou: a tela de entrar some (sem faixa de "modo dev", igual ao site) e a identidade fica guardada.
+    await waitFor(() => expect(screen.queryByRole("heading", { level: 1, name: "Entrar" })).toBeNull());
     expect(window.localStorage.getItem("cursed-dev-identidade")).toBe("iris-souza");
   });
 });

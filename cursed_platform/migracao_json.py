@@ -111,7 +111,7 @@ def _rascunho(tipo: str, dados: dict[str, Any], *, item_tipo: str | None = None)
         if item_tipo not in LISTAS_FICHA.values():
             raise ValueError("Tipo de item sem destino validado.")
         base.update({"item_tipo": item_tipo, "dados": {k: v for k, v in dados.items()
-                     if k not in {"nome", "descricao", "quantidade", "efeitos"}}})
+                     if k not in {"nome", "descricao", "quantidade", "efeitos", "peso"}}})
         quantidade = dados.get("quantidade", 1)
         if isinstance(quantidade, bool) or not isinstance(quantidade, int) or quantidade < 1:
             raise ValueError("Quantidade inválida.")
@@ -162,7 +162,7 @@ def _importar_carta(session: Session, relatorio: RelatorioJson, *, fonte: str,
     if cartas.AVISO_CUSTO_LEGADO in validacao.revisao_pendente:
         pendencias.append("Custo legado exige revisão.")
     if cartas.AVISO_FORMATO_PENDENTE in validacao.revisao_pendente:
-        pendencias.append("Tipo e dimensão na grade pendentes de definição pelo Narrador; o peso fica só como descrição.")
+        pendencias.append("Tipo e dimensão na grade pendentes de definição pelo Narrador.")
     imagem_extraida = bool((session.get(CartaDefinicaoRegistro, destino_id).rascunho or {})
                           .get("conteudo", {}).get("ativos_privados"))
     if imagem_pendente and not imagem_extraida:

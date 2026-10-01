@@ -35,7 +35,17 @@
         "Listas e dicas extraídas do código do Streamlit.",
         "Pecado gravado como Ganancia passa a Ganância, com Ganancia como grafia equivalente.",
         "Lista faixas_de_altura por Tamanho, aprovada pelo usuário em 2026-09-28 (Criação de Personagem.md, Altura e Tamanho fora da média).",
-        "Campo de personalidade História (longo, até 4000 caracteres) e mapa icones_ficha do Resumo da ficha, aprovados pelo usuário em 2026-09-28 (aba-resumo-da-ficha)."
+        "Campo de personalidade História (longo, até 4000 caracteres) e mapa icones_ficha do Resumo da ficha, aprovados pelo usuário em 2026-09-28 (aba-resumo-da-ficha).",
+        "Campos Frase marcante e Traços (tipo tracos, até 6), ícone de cada campo e arrumação da aba Personalidade (personalidade_topo, grupos_personalidade, icones_personalidade), decididos pelo usuário em 2026-09-29 (reformular-personalidade-da-ficha)."
+      ]
+    },
+    "itens.json": {
+      "origem": "Decisão do usuário em 2026-09-28 (mudança reformular-visual-da-ficha); catálogo novo, sem arquivo de origem no Streamlit",
+      "sha256_origem": {},
+      "copiado_em": "2026-09-28",
+      "transformacoes": [
+        "Raridades (Comum, Incomum, Raro, Épico, Lendário) e categorias de item; Criaturas cobre o subtipo criatura dos corpos carregados.",
+        "Listas, campos e campos por subtipo tirados de Equipamentos.md e de Condições e Tipos de Dano.md (simplificar-criacao-de-cartas, 2026-09-30); o terceiro tipo físico de dano é Contundente, por decisão do usuário; sem peso."
       ]
     }
   }

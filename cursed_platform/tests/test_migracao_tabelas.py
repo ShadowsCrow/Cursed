@@ -95,8 +95,9 @@ class MigracaoTabelasTest(unittest.TestCase):
             self.assertEqual((operacao.alvo, float(operacao.valor)), ("pericia:arcanismo", 2.0))
             self.assertEqual(session.scalar(select(func.count()).select_from(MigracaoLegadaRegistro)), 5)
 
-    def test_itens_migrados_ficam_sem_dimensao_com_peso_so_como_descricao(self):
-        """carga-por-espacos 7.1: nada é convertido de kg; o Narrador define o formato depois."""
+    def test_itens_migrados_ficam_sem_dimensao_e_sem_peso(self):
+        """carga-por-espacos 7.1: nada é convertido de kg, e o peso é descartado (simplificar-criacao-de-cartas,
+        D7a); o Narrador define o formato depois."""
         with self.legado.begin() as conexao:
             conexao.execute(update(self.filhos["ficha_armas"]).values(
                 dados={**self.dados["armas"][0], "peso": 3, "equipado": True}))
@@ -113,8 +114,8 @@ class MigracaoTabelasTest(unittest.TestCase):
                     (None,) * 7, f"{item.nome} recebeu formato sozinho",
                 )
             adaga, _, lanterna = itens
-            self.assertEqual((adaga.dados["peso"], adaga.equipado), (3, True))
-            self.assertEqual((lanterna.dados["peso"], lanterna.quantidade), (0.5, 4))
+            self.assertEqual(("peso" in adaga.dados, adaga.equipado), (False, True))
+            self.assertEqual(("peso" in lanterna.dados, lanterna.quantidade), (False, 4))
 
     def test_origem_alterada_exige_revisao_sem_sobrescrever_destino(self):
         self.migrar()

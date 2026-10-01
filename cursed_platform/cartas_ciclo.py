@@ -97,7 +97,11 @@ def adquirir(
     elif versao.tipo == "item":
         previa = ficha_viva.PreviaImportacao(
             tipo="equipamento", item_tipo=conteudo["item_tipo"], formato=conteudo.get("formato"),
-            item={**conteudo.get("dados", {}), "nome": conteudo["titulo"], "quantidade": conteudo.get("quantidade", 1)},
+            item={**conteudo.get("dados", {}), "nome": conteudo["titulo"], "quantidade": conteudo.get("quantidade", 1),
+                  # O texto e a arte da carta acompanham o item: descrição e foto do painel do item
+                  # (reformular-visual-da-ficha). O ícone da bolsa vem pelo formato.
+                  "descricao": conteudo.get("dados", {}).get("descricao") or conteudo["texto"],
+                  **({"imagem_ativo": conteudo["ativos"][0]} if conteudo.get("ativos") else {})},
             efeitos=[
                 ficha_viva.EfeitoImportado(
                     nome=e["nome"], descricao=e["descricao"], versao=1, associacao=None,
@@ -288,13 +292,14 @@ def encerrar_oferta(session: Session, oferta: OfertaCartasRegistro, estado: str 
 # ------------------------------------------------------------- apresentação
 
 def apresentacoes_ativas(session: Session, mesa_id: str, usuario_id: str | None) -> list[ApresentacaoCartaRegistro]:
-    """Apresentações visíveis ao usuário (`None` = Narrador, vê todas)."""
+    """Apresentações visíveis ao usuário (`None` = Narrador, vê todas). Quem já viu uma carta não a recebe de novo."""
     ativas = session.scalars(
         select(ApresentacaoCartaRegistro)
         .where(ApresentacaoCartaRegistro.mesa_id == mesa_id, ApresentacaoCartaRegistro.estado == "apresentada")
         .order_by(ApresentacaoCartaRegistro.apresentada_em, ApresentacaoCartaRegistro.id)
     )
-    return [a for a in ativas if usuario_id is None or not a.destinatarios or usuario_id in a.destinatarios]
+    return [a for a in ativas if usuario_id is None or (
+        (not a.destinatarios or usuario_id in a.destinatarios) and usuario_id not in (a.vistas or []))]
 
 
 # ----------------------------------------------------------------- migração

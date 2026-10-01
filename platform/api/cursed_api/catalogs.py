@@ -13,7 +13,9 @@ from cursed_platform import catalogos, icones_efeitos
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.catalogos import Base, Habilidade
 from cursed_platform.contracts import (
-    ArquetipoResumo, BaseClasseResumo, CampoPersonalidadeResumo, ClasseCatalogoResumo, EfeitoDefaultResumo,
+    ArquetipoResumo, BaseClasseResumo, CampoDoSubtipoResumo, CampoItemResumo, CampoPersonalidadeResumo,
+    CatalogoItensResumo, CategoriaItemResumo,
+    ClasseCatalogoResumo, EfeitoDefaultResumo, GrupoPersonalidadeResumo, RaridadeResumo, TopoPersonalidadeResumo,
     ErroCatalogoResumo, EstadoCatalogoResumo, FaixaAlturaResumo, HabilidadeCatalogoResumo, IconeResumo,
     IntervaloAlturaResumo, ListasFichaResumo, ModificadorCatalogoResumo, PecadoResumo, RacaCatalogoResumo,
 )
@@ -75,11 +77,36 @@ def listar_listas(mesa_id: str, ator: Ator = Depends(get_actor),
     return ListasFichaResumo(
         sexos=list(listas.sexos), alinhamentos=list(listas.alinhamentos),
         pecados=[PecadoResumo(nome=p.nome, icone=p.icone, equivalentes=list(p.equivalentes)) for p in listas.pecados],
-        campos_personalidade=[CampoPersonalidadeResumo(chave=c.chave, rotulo=c.rotulo, dica=c.dica, longo=c.longo, limite=c.limite)
+        campos_personalidade=[CampoPersonalidadeResumo(chave=c.chave, rotulo=c.rotulo, dica=c.dica, longo=c.longo, limite=c.limite,
+                                                       tipo=c.tipo, maximo=c.maximo, icone=c.icone)
                               for c in listas.campos_personalidade],
         faixas_de_altura=[FaixaAlturaResumo(tamanho=f.tamanho, minima=f.intervalo.minima, maxima=f.intervalo.maxima)
                           for f in listas.faixas_de_altura],
         icones_ficha=dict(listas.icones_ficha),
+        personalidade_topo=TopoPersonalidadeResumo(citacao=listas.personalidade_topo.citacao,
+                                                   etiquetas=listas.personalidade_topo.etiquetas)
+        if listas.personalidade_topo else None,
+        grupos_personalidade=[GrupoPersonalidadeResumo(id=g.id, titulo=g.titulo, subtitulo=g.subtitulo, emblema=g.emblema,
+                                                       campos=list(g.campos)) for g in listas.grupos_personalidade],
+        icones_personalidade=dict(listas.icones_personalidade),
+    )
+
+
+@router.get("/itens", response_model=CatalogoItensResumo)
+def listar_catalogo_de_itens(mesa_id: str, ator: Ator = Depends(get_actor),
+                             session: Session = Depends(get_session)) -> CatalogoItensResumo:
+    _exigir(session, mesa_id, ator)
+    itens = catalogos.obter().itens
+    return CatalogoItensResumo(
+        raridades=[RaridadeResumo(id=r.id, rotulo=r.rotulo, cor=r.cor) for r in itens.raridades],
+        categorias=[CategoriaItemResumo(id=c.id, rotulo=c.rotulo, icone=c.icone, subtipos=list(c.subtipos),
+                                        escolha_em_outros=c.escolha_em_outros, padrao_outros=c.padrao_outros)
+                    for c in itens.categorias],
+        listas={nome: list(valores) for nome, valores in itens.listas.items()},
+        campos=[CampoItemResumo(id=c.id, rotulo=c.rotulo, tipo=c.tipo, icone=c.icone, lista=c.lista,
+                                exemplo=c.exemplo, unidade=c.unidade) for c in itens.campos.values()],
+        campos_por_subtipo={subtipo: [CampoDoSubtipoResumo(campo=c.campo, sugestoes=c.sugestoes) for c in campos]
+                            for subtipo, campos in itens.campos_por_subtipo.items()},
     )
 
 

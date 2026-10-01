@@ -65,12 +65,39 @@ class ApiCatalogosTest(unittest.TestCase):
         self.assertEqual(listas["sexos"], ["Masculino", "Feminino", "Outro"])
         ganancia = next(p for p in listas["pecados"] if p["nome"] == "Ganância")
         self.assertEqual(ganancia["equivalentes"], ["Ganancia"])
-        self.assertEqual(len(listas["campos_personalidade"]), 10)
+        self.assertEqual(len(listas["campos_personalidade"]), 12)
         historia = next(c for c in listas["campos_personalidade"] if c["chave"] == "historia")
         self.assertEqual((historia["rotulo"], historia["longo"], historia["limite"]), ("História", True, 4000))
         lema = next(c for c in listas["campos_personalidade"] if c["chave"] == "meu_lema")
         self.assertEqual((lema["longo"], lema["limite"]), (False, None))
         self.assertEqual(listas["icones_ficha"]["Proposito"], "proposito")
+
+    def test_arrumacao_da_personalidade(self):
+        listas = self.client.get(f"{BASE}/listas-ficha").json()
+        tracos = next(c for c in listas["campos_personalidade"] if c["chave"] == "tracos")
+        self.assertEqual((tracos["tipo"], tracos["maximo"], tracos["limite"]), ("tracos", 6, 24))
+        medo = next(c for c in listas["campos_personalidade"] if c["chave"] == "medo")
+        self.assertEqual((medo["tipo"], medo["icone"]), ("texto", "aranha"))
+        self.assertEqual(listas["personalidade_topo"], {"citacao": "frase", "etiquetas": "tracos"})
+        self.assertEqual([g["titulo"] for g in listas["grupos_personalidade"]], ["Traços e essência", "Convicções e sombras"])
+        self.assertEqual(listas["grupos_personalidade"][1]["campos"][0], "pecado")
+        self.assertEqual(listas["grupos_personalidade"][0]["emblema"], "rosa_dos_ventos")
+        self.assertEqual(listas["icones_personalidade"], {"alinhamento": "balanca", "pecado": "caveira"})
+
+    def test_catalogo_de_itens(self):
+        itens = self.client.get(f"{BASE}/itens").json()
+        self.assertEqual([r["rotulo"] for r in itens["raridades"]], ["Comum", "Incomum", "Raro", "Épico", "Lendário"])
+        self.assertRegex(itens["raridades"][0]["cor"], r"^#[0-9A-F]{6}$")
+        armas = next(c for c in itens["categorias"] if c["id"] == "armas")
+        self.assertEqual(armas["subtipos"], ["uma_mao", "duas_maos"])
+        self.assertEqual([c["rotulo"] for c in itens["categorias"] if c["escolha_em_outros"]],
+                         ["Consumíveis", "Materiais", "Chaves", "Itens de Missão", "Diversos"])
+        # Campos por subtipo (simplificar-criacao-de-cartas): a mochila não pede Dano; a arma sugere propriedades.
+        self.assertEqual(itens["campos_por_subtipo"]["mochila"], [{"campo": "propriedades", "sugestoes": None}])
+        self.assertIn({"campo": "propriedades", "sugestoes": "propriedades_arma"}, itens["campos_por_subtipo"]["uma_mao"])
+        tipo_dano = next(c for c in itens["campos"] if c["id"] == "tipo_dano")
+        self.assertEqual((tipo_dano["rotulo"], tipo_dano["tipo"], tipo_dano["lista"]), ("Tipo de Dano", "escolha", "tipos_dano"))
+        self.assertEqual(itens["listas"]["tipos_dano"][:3], ["Cortante", "Perfurante", "Contundente"])
 
     def test_efeitos_default_sem_sobrepeso_com_grupo_substituicao_e_icone(self):
         efeitos = {e["associacao"]: e for e in self.client.get(f"{BASE}/efeitos-default").json()}
@@ -83,7 +110,7 @@ class ApiCatalogosTest(unittest.TestCase):
 
     def test_nao_participante_nao_acessa(self):
         self.ator = "estranho"
-        for rota in ("classes", "racas", "listas-ficha", "efeitos-default", "estado"):
+        for rota in ("classes", "racas", "listas-ficha", "itens", "efeitos-default", "estado"):
             with self.subTest(rota=rota):
                 self.assertEqual(self.client.get(f"{BASE}/{rota}").status_code, 404)
 

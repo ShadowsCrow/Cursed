@@ -62,7 +62,7 @@ export async function semear() {
       ...(custos[0] === null ? { custo_legado: "2 PP por cena" } : {}) }));
   }
   const espada = await publicar(m, "item", { titulo: "Lâmina Rúnica", texto: "Aço antigo gravado com runas que brilham no escuro.",
-    item_tipo: "arma", dados: { dano: "1d8", peso: 2 }, formato: { subtipo: "uma_mao", largura: 1, altura: 3 },
+    item_tipo: "arma", dados: { dano: "1d8", tipo_dano: "Cortante" }, formato: { subtipo: "uma_mao", largura: 1, altura: 3 },
     efeitos: [{ nome: "Runas despertas", descricao: "+1 em Arcanismo enquanto empunhada.",
       modificadores: [{ alvo: "pericia:arcanismo", valor: 1 }] }] });
   await publicar(m, "efeito", { titulo: "Abençoado", texto: "+1 em testes de Vontade.", duracao_rodadas: 3 });

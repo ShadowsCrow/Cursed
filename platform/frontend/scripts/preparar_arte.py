@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import colorsys
+import json
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
@@ -148,9 +149,10 @@ ARTES_DO_RESUMO: dict[str, tuple[tuple[int, int], tuple[int, int], float, bool]]
 FUNDO_CHEIO, FUNDO_BORDA = 26, 62
 
 
-def cor_do_fundo(imagem: Image.Image, amostra: int = 32) -> tuple[int, int, int]:
-    """Cor média do canto superior direito, onde os prompts pedem só fundo liso."""
-    canto = imagem.convert("RGB").crop((imagem.width - amostra, 0, imagem.width, amostra))
+def cor_do_fundo(imagem: Image.Image, amostra: int = 32, canto: str = "direita") -> tuple[int, int, int]:
+    """Cor média de um canto de cima (o direito, salvo pedido), onde os prompts pedem só fundo liso."""
+    x = imagem.width - amostra if canto == "direita" else 0
+    canto = imagem.convert("RGB").crop((x, 0, x + amostra, amostra))
     return tuple(round(sum(canal.getdata()) / (amostra * amostra)) for canal in canto.split())  # type: ignore[return-value]
 
 
@@ -180,19 +182,402 @@ def remover_fundo(imagem: Image.Image, cor: tuple[int, int, int] | None = None) 
     return recortada
 
 
-def preparar_arte_do_resumo(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
-    """Gera as pinturas opcionais do Resumo cujas matrizes existirem em `origem`."""
+# Pinturas opcionais de Informações básicas (redesenhar-informacoes-basicas, D5 e D6), no formato das do
+# Resumo. A paisagem em sépia fica com o fundo de pergaminho: na tela ela é multiplicada sobre o papel.
+ARTES_DAS_INFORMACOES: dict[str, tuple[tuple[int, int], tuple[int, int], float, bool]] = {
+    "informacoes-paisagem": ((3, 2), (1536, 1024), .5, False),
+    "informacoes-conceito-direita": ((1, 1), (512, 512), .5, True),
+}
+# Área útil da matriz, em frações (x0, y0, x1, y1), recortada antes da proporção. A paisagem de 2026-09-29 tem
+# um quarto esquerdo só de papel e muito rio embaixo: sem eles, o castelo, a ponte e a rosa ocupam a altura do
+# cabeçalho, e as colinas da esquerda sobram para o esmaecimento.
+AREA_UTIL: dict[str, tuple[float, float, float, float]] = {
+    "informacoes-paisagem": (.28, .07, 1.0, .80),
+}
+
+
+def preparar_pinturas(artes: dict[str, tuple[tuple[int, int], tuple[int, int], float, bool]],
+                      origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    """Gera as pinturas opcionais da tabela `artes` cujas matrizes existirem em `origem`."""
     saidas: list[Path] = []
-    for nome, (proporcao, tamanho, topo, sem_fundo) in ARTES_DO_RESUMO.items():
+    for nome, (proporcao, tamanho, topo, sem_fundo) in artes.items():
         matriz = origem / f"{nome}.png"
         if not matriz.exists():
             continue
         destino.mkdir(parents=True, exist_ok=True)
         with Image.open(matriz) as imagem:
             original = imagem.convert("RGB")
-            recorte = recortar_proporcao(original, *proporcao, topo=topo).resize(tamanho, Image.LANCZOS)
+            if nome in AREA_UTIL:
+                x0, y0, x1, y1 = AREA_UTIL[nome]
+                largura, altura = original.size
+                util = original.crop((round(x0 * largura), round(y0 * altura), round(x1 * largura), round(y1 * altura)))
+            else:
+                util = original
+            recorte = recortar_proporcao(util, *proporcao, topo=topo).resize(tamanho, Image.LANCZOS)
             # A cor do fundo vem da matriz inteira: o recorte pode ter perdido o canto liso.
             saidas.append(_salvar(remover_fundo(recorte, cor_do_fundo(original)) if sem_fundo else recorte, destino, nome))
+    return saidas
+
+
+def preparar_arte_do_resumo(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    """Gera as pinturas opcionais do Resumo cujas matrizes existirem em `origem`."""
+    return preparar_pinturas(ARTES_DO_RESUMO, origem, destino)
+
+
+def preparar_arte_das_informacoes(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    """Gera as pinturas opcionais de Informações básicas cujas matrizes existirem em `origem`."""
+    return preparar_pinturas(ARTES_DAS_INFORMACOES, origem, destino)
+
+
+# Pinturas opcionais da aba Atributos (redesenhar-aba-atributos, D4), na pasta `atributos/`. A gravura das
+# três figuras fica com o fundo de papel: na tela ela é multiplicada sobre o pergaminho.
+ARTES_DOS_ATRIBUTOS: dict[str, tuple[tuple[int, int], tuple[int, int], float, bool]] = {
+    # 11:4 é a proporção da gravura do usuário: um recorte mais baixo cortaria a cabeça e o halo.
+    "atributos-gravura": ((11, 4), (1440, 524), .5, False),
+    # O recorte vertical segue o que importa em cada cena: o arqueiro e o castelo no alto, as figuras e o
+    # mapa celeste no meio.
+    "atributos-faixa-fisicos": ((3, 1), (1200, 400), .3, False),
+    "atributos-faixa-sociais": ((3, 1), (1200, 400), .45, False),
+    "atributos-faixa-mentais": ((3, 1), (1200, 400), .35, False),
+}
+
+
+# Pinturas da aba Personalidade (reformular-personalidade-da-ficha, D6), na pasta `personalidade/`: a
+# escrivaninha do alto e a natureza-morta da História, geradas pelo Codex a partir dos recortes da referência.
+# O fundo de pergaminho fica; o esmaecimento para o papel é feito no CSS.
+ARTES_DA_PERSONALIDADE: dict[str, tuple[tuple[int, int], tuple[int, int], float, bool]] = {
+    "personalidade-escrivaninha": ((16, 9), (1280, 720), .5, False),
+    "personalidade-historia": ((2, 1), (1280, 640), .5, False),
+}
+
+
+def preparar_arte_da_personalidade(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    """Gera as pinturas opcionais da aba Personalidade cujas matrizes existirem em `origem`."""
+    return preparar_pinturas(ARTES_DA_PERSONALIDADE, origem, destino / "personalidade")
+
+
+def preparar_arte_dos_atributos(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    """Gera as pinturas opcionais da aba Atributos cujas matrizes existirem em `origem`."""
+    return preparar_pinturas(ARTES_DOS_ATRIBUTOS, origem, destino / "atributos")
+
+
+# Pinturas opcionais da aba Perícias (redesenhar-aba-pericias, D7), na pasta `pericias/`. A paisagem em sépia
+# fica com o fundo de papel, multiplicada sobre o pergaminho como a gravura dos Atributos. Nas matrizes de
+# 2026-09-29 (8:3), as figuras ocupam a faixa do meio; nos estandartes, o recorte segue o que importa em cada
+# cena: o lanceiro e o castelo, o arqueiro e o alvo, e as velas e a esfera armilar, mais baixas.
+ARTES_DAS_PERICIAS: dict[str, tuple[tuple[int, int], tuple[int, int], float, bool]] = {
+    "pericias-cena": ((4, 1), (1536, 384), .5, False),
+    "pericias-talentos": ((3, 1), (1200, 400), .4, False),
+    "pericias-tecnicas": ((3, 1), (1200, 400), .45, False),
+    "pericias-conhecimentos": ((3, 1), (1200, 400), .7, False),
+}
+
+
+def preparar_arte_das_pericias(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    """Gera as pinturas opcionais da aba Perícias cujas matrizes existirem em `origem`."""
+    return preparar_pinturas(ARTES_DAS_PERICIAS, origem, destino / "pericias")
+
+
+# Pinturas opcionais da aba Cartas (redesenhar-aba-cartas, D9), na pasta `cartas/`. A gravura do cabeçalho
+# fica com o fundo de papel, multiplicada sobre o pergaminho. Há uma faixa por categoria de carta: a cena
+# com o medalhão e o emblema já pintados no centro. As categorias de item vêm do catálogo do sistema.
+CATALOGO_DE_ITENS = FRONTEND.parents[1] / "cursed_platform" / "catalogos" / "itens.json"
+CATEGORIAS_DE_CARTA = ("habilidades", "magias", "efeitos")
+TAMANHO_DA_FAIXA = (1024, 304)  # a proporção da faixa na carta, 266 × 79 px
+
+
+def categorias_das_cartas(catalogo: Path = CATALOGO_DE_ITENS) -> list[str]:
+    """Habilidades, magias e efeitos, mais as categorias de item do catálogo, na ordem da barra de filtros."""
+    itens = [c["id"] for c in json.loads(catalogo.read_text(encoding="utf-8"))["categorias"]]
+    return [*CATEGORIAS_DE_CARTA[:2], *itens, CATEGORIAS_DE_CARTA[2]]
+
+
+# Arte quadrada da categoria no quadro da página esquerda do grimório (D8 revisto): o painel com o medalhão
+# e a moldura de filigrana pintados, como no conceito. O gerador deixa uma tira de pergaminho nas bordas.
+MARGEM_DA_ARTE = .016
+
+
+def artes_das_cartas(catalogo: Path = CATALOGO_DE_ITENS) -> dict[str, tuple[tuple[int, int], tuple[int, int], float, bool]]:
+    for c in categorias_das_cartas(catalogo):
+        m = MARGEM_DA_ARTE
+        AREA_UTIL.setdefault(f"cartas-arte-{c.replace('_', '-')}", (m, m, 1 - m, 1 - m))
+    return {
+        **{f"cartas-arte-{c.replace('_', '-')}": ((1, 1), (800, 800), .5, False) for c in categorias_das_cartas(catalogo)},
+        "cartas-gravura": ((6, 1), (1536, 256), .5, False),
+        # O grimório do detalhe (D8 revisto): o livro aberto de páginas em branco e a cena de velas em volta,
+        # na proporção do diálogo do conceito aprovado (1395 × 790). O conteúdo é posto por cima.
+        "cartas-detalhe-livro": ((1395, 790), (1600, 906), .5, False),
+        # O editor de cartas (simplificar-criacao-de-cartas, D9): o livro do conceito do editor, de páginas em
+        # branco e sem os marcadores, na proporção do conceito (1536 × 1024).
+        "cartas-editor-livro": ((3, 2), (1536, 1024), .5, False),
+        **{f"cartas-faixa-{c.replace('_', '-')}": (TAMANHO_DA_FAIXA, TAMANHO_DA_FAIXA, .5, False) for c in categorias_das_cartas(catalogo)},
+    }
+
+
+# Medalhão da carta da grade (pedido do usuário, 2026-09-30): o da arte quadrada da categoria, mais bonito que o
+# pintado na faixa, recortado num círculo de borda suave e posto por cima do centro da faixa. Frações do lado da
+# arte: o aro vai de 17% a 83% e os losangos encostam nele; o recorte pega até 36% do centro.
+RAIO_DO_MEDALHAO = .36
+SUAVE_DO_MEDALHAO = .025
+LADO_DO_MEDALHAO = 400
+
+
+def recortar_medalhao(arte: Image.Image) -> Image.Image:
+    """Círculo central da arte, com transparência fora dele e uma borda que esmaece."""
+    lado = min(arte.size)
+    quadrado = recortar_proporcao(arte.convert("RGB"), 1, 1)
+    raio = RAIO_DO_MEDALHAO * lado
+    caixa = (round(lado / 2 - raio), round(lado / 2 - raio), round(lado / 2 + raio), round(lado / 2 + raio))
+    recorte = quadrado.crop(caixa).convert("RGBA")
+    diametro = recorte.width
+    escala = 4  # máscara em alta resolução, para o círculo sair liso
+    mascara = Image.new("L", (diametro * escala, diametro * escala), 0)
+    ImageDraw.Draw(mascara).ellipse((0, 0, diametro * escala - 1, diametro * escala - 1), fill=255)
+    borda = max(1, round(SUAVE_DO_MEDALHAO * lado))
+    mascara = mascara.resize((diametro, diametro), Image.LANCZOS).filter(ImageFilter.GaussianBlur(borda / 2))
+    recorte.putalpha(mascara)
+    return recorte.resize((LADO_DO_MEDALHAO, LADO_DO_MEDALHAO), Image.LANCZOS)
+
+
+# Peças do editor de cartas (simplificar-criacao-de-cartas, D9), pintadas sobre pergaminho liso: o marcador de
+# couro vazio (comum e ativo) e o selo de cera vazio do Publicar. Perdem o fundo e são recortadas rente ao objeto.
+# nome -> largura final, em pixels.
+PECAS_DO_EDITOR: dict[str, int] = {
+    "cartas-editor-marcador": 480,
+    "cartas-editor-marcador-ativo": 480,
+    "cartas-editor-selo": 480,
+}
+
+
+def preparar_pecas_do_editor(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    saidas: list[Path] = []
+    for nome, largura in PECAS_DO_EDITOR.items():
+        matriz = origem / f"{nome}.png"
+        if not matriz.exists():
+            continue
+        destino.mkdir(parents=True, exist_ok=True)
+        with Image.open(matriz) as imagem:
+            objeto, _ = recortar_objeto(imagem, canto="esquerda")
+        altura = max(1, round(objeto.height * largura / objeto.width))
+        caminho = destino / f"{nome}.webp"
+        objeto.resize((largura, altura), Image.LANCZOS).save(caminho, "WEBP", quality=90, method=6)
+        saidas.append(caminho)
+    return saidas
+
+
+def preparar_arte_das_cartas(origem: Path = ORIGEM, destino: Path = DESTINO, catalogo: Path = CATALOGO_DE_ITENS) -> list[Path]:
+    """Gera as pinturas opcionais da aba Cartas cujas matrizes existirem em `origem`, e os medalhões das artes."""
+    saidas = preparar_pinturas(artes_das_cartas(catalogo), origem, destino / "cartas")
+    saidas.extend(preparar_pecas_do_editor(origem, destino / "cartas"))
+    for arte in [s for s in saidas if s.stem.startswith("cartas-arte-")]:
+        with Image.open(arte) as imagem:
+            medalhao = recortar_medalhao(imagem)
+        caminho = destino / "cartas" / f"{arte.stem.replace('cartas-arte-', 'cartas-medalhao-')}.webp"
+        medalhao.save(caminho, "WEBP", quality=90, method=6)
+        saidas.append(caminho)
+    return saidas
+
+
+# Pinturas opcionais do Inventário da ficha (reformular-visual-da-ficha, tarefa 8.1): o couro é textura
+# que se repete; as peças da bolsa vêm sobre pergaminho liso e perdem o fundo. Sem a matriz, a bolsa usa
+# o couro em gradiente do CSS e a peça não aparece.
+# nome -> (proporção, tamanho final, remover o fundo, área útil da matriz em frações (x0, y0, x1, y1)).
+# O tecido perde o alto da matriz, onde o gerador desenhou um pedaço de bolsa cortado na borda.
+# Laterais da bolsa, como um lanche (D1, item 4): nome -> (borda em que fica a tira, a que encosta na
+# grade; faixa só de couro que se repete, em frações da altura da pintura, ou None para detectar).
+# As faixas valem para as pinturas de 2026-09-29: entre o mapa e a fivela de baixo (esquerda) e entre
+# a fivela da alça e a argola do saco de moedas (direita). Pintura nova: conferir ou voltar a None.
+LADOS_DO_INVENTARIO: dict[str, tuple[str, tuple[float, float] | None]] = {
+    "inventario-lado-esquerdo": ("direita", (.405, .515)),
+    "inventario-lado-direito": ("esquerda", (.335, .495)),
+}
+LARGURA_LADO = 320
+PARTES_DO_LADO = ("topo", "miolo", "base")
+# Tampa aberta no alto (uma peça, sem esticar) e base no pé, que estica na largura (D1, item 5).
+# A faixa do miolo da base, em frações da largura da pintura, ou None para detectar.
+LARGURA_TAMPA = 640
+ALTURA_BASE = 240
+MIOLO_DA_BASE: tuple[float, float] | None = None
+PARTES_DA_BASE = ("esquerda", "miolo", "direita")
+
+
+def manter_objeto_principal(imagem: Image.Image, limiar: int = 96) -> Image.Image:
+    """Apaga manchas soltas que sobraram do fundo: fica só o que está ligado ao objeto do centro."""
+    alfa = imagem.getchannel("A")
+    opaco = alfa.point(lambda v: 255 if v > limiar else 0)
+    largura, altura = opaco.size
+    # Semente: o ponto opaco mais perto do centro (os prompts pedem o objeto no meio da imagem).
+    cx, cy = largura // 2, altura // 2
+    semente = next(((cx + dx, cy + dy) for raio in range(0, max(largura, altura), 2)
+                    for dx, dy in ((raio, 0), (-raio, 0), (0, raio), (0, -raio))
+                    if 0 <= cx + dx < largura and 0 <= cy + dy < altura and opaco.getpixel((cx + dx, cy + dy)) == 255), None)
+    if semente is None:
+        return imagem
+    ImageDraw.floodfill(opaco, semente, 128, thresh=0)
+    # A borda suave (alfa baixo) em volta do objeto continua: a máscara cresce alguns pixels.
+    ligado = opaco.point(lambda v: 255 if v == 128 else 0).filter(ImageFilter.MaxFilter(7))
+    limpa = imagem.copy()
+    limpa.putalpha(ImageChops.darker(alfa, ligado))
+    return limpa
+
+
+def _extensao_por_linha(alfa: Image.Image, limiar: int = 128) -> list[int]:
+    """Largura ocupada pelo objeto em cada linha (0 na linha vazia)."""
+    opaco = alfa.point(lambda v: 255 if v >= limiar else 0)
+    larguras = []
+    for y in range(opaco.height):
+        caixa = opaco.crop((0, y, opaco.width, y + 1)).getbbox()
+        larguras.append(caixa[2] - caixa[0] if caixa else 0)
+    return larguras
+
+
+def achar_miolo(imagem: Image.Image) -> tuple[int, int]:
+    """Linhas [início, fim) onde só aparece a tira de couro: a faixa contínua mais longa com a largura mínima.
+
+    O mapa, a fivela, o tecido e o saco avançam para fora da tira e alargam as linhas do topo e da base.
+    """
+    larguras = _extensao_por_linha(imagem.getchannel("A"))
+    altura = len(larguras)
+    centrais = [w for w in larguras[altura // 5: altura - altura // 5] if w > 0]
+    if not centrais:
+        raise ValueError("lateral sem tira de couro no meio da imagem")
+    limite = min(centrais) * 1.12 + 2
+    melhor, inicio = (0, 0), None
+    for y, w in enumerate(larguras + [0]):
+        if 0 < w <= limite:
+            inicio = y if inicio is None else inicio
+        elif inicio is not None:
+            melhor = max(melhor, (inicio, y), key=lambda f: f[1] - f[0])
+            inicio = None
+    comeco, fim = melhor
+    # Margem: a sombra de um objeto costuma escurecer as primeiras linhas "só de tira".
+    margem = (fim - comeco) // 20
+    comeco, fim = comeco + margem, fim - margem
+    if fim - comeco < altura * .08:
+        raise ValueError("miolo da lateral muito curto: o terço do meio deve ter só a tira de couro")
+    return comeco, fim
+
+
+def dividir_lateral(imagem: Image.Image, mistura: int = 48, miolo: tuple[int, int] | None = None) -> dict[str, Image.Image]:
+    """Topo, miolo sem emenda na vertical e base de uma lateral já sem fundo.
+
+    O miolo repetido começa `k` linhas abaixo do início da faixa só de couro; as últimas `k` linhas
+    dele se misturam com as `k` primeiras da faixa, que na pintura vinham logo antes. Assim o fim de
+    uma repetição emenda no começo da seguinte, e o topo (que vai até ali) emenda no primeiro miolo.
+    """
+    comeco, fim = miolo or achar_miolo(imagem)
+    k = max(1, min(mistura, (fim - comeco) // 3))
+    miolo = imagem.crop((0, comeco + k, imagem.width, fim))
+    fim_original = imagem.crop((0, fim - k, imagem.width, fim))
+    antes_do_miolo = imagem.crop((0, comeco, imagem.width, comeco + k))
+    peso = Image.linear_gradient("L").resize((imagem.width, k))
+    miolo.paste(Image.composite(antes_do_miolo, fim_original, peso), (0, miolo.height - k))
+    return {
+        "topo": imagem.crop((0, 0, imagem.width, comeco + k)),
+        "miolo": miolo,
+        "base": imagem.crop((0, fim, imagem.width, imagem.height)),
+    }
+
+
+def recortar_objeto(matriz: Image.Image, canto: str = "direita") -> tuple[Image.Image, tuple[int, int, int, int]]:
+    """Apaga o fundo (medido no canto de cima indicado), fica só com o objeto principal e recorta rente a ele."""
+    rgb = matriz.convert("RGB")
+    sem_fundo = manter_objeto_principal(remover_fundo(rgb, cor_do_fundo(rgb, canto=canto)))
+    caixa = sem_fundo.getchannel("A").point(lambda v: 255 if v >= 32 else 0).getbbox() or (0, 0, *sem_fundo.size)
+    return sem_fundo.crop(caixa), caixa
+
+
+def preparar_lateral(matriz: Image.Image, borda_da_tira: str, miolo: tuple[float, float] | None = None) -> dict[str, Image.Image]:
+    """Apaga o fundo (medido no canto de cima oposto à tira), recorta rente ao objeto e divide em três.
+
+    `miolo`: faixa só de couro em frações da altura da matriz; sem ela, a faixa é detectada.
+    """
+    sem_fundo, caixa = recortar_objeto(matriz, "esquerda" if borda_da_tira == "direita" else "direita")
+    escala = LARGURA_LADO / sem_fundo.width
+    reduzida = sem_fundo.resize((LARGURA_LADO, round(sem_fundo.height * escala)), Image.LANCZOS)
+    linhas = None
+    if miolo:
+        linhas = tuple(min(reduzida.height, max(0, round((f * matriz.height - caixa[1]) * escala))) for f in miolo)
+    return dividir_lateral(reduzida, miolo=linhas)  # type: ignore[arg-type]
+
+
+def preparar_tampa(matriz: Image.Image) -> Image.Image:
+    """Tampa aberta da bolsa: sem fundo, rente ao objeto, com LARGURA_TAMPA de largura."""
+    sem_fundo, _ = recortar_objeto(matriz)
+    return sem_fundo.resize((LARGURA_TAMPA, round(sem_fundo.height * LARGURA_TAMPA / sem_fundo.width)), Image.LANCZOS)
+
+
+def esmaecer_bordas_cortadas(imagem: Image.Image, caixa: tuple[int, int, int, int], tamanho: tuple[int, int],
+                             faixa: float = .07) -> Image.Image:
+    """Esmaece, na horizontal, os lados em que o objeto encostava na borda da pintura (ali ele foi cortado reto)."""
+    esquerda, direita = caixa[0] <= 1, caixa[2] >= tamanho[0] - 1
+    if not (esquerda or direita):
+        return imagem
+    largura = max(1, round(imagem.width * faixa))
+    rampa = []
+    for x in range(imagem.width):
+        peso = 1.0
+        if esquerda:
+            peso = min(peso, (x + .5) / largura)
+        if direita:
+            peso = min(peso, (imagem.width - x - .5) / largura)
+        rampa.append(round(255 * max(0.0, min(1.0, peso))))
+    linha = Image.new("L", (imagem.width, 1))
+    linha.putdata(rampa)
+    resultado = imagem.copy()
+    resultado.putalpha(ImageChops.multiply(imagem.getchannel("A"), linha.resize(imagem.size, Image.NEAREST)))
+    return resultado
+
+
+def preparar_base(matriz: Image.Image, miolo: tuple[float, float] | None = None) -> dict[str, Image.Image]:
+    """Base da bolsa: a divisão das laterais com a pintura girada (a ponta esquerda vira o topo).
+
+    `miolo`: faixa só de couro em frações da largura da matriz; sem ela, a faixa é detectada.
+    """
+    sem_fundo, caixa = recortar_objeto(matriz)
+    # O pano das pontas pode encostar nas laterais da pintura; o corte reto vira um esmaecido.
+    sem_fundo = esmaecer_bordas_cortadas(sem_fundo, caixa, matriz.size)
+    escala = ALTURA_BASE / sem_fundo.height
+    reduzida = sem_fundo.resize((round(sem_fundo.width * escala), ALTURA_BASE), Image.LANCZOS)
+    colunas = None
+    if miolo:
+        colunas = tuple(min(reduzida.width, max(0, round((f * matriz.width - caixa[0]) * escala))) for f in miolo)
+    # Girada 90° no sentido horário, a coluna da esquerda vira a linha de cima.
+    partes = dividir_lateral(reduzida.transpose(Image.Transpose.ROTATE_270), miolo=colunas)  # type: ignore[arg-type]
+    return {"esquerda": partes["topo"].transpose(Image.Transpose.ROTATE_90),
+            "miolo": partes["miolo"].transpose(Image.Transpose.ROTATE_90),
+            "direita": partes["base"].transpose(Image.Transpose.ROTATE_90)}
+
+
+def preparar_arte_do_inventario(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    """Gera o couro, as laterais, a tampa e a base da bolsa cujas matrizes existirem em `origem` (saída em `destino/inventario`)."""
+    saidas: list[Path] = []
+    pasta = destino / "inventario"
+    couro = origem / "inventario-couro.png"
+    if couro.exists():
+        pasta.mkdir(parents=True, exist_ok=True)
+        with Image.open(couro) as imagem:
+            textura = recortar_proporcao(imagem.convert("RGB"), 1, 1).resize((LADO_TEXTURA, LADO_TEXTURA), Image.LANCZOS)
+            saidas.append(_salvar(sem_emenda(textura), pasta, "inventario-couro", qualidade=90))
+    for nome, (borda_da_tira, miolo) in LADOS_DO_INVENTARIO.items():
+        matriz = origem / f"{nome}.png"
+        if not matriz.exists():
+            continue
+        pasta.mkdir(parents=True, exist_ok=True)
+        with Image.open(matriz) as imagem:
+            partes = preparar_lateral(imagem, borda_da_tira, miolo)
+        saidas.extend(_salvar(partes[parte], pasta, f"{nome}-{parte}", qualidade=86) for parte in PARTES_DO_LADO)
+    tampa = origem / "inventario-tampa.png"
+    if tampa.exists():
+        pasta.mkdir(parents=True, exist_ok=True)
+        with Image.open(tampa) as imagem:
+            saidas.append(_salvar(preparar_tampa(imagem), pasta, "inventario-tampa", qualidade=86))
+    base = origem / "inventario-base.png"
+    if base.exists():
+        pasta.mkdir(parents=True, exist_ok=True)
+        with Image.open(base) as imagem:
+            partes = preparar_base(imagem, MIOLO_DA_BASE)
+        saidas.extend(_salvar(partes[parte], pasta, f"inventario-base-{parte}", qualidade=86) for parte in PARTES_DA_BASE)
     return saidas
 
 
@@ -236,6 +621,84 @@ def preparar_arte_da_navegacao(origem: Path = ORIGEM, destino: Path = DESTINO) -
     return saidas
 
 
+# Ícones da aba Personalidade recortados da própria referência do usuário (reformular-personalidade-da-ficha,
+# D7, revisado em 2026-09-30 a pedido dele): o desenho fica idêntico ao da imagem. Cada ícone: região de busca
+# (px da referência inteira) e o lado do quadrado em que ele aparece lá (48 nas linhas, 80 nos emblemas, 56 no
+# livro da História). A tela mostra a máscara nesse mesmo tamanho, então a escala é a da referência.
+REFERENCIA_DA_PERSONALIDADE = FRONTEND / "e2e" / "fixtures" / "referencias" / "personalidade" / "personalidade.webp"
+ICONES_DA_PERSONALIDADE: dict[str, tuple[tuple[int, int, int, int], int]] = {
+    "rosa_dos_ventos": ((60, 622, 152, 712), 80),
+    "lua_solar": ((588, 622, 680, 712), 80),
+    "livro_fechado": ((84, 1108, 152, 1166), 56),
+    "balanca": ((66, 722, 130, 768), 48),
+    "livro_aberto": ((66, 787, 130, 827), 48),
+    "olho": ((66, 852, 130, 889), 48),
+    "louros": ((66, 913, 130, 966), 48),
+    "aranha": ((66, 986, 130, 1041), 48),
+    "caveira": ((590, 720, 656, 766), 48),
+    "espadas": ((590, 777, 656, 820), 48),
+    "mao": ((590, 828, 656, 879), 48),
+    "ampulheta": ((590, 888, 656, 935), 48),
+    "estrela": ((590, 946, 656, 999), 48),
+    "lua_estrela": ((590, 1009, 656, 1057), 48),
+}
+ESCALA_DOS_ICONES = 4
+
+
+def _caixa_de_tinta(cinza: Image.Image, limiar: int = 120) -> tuple[int, int, int, int] | None:
+    return cinza.point(lambda v: 255 if v < limiar else 0).getbbox()
+
+
+def mascara_do_icone(referencia: Image.Image, regiao: tuple[int, int, int, int], lado: int,
+                     escala: int = ESCALA_DOS_ICONES) -> Image.Image:
+    """Recorta um ícone da referência num quadrado de `lado` px centrado na tinta e o transforma em máscara.
+
+    Amplia `escala` vezes com suavização e converte a luminância em alfa: o pergaminho (mediana da borda do
+    recorte) fica transparente e a tinta, opaca. Manchas claras do papel viram alfa zero. A cor da imagem é
+    branca: na tela, o formato vem do alfa e a cor vem do tema (`mask-image`).
+    """
+    busca = referencia.crop(regiao).convert("L")
+    tinta = _caixa_de_tinta(busca)
+    if tinta is None:
+        raise ValueError(f"nenhum desenho na região {regiao}")
+    cx = regiao[0] + (tinta[0] + tinta[2]) / 2
+    cy = regiao[1] + (tinta[1] + tinta[3]) / 2
+    x0, y0 = round(cx - lado / 2), round(cy - lado / 2)
+    recorte = referencia.crop((x0, y0, x0 + lado, y0 + lado)).convert("L")
+    grande = recorte.resize((lado * escala, lado * escala), Image.LANCZOS).filter(ImageFilter.GaussianBlur(escala * 0.35))
+    borda = [grande.getpixel((x, y)) for x in range(0, grande.width, 4) for y in (0, grande.height - 1)]
+    borda += [grande.getpixel((x, y)) for y in range(0, grande.height, 4) for x in (0, grande.width - 1)]
+    fundo = sorted(borda)[len(borda) // 2]
+    escuros = sorted(grande.getdata())
+    cor_da_tinta = escuros[len(escuros) // 50]
+    faixa = max(1, fundo - cor_da_tinta)
+
+    def alfa(v: int) -> int:
+        t = (fundo - v) / faixa
+        # Curva em S: bordas firmes, sem o véu das manchas do pergaminho.
+        t = 0.0 if t < 0.18 else 1.0 if t > 0.62 else (t - 0.18) / 0.44
+        return round(255 * t * t * (3 - 2 * t))
+
+    mascara = Image.new("RGBA", grande.size, (255, 255, 255, 0))
+    mascara.putalpha(grande.point(alfa))
+    return mascara
+
+
+def preparar_icones_da_personalidade(referencia: Path = REFERENCIA_DA_PERSONALIDADE, destino: Path = DESTINO) -> list[Path]:
+    """Grava uma máscara WebP (sem perda, com alfa) por ícone em `arte/personalidade/icones/`."""
+    if not referencia.exists():
+        return []
+    imagem = Image.open(referencia).convert("RGB")
+    pasta = destino / "personalidade" / "icones"
+    pasta.mkdir(parents=True, exist_ok=True)
+    saidas: list[Path] = []
+    for nome, (regiao, lado) in ICONES_DA_PERSONALIDADE.items():
+        caminho = pasta / f"{nome}.webp"
+        mascara_do_icone(imagem, regiao, lado).save(caminho, "WEBP", lossless=True, method=6)
+        saidas.append(caminho)
+    return saidas
+
+
 def preparar(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
     destino.mkdir(parents=True, exist_ok=True)
     abrir = lambda nome: Image.open(origem / f"{nome}.png")  # noqa: E731
@@ -271,6 +734,12 @@ def preparar(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
         saidas.append(_salvar(recortar_proporcao(imagem, 3, 2).resize((1200, 800), Image.LANCZOS), destino, f"etapa-{etapa}"))
 
     saidas.extend(preparar_arte_do_resumo(origem, destino))
+    saidas.extend(preparar_arte_das_informacoes(origem, destino))
+    saidas.extend(preparar_arte_dos_atributos(origem, destino))
+    saidas.extend(preparar_arte_da_personalidade(origem, destino))
+    saidas.extend(preparar_arte_das_pericias(origem, destino))
+    saidas.extend(preparar_arte_das_cartas(origem, destino))
+    saidas.extend(preparar_arte_do_inventario(origem, destino))
     saidas.extend(preparar_arte_da_navegacao(origem, destino))
     return saidas
 
@@ -281,6 +750,8 @@ def main() -> None:
     argumentos.add_argument("--destino", type=Path, default=DESTINO)
     opcoes = argumentos.parse_args()
     saidas = preparar(opcoes.origem, opcoes.destino)
+    # Os ícones da Personalidade saem da referência versionada, não das matrizes de `arte-original/`.
+    saidas += preparar_icones_da_personalidade(destino=opcoes.destino)
     total = sum(caminho.stat().st_size for caminho in saidas)
     for caminho in saidas:
         print(f"{caminho.name:32} {caminho.stat().st_size / 1024:8.1f} KB")

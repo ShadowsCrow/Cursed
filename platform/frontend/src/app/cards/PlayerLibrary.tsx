@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dialog } from "../../ui/primitives";
 import { usePersonagens } from "../characters/api";
 import type { ApiClient } from "../characters/types";
-import { useApresentacoes, useOfertas } from "./api";
+import { useApresentacoes, useMarcarApresentacaoVista, useOfertas } from "./api";
 import { CardFace } from "./cardView";
 import { OfferChooser } from "./OfferChooser";
 import type { OfertaResumo } from "./types";
@@ -50,15 +50,23 @@ export function PlayerLibrary({ api, mesaId }: { api: ApiClient; mesaId: string 
   );
 }
 
-/** Cartas apresentadas pelo Narrador: mostradas sem posse; fechar só esconde localmente. */
+/**
+ * Cartas apresentadas pelo Narrador: mostradas sem posse e uma vez só. Fechar esconde na hora e avisa o
+ * servidor, que não a apresenta de novo a este participante (nem depois de recarregar a página).
+ */
 export function PresentationOverlay({ api, mesaId }: { api: ApiClient; mesaId: string }) {
   const apresentacoes = useApresentacoes(api, mesaId);
+  const marcarVista = useMarcarApresentacaoVista(api, mesaId);
   const reduzido = useReducedMotion();
   const [fechadas, setFechadas] = useState<string[]>([]);
   const visivel = (apresentacoes.data ?? []).find((a) => !fechadas.includes(a.id));
   if (!visivel) return null;
+  const fechar = () => {
+    setFechadas((atual) => [...atual, visivel.id]);
+    marcarVista.mutate(visivel.id);
+  };
   return (
-    <Dialog open title="Carta apresentada" onClose={() => setFechadas((atual) => [...atual, visivel.id])} className="presentation-dialog">
+    <Dialog open title="Carta apresentada" onClose={fechar} className="presentation-dialog">
       <div className="presentation" data-movimento={reduzido ? "reduzido" : "normal"}>
         <CardFace tipo={visivel.carta.tipo} conteudo={visivel.carta.conteudo} api={api} mesaId={mesaId} />
         <p>O Narrador está mostrando esta carta. Ela não foi adicionada à sua ficha.</p>

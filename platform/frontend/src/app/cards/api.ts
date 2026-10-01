@@ -160,8 +160,13 @@ export function useCartasDoPersonagem(
 
 /** Após qualquer comando de posse: nova versão da ficha e dados que dependem das cartas. */
 function useAposComandoDePosse(mesaId: string, personagemId: string) {
+  const aplicar = useAplicarComandoDePosse(mesaId);
+  return (resposta: AquisicaoCartasResposta) => aplicar(personagemId, resposta);
+}
+
+function useAplicarComandoDePosse(mesaId: string) {
   const queryClient = useQueryClient();
-  return (resposta: AquisicaoCartasResposta) => {
+  return (personagemId: string, resposta: AquisicaoCartasResposta) => {
     queryClient.setQueryData(sheetKeys.ficha(mesaId, personagemId), (antigo: { versao: number } | undefined) =>
       antigo ? { ...antigo, versao: resposta.versao } : antigo,
     );
@@ -185,6 +190,28 @@ export function useConcederCarta(api: ApiClient, mesaId: string, personagemId: s
       return data as AquisicaoCartasResposta;
     },
     onSuccess: aposComando,
+  });
+}
+
+/**
+ * "Enviar" da biblioteca da mesa: concede a carta ao personagem escolhido, sem abrir a ficha dele. Item
+ * entra no inventário sem lugar na grade; habilidade e magia ficam disponíveis; efeito é aplicado.
+ */
+export function useEnviarCarta(api: ApiClient, mesaId: string) {
+  const aplicar = useAplicarComandoDePosse(mesaId);
+  return useMutation({
+    mutationFn: async ({ personagemId, versaoId }: { personagemId: string; versaoId: string }) => {
+      const caminho = { mesa_id: mesaId, personagem_id: personagemId };
+      const ficha = await api.GET("/mesas/{mesa_id}/personagens/{personagem_id}/ficha", { params: { path: caminho } });
+      if (ficha.error || !ficha.data) throw erroDaApi(ficha.error, "Não foi possível ler a ficha do personagem.");
+      const { data, error } = await api.POST("/mesas/{mesa_id}/personagens/{personagem_id}/cartas", {
+        params: { path: caminho },
+        body: { versao_id: versaoId, excecao_aprendizado: false, motivo: null, versao_esperada: ficha.data.versao },
+      });
+      if (error) throw erroDaApi(error, "Não foi possível enviar a carta.");
+      return data as AquisicaoCartasResposta;
+    },
+    onSuccess: (resposta, { personagemId }) => aplicar(personagemId, resposta),
   });
 }
 
@@ -346,17 +373,15 @@ export function useApresentarCarta(api: ApiClient, mesaId: string) {
   });
 }
 
-export function useRecolherCarta(api: ApiClient, mesaId: string) {
-  const queryClient = useQueryClient();
+/** O participante fechou a carta apresentada: o servidor não a mostra mais para ele, nem ao recarregar. */
+export function useMarcarApresentacaoVista(api: ApiClient, mesaId: string) {
   return useMutation({
     mutationFn: async (apresentacaoId: string) => {
-      const { data, error } = await api.POST("/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/recolhimento", {
+      const { error } = await api.POST("/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/visualizacao", {
         params: { path: { mesa_id: mesaId, apresentacao_id: apresentacaoId } },
       });
-      if (error) throw erroDaApi(error, "Não foi possível recolher a carta.");
-      return data as ApresentacaoResumo;
+      if (error) throw erroDaApi(error, "Não foi possível registrar que a carta foi vista.");
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: cardKeys.apresentacoes(mesaId) }),
   });
 }
 
@@ -367,4 +392,9 @@ export function contarOfertasPendentes(ofertas: OfertaResumo[] | undefined): num
       ? oferta.destinatarios.filter((d) => d.estado === "pendente").length : 0),
     0,
   );
+}
+
+/** Oferta aceita por todos: cada destinatário já respondeu, então ela sai da lista do Narrador. */
+export function ofertaAceita(oferta: OfertaResumo): boolean {
+  return oferta.destinatarios.length > 0 && oferta.destinatarios.every((d) => d.estado === "respondida");
 }

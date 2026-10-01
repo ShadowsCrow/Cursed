@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -59,9 +59,17 @@ def _personagem(session: Session, mesa_id: str, personagem_id: str, ator: Ator) 
     return personagem
 
 
-def _visivel(versao: CartaVersaoRegistro) -> CartaVisivel:
+# Custo de Aprendizado e Descansos Mínimos são do Narrador (redesenhar-aba-cartas, D2); o custo legado em
+# texto pode repetir o mesmo número. As chaves somem: `null` já quer dizer "Não definido".
+RESERVADOS_AO_NARRADOR = ("custo_aprendizado", "descansos_minimos", "custo_legado")
+
+
+def _visivel(versao: CartaVersaoRegistro, narrador: bool) -> CartaVisivel:
+    conteudo = versao.conteudo if narrador else {
+        chave: valor for chave, valor in versao.conteudo.items() if chave not in RESERVADOS_AO_NARRADOR
+    }
     return CartaVisivel(versao_id=versao.id, definicao_id=versao.definicao_id, numero=versao.numero,
-                        tipo=versao.tipo, conteudo=versao.conteudo)
+                        tipo=versao.tipo, conteudo=conteudo)
 
 
 def _instancia_resumo(session: Session, instancia: CartaPersonagemRegistro, narrador: bool) -> CartaPersonagemResumo:
@@ -70,7 +78,7 @@ def _instancia_resumo(session: Session, instancia: CartaPersonagemRegistro, narr
     return CartaPersonagemResumo(
         id=instancia.id, personagem_id=instancia.personagem_id, tipo=instancia.tipo, estado=instancia.estado,
         origem=instancia.origem, excecao_aprendizado=instancia.excecao_aprendizado, item_id=instancia.item_id,
-        efeito_id=instancia.efeito_id, adquirida_em=instancia.adquirida_em, carta=_visivel(versao),
+        efeito_id=instancia.efeito_id, adquirida_em=instancia.adquirida_em, carta=_visivel(versao, narrador),
         versao_mais_recente=definicao.versao_publicada if narrador and definicao is not None else None,
         concedida_por=instancia.concedida_por,
     )
@@ -259,6 +267,7 @@ def migrar_carta(
 # ----------------------------------------------------------------- ofertas
 
 def _oferta_resumo(session: Session, oferta: OfertaCartasRegistro, visiveis: set[str] | None) -> OfertaResumo:
+    """`visiveis` é `None` só para o Narrador, que vê todos os destinatários e os custos reservados."""
     destinatarios = session.scalars(
         select(OfertaDestinatarioRegistro).where(OfertaDestinatarioRegistro.oferta_id == oferta.id)
         .order_by(OfertaDestinatarioRegistro.personagem_id)
@@ -270,7 +279,7 @@ def _oferta_resumo(session: Session, oferta: OfertaCartasRegistro, visiveis: set
     return OfertaResumo(
         id=oferta.id, titulo=oferta.titulo, estado=oferta.estado, min_escolhas=oferta.min_escolhas,
         max_escolhas=oferta.max_escolhas, expira_em=oferta.expira_em, expirada=expirada, criado_em=oferta.criado_em,
-        candidatas=[_visivel(v) for v in cartas_ciclo.candidatas(session, oferta.id)],
+        candidatas=[_visivel(v, visiveis is None) for v in cartas_ciclo.candidatas(session, oferta.id)],
         destinatarios=[
             DestinatarioOferta(
                 personagem_id=d.personagem_id,
@@ -402,8 +411,9 @@ def cancelar_oferta(
 def _apresentacao_resumo(session: Session, apresentacao: ApresentacaoCartaRegistro, narrador: bool) -> ApresentacaoResumo:
     return ApresentacaoResumo(
         id=apresentacao.id, estado=apresentacao.estado, apresentada_em=apresentacao.apresentada_em,
-        carta=_visivel(session.get(CartaVersaoRegistro, apresentacao.versao_id)),
+        carta=_visivel(session.get(CartaVersaoRegistro, apresentacao.versao_id), narrador),
         destinatarios=list(apresentacao.destinatarios) if narrador else None,
+        vista_por=list(apresentacao.vistas or []) if narrador else None,
     )
 
 
@@ -449,6 +459,26 @@ def listar_apresentacoes(
         _apresentacao_resumo(session, a, narrador)
         for a in cartas_ciclo.apresentacoes_ativas(session, mesa_id, None if narrador else ator.usuario_id)
     ]
+
+
+@router.post("/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/visualizacao", status_code=status.HTTP_204_NO_CONTENT)
+def marcar_apresentacao_vista(
+    mesa_id: str, apresentacao_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+) -> Response:
+    """O participante fechou a carta: ela é apresentada uma vez e não volta ao recarregar a página."""
+    decisao = Autorizador(session).decidir(Acao.LER_MESA, usuario_id=ator.usuario_id, mesa_id=mesa_id)
+    if not decisao.permitido:
+        _negar(decisao)
+    apresentacao = session.get(ApresentacaoCartaRegistro, apresentacao_id)
+    visiveis = {a.id for a in cartas_ciclo.apresentacoes_ativas(session, mesa_id, None)}
+    if apresentacao is None or apresentacao.mesa_id != mesa_id or apresentacao.id not in visiveis or (
+            apresentacao.destinatarios and ator.usuario_id not in apresentacao.destinatarios):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apresentação não encontrada.")
+    if ator.usuario_id not in (apresentacao.vistas or []):
+        # Lista nova (e não append): o JSON só é gravado quando o atributo é substituído.
+        apresentacao.vistas = [*(apresentacao.vistas or []), ator.usuario_id]
+        session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/mesas/{mesa_id}/apresentacoes/{apresentacao_id}/recolhimento", response_model=ApresentacaoResumo)

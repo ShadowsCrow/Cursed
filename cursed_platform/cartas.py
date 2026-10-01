@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from cursed_platform import ficha_viva, narrador
+from cursed_platform import catalogos, ficha_viva, narrador
 from cursed_platform.acesso_privado import BUCKET_PRIVADO
 from cursed_platform.migracao_ativos import ArmazenamentoObjetos, AtivoInvalido
 from cursed_platform.contracts import (
@@ -41,6 +41,32 @@ def _modificadores(conteudo: Mapping[str, Any]) -> list[list[Mapping[str, Any]]]
 AVISO_FORMATO_PENDENTE = "Defina o tipo e a dimensão do item na grade antes de publicar."
 
 
+def _mensagem(erro: Mapping[str, Any]) -> str:
+    """Mensagem do Pydantic em português, para o editor mostrar junto do campo (simplificar-criacao-de-cartas, D5)."""
+    tipo, ctx = erro.get("type"), erro.get("ctx") or {}
+    if tipo == "missing" or (tipo == "string_too_short" and ctx.get("min_length") == 1):
+        return "Preencha este campo."
+    if tipo == "string_too_long":
+        return f"Use no máximo {ctx.get('max_length')} caracteres."
+    if tipo == "too_long":
+        return f"Use no máximo {ctx.get('max_length')} itens."
+    if tipo in {"greater_than_equal", "greater_than"}:
+        return f"Use um valor a partir de {ctx.get('ge', ctx.get('gt'))}."
+    if tipo in {"less_than_equal", "less_than"}:
+        return f"Use um valor até {ctx.get('le', ctx.get('lt'))}."
+    if tipo in {"int_parsing", "int_type", "int_from_float"}:
+        return "Use um número inteiro."
+    if tipo in {"string_type"}:
+        return "Use um texto."
+    if tipo == "literal_error":
+        return "Escolha uma das opções."
+    if tipo == "extra_forbidden":
+        return "Este campo não pertence a este tipo de carta."
+    if tipo == "value_error":
+        return str(erro.get("msg", "")).removeprefix("Value error, ")
+    return str(erro.get("msg", "Valor inválido."))
+
+
 def validar(
     tipo: str, rascunho: Mapping[str, Any] | None, mesa_id: str, *, para_publicar: bool = True,
 ) -> tuple[dict[str, Any] | None, ValidacaoCarta]:
@@ -59,7 +85,7 @@ def validar(
     except ValidationError as erro:
         for item in erro.errors():
             campo = ".".join(str(parte) for parte in item["loc"]) or "conteudo"
-            problemas.append(ProblemaValidacao(campo=campo, mensagem=item["msg"]))
+            problemas.append(ProblemaValidacao(campo=campo, mensagem=_mensagem(item)))
         return None, ValidacaoCarta(valida=False, problemas=problemas)
     for indice, grupo in enumerate(_modificadores(conteudo)):
         try:
@@ -73,6 +99,10 @@ def validar(
             problemas.append(ProblemaValidacao(
                 campo=f"ativos.{indice}", mensagem=f"Ativos de cartas precisam ficar em {prefixo}.",
             ))
+    if tipo == "item" and conteudo.get("formato") is not None:
+        subtipo = conteudo["formato"]["subtipo"]
+        for chave_dado, mensagem in catalogos.obter().itens.problemas_dos_dados(subtipo, conteudo.get("dados") or {}):
+            problemas.append(ProblemaValidacao(campo=f"dados.{chave_dado}", mensagem=mensagem))
     formato_pendente = tipo == "item" and conteudo.get("formato") is None
     if formato_pendente and para_publicar:
         problemas.append(ProblemaValidacao(campo="formato", mensagem=AVISO_FORMATO_PENDENTE))
@@ -128,15 +158,25 @@ def criar_definicao(
     return definicao
 
 
+class TipoFixo(Exception):
+    """O tipo de uma carta já publicada não muda."""
+
+
 def salvar_rascunho(
     session: Session, definicao: CartaDefinicaoRegistro, rascunho: Mapping[str, Any], versao_esperada: int,
+    tipo: str | None = None,
 ) -> None:
+    """Grava o rascunho. ``tipo`` troca o tipo da carta, só enquanto ela nunca foi publicada
+    (simplificar-criacao-de-cartas, D3)."""
+    if tipo is not None and tipo != definicao.tipo and definicao.versao_publicada is not None:
+        raise TipoFixo()
+    tipo = tipo or definicao.tipo
     procedencia = (definicao.rascunho or {}).get("procedencia") or {}
     resultado = session.execute(
         update(CartaDefinicaoRegistro)
         .where(CartaDefinicaoRegistro.id == definicao.id, CartaDefinicaoRegistro.versao == versao_esperada)
-        .values(rascunho={"conteudo": {**dict(rascunho), "tipo": definicao.tipo}, "procedencia": procedencia},
-                versao=CartaDefinicaoRegistro.versao + 1)
+        .values(rascunho={"conteudo": {**dict(rascunho), "tipo": tipo}, "procedencia": procedencia},
+                tipo=tipo, versao=CartaDefinicaoRegistro.versao + 1)
         .execution_options(synchronize_session=False)
     )
     if resultado.rowcount != 1:

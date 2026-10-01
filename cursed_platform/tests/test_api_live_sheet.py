@@ -165,11 +165,13 @@ class ApiLiveSheetTest(unittest.TestCase):
         self.assertEqual(antigo.status_code, 409)
         self.assertFalse(self.client.get(f"{BASE}/inventario").json()[0]["equipado"])
 
-    def test_equipamento_importado_chega_sem_dimensao_com_peso_so_como_descricao(self):
-        """carga-por-espacos 7.2: códigos EQ1 antigos não trazem formato e nada é convertido de kg."""
+    def test_equipamento_importado_chega_sem_dimensao_e_sem_peso(self):
+        """carga-por-espacos 7.2: códigos EQ1 antigos não trazem formato; o peso é descartado
+        (simplificar-criacao-de-cartas, D7a)."""
         item = self.importar(ARMADURA, 0)["item"]
         self.assertEqual((item["subtipo"], item["largura"], item["altura"], item["coluna"], item["linha"]), (None,) * 5)
-        self.assertEqual(item["dados"]["peso"], 10.5)
+        self.assertNotIn("peso", item["dados"])
+        self.assertEqual(item["dados"]["armadura"], 2)
         with Session(self.engine) as session:
             registro = session.get(ItemInventarioRegistro, item["id"])
             self.assertEqual((registro.subtipo, registro.largura, registro.coluna), (None, None, None))
@@ -216,6 +218,7 @@ class ApiLiveSheetTest(unittest.TestCase):
         ])
         resultado = self.importar(codigo, 0)
         self.assertEqual([e["nome"] for e in resultado["efeitos"]], ["Sobrepeso", "Sobrepeso"])
+        self.assertNotIn("peso", resultado["item"]["dados"])
         item_id = resultado["item"]["id"]
         versao = self.colocar_na_grade(item_id, {"subtipo": "outro", "largura": 2, "altura": 2, "maos": 1})
         equipado = self.client.post(f"{BASE}/inventario/{item_id}/equipar", json={"equipado": True, "versao_esperada": versao})

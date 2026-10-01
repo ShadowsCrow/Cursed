@@ -1,4 +1,4 @@
-"""Catálogos do sistema: classes, raças, efeitos default e listas da ficha.
+"""Catálogos do sistema: classes, raças, efeitos default, listas da ficha e itens.
 
 Os arquivos JSON de ``cursed_platform/catalogos/`` são a fonte de trabalho: o
 conteúdo ainda está em desenvolvimento e é editado direto no arquivo. A
@@ -22,7 +22,7 @@ from cursed_platform.domain.efeitos import validar_catalogo
 
 DIRETORIO = Path(__file__).resolve().parent / "catalogos"
 RAIZ_PROJETO = DIRETORIO.parents[1]
-ARQUIVOS = ("classes.json", "racas.json", "efeitos_default.json", "listas_ficha.json")
+ARQUIVOS = ("classes.json", "racas.json", "efeitos_default.json", "listas_ficha.json", "itens.json")
 
 _BASE = re.compile(r"^\s*(-?\d+)\s*\+\s*([^\W\d_]+)\s*$")
 _ACENTOS = str.maketrans("áàâãäéèêëíìîïóòôõöúùûüç", "aaaaaeeeeiiiiooooouuuuc")
@@ -58,6 +58,9 @@ class Habilidade:
     tipo: str
     # Campo "custo" do catálogo original, só como texto histórico: nunca preenche custos calculados.
     custo_legado: str | None = None
+    # Custo de Aprendizado, Descansos Mínimos, Potência de Uso e Custo de Uso, com os nomes da carta; ausentes
+    # ficam indefinidos (cartas-do-catalogo-somente-leitura, D2).
+    custos: tuple[tuple[str, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -127,8 +130,31 @@ class CampoPersonalidade:
     dica: str
     # Texto longo (ex.: História), com área de texto maior na ficha.
     longo: bool = False
-    # Máximo de caracteres aceito pelo servidor; None = sem limite.
+    # Máximo de caracteres aceito pelo servidor; None = sem limite. Nos traços, o limite de cada traço.
     limite: int | None = None
+    # "texto" ou "tracos" (lista de palavras curtas, reformular-personalidade-da-ficha, D3).
+    tipo: str = "texto"
+    # Quantidade máxima de traços; só no tipo "tracos".
+    maximo: int | None = None
+    # Ícone da linha na aba Personalidade (um de ICONES_PERSONALIDADE).
+    icone: str | None = None
+
+
+@dataclass(frozen=True)
+class GrupoPersonalidade:
+    """Quadro da aba Personalidade: emblema, títulos e os campos na ordem de exibição."""
+    id: str
+    titulo: str
+    subtitulo: str
+    emblema: str
+    campos: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class TopoPersonalidade:
+    """Campos do topo da aba Personalidade: a citação e as etiquetas."""
+    citacao: str | None = None
+    etiquetas: str | None = None
 
 
 @dataclass(frozen=True)
@@ -141,6 +167,14 @@ class Listas:
     faixas_de_altura: tuple[FaixaAltura, ...] = ()
     # Ícone do Resumo da ficha por nome de atributo, perícia ou grupo (aba-resumo-da-ficha, D5).
     icones_ficha: tuple[tuple[str, str], ...] = ()
+    # Arrumação da aba Personalidade (reformular-personalidade-da-ficha, D2); vazia quando o JSON não a traz.
+    personalidade_topo: TopoPersonalidade | None = None
+    grupos_personalidade: tuple[GrupoPersonalidade, ...] = ()
+    # Ícone dos campos que não estão em `campos_personalidade` (alinhamento e pecado).
+    icones_personalidade: tuple[tuple[str, str], ...] = ()
+
+    def campo_personalidade(self, chave_campo: str) -> CampoPersonalidade | None:
+        return next((c for c in self.campos_personalidade if c.chave == chave_campo), None)
 
     def faixa(self, tamanho: Any) -> FaixaAltura | None:
         return next((f for f in self.faixas_de_altura if chave(f.tamanho) == chave(tamanho)), None)
@@ -152,12 +186,127 @@ class Listas:
 
 
 @dataclass(frozen=True)
+class Raridade:
+    id: str
+    rotulo: str
+    cor: str
+
+
+@dataclass(frozen=True)
+class CategoriaItem:
+    id: str
+    rotulo: str
+    icone: str
+    # Subtipos que caem nesta categoria sem escolha (ex.: uma_mao e duas_maos em Armas).
+    subtipos: tuple[str, ...] = ()
+    # Categoria que o Narrador escolhe para itens do tipo Outros.
+    escolha_em_outros: bool = False
+    # Categoria dos itens Outros sem escolha (itens antigos).
+    padrao_outros: bool = False
+
+
+TIPOS_DE_CAMPO = ("inteiro", "texto", "escolha", "escolhas", "etiquetas")
+
+
+@dataclass(frozen=True)
+class CampoItem:
+    """Campo de um item, guardado em ``dados[id]`` (simplificar-criacao-de-cartas, D6)."""
+
+    id: str
+    rotulo: str
+    tipo: str
+    icone: str
+    lista: str | None = None
+    exemplo: str | None = None
+    unidade: str | None = None
+
+
+@dataclass(frozen=True)
+class CampoDoSubtipo:
+    campo: str
+    # Lista de sugestões, só em campos de etiquetas (ex.: propriedades das armas).
+    sugestoes: str | None = None
+
+
+@dataclass(frozen=True)
+class CatalogoItens:
+    """Raridades e categorias de item (reformular-visual-da-ficha, D6), sem efeito mecânico, e os campos
+    de cada subtipo, tirados de Equipamentos.md (simplificar-criacao-de-cartas, D6)."""
+
+    raridades: tuple[Raridade, ...]
+    categorias: tuple[CategoriaItem, ...]
+    listas: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    campos: Mapping[str, CampoItem] = field(default_factory=dict)
+    campos_por_subtipo: Mapping[str, tuple[CampoDoSubtipo, ...]] = field(default_factory=dict)
+
+    def campos_do_subtipo(self, subtipo: Any) -> tuple[CampoItem, ...]:
+        return tuple(self.campos[c.campo] for c in self.campos_por_subtipo.get(subtipo, ()))
+
+    def problemas_dos_dados(self, subtipo: Any, dados: Mapping[str, Any]) -> list[tuple[str, str]]:
+        """``(chave, mensagem)`` para cada valor de ``dados`` que o subtipo não declara ou que não segue o
+        tipo do campo. Valores vazios (``None``, texto vazio, lista vazia) não contam."""
+        declarados = {c.id: c for c in self.campos_do_subtipo(subtipo)}
+        problemas: list[tuple[str, str]] = []
+        for chave_dado, valor in dados.items():
+            if valor is None or valor == "" or valor == []:
+                continue
+            campo = declarados.get(chave_dado)
+            if campo is None:
+                problemas.append((chave_dado, "Não se aplica a este tipo de item."))
+                continue
+            mensagem = _problema_do_valor(campo, valor, self.listas)
+            if mensagem:
+                problemas.append((chave_dado, mensagem))
+        return problemas
+
+    @property
+    def raridade_padrao(self) -> str:
+        return self.raridades[0].id
+
+    @property
+    def categoria_padrao_outros(self) -> str:
+        return next(c.id for c in self.categorias if c.padrao_outros)
+
+    def raridade(self, valor: Any) -> Raridade | None:
+        return next((r for r in self.raridades if r.id == valor), None)
+
+    def escolhas_em_outros(self) -> tuple[str, ...]:
+        return tuple(c.id for c in self.categorias if c.escolha_em_outros)
+
+    def categoria_do_subtipo(self, subtipo: Any) -> str | None:
+        """Categoria derivada do subtipo; ``None`` para ``outro``, que depende da escolha do Narrador."""
+        return next((c.id for c in self.categorias if subtipo in c.subtipos), None)
+
+    def categoria_efetiva(self, subtipo: Any, escolhida: Any, tipo: Any = None) -> str:
+        """Categoria do item: pelo subtipo; em Outros, a escolhida (ou a padrão). Itens antigos sem
+        subtipo usam o tipo (arma, armadura) quando ele basta."""
+        derivada = self.categoria_do_subtipo(subtipo)
+        if derivada is None and subtipo is None and tipo in ("arma", "armadura"):
+            derivada = self.categoria_do_subtipo("uma_mao" if tipo == "arma" else "peitoral")
+        if derivada is not None:
+            return derivada
+        return escolhida if escolhida in self.escolhas_em_outros() else self.categoria_padrao_outros
+
+    def descritivos(self, subtipo: Any, tipo: Any, dados: Mapping[str, Any] | None) -> dict[str, Any]:
+        """Raridade, categoria e descrição de um item do inventário, com os padrões aplicados."""
+        dados = dados or {}
+        raridade = dados.get("raridade")
+        descricao = dados.get("descricao")
+        return {
+            "raridade": raridade if self.raridade(raridade) else self.raridade_padrao,
+            "categoria": self.categoria_efetiva(subtipo, dados.get("categoria"), tipo),
+            "descricao": descricao.strip() if isinstance(descricao, str) and descricao.strip() else None,
+        }
+
+
+@dataclass(frozen=True)
 class Catalogos:
     versao: str
     classes: tuple[Classe, ...]
     racas: tuple[Raca, ...]
     efeitos_default: tuple[dict[str, Any], ...]
     listas: Listas
+    itens: CatalogoItens
 
     def classe(self, nome: Any) -> Classe | None:
         return next((c for c in self.classes if chave(c.nome) == chave(nome)), None)
@@ -204,6 +353,21 @@ def _lista(dados: Mapping[str, Any], campo: str, *, arquivo: str, onde: str) -> 
     return valor
 
 
+CUSTOS_DE_HABILIDADE = ("custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso")
+
+
+def _custos(bruta: Mapping[str, Any], *, arquivo: str, onde: str) -> tuple[tuple[str, int], ...]:
+    custos = []
+    for campo in CUSTOS_DE_HABILIDADE:
+        valor = bruta.get(campo)
+        if valor is None:
+            continue
+        if not isinstance(valor, int) or isinstance(valor, bool) or valor < 0:
+            raise CatalogoInvalido(arquivo, f"{onde}: o campo '{campo}' precisa ser um número inteiro de 0 para cima.")
+        custos.append((campo, valor))
+    return tuple(custos)
+
+
 def _habilidades(brutas: list[Any], *, arquivo: str, onde: str) -> tuple[Habilidade, ...]:
     habilidades: list[Habilidade] = []
     vistas: set[str] = set()
@@ -219,6 +383,7 @@ def _habilidades(brutas: list[Any], *, arquivo: str, onde: str) -> tuple[Habilid
             _texto(bruta, "descricao", arquivo=arquivo, onde=local),
             _texto(bruta, "tipo", arquivo=arquivo, onde=local, obrigatorio=False),
             str(custo).strip() if custo not in (None, "") else None,
+            _custos(bruta, arquivo=arquivo, onde=local),
         )
         if chave(habilidade.nome) in vistas:
             raise CatalogoInvalido(arquivo, f"{onde}: habilidade '{habilidade.nome}' repetida.")
@@ -396,19 +561,148 @@ def converter_listas(dados: Any, arquivo: str = "listas_ficha.json") -> Listas:
         if not isinstance(longo, bool):
             raise CatalogoInvalido(arquivo, f"{onde}: 'longo' precisa ser verdadeiro ou falso.")
         limite = bruto.get("limite")
-        if limite is not None and (isinstance(limite, bool) or not isinstance(limite, int) or limite < 1):
+        if limite is not None and not _inteiro_positivo(limite):
             raise CatalogoInvalido(arquivo, f"{onde}: 'limite' precisa ser um inteiro maior que zero.")
+        chave_campo = _texto(bruto, "chave", arquivo=arquivo, onde=onde)
+        onde = f"campo de personalidade '{chave_campo}'"
+        if chave_campo in CHAVES_RESERVADAS_PERSONALIDADE:
+            raise CatalogoInvalido(arquivo, f"{onde}: a chave é reservada ao {chave_campo}, que tem lista própria.")
+        tipo = bruto.get("tipo", "texto")
+        if tipo not in TIPOS_CAMPO_PERSONALIDADE:
+            raise CatalogoInvalido(arquivo, f"{onde}: 'tipo' precisa ser {' ou '.join(TIPOS_CAMPO_PERSONALIDADE)}.")
+        maximo = bruto.get("maximo")
+        if tipo == "tracos":
+            if not _inteiro_positivo(maximo):
+                raise CatalogoInvalido(arquivo, f"{onde}: 'maximo' (quantidade de traços) precisa ser um inteiro maior que zero.")
+            if longo:
+                raise CatalogoInvalido(arquivo, f"{onde}: traços não podem ser um campo longo.")
+        elif maximo is not None:
+            raise CatalogoInvalido(arquivo, f"{onde}: 'maximo' só vale para o tipo tracos.")
+        icone = bruto.get("icone")
+        if icone is not None and icone not in ICONES_PERSONALIDADE:
+            raise CatalogoInvalido(arquivo, f"{onde}: o ícone '{icone}' não existe (opções: {', '.join(ICONES_PERSONALIDADE)}).")
         campos.append(CampoPersonalidade(
-            _texto(bruto, "chave", arquivo=arquivo, onde=onde),
+            chave_campo,
             _texto(bruto, "rotulo", arquivo=arquivo, onde=onde),
             _texto(bruto, "dica", arquivo=arquivo, onde=onde, obrigatorio=False),
             longo,
             limite,
+            tipo,
+            maximo if tipo == "tracos" else None,
+            icone,
         ))
     _unicos([c.chave for c in campos], arquivo=arquivo, tipo="campos_personalidade: chave")
     faixas = converter_faixas(_lista(dados, "faixas_de_altura", arquivo=arquivo, onde="listas"), arquivo)
+    topo, grupos, icones = converter_arrumacao_personalidade(dados, tuple(campos), arquivo)
     return Listas(textos("sexos"), textos("alinhamentos"), tuple(pecados), tuple(campos), faixas,
-                  converter_icones_ficha(dados.get("icones_ficha", {}), arquivo))
+                  converter_icones_ficha(dados.get("icones_ficha", {}), arquivo), topo, grupos, icones)
+
+
+# Aba Personalidade (reformular-personalidade-da-ficha, D2). Os nomes são os desenhos que a tela conhece: um nome
+# novo aqui precisa de um desenho no frontend (`personalidade/icones.tsx`), e o teste confere as duas listas.
+ICONES_PERSONALIDADE = (
+    "rosa_dos_ventos", "lua_solar", "livro_fechado", "balanca", "livro_aberto", "olho", "louros",
+    "aranha", "caveira", "espadas", "mao", "ampulheta", "estrela", "lua_estrela",
+)
+# Campos com lista própria (fora de `campos_personalidade`) que também entram nos grupos.
+CHAVES_RESERVADAS_PERSONALIDADE = ("alinhamento", "pecado")
+TIPOS_CAMPO_PERSONALIDADE = ("texto", "tracos")
+
+
+def _inteiro_positivo(valor: Any) -> bool:
+    return isinstance(valor, int) and not isinstance(valor, bool) and valor >= 1
+
+
+def converter_arrumacao_personalidade(
+    dados: Mapping[str, Any], campos: tuple[CampoPersonalidade, ...], arquivo: str = "listas_ficha.json",
+) -> tuple[TopoPersonalidade | None, tuple[GrupoPersonalidade, ...], tuple[tuple[str, str], ...]]:
+    """Topo, grupos e ícones da aba Personalidade. Sem topo e sem grupos no JSON, não há arrumação a validar.
+
+    Com eles, todo campo curto (e o alinhamento e o pecado) fica em exatamente um lugar, e os longos ficam fora
+    dos grupos, no quadro próprio.
+    """
+    por_chave = {c.chave: c for c in campos}
+    icones_brutos = dados.get("icones_personalidade", {})
+    if not isinstance(icones_brutos, Mapping):
+        raise CatalogoInvalido(arquivo, "'icones_personalidade' precisa ser um objeto de campo para ícone.")
+    icones: list[tuple[str, str]] = []
+    for nome, icone in icones_brutos.items():
+        if nome not in CHAVES_RESERVADAS_PERSONALIDADE and nome not in por_chave:
+            raise CatalogoInvalido(arquivo, f"icones_personalidade: o campo '{nome}' não existe.")
+        if icone not in ICONES_PERSONALIDADE:
+            raise CatalogoInvalido(arquivo, f"icones_personalidade: o ícone '{icone}' de '{nome}' não existe.")
+        icones.append((nome, icone))
+
+    topo_bruto = dados.get("personalidade_topo")
+    grupos_brutos = dados.get("grupos_personalidade")
+    if topo_bruto is None and grupos_brutos is None:
+        return None, (), tuple(icones)
+
+    lugar: dict[str, str] = {}
+
+    def colocar(nome: Any, onde: str) -> str:
+        if not isinstance(nome, str) or not nome.strip():
+            raise CatalogoInvalido(arquivo, f"{onde}: o campo precisa ser a chave de um campo de personalidade.")
+        if nome not in CHAVES_RESERVADAS_PERSONALIDADE and nome not in por_chave:
+            raise CatalogoInvalido(arquivo, f"{onde}: o campo '{nome}' não existe.")
+        if nome in lugar:
+            raise CatalogoInvalido(arquivo, f"o campo '{nome}' aparece em mais de um lugar ({lugar[nome]} e {onde}).")
+        lugar[nome] = onde
+        return nome
+
+    topo = TopoPersonalidade()
+    if topo_bruto is not None:
+        if not isinstance(topo_bruto, Mapping) or set(topo_bruto) - {"citacao", "etiquetas"}:
+            raise CatalogoInvalido(arquivo, "'personalidade_topo' aceita só 'citacao' e 'etiquetas'.")
+        citacao = topo_bruto.get("citacao")
+        etiquetas = topo_bruto.get("etiquetas")
+        if citacao is not None:
+            colocar(citacao, "a citação do topo")
+            campo = por_chave.get(citacao)
+            if not campo or campo.tipo != "texto" or campo.longo:
+                raise CatalogoInvalido(arquivo, f"a citação do topo precisa ser um campo de texto curto, e '{citacao}' não é.")
+        if etiquetas is not None:
+            colocar(etiquetas, "as etiquetas do topo")
+            campo = por_chave.get(etiquetas)
+            if not campo or campo.tipo != "tracos":
+                raise CatalogoInvalido(arquivo, f"as etiquetas do topo precisam ser um campo de traços, e '{etiquetas}' não é.")
+        topo = TopoPersonalidade(citacao, etiquetas)
+
+    if grupos_brutos is None:
+        grupos_brutos = []
+    if not isinstance(grupos_brutos, list):
+        raise CatalogoInvalido(arquivo, "'grupos_personalidade' precisa ser uma lista.")
+    grupos: list[GrupoPersonalidade] = []
+    for indice, bruto in enumerate(grupos_brutos):
+        onde = f"grupo de personalidade {indice + 1}"
+        if not isinstance(bruto, Mapping):
+            raise CatalogoInvalido(arquivo, f"{onde}: precisa ser um objeto.")
+        ident = bruto.get("id")
+        if not isinstance(ident, str) or not _ID.match(ident):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'id' precisa ser um identificador em minúsculas (ex.: essencia).")
+        onde = f"grupo '{ident}'"
+        emblema = bruto.get("emblema")
+        if emblema not in ICONES_PERSONALIDADE:
+            raise CatalogoInvalido(arquivo, f"{onde}: o emblema '{emblema}' não existe.")
+        nomes = _lista(bruto, "campos", arquivo=arquivo, onde=onde)
+        if not nomes:
+            raise CatalogoInvalido(arquivo, f"{onde}: precisa ter ao menos um campo.")
+        for nome in nomes:
+            colocar(nome, onde)
+            if nome in por_chave and (por_chave[nome].longo or por_chave[nome].tipo != "texto"):
+                raise CatalogoInvalido(arquivo, f"{onde}: o campo '{nome}' não cabe numa linha (é longo ou de traços).")
+        grupos.append(GrupoPersonalidade(
+            ident, _texto(bruto, "titulo", arquivo=arquivo, onde=onde),
+            _texto(bruto, "subtitulo", arquivo=arquivo, onde=onde, obrigatorio=False),
+            emblema, tuple(nomes),
+        ))
+    _unicos([g.id for g in grupos], arquivo=arquivo, tipo="grupos_personalidade: id")
+
+    faltando = [nome for nome in (*CHAVES_RESERVADAS_PERSONALIDADE, *(c.chave for c in campos if not c.longo))
+                if nome not in lugar]
+    if faltando:
+        raise CatalogoInvalido(arquivo, f"campos de personalidade sem lugar na aba (nem num grupo nem no topo): {', '.join(faltando)}.")
+    return topo, tuple(grupos), tuple(icones)
 
 
 _NOME_DE_ICONE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -429,8 +723,165 @@ def converter_icones_ficha(bruto: Any, arquivo: str = "listas_ficha.json") -> tu
     return tuple(pares)
 
 
+_ID = re.compile(r"^[a-z][a-z0-9_]*$")
+_COR = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+
+def converter_itens(dados: Any, arquivo: str = "itens.json") -> CatalogoItens:
+    """Raridades e categorias. Todo subtipo que não seja ``outro`` cai em exatamente uma categoria."""
+    from cursed_platform.domain.grade import SUBTIPOS
+
+    if not isinstance(dados, Mapping):
+        raise CatalogoInvalido(arquivo, "o catálogo de itens precisa ser um objeto.")
+
+    def identificador(bruto: Mapping[str, Any], onde: str) -> str:
+        valor = bruto.get("id")
+        if not isinstance(valor, str) or not _ID.match(valor):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'id' precisa ser um identificador em minúsculas (ex.: itens_de_missao).")
+        return valor
+
+    raridades: list[Raridade] = []
+    for indice, bruto in enumerate(_lista(dados, "raridades", arquivo=arquivo, onde="itens")):
+        onde = f"raridade {indice + 1}"
+        if not isinstance(bruto, Mapping):
+            raise CatalogoInvalido(arquivo, f"{onde}: precisa ser um objeto.")
+        cor = bruto.get("cor")
+        if not isinstance(cor, str) or not _COR.match(cor):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'cor' precisa ser hexadecimal, como #1F4F8F.")
+        raridades.append(Raridade(identificador(bruto, onde), _texto(bruto, "rotulo", arquivo=arquivo, onde=onde), cor.upper()))
+    if not raridades:
+        raise CatalogoInvalido(arquivo, "'raridades' precisa ter ao menos uma opção; a primeira é a padrão.")
+    _unicos([r.id for r in raridades], arquivo=arquivo, tipo="raridades: id")
+
+    categorias: list[CategoriaItem] = []
+    for indice, bruto in enumerate(_lista(dados, "categorias", arquivo=arquivo, onde="itens")):
+        onde = f"categoria {indice + 1}"
+        if not isinstance(bruto, Mapping):
+            raise CatalogoInvalido(arquivo, f"{onde}: precisa ser um objeto.")
+        subtipos = _lista(bruto, "subtipos", arquivo=arquivo, onde=onde)
+        desconhecidos = [s for s in subtipos if s not in SUBTIPOS or s == "outro"]
+        if desconhecidos:
+            raise CatalogoInvalido(arquivo, f"{onde}: subtipo inválido {desconhecidos[0]!r}.")
+        escolha = bruto.get("escolha_em_outros", False)
+        padrao = bruto.get("padrao_outros", False)
+        if not isinstance(escolha, bool) or not isinstance(padrao, bool):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'escolha_em_outros' e 'padrao_outros' precisam ser verdadeiro ou falso.")
+        if bool(subtipos) == escolha:
+            raise CatalogoInvalido(arquivo, f"{onde}: a categoria precisa ter subtipos ou ser escolha em Outros, e não os dois.")
+        if padrao and not escolha:
+            raise CatalogoInvalido(arquivo, f"{onde}: só uma escolha em Outros pode ser a padrão.")
+        icone = bruto.get("icone")
+        if not isinstance(icone, str) or not _ID.match(icone):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'icone' precisa ser um identificador em minúsculas.")
+        categorias.append(CategoriaItem(identificador(bruto, onde), _texto(bruto, "rotulo", arquivo=arquivo, onde=onde),
+                                        icone, tuple(subtipos), escolha, padrao))
+    _unicos([c.id for c in categorias], arquivo=arquivo, tipo="categorias: id")
+    for subtipo in SUBTIPOS:
+        if subtipo == "outro":
+            continue
+        donas = [c.id for c in categorias if subtipo in c.subtipos]
+        if len(donas) != 1:
+            raise CatalogoInvalido(arquivo, f"o subtipo '{subtipo}' precisa estar em exatamente uma categoria (está em {len(donas)}).")
+    if sum(c.padrao_outros for c in categorias) != 1:
+        raise CatalogoInvalido(arquivo, "exatamente uma categoria precisa ser 'padrao_outros'.")
+    listas, campos, por_subtipo = _campos_dos_itens(dados, arquivo)
+    return CatalogoItens(tuple(raridades), tuple(categorias), listas, campos, por_subtipo)
+
+
+def _problema_do_valor(campo: CampoItem, valor: Any, listas: Mapping[str, tuple[str, ...]]) -> str | None:
+    if campo.tipo == "inteiro":
+        if isinstance(valor, bool) or not isinstance(valor, int) or valor < 0:
+            return "Use um número inteiro, zero ou maior."
+        return None
+    if campo.tipo == "texto":
+        return None if isinstance(valor, str) else "Use um texto."
+    escolhas = listas.get(campo.lista or "", ())
+    if campo.tipo == "escolha":
+        return None if valor in escolhas else f"Escolha uma das opções de {campo.rotulo}."
+    if not isinstance(valor, list) or any(not isinstance(v, str) or not v.strip() for v in valor):
+        return "Use uma lista de textos."
+    if campo.tipo == "escolhas" and any(v not in escolhas for v in valor):
+        return f"Escolha entre as opções de {campo.rotulo}."
+    return None
+
+
+def _campos_dos_itens(dados: Mapping[str, Any], arquivo: str) -> tuple[
+    dict[str, tuple[str, ...]], dict[str, CampoItem], dict[str, tuple[CampoDoSubtipo, ...]],
+]:
+    """Listas, campos e campos por subtipo. Toda referência precisa existir, e todo subtipo criável tem lista."""
+    from cursed_platform.domain.grade import SUBTIPOS
+
+    listas: dict[str, tuple[str, ...]] = {}
+    brutas = dados.get("listas", {})
+    if not isinstance(brutas, Mapping):
+        raise CatalogoInvalido(arquivo, "'listas' precisa ser um objeto.")
+    for nome, valores in brutas.items():
+        if not _ID.match(nome) or not isinstance(valores, list) or not valores \
+                or any(not isinstance(v, str) or not v.strip() for v in valores):
+            raise CatalogoInvalido(arquivo, f"lista '{nome}': precisa ter um id em minúsculas e ao menos um texto.")
+        _unicos(list(valores), arquivo=arquivo, tipo=f"lista {nome}")
+        listas[nome] = tuple(valores)
+
+    campos: dict[str, CampoItem] = {}
+    brutos = dados.get("campos", {})
+    if not isinstance(brutos, Mapping):
+        raise CatalogoInvalido(arquivo, "'campos' precisa ser um objeto.")
+    for nome, bruto in brutos.items():
+        onde = f"campo '{nome}'"
+        if not _ID.match(nome) or not isinstance(bruto, Mapping):
+            raise CatalogoInvalido(arquivo, f"{onde}: precisa ter um id em minúsculas e ser um objeto.")
+        tipo = bruto.get("tipo")
+        if tipo not in TIPOS_DE_CAMPO:
+            raise CatalogoInvalido(arquivo, f"{onde}: 'tipo' precisa ser um de {', '.join(TIPOS_DE_CAMPO)}.")
+        lista = bruto.get("lista")
+        if tipo in ("escolha", "escolhas") and lista not in listas:
+            raise CatalogoInvalido(arquivo, f"{onde}: 'lista' precisa ser uma das listas do catálogo.")
+        if tipo not in ("escolha", "escolhas") and lista is not None:
+            raise CatalogoInvalido(arquivo, f"{onde}: só campos de escolha têm 'lista'.")
+        icone = bruto.get("icone")
+        if not isinstance(icone, str) or not _ID.match(icone):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'icone' precisa ser um identificador em minúsculas.")
+        extras = {c: bruto.get(c) for c in ("exemplo", "unidade")}
+        if any(v is not None and (not isinstance(v, str) or not v.strip()) for v in extras.values()):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'exemplo' e 'unidade' precisam ser textos.")
+        campos[nome] = CampoItem(nome, _texto(bruto, "rotulo", arquivo=arquivo, onde=onde), tipo, icone, lista,
+                                 extras["exemplo"], extras["unidade"])
+
+    criaveis = [s for s in SUBTIPOS if s not in ("moedas", "criatura")]
+    por_subtipo: dict[str, tuple[CampoDoSubtipo, ...]] = {}
+    brutos = dados.get("campos_por_subtipo", {})
+    if not isinstance(brutos, Mapping):
+        raise CatalogoInvalido(arquivo, "'campos_por_subtipo' precisa ser um objeto.")
+    for subtipo, itens in brutos.items():
+        onde = f"campos_por_subtipo '{subtipo}'"
+        if subtipo not in criaveis:
+            raise CatalogoInvalido(arquivo, f"{onde}: subtipo desconhecido.")
+        if not isinstance(itens, list):
+            raise CatalogoInvalido(arquivo, f"{onde}: precisa ser uma lista de campos.")
+        do_subtipo: list[CampoDoSubtipo] = []
+        for item in itens:
+            if isinstance(item, str):
+                nome, sugestoes = item, None
+            elif isinstance(item, Mapping):
+                nome, sugestoes = item.get("campo"), item.get("sugestoes")
+            else:
+                nome, sugestoes = None, None
+            if nome not in campos:
+                raise CatalogoInvalido(arquivo, f"{onde}: campo desconhecido {nome!r}.")
+            if sugestoes is not None and (sugestoes not in listas or campos[nome].tipo != "etiquetas"):
+                raise CatalogoInvalido(arquivo, f"{onde}: 'sugestoes' precisa ser uma lista do catálogo, num campo de etiquetas.")
+            do_subtipo.append(CampoDoSubtipo(nome, sugestoes))
+        _unicos([c.campo for c in do_subtipo], arquivo=arquivo, tipo=onde)
+        por_subtipo[subtipo] = tuple(do_subtipo)
+    if por_subtipo:
+        faltando = [s for s in criaveis if s not in por_subtipo]
+        if faltando:
+            raise CatalogoInvalido(arquivo, f"campos_por_subtipo: falta o subtipo '{faltando[0]}'.")
+    return listas, campos, por_subtipo
+
+
 def ler(diretorio: Path = DIRETORIO) -> Catalogos:
-    """Lê e valida os quatro arquivos. Levanta ``CatalogoInvalido`` com o arquivo e o motivo."""
+    """Lê e valida os arquivos. Levanta ``CatalogoInvalido`` com o arquivo e o motivo."""
     brutos: dict[str, bytes] = {}
     dados: dict[str, Any] = {}
     for nome in ARQUIVOS:
@@ -452,6 +903,7 @@ def ler(diretorio: Path = DIRETORIO) -> Catalogos:
         racas=racas,
         efeitos_default=converter_efeitos(dados["efeitos_default.json"]),
         listas=listas,
+        itens=converter_itens(dados["itens.json"]),
     )
 
 
