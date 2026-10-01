@@ -1,0 +1,12 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is an approved concept: an open grimoire with blue leather cover, brass corners and clasps, gold rings on the spine, curled parchment page stacks, lit candles, a white quill in a brass inkwell, stacked antique books and dark blue velvet, framed by a thin gold border.
+
+Generate the SAME scene as a landscape image 1536 x 1024, keeping the open book at exactly the same position, size and perspective as in the attached image (the spine in the exact horizontal center, the book filling the same area), with the same lighting, colors, candles, quill, books and velvet around it. The attached image already has the 3:2 framing to reproduce; its top and bottom strips are just a mirrored extension of the background, so paint natural dark background and velvet there.
+
+Changes from the reference:
+1. Both pages of the book must be COMPLETELY BLANK: only the aged, smooth parchment surface with its natural shading toward the spine and the page stacks at the edges. Absolutely nothing drawn on the pages: no frames, no boxes, no borders, no filigree, no stars, no ornaments, no text, no letters, no icons, no medallion, no illustration.
+2. Remove the thin gold border that frames the reference image and the round close button with an "x" in the top right corner: the scene must run to the edges of the image.
+3. No text anywhere in the image.
+
+Keep the painterly, rich, warm fantasy style of the reference. When done, reply only with the absolute path of the generated image file.

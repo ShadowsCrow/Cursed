@@ -14,7 +14,7 @@ A ficha SHALL apresentar informações como conteúdo de jogo e SHALL revelar co
 - **THEN** o jogador vê retrato, identidade, recursos e estado atual sem uma página dominada por campos de formulário
 
 ### Requirement: Seções modulares preservadas
-A ficha SHALL oferecer resumo, retrato, informações básicas, personalidade, atributos, perícias, habilidades, equipamentos, inventário, status e efeitos como seções organizáveis sem perder o conteúdo atualmente suportado. O resumo SHALL ser a primeira seção e a seção aberta quando nenhuma outra for indicada.
+A ficha SHALL oferecer resumo, retrato, informações básicas, personalidade, atributos, perícias, cartas, equipamentos, inventário, status e efeitos como seções organizáveis sem perder o conteúdo atualmente suportado. A seção de cartas SHALL se chamar "Cartas", porque habilidades, magias, itens e efeitos são todos cartas, e links antigos para a seção de habilidades SHALL abri-la. O resumo SHALL ser a primeira seção e a seção aberta quando nenhuma outra for indicada.
 
 #### Scenario: Jogador navega entre seções
 - **WHEN** o jogador seleciona uma seção da ficha
@@ -23,6 +23,10 @@ A ficha SHALL oferecer resumo, retrato, informações básicas, personalidade, a
 #### Scenario: Ficha aberta sem seção indicada
 - **WHEN** o jogador abre a ficha sem indicar uma seção
 - **THEN** o sistema apresenta a seção de resumo
+
+#### Scenario: Link antigo para habilidades
+- **WHEN** o jogador abre a ficha por um link com a seção "habilidades"
+- **THEN** a ficha abre na aba "Cartas"
 
 ### Requirement: Efeitos ativos legíveis e acessíveis
 O sistema SHALL representar efeitos ativos por ícones distinguíveis e SHALL disponibilizar nome, descrição, origem, duração e condições de encerramento por foco, toque ou acionamento, sem depender apenas de hover.

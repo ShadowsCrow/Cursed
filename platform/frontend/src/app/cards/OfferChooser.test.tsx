@@ -37,6 +37,19 @@ function montar(resposta?: { data?: unknown; error?: unknown; status?: number },
 describe("OfferChooser — 9.8 escolha acessível e animada", () => {
   afterEach(() => cleanup());
 
+  it("não mostra ao jogador o Custo de aprendizado nem os Descansos mínimos, mesmo se chegarem", () => {
+    const [primeira] = OFERTA.candidatas;
+    const oferta: OfertaResumo = { ...OFERTA, candidatas: [{ ...primeira!, conteudo: {
+      ...primeira!.conteudo, custo_aprendizado: 22, descansos_minimos: 4, potencia_uso: 9, custo_uso: 2, custo_legado: "22 PP" } }] };
+    const simulada = apiSimulada({ GET: {}, POST: {} });
+    renderComQuery(<OfferChooser api={simulada.api} mesaId="mesa" oferta={oferta} personagemId="lia" personagemNome="Lia" />);
+    expect(screen.getByText("Potência de uso")).toBeTruthy();
+    expect(screen.getByText("Custo de uso")).toBeTruthy();
+    expect(screen.queryByText("Custo de aprendizado")).toBeNull();
+    expect(screen.queryByText("Descansos mínimos")).toBeNull();
+    expect(screen.queryByText(/22 PP/)).toBeNull();
+  });
+
   it("seleciona por teclado com setas e Espaço, e o contador acompanha", () => {
     montar();
     const botoes = screen.getAllByRole("button", { pressed: false });

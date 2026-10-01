@@ -1,0 +1,989 @@
+/*
+ * Aba Cartas (redesenhar-aba-cartas). Medidas tiradas por varredura de pixels da referência do usuário a
+ * 1448 px de janela: folha de x 8 a 1440; texto do cabeçalho a 46 px da borda; cartas de 266 × 310 px a
+ * 29 px da borda esquerda, com 13 px entre colunas e 9 px entre linhas; faixa de 79 px; pílula de 24 px. A folha e a moldura dupla são as da aba Atributos (`atributos.css`). Molduras e ornamentos em
+ * CSS/SVG; pinturas só como ilustração, todas opcionais.
+ */
+
+.cartas-conteiner { container: cartas / inline-size; margin-top: 1.2rem; }
+
+.cartas-folha {
+  --cartas-tinta: #17110b;
+  --cartas-ouro: #b08a45;
+  --cartas-ouro-escuro: #6a4a15;
+  --colunas: 4;
+  /* As cartas têm prioridade (262 px cada); a barra fica com o que sobra, de 180 a 250 px. */
+  --cartas-grade: calc(var(--colunas) * 16.625rem + (var(--colunas) - 1) * .8125rem);
+  padding: 1.8rem 1.375rem 2rem 1.8125rem;
+}
+
+/* ---------- Cabeçalho ---------- */
+.cartas-cabecalho {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: .9rem 1.5rem;
+  min-height: 6.3rem;
+  padding-left: 1.0625rem;
+}
+.cartas-cabecalho__titulos { flex: 1 1 22rem; align-self: flex-start; }
+.cartas-cabecalho__sobretitulo {
+  margin: 0;
+  color: #3b2d20;
+  font: 700 .82rem/1 var(--font-display);
+  letter-spacing: .28em;
+  -webkit-text-stroke: .4px currentColor;
+  text-transform: uppercase;
+}
+.cartas-cabecalho__titulo {
+  margin: .55rem 0 0;
+  color: var(--cartas-tinta);
+  font: 700 clamp(1.7rem, 3.4vw, 2.72rem)/1 var(--font-display);
+  -webkit-text-stroke: 1px currentColor;
+  letter-spacing: -.005em;
+}
+.cartas-cabecalho__ferramentas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .9rem;
+}
+
+/* Busca e ordem: 223 × 34 e 156 × 34 px, placa clara com borda dourada. */
+.cartas-cabecalho .busca-inventario { width: 13.95rem; }
+.cartas-cabecalho .busca-inventario input,
+.cartas-ordem select,
+.cartas-conceder {
+  height: 2.125rem;
+  border: 1px solid var(--cartas-ouro);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #fdf7ea, #f6ead0);
+  color: var(--cartas-tinta);
+  box-shadow: inset 0 0 0 1px #fff8, 0 1px 3px #5a3a1426;
+  font: 600 .95rem/1 var(--font-display);
+}
+.cartas-cabecalho .busca-inventario input { width: 100%; min-height: 0; padding: 0 .7rem 0 2.35rem; }
+.cartas-cabecalho .busca-inventario input::placeholder { color: #5b4a38; opacity: 1; }
+.cartas-cabecalho .busca-inventario svg { left: .75rem; color: #2b1d10; }
+
+.cartas-ordem { position: relative; display: flex; align-items: center; width: 9.75rem; }
+.cartas-ordem select {
+  width: 100%;
+  padding: 0 2rem 0 2.2rem;
+  appearance: none;
+  cursor: pointer;
+}
+.cartas-ordem__icone, .cartas-ordem__seta { position: absolute; color: #2b1d10; pointer-events: none; }
+.cartas-ordem__icone { left: .75rem; }
+.cartas-ordem__seta { right: .7rem; }
+
+.cartas-conceder {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: 0 1rem;
+  cursor: pointer;
+}
+.cartas-conceder:hover, .cartas-ordem select:hover { border-color: var(--cartas-ouro-escuro); }
+.cartas-cabecalho .busca-inventario input:focus-visible,
+.cartas-ordem select:focus-visible,
+.cartas-conceder:focus-visible { outline: 2px solid var(--cartas-ouro-escuro); outline-offset: 2px; }
+
+/* Gravura em sépia atrás do lado direito do cabeçalho (x 790–1420, y 372–470 na referência). */
+.cartas-gravura {
+  position: absolute;
+  z-index: -1;
+  top: -1.5rem;
+  right: -.6rem;
+  width: min(39.4rem, 56%);
+  height: 6.9rem;
+  pointer-events: none;
+}
+.cartas-gravura__pintura {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 40%;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 94%, transparent);
+}
+.cartas-gravura__reserva {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 2.4rem;
+  height: 100%;
+  padding-right: 3rem;
+  color: #7a5a26;
+  opacity: .38;
+}
+
+.cartas-mensagem { position: relative; z-index: 1; margin: 1.5rem .875rem 0; font: 600 1.1rem/1.3 var(--font-display); }
+
+/* ---------- Corpo: barra de filtros e grade ---------- */
+.cartas-corpo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* A barra fica com o que sobra depois das cartas (percentual da própria grade), entre 180 e 250 px. */
+  /* O .75rem a mais é o vão da barra de rolagem da grade, para as cartas manterem os 266 px. */
+  grid-template-columns: clamp(11rem, 100% - var(--cartas-grade) - 2.25rem, 15.6rem) minmax(0, 1fr);
+  grid-template-areas: "lateral grade";
+  gap: 1.25rem 1.5rem;
+  /*
+   * Na referência, "Aprendidas" fica na altura da busca. Com a grade rolando dentro de si, o título preso
+   * no alto cobriria a busca: a caixa começa logo abaixo dela.
+   */
+  margin-top: .9rem;
+}
+.cartas-corpo__lateral { grid-area: lateral; min-width: 0; padding-top: .1rem; }
+.cartas-corpo__grade { grid-area: grade; min-width: 0; }
+/*
+ * A grade rola dentro de si (pedido do usuário, 2026-09-29): as cartas são grandes e muitas, e a barra de
+ * filtros fica parada ao lado. A altura acompanha a janela, com no mínimo duas linhas de cartas. O vão à
+ * direita guarda a barra de rolagem longe das cartas, e o recuo em cima deixa espaço para o levantar do
+ * foco e do passar do mouse.
+ */
+.cartas-corpo__grade--rola {
+  max-height: max(41rem, calc(100dvh - 12.5rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-right: -.9rem;
+  padding: 4px .9rem 6px 4px;
+  margin-left: -4px;
+  scrollbar-width: thin;
+  scrollbar-color: #9a7438 color-mix(in srgb, #7a5626 14%, transparent);
+  scrollbar-gutter: stable;
+}
+.cartas-corpo__grade--rola::-webkit-scrollbar { width: 10px; }
+.cartas-corpo__grade--rola::-webkit-scrollbar-track { border-radius: 99px; background: color-mix(in srgb, #7a5626 14%, transparent); }
+.cartas-corpo__grade--rola::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 99px; background: #9a7438 padding-box; }
+.cartas-corpo__grade--rola:focus-visible { outline: 2px solid #7a5626; outline-offset: 2px; }
+/* O título de cada seção fica preso no alto enquanto as cartas dela passam. */
+.cartas-corpo__grade--rola .cartas-secao__titulo {
+  position: sticky;
+  z-index: 2;
+  top: -4px;
+  margin-inline: -4px;
+  padding: 4px 4px .3rem;
+  border-bottom: 1px solid color-mix(in srgb, #9a7438 45%, transparent);
+  background: linear-gradient(180deg, #f1e3c4, #ecdcb9);
+}
+
+.cartas-filtros { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.3rem; }
+.cartas-filtros > * { min-width: 0; }
+.cartas-filtros .categorias--lista {
+  padding: .75rem .7rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--cartas-ouro) 70%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, #fffaf0 45%, transparent);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, #fffaf0 30%, transparent);
+}
+.cartas-filtros .categorias__titulo {
+  margin: 0 0 .45rem .35rem;
+  color: #3b2d20;
+  font: 700 .78rem/1 var(--font-display);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.cartas-filtros .categorias__opcao { font-family: var(--font-display); font-size: 1rem; font-weight: 600; color: var(--cartas-tinta); }
+.cartas-filtros .categorias__opcao[aria-pressed="true"] { color: var(--ouro-200); }
+
+.cartas-vazio { display: grid; justify-items: start; gap: .6rem; padding-top: 2rem; }
+.cartas-vazio p { margin: 0; font: 600 1.1rem/1.3 var(--font-display); }
+
+.cartas-secao + .cartas-secao { margin-top: 1.6rem; }
+.cartas-secao__titulo {
+  margin: 0 0 1.35rem;
+  color: var(--cartas-tinta);
+  font: 700 1.1rem/1.25 var(--font-display);
+  -webkit-text-stroke: .3px currentColor;
+}
+.cartas-secao__nota { margin: -1rem 0 1rem; color: #3a2a1a; font: 500 .98rem/1.3 var(--font-display); }
+.cartas-secao__lista {
+  display: grid;
+  grid-template-columns: repeat(var(--colunas), minmax(0, 16.625rem));
+  gap: .5625rem .8125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cartas-secao__lista > li { display: flex; min-width: 0; }
+
+/* ---------- Carta ---------- */
+.carta-ficha {
+  --carta-cor: #16233f;
+  --carta-cor-clara: #2c4274;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  /* Linha escura de 1 px, filete dourado claro por dentro; a faixa começa 3 px abaixo e 5 px ao lado. */
+  padding: 2px 4px 0;
+  border: 1px solid #7a5626;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 50% 40%, transparent 60%, color-mix(in srgb, #b98a45 16%, transparent) 100%),
+    linear-gradient(180deg, #f7e5c1, #f1dbb0);
+  box-shadow:
+    inset 0 0 0 2.5px #d8b46c,
+    inset 0 0 0 3.5px color-mix(in srgb, #8a6428 45%, transparent),
+    inset 0 0 16px color-mix(in srgb, #9a6a2a 18%, transparent),
+    0 3px 7px color-mix(in srgb, #3b2410 38%, transparent);
+  color: #2e2216;
+  font-family: var(--font-display);
+  text-align: left;
+  font-variant-numeric: lining-nums;
+}
+/* Toda carta tem a altura da referência (310 px): itens e efeitos, sem custos, guardam a pílula no pé. */
+.cartas-secao__lista .carta-ficha { min-height: 19.375rem; }
+button.carta-ficha { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+button.carta-ficha:hover { transform: translateY(-2px); }
+button.carta-ficha:focus-visible { outline: 3px solid #7a5a26; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { button.carta-ficha { transition: none; } button.carta-ficha:hover { transform: none; } }
+.carta-ficha--magia { --carta-cor: #2b1d4a; --carta-cor-clara: #4b3480; }
+.carta-ficha--item { --carta-cor: #3a2a16; --carta-cor-clara: #6b4d26; }
+.carta-ficha--efeito { --carta-cor: #1d3a33; --carta-cor-clara: #2f5f53; }
+
+.carta-ficha__faixa {
+  position: relative;
+  display: block;
+  flex: none;
+  height: 79px;
+  overflow: hidden;
+  border-radius: 8px 8px 1px 1px;
+  border-bottom: 3px solid #c9a35c;
+  background: var(--carta-cor);
+}
+/* Item não tem quadro de custos: a imagem cresce e ocupa esse espaço, e a carta mantém a altura. */
+.carta-ficha--item .carta-ficha__faixa { height: var(--faixa-item, 136px); }
+.carta-ficha--item .carta-voluta--fe,
+.carta-ficha--item .carta-voluta--fd { top: calc(var(--faixa-item, 136px) + 1px); }
+.carta-ficha__faixa::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 16px #0009, inset 0 -1px 0 #f3d38a66;
+  pointer-events: none;
+}
+.carta-ficha__pintura { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Medalhão da arte da categoria, centrado na faixa: o aro fica com ~67 px, como o da referência. */
+.carta-ficha__medalhao {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82px;
+  height: 82px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+/*
+ * Imagem própria (foto do item, arte enviada): inteira, ajustada à faixa, sobre uma cópia dela desfocada e
+ * escurecida que preenche o resto. Fotos de objetos altos ou estreitos não viram uma fatia.
+ */
+/* Atrás da foto, a pintura da categoria fica desfocada: o medalhão pintado nela não briga com o objeto. */
+.carta-ficha__faixa:has(.carta-ficha__pintura--propria) .carta-ficha__pintura:not(.carta-ficha__pintura--propria) {
+  transform: scale(1.15);
+  filter: blur(6px) brightness(.6);
+}
+.carta-ficha__veu { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, #0004, #000a); }
+.carta-ficha__pintura--propria { padding: 5px 8px; object-fit: contain; filter: drop-shadow(0 3px 6px #000b); }
+.carta-ficha__pintura--propria ~ .carta-ficha__medalhao { display: none; }
+
+.carta-ficha__reserva {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, #f0b04a 30%, transparent) 0 14%, transparent 34%),
+    repeating-conic-gradient(from 0deg at 50% 50%, #ffffff10 0 1.5deg, transparent 1.5deg 11deg),
+    radial-gradient(ellipse 70% 120% at 50% 50%, var(--carta-cor-clara), var(--carta-cor) 55%, #05070f 100%);
+}
+
+/* 84 px de desenho: aro de 67 px, como o da referência, com as pontas quase tocando a faixa. */
+.carta-medalhao { position: relative; display: grid; place-items: center; width: 84px; height: 84px; }
+.carta-medalhao__aro { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 0 6px #f0b04a55); }
+.carta-medalhao__icone {
+  position: relative;
+  display: grid;
+  color: #f6d68c;
+  filter: drop-shadow(0 0 4px #f0a53c) drop-shadow(0 1px 0 #6a4312);
+}
+.carta-medalhao__icone .icone-categoria { width: 38px; height: 38px; stroke-width: 1.8; }
+
+/* Volutas douradas: nos cantos de cima da carta e no pé da faixa. */
+.carta-ficha__volutas { position: absolute; inset: 0; pointer-events: none; }
+.carta-voluta {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  color: #e2bf72;
+  filter: drop-shadow(0 0 .6px #3b2b13) drop-shadow(0 0 .6px #3b2b13);
+}
+.carta-voluta--se { top: 1px; left: 1px; }
+.carta-voluta--sd { top: 1px; right: 1px; }
+.carta-voluta--fe { top: 80px; left: 1px; width: 14px; height: 14px; }
+.carta-voluta--fd { top: 80px; right: 1px; width: 14px; height: 14px; }
+
+.carta-ficha__selo {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: .12rem .45rem;
+  border: 1px solid #e2bf72;
+  border-radius: 99px;
+  background: #140d06d9;
+  color: #f6d68c;
+  font: 700 .66rem/1.2 var(--font-body);
+  letter-spacing: .04em;
+}
+
+.carta-ficha__corpo { display: flex; flex-direction: column; padding: 0 10px 10px 17px; }
+.carta-ficha__tipo {
+  margin-top: 10px;
+  color: #33271b;
+  font-size: .6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  -webkit-text-stroke: .45px currentColor;
+}
+.carta-ficha__titulo {
+  margin-top: 6px;
+  color: var(--cartas-tinta, #17110b);
+  font-size: 1.32rem;
+  font-weight: 700;
+  line-height: 1.05;
+  -webkit-text-stroke: .35px currentColor;
+  overflow-wrap: anywhere;
+}
+.carta-ficha__texto {
+  display: -webkit-box;
+  margin: 4px 16px 0 0;
+  overflow: hidden;
+  color: #3a2a1a;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.03;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  -webkit-text-stroke: .25px currentColor;
+}
+.carta-ficha__custos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 0;
+  margin: 9px 0 0 -5px;
+  padding: 8px 0 0 5px;
+  border-top: 1px solid color-mix(in srgb, var(--cartas-ouro, #b08a45) 75%, transparent);
+  background:
+    linear-gradient(color-mix(in srgb, var(--cartas-ouro, #b08a45) 60%, transparent), color-mix(in srgb, var(--cartas-ouro, #b08a45) 60%, transparent))
+    50% 8px / 1px calc(100% - 12px) no-repeat;
+}
+.carta-ficha__custo { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-right: 8px; }
+.carta-ficha__custo:nth-child(even) { padding: 0 0 0 9px; }
+.carta-ficha__custo-rotulo {
+  color: #2b1d10;
+  font: 700 .57rem/1.12 var(--font-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  -webkit-text-stroke: .25px currentColor;
+}
+.carta-ficha__custo-valor { color: #1b140c; font: 700 .75rem/1.1 var(--font-display); -webkit-text-stroke: .25px currentColor; }
+
+.carta-ficha__origem {
+  display: block;
+  margin: auto 6px 10px;
+  padding: 0 .6rem;
+  height: 24px;
+  overflow: hidden;
+  border: 1.5px solid #9a7438;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #f7e6c3, #f0dbb1);
+  box-shadow: inset 0 0 0 1px #fff4, inset 0 1px 2px #6a4a1522;
+  color: #2b1d10;
+  font: 600 .74rem/21px var(--font-display);
+  -webkit-text-stroke: .15px currentColor;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Anotações da ficha antiga ---------- */
+.cartas-legado { position: relative; z-index: 1; margin: 2rem .875rem 0; }
+.cartas-legado__lista { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.cartas-legado__lista li { display: flex; align-items: center; gap: .6rem; font-family: var(--font-display); font-size: 1.05rem; }
+.cartas-legado__lista small { color: #5b4a38; }
+.cartas-legado__lista b { margin-left: auto; }
+
+/* ---------- Detalhe: grimório aberto (design D8 revisto; referencia/detalhe-grimorio.png) ----------
+ * Cópia fiel do conceito aprovado. Toda a geometria vem dele, em frações do diálogo (1395 × 790 px no
+ * conceito), e os tamanhos em `cqw` do diálogo: o grimório inteiro escala junto com a janela, sem mudar de
+ * proporção. Com a pintura `cartas-detalhe-livro` (o livro aberto de páginas em branco e a cena de velas),
+ * ela é o fundo; sem ela, o livro é desenhado em CSS na mesma geometria. Molduras, quadros e ornamentos
+ * são sempre SVG/CSS, por cima.
+ */
+.dialog.grimorio {
+  --grimorio-ouro: #d8b46c;
+  --grimorio-ouro-escuro: #9a7438;
+  --grimorio-tinta: #1b140c;
+  --grimorio-pagina: #efdcb4;
+  position: relative;
+  container-type: inline-size;
+  width: min(88vw, 87.5rem, calc((100dvh - 3rem) * 1.766));
+  max-width: none;
+  max-height: none;
+  aspect-ratio: 1395 / 790;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse 12% 30% at 6% 32%, color-mix(in srgb, #f0a54a 30%, transparent), transparent),
+    radial-gradient(ellipse 12% 30% at 94% 38%, color-mix(in srgb, #f0a54a 28%, transparent), transparent),
+    radial-gradient(ellipse 60% 22% at 50% 100%, #1d2d5c, transparent),
+    linear-gradient(180deg, #120f14, #07070c);
+  box-shadow: 0 30px 80px #000d;
+  color: var(--grimorio-tinta);
+  font-variant-numeric: lining-nums;
+}
+.grimorio .dialog__body { display: block; position: static; }
+.grimorio .dialog__head { position: absolute; z-index: 8; top: calc(6.3% - 1.8cqw); right: calc(3.2% - 1.8cqw); }
+.grimorio .dialog__title {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.grimorio .dialog__close {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  min-width: 34px;
+  min-height: 34px;
+  border: 1.5px solid var(--grimorio-ouro);
+  background: radial-gradient(circle at 50% 40%, #1c1f35, #07080f);
+  color: #f3d488;
+  box-shadow: 0 0 10px #f0a54a55;
+}
+.grimorio .dialog__close:hover { color: #fff1c4; border-color: #f3d488; }
+.grimorio .dialog__close:focus-visible { outline: 2px solid #f3d488; outline-offset: 3px; }
+
+.grimorio-fundo { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.grimorio-fundo__pintura { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Moldura do diálogo: filete dourado duplo, filigrana nos cantos e estrela no alto e no pé. */
+.grimorio-moldura {
+  position: absolute;
+  inset: .55cqw;
+  z-index: 3;
+  pointer-events: none;
+  /* No conceito o filete de fora é grosso e brilhante, com um segundo filete fino por dentro. */
+  border: max(2px, .2cqw) solid #e6c16f;
+  box-shadow:
+    0 0 .6cqw color-mix(in srgb, #f0a54a 55%, transparent),
+    inset 0 0 0 .3cqw color-mix(in srgb, #07080f 55%, transparent),
+    inset 0 0 0 .4cqw color-mix(in srgb, var(--grimorio-ouro) 70%, transparent);
+}
+.grimorio-moldura .resumo-canto-folha { width: 5.6cqw; height: 5.6cqw; color: #f0c870; filter: drop-shadow(0 0 2px #000) drop-shadow(0 0 4px #f0a54a88); }
+.grimorio-moldura .resumo-canto-folha--se { top: -.6cqw; left: -.6cqw; }
+.grimorio-moldura .resumo-canto-folha--sd { top: -.6cqw; right: -.6cqw; }
+.grimorio-moldura .resumo-canto-folha--ie { bottom: -.6cqw; left: -.6cqw; }
+.grimorio-moldura .resumo-canto-folha--id { bottom: -.6cqw; right: -.6cqw; }
+.grimorio-estrela { display: block; width: 100%; height: 100%; }
+.grimorio-moldura__estrela { position: absolute; left: 50%; width: 3.8cqw; height: 3.8cqw; margin-left: -1.9cqw; color: #f6d27e; filter: drop-shadow(0 0 6px #f0a54a); }
+.grimorio-moldura__estrela--alto { top: -2cqw; }
+.grimorio-moldura__estrela--pe { bottom: -2cqw; }
+
+/* ---------- O livro em CSS (sem a pintura), na geometria do conceito ---------- */
+.grimorio--pintado .grimorio-livro { display: none; }
+.grimorio-livro { position: absolute; z-index: 1; left: 5.7%; top: 2.9%; width: 88.9%; height: 91.5%; pointer-events: none; }
+.grimorio-livro::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1.1cqw;
+  background:
+    linear-gradient(90deg, transparent 48.4%, #07060c 49.4%, transparent 50.4%),
+    radial-gradient(ellipse at 50% 30%, #262035, #120e1a 72%);
+  box-shadow:
+    inset 0 0 0 .18cqw #6b4f2a,
+    inset 0 0 0 .32cqw #1a1422,
+    inset 0 0 0 .4cqw color-mix(in srgb, var(--grimorio-ouro) 55%, transparent),
+    0 1.4cqw 3cqw #000c;
+}
+/* Folhas: o pergaminho da plataforma, o maço de folhas do lado de fora e a curva para a lombada. */
+.grimorio-folha {
+  position: absolute;
+  top: 1.6%;
+  height: 94%;
+  background-color: var(--grimorio-pagina);
+  background-image: url("/arte/pergaminho.webp");
+  background-size: 36cqw;
+}
+/* As folhas seguem as páginas da pintura: 13,4–49,6% e 49,8–87,2% do diálogo. */
+.grimorio-folha--esquerda {
+  left: 8.7%;
+  width: 40.7%;
+  border-radius: .6cqw 0 0 .6cqw;
+  /* O maço desce reto também, para não abrir um recorte escuro no pé da lombada. */
+  box-shadow:
+    -.25cqw .15cqw 0 #e8d5ad, -.5cqw .3cqw 0 #c9ae82, -.75cqw .45cqw 0 #e3cea3, -1cqw .6cqw 0 #b3966a,
+    -1.25cqw .75cqw 0 #d9c297, -1.5cqw .9cqw 0 #a98c61, -1.75cqw 1.05cqw 0 #cfb68a,
+    0 .15cqw 0 #e8d5ad, 0 .45cqw 0 #e3cea3, 0 .75cqw 0 #d9c297, 0 1.05cqw 0 #cfb68a;
+}
+.grimorio-folha--direita {
+  left: 49.4%;
+  width: 42.3%;
+  border-radius: 0 .6cqw .6cqw 0;
+  box-shadow:
+    .25cqw .15cqw 0 #e8d5ad, .5cqw .3cqw 0 #c9ae82, .75cqw .45cqw 0 #e3cea3, 1cqw .6cqw 0 #b3966a,
+    1.25cqw .75cqw 0 #d9c297, 1.5cqw .9cqw 0 #a98c61, 1.75cqw 1.05cqw 0 #cfb68a,
+    0 .15cqw 0 #e8d5ad, 0 .45cqw 0 #e3cea3, 0 .75cqw 0 #d9c297, 0 1.05cqw 0 #cfb68a;
+}
+.grimorio-folha::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.grimorio-folha--esquerda::after {
+  background: linear-gradient(90deg, color-mix(in srgb, #7a4f1f 12%, transparent), transparent 10%, transparent 84%, color-mix(in srgb, #7a4f1f 32%, transparent) 95%, color-mix(in srgb, #3b2208 62%, transparent));
+}
+.grimorio-folha--direita::after {
+  background: linear-gradient(270deg, color-mix(in srgb, #7a4f1f 12%, transparent), transparent 10%, transparent 84%, color-mix(in srgb, #7a4f1f 32%, transparent) 95%, color-mix(in srgb, #3b2208 62%, transparent));
+}
+.grimorio-livro__lombada {
+  position: absolute;
+  top: 10%;
+  bottom: 12%;
+  left: 49.5%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transform: translateX(-50%);
+}
+.grimorio-livro__lombada i {
+  display: block;
+  width: .75cqw;
+  height: 1.6cqw;
+  border: 1px solid #3b2608;
+  border-radius: .4cqw;
+  background: linear-gradient(90deg, #5e3d10, #f3d488 45%, #8d6424);
+}
+.grimorio-livro__fechos { position: absolute; inset: 0; }
+.grimorio-fecho { position: absolute; width: 2cqw; height: 3.2cqw; filter: drop-shadow(0 2px 3px #000a); }
+.grimorio-fecho--esquerda { left: 2.2%; }
+.grimorio-fecho--direita { right: 1.4%; transform: scaleX(-1); }
+.grimorio-livro__fechos .grimorio-fecho:nth-child(1), .grimorio-livro__fechos .grimorio-fecho:nth-child(3) { top: 20%; }
+.grimorio-livro__fechos .grimorio-fecho:nth-child(2), .grimorio-livro__fechos .grimorio-fecho:nth-child(4) { top: 71%; }
+
+/* ---------- Conteúdo, nas posições do conceito ---------- */
+.grimorio-pagina { position: absolute; z-index: 2; display: flex; flex-direction: column; min-width: 0; }
+/*
+ * Posições calibradas na pintura `cartas-detalhe-livro` (páginas de 13,4–47,2% e 50,4–87,2% da largura e de
+ * 3,4–90% da altura), mantendo as medidas do conceito: arte de 29% × 51,3%, citação de 31% de altura, quadros
+ * de 110 px em 790.
+ */
+.grimorio-pagina--esquerda { left: 15.8%; top: 8.9%; width: 29%; height: 72.8%; justify-content: space-between; align-items: center; }
+.grimorio-pagina--direita { left: 52%; top: 8.9%; width: 33.6%; height: 77.8%; }
+
+/* Molduras dos quadros de citação, título e arte: filete duplo marrom-dourado com filigrana de canto. */
+.grimorio-arte, .grimorio-titulo, .grimorio-citacao {
+  position: relative;
+  border: .11cqw solid var(--grimorio-ouro-escuro);
+  box-shadow: inset 0 0 0 .25cqw transparent, inset 0 0 0 .32cqw color-mix(in srgb, var(--grimorio-ouro-escuro) 70%, transparent);
+}
+.grimorio-cantos { position: absolute; inset: 0; pointer-events: none; }
+.grimorio-cantos .resumo-canto-folha { width: 3.3cqw; height: 3.3cqw; color: #8a5f22; }
+.grimorio-cantos .resumo-canto-folha--se { top: -.35cqw; left: -.35cqw; }
+.grimorio-cantos .resumo-canto-folha--sd { top: -.35cqw; right: -.35cqw; }
+.grimorio-cantos .resumo-canto-folha--ie { bottom: -.35cqw; left: -.35cqw; }
+.grimorio-cantos .resumo-canto-folha--id { bottom: -.35cqw; right: -.35cqw; }
+.grimorio-arte__estrela, .grimorio-titulo__estrela, .grimorio-citacao__estrela {
+  position: absolute;
+  z-index: 2;
+  width: 2.3cqw;
+  height: 2.3cqw;
+  color: #c9973e;
+  filter: drop-shadow(0 0 3px #f0c87088);
+}
+.grimorio-arte__estrela--alto, .grimorio-titulo__estrela--alto, .grimorio-citacao__estrela--alto { top: -1.2cqw; left: 50%; margin-left: -1.15cqw; }
+.grimorio-arte__estrela--pe, .grimorio-titulo__estrela--pe, .grimorio-citacao__estrela--pe { bottom: -1.2cqw; left: 50%; margin-left: -1.15cqw; }
+.grimorio-arte__estrela--esq { left: -1.2cqw; top: 50%; margin-top: -1.15cqw; }
+.grimorio-arte__estrela--dir { right: -1.2cqw; top: 50%; margin-top: -1.15cqw; }
+
+/* Página esquerda: quadro da arte (405 × 405 no conceito) e quadro do título. */
+.grimorio-arte { width: 100%; height: calc(51.3 / 72.8 * 100%); padding: .65cqw; }
+.grimorio-arte__quadro {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: .15cqw solid #c9973e;
+  box-shadow: inset 0 0 1.6cqw #000b;
+}
+.grimorio-arte__imagem { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.grimorio-arte__imagem--fundo { transform: scale(1.15); filter: blur(.9cqw) brightness(.55); }
+.grimorio-arte__imagem--propria { padding: 1.4cqw; object-fit: contain; filter: drop-shadow(0 .3cqw .8cqw #000c); }
+/* A arte pintada da categoria já traz a moldura de filigrana e os losangos do conceito. */
+.grimorio-arte--pintada { padding: 0; border: 0; box-shadow: none; }
+.grimorio-arte--pintada .grimorio-arte__quadro { border: 0; box-shadow: 0 .3cqw .9cqw #3b240f66; }
+.grimorio-arte--pintada .grimorio-cantos, .grimorio-arte--pintada .grimorio-arte__estrela { display: none; }
+.grimorio-arte__reserva {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  --reserva-cor: #16233f;
+  --reserva-clara: #2c4274;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, #f0b04a 34%, transparent) 0 20%, transparent 44%),
+    repeating-conic-gradient(from 0deg at 50% 50%, #ffffff12 0 1deg, transparent 1deg 7deg),
+    radial-gradient(circle at 50% 50%, var(--reserva-clara), var(--reserva-cor) 55%, #05070f 100%);
+}
+.grimorio-arte__reserva--magia { --reserva-cor: #2b1d4a; --reserva-clara: #4b3480; }
+.grimorio-arte__reserva--item { --reserva-cor: #3a2a16; --reserva-clara: #6b4d26; }
+.grimorio-arte__reserva--efeito { --reserva-cor: #1d3a33; --reserva-clara: #2f5f53; }
+.grimorio-arte .carta-medalhao { width: 72%; height: 72%; }
+.grimorio-arte .carta-medalhao__icone .icone-categoria { width: 7.4cqw; height: 7.4cqw; stroke-width: 1.7; }
+.grimorio-arte__estrelas { position: absolute; inset: 0; color: #f3d488; }
+.grimorio-arte__estrelas .grimorio-estrela { position: absolute; width: 1.2cqw; height: 1.2cqw; filter: drop-shadow(0 0 4px #f0c870); }
+.grimorio-arte__estrelas .grimorio-estrela:nth-child(1) { top: 10%; left: 10%; }
+.grimorio-arte__estrelas .grimorio-estrela:nth-child(2) { top: 10%; right: 10%; }
+.grimorio-arte__estrelas .grimorio-estrela:nth-child(3) { bottom: 10%; left: 10%; }
+.grimorio-arte__estrelas .grimorio-estrela:nth-child(4) { bottom: 10%; right: 10%; }
+
+.grimorio-titulo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 97.6%;
+  height: calc(20.3 / 72.8 * 100%);
+  padding: 0 1.2cqw;
+  text-align: center;
+}
+.grimorio-titulo__tipo {
+  margin: 0;
+  color: #33271b;
+  font: 700 1.2cqw/1 var(--font-display);
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  -webkit-text-stroke: .3px currentColor;
+}
+.grimorio-titulo__nome {
+  margin: .55cqw 0 0;
+  color: var(--grimorio-tinta);
+  /* 4,3 cqw no título curto do conceito; título longo diminui para caber numa linha. */
+  font: 700 calc(4.3cqw * var(--titulo-escala, 1))/1.05 var(--font-display);
+  -webkit-text-stroke: .6px currentColor;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Página direita. Pedido do usuário (2026-09-30): quadros de dados bem menores, para o texto ter mais espaço.
+ * A citação fica com toda a altura que os quadros não usam.
+ */
+.grimorio-citacao { flex: 1 1 0; min-height: 9cqw; width: 100%; padding: 1.9cqw 2.2cqw 1.9cqw 3.2cqw; }
+.grimorio-citacao::before {
+  content: "“";
+  position: absolute;
+  top: 1.3cqw;
+  left: 1.2cqw;
+  color: #b0823a;
+  font: 700 3cqw/1 var(--font-display);
+}
+.grimorio-citacao__texto {
+  height: 100%;
+  margin: 0;
+  overflow-y: auto;
+  color: #2a1f14;
+  font: 500 1.5cqw/1.4 var(--font-display);
+  white-space: pre-line;
+  -webkit-text-stroke: .25px currentColor;
+  scrollbar-width: thin;
+  scrollbar-color: var(--grimorio-ouro-escuro) transparent;
+}
+
+/* Quadros de dados: baixos (~70 px em 790), 13 px entre as colunas e 10 entre as linhas; crescem só com texto longo. */
+.grimorio-dados {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: 1.1cqw 0 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--grimorio-ouro-escuro) transparent;
+}
+.grimorio-dados:focus-visible, .grimorio-citacao__texto:focus-visible { outline: 2px solid #8a5f22; outline-offset: 3px; }
+.grimorio-dados__lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(5cqw, auto);
+  gap: .72cqw .93cqw;
+  margin: 0;
+  padding: 0 0 .3cqw;
+  --dado-escala: .68;
+}
+/* Com mais de três linhas (magia, visão do Narrador), um pouco menores ainda, para a citação não sumir. */
+.grimorio-dados__lista--quatro { --dado-escala: .62; grid-auto-rows: minmax(4.5cqw, auto); }
+.grimorio-dados__lista--cinco { --dado-escala: .56; grid-auto-rows: minmax(4.1cqw, auto); }
+.grimorio-dado {
+  position: relative;
+  display: grid;
+  grid-template-columns: calc(4.65cqw * var(--dado-escala, 1)) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: .8cqw;
+  align-content: center;
+  /* A voluta do canto passa por cima do respiro: o ícone fica perto do filete, como no conceito. */
+  padding: .15cqw .5cqw .15cqw .4cqw;
+  border: .5cqw solid transparent;
+  border-image: url("./molduras/quadro-grimorio.svg") 20 / 1.1cqw stretch;
+}
+.grimorio-dado--larga { grid-column: 1 / -1; }
+.grimorio-dado__estrela {
+  position: absolute;
+  z-index: 2;
+  bottom: -1.5cqw;
+  left: 50%;
+  width: 1.2cqw;
+  height: 1.2cqw;
+  margin-left: -.6cqw;
+  color: #b0823a;
+}
+.grimorio-dado:nth-last-child(-n + 2) .grimorio-dado__estrela, .grimorio-dado--larga .grimorio-dado__estrela { display: none; }
+.grimorio-dado__icone {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: calc(4.65cqw * var(--dado-escala, 1));
+  height: calc(4.65cqw * var(--dado-escala, 1));
+  border: .16cqw solid #b08a45;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 35%, #5c3a1d, #2a1a0c);
+  color: #f0dfbd;
+  box-shadow: 0 0 0 .08cqw #3b2608, inset 0 .1cqw .3cqw #0008;
+}
+.grimorio-icone { width: calc(2.5cqw * var(--dado-escala, 1)); height: calc(2.5cqw * var(--dado-escala, 1)); }
+.grimorio-dado__rotulo {
+  align-self: end;
+  color: #33271b;
+  font: 700 .72cqw/1.15 var(--font-display);
+  letter-spacing: .1em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  -webkit-text-stroke: .25px currentColor;
+}
+.grimorio-dado__rotulo::after { content: ":"; }
+.grimorio-dado__valor {
+  align-self: start;
+  margin: .15cqw 0 0;
+  color: var(--grimorio-tinta);
+  font: 500 calc(1.2cqw * var(--valor-escala, 1))/1.12 var(--font-display);
+  -webkit-text-stroke: .25px currentColor;
+  overflow-wrap: anywhere;
+}
+.grimorio-dado__lista { margin: 0; padding-left: 1.1em; }
+
+/* Ações: o conceito não as mostra; ficam num friso no pé, entre o livro e a moldura. */
+.grimorio-acoes {
+  position: absolute;
+  z-index: 4;
+  right: 7%;
+  bottom: 1.6%;
+  display: flex;
+  align-items: center;
+  gap: .7cqw;
+}
+.grimorio-acao {
+  padding: .45cqw 1cqw;
+  border: 1px solid #6a4a15;
+  border-radius: .4cqw;
+  background: linear-gradient(180deg, #fbf1dc, #f0dcb3);
+  color: #2b1d10;
+  font: 700 max(.95cqw, 12px)/1.1 var(--font-display);
+  box-shadow: inset 0 0 0 1px #fff6, 0 2px 4px #0006;
+  cursor: pointer;
+}
+.grimorio-acao--principal { background: linear-gradient(180deg, #f6dc97, #c9973e); }
+.grimorio-acao--discreta { background: color-mix(in srgb, #0b0d18 70%, transparent); border-color: var(--grimorio-ouro-escuro); color: #f0dfbd; }
+.grimorio-acao:hover:not(:disabled) { filter: brightness(1.08); }
+.grimorio-acao:disabled { opacity: .6; cursor: default; }
+.grimorio-acao:focus-visible { outline: 2px solid #f3d488; outline-offset: 2px; }
+.detalhe-carta__erro { margin: 0 .6cqw 0 0; padding: .2cqw .6cqw; border-radius: .3cqw; background: #fbe9e5; color: #8a1c10; font-weight: 700; font-size: max(.95cqw, 12px); }
+
+.grimorio-pagina :where(p, dt, dd, li, button) { font-variant-numeric: lining-nums; }
+
+/*
+ * Telas estreitas: não cabe o livro deitado. Uma página só, rolando dentro do diálogo: arte e título em
+ * cima, citação e dados embaixo, e as ações no fim. A moldura fica presa ao diálogo.
+ */
+@media (max-width: 760px) {
+  /* O corpo rola sem ser posicionado: a moldura, presa ao diálogo, não rola junto. */
+  .dialog.grimorio {
+    container-type: normal;
+    display: flex;
+    flex-direction: column;
+    width: calc(100vw - 2rem);
+    height: calc(100dvh - 2rem);
+    aspect-ratio: auto;
+    padding: 12px;
+    overflow: hidden;
+  }
+  .grimorio .dialog__body {
+    position: static;
+    flex: 1;
+    min-height: 0;
+    padding: 30px 14px 24px;
+    overflow-y: auto;
+    border-radius: 6px;
+    background: var(--grimorio-pagina) url("/arte/pergaminho.webp") center / 512px;
+  }
+  .grimorio .dialog__head { top: 16px; right: 16px; }
+  .grimorio .dialog__close { width: 38px; height: 38px; }
+  .grimorio-livro, .grimorio-fundo { display: none; }
+  .grimorio-moldura { inset: 6px; }
+  .grimorio-moldura .resumo-canto-folha { width: 44px; height: 44px; }
+  .grimorio-moldura__estrela { width: 28px; height: 28px; margin-left: -14px; }
+  .grimorio-moldura__estrela--alto { top: -14px; }
+  .grimorio-moldura__estrela--pe { bottom: -14px; }
+  .grimorio-pagina { position: static; width: auto; height: auto; }
+  .grimorio-pagina--direita { margin-top: 26px; }
+  .grimorio-arte { width: min(100%, 20rem); height: auto; aspect-ratio: 1; padding: 8px; }
+  .grimorio-titulo { width: min(100%, 20rem); height: auto; margin-top: 20px; padding: 22px 14px 24px; }
+  .grimorio-titulo__tipo { font-size: .78rem; }
+  .grimorio-titulo__nome { margin-top: .5rem; font-size: 2.1rem; }
+  .grimorio-citacao { width: 100%; height: auto; padding: 24px 18px 24px 36px; }
+  .grimorio-citacao::before { top: 14px; left: 12px; font-size: 2.2rem; }
+  .grimorio-citacao__texto { height: auto; font-size: 1.1rem; }
+  .grimorio-cantos .resumo-canto-folha { width: 40px; height: 40px; }
+  .grimorio-arte__estrela, .grimorio-titulo__estrela, .grimorio-citacao__estrela { width: 26px; height: 26px; }
+  .grimorio-arte__estrela--alto, .grimorio-titulo__estrela--alto, .grimorio-citacao__estrela--alto { top: -14px; margin-left: -13px; }
+  .grimorio-arte__estrela--pe, .grimorio-titulo__estrela--pe, .grimorio-citacao__estrela--pe { bottom: -14px; margin-left: -13px; }
+  .grimorio-arte__estrela--esq { left: -14px; margin-top: -13px; }
+  .grimorio-arte__estrela--dir { right: -14px; margin-top: -13px; }
+  .grimorio-arte .carta-medalhao__icone .icone-categoria { width: 72px; height: 72px; }
+  .grimorio-arte__estrelas .grimorio-estrela { width: 14px; height: 14px; }
+  .grimorio-dados { overflow: visible; margin-top: 20px; }
+  .grimorio-dados__lista { height: auto; grid-auto-rows: auto; gap: 10px; --dado-escala: 1; }
+  .grimorio-dado { grid-template-columns: 40px minmax(0, 1fr); column-gap: 10px; min-height: 64px; padding: 2px 6px; border-width: 10px; border-image-width: 14px; }
+  .grimorio-dado__icone { width: 40px; height: 40px; border-width: 2px; }
+  .grimorio-icone { width: 22px; height: 22px; }
+  .grimorio-dado__rotulo { font-size: .66rem; }
+  .grimorio-dado__valor { margin-top: 3px; font-size: 1.05rem; }
+  .grimorio-dado__estrela { width: 14px; height: 14px; bottom: -19px; margin-left: -7px; }
+  .grimorio-acoes { position: static; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .grimorio-acao { padding: .55rem 1rem; font-size: 1rem; border-radius: 6px; }
+  .detalhe-carta__erro { font-size: .9rem; }
+}
+@media (max-width: 420px) {
+  .grimorio-dados__lista { grid-template-columns: minmax(0, 1fr); }
+  .grimorio-dado__estrela { display: none; }
+}
+
+/* ---------- Larguras (design D10) ---------- */
+@container cartas (max-width: 1289px) {
+  .cartas-folha { --colunas: 3; }
+}
+@container cartas (max-width: 999px) {
+  .cartas-folha { --colunas: 2; }
+}
+@container cartas (max-width: 779px) {
+  .cartas-folha { padding: 1.5rem 1rem 1.6rem; }
+  .cartas-cabecalho { padding: .5rem 0 0 .9rem; }
+  .cartas-cabecalho__ferramentas { justify-content: flex-start; width: 100%; }
+  .cartas-cabecalho .busca-inventario { flex: 1 1 12rem; width: auto; }
+  .cartas-gravura { top: -.9rem; width: 100%; opacity: .55; }
+  /* A barra vira duas fileiras roláveis acima da grade, com o título só para leitores de tela. */
+  .cartas-corpo { grid-template-columns: minmax(0, 1fr); grid-template-areas: "lateral" "grade"; }
+  .cartas-filtros { gap: .5rem; }
+  .cartas-filtros .categorias--lista { padding: 0; border: 0; background: none; box-shadow: none; }
+  .cartas-filtros .categorias__titulo {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  .cartas-filtros .categorias ul { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .3rem; scrollbar-width: thin; }
+  .cartas-filtros .categorias__opcao {
+    width: auto; min-height: 2.2rem; white-space: nowrap; border-radius: 99px;
+    border-color: color-mix(in srgb, var(--ouro-700) 45%, transparent);
+  }
+  .cartas-secao__lista { justify-content: center; }
+  .cartas-legado { margin-inline: .4rem; }
+  /* No celular, rolagem dentro de rolagem atrapalha o toque: a grade volta a rolar com a página. */
+  .cartas-corpo__grade--rola { max-height: none; overflow: visible; margin: 0; padding: 0; }
+  .cartas-corpo__grade--rola .cartas-secao__titulo { position: static; margin-inline: 0; padding: 0; background: none; }
+}
+@container cartas (max-width: 479px) {
+  .cartas-folha { --colunas: 1; }
+  .cartas-secao__lista { grid-template-columns: minmax(0, 22.5rem); }
+  .cartas-folha .resumo-flor { display: none; }
+}
+
+/* Carta fora da aba: biblioteca da mesa, editor, ofertas e apresentação usam a mesma carta, no tamanho da referência. */
+.card-face { justify-items: center; }
+.card-face .carta-ficha { width: min(100%, 16.625rem); height: 21rem; }
+/* Altura fixa: cabe título de duas linhas, três de texto e os quatro custos; a pílula fica no pé. O título passa de duas linhas com reticências. */
+.card-face .carta-ficha__titulo {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Biblioteca da mesa: a carta é o botão que abre o grimório, como na ficha; o lápis do canto é o atalho de editar. */
+.carta-biblioteca { position: relative; width: min(100%, 16.625rem); margin-inline: auto; }
+.carta-biblioteca .card-face { width: 100%; }
+
+/*
+ * Biblioteca da mesa: a mesma barra de filtros da aba ao lado do catálogo. O painel é o contêiner "cartas",
+ * para a barra virar fileiras roláveis nas telas estreitas; sem folha, a barra fica na largura máxima.
+ */
+.biblioteca-painel {
+  container: cartas / inline-size;
+  --cartas-tinta: #17110b;
+  --cartas-ouro: #b08a45;
+  --cartas-grade: 0px;
+}
+/* Sem a folha por baixo, a caixa dos filtros leva o pergaminho da folha, opaco, sobre o painel escuro. Nas telas estreitas não há caixa, só as pílulas. */
+@container cartas (min-width: 780px) {
+  .biblioteca-painel .cartas-filtros .categorias--lista { background: linear-gradient(180deg, #f1e3c4, #ecdcb9); }
+}
+@container cartas (max-width: 779px) {
+  .biblioteca-painel .cartas-filtros .categorias__opcao:not([aria-pressed="true"]) { background: #f1e3c4; }
+}
+
+/* Editar: o selo do lápis (o mesmo de "Editar campanha"), preso ao canto superior direito e saindo da moldura. O selo de estado da carta recua para não ficar embaixo. */
+.carta-biblioteca__editar {
+  position: absolute;
+  top: -.7rem;
+  right: -.7rem;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid #e2bf72;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a2814, #140d06 70%);
+  box-shadow: 0 0 0 3px #140d06b3, 0 3px 8px #0009, inset 0 0 0 2px #6a4a15;
+  color: #f6d68c;
+  cursor: pointer;
+  transition: transform .15s ease, color .15s ease;
+}
+.carta-biblioteca__editar:hover { color: #fff0cf; transform: scale(1.06); }
+.carta-biblioteca__editar:focus-visible { outline: 2px solid #ffe3a3; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .carta-biblioteca__editar { transition: none; } }
+.carta-biblioteca:has(.carta-biblioteca__editar) .carta-ficha__selo { right: 2.2rem; }
+.biblioteca-aviso { margin: .6rem 0 0; color: #f6d68c; font-weight: 600; }
+
+/* O custo legado fica sob a carta sem entrar na altura da linha, para nenhuma coluna ficar maior que outra. */
+.card-catalog { row-gap: 2.4rem; }
+.carta-biblioteca .card-face__legacy {
+  position: absolute;
+  top: calc(100% + .35rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+}
