@@ -1,0 +1,495 @@
+/*
+ * Aba Atributos (redesenhar-aba-atributos). Medidas tiradas da referência do usuário a 1448 px:
+ * folha de pergaminho com moldura dourada, cabeçalho com a gravura das três figuras e três cartões
+ * com faixa pintada, medalhão e tabela. Molduras em SVG/CSS; pinturas só como ilustração.
+ */
+
+.atributos-conteiner { container: atributos / inline-size; margin-top: 1.2rem; }
+
+.atributos-folha {
+  --atr-ouro: #7a5a26;
+  --atr-ouro-medio: #b08a45;
+  --atr-ouro-claro: #ddb872;
+  --atr-tinta: #2b1d10;
+  --atr-tinta-media: #4a3522;
+  --icone-recorte: var(--pergaminho-100);
+  position: relative;
+  isolation: isolate;
+  padding: 2.6rem clamp(1rem, 2.6vw, 2.6rem) 2rem;
+  border-radius: 6px;
+  color: var(--atr-tinta);
+  font-variant-numeric: lining-nums;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tinta-900) 55%, transparent),
+    inset 0 0 38px color-mix(in srgb, #5c3410 50%, transparent),
+    inset 0 0 110px color-mix(in srgb, #7a4a1a 24%, transparent),
+    0 18px 50px #000a;
+}
+
+/* Moldura dupla da folha com os cantos do Resumo. */
+.atributos-folha__moldura {
+  position: absolute;
+  inset: 9px;
+  z-index: 0;
+  pointer-events: none;
+  border: 3px solid #c9a35c;
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 1.5px #5a3d15,
+    inset 0 0 0 1.5px #5a3d15,
+    inset 0 0 0 4px color-mix(in srgb, var(--pergaminho-50) 55%, transparent),
+    inset 0 0 0 5px color-mix(in srgb, var(--atr-ouro) 70%, transparent);
+}
+/* Dourado em relevo: traço claro com contorno escuro. */
+.atributos-folha .resumo-canto-folha, .atributos-folha .resumo-flor,
+.atributos-cartao__ornatos, .atributos-vinhetas__no {
+  filter: drop-shadow(0 0 .6px #3b2b13) drop-shadow(0 0 .6px #3b2b13) drop-shadow(0 1.5px 1px #3b2b1366);
+}
+.atributos-folha__moldura .resumo-canto-folha { width: 84px; height: 84px; color: #d7b36c; }
+.atributos-folha__moldura .resumo-canto-folha--se { top: -7px; left: -7px; }
+.atributos-folha__moldura .resumo-canto-folha--sd { top: -7px; right: -7px; }
+.atributos-folha__moldura .resumo-canto-folha--ie { bottom: -7px; left: -7px; }
+.atributos-folha__moldura .resumo-canto-folha--id { bottom: -7px; right: -7px; }
+.atributos-folha__moldura .resumo-flor { color: #d7b36c; }
+
+/* ---------- Cabeçalho ---------- */
+.atributos-cabecalho {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(16rem, 25rem) minmax(0, 1fr) auto;
+  grid-template-areas: "titulos vinhetas acoes";
+  align-items: start;
+  gap: 1rem 1.6rem;
+  margin-bottom: .2rem;
+}
+.atributos-cabecalho__titulos { grid-area: titulos; padding-top: .55rem; }
+.atributos-cabecalho__sobretitulo {
+  margin: 0;
+  color: var(--atr-tinta-media);
+  font: 700 .9rem/1 var(--font-display);
+  letter-spacing: .22em;
+  -webkit-text-stroke: .3px currentColor;
+  text-transform: uppercase;
+}
+.atributos-cabecalho__titulo {
+  margin: .55rem 0 .7rem;
+  color: var(--atr-tinta);
+  font: 700 clamp(2.4rem, 4.2vw, 3.55rem)/.95 var(--font-display);
+  -webkit-text-stroke: 1px currentColor;
+  letter-spacing: -.005em;
+}
+.atributos-cabecalho__frase {
+  margin: 0;
+  max-width: 23.6rem;
+  color: #3a2a1a;
+  -webkit-text-stroke: .2px currentColor;
+  font: 500 1.2rem/1.2 var(--font-display);
+}
+.atributos-cabecalho__acoes { grid-area: acoes; display: flex; justify-content: flex-end; padding-top: 1.1rem; }
+
+.atributos-editar {
+  display: inline-flex;
+  align-items: center;
+  gap: .7rem;
+  min-height: 3rem;
+  padding: .55rem 1.45rem .55rem 1.25rem;
+  border: 1.5px solid var(--atr-ouro-medio);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #fffaf0, #f9eedb);
+  color: var(--atr-tinta);
+  font: 700 1.08rem/1 var(--font-display);
+  -webkit-text-stroke: .3px currentColor;
+  box-shadow: inset 0 0 0 1px #fff8, 0 2px 5px #5a3a1433;
+  cursor: pointer;
+  --icone-recorte: #fcf4e4;
+}
+.atributos-editar:hover { background: linear-gradient(180deg, #fffdf6, #f5e6c8); border-color: var(--atr-ouro); }
+.atributos-editar:focus-visible { outline: 2px solid var(--atr-ouro); outline-offset: 2px; }
+.atributos-editar .icone-pena { flex: none; }
+
+/* Gravura das três figuras, com as fitas de legenda por cima. */
+.atributos-vinhetas {
+  grid-area: vinhetas;
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  /*
+   * A caixa reserva a altura com ou sem a imagem. É mais baixa que a gravura (11:4): o pé vazio dela fica
+   * de fora, e as fitas cobrem o peito das figuras, como na referência.
+   */
+  aspect-ratio: 3.5 / 1;
+  align-self: start;
+  width: 100%;
+  max-width: 46rem;
+  justify-self: center;
+  margin: -1.6rem 0 -.3rem;
+}
+.atributos-vinhetas__gravura {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: radial-gradient(ellipse 58% 64% at 50% 44%, #000 66%, transparent 100%);
+  mask-image: radial-gradient(ellipse 58% 64% at 50% 44%, #000 66%, transparent 100%);
+}
+.atributos-vinheta {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  height: 100%;
+  margin: 0;
+}
+.atributos-vinheta__emblema {
+  position: absolute;
+  inset: 0 .4rem 2.6rem;
+  display: grid;
+  place-items: center;
+  color: #6b4a22;
+}
+.atributos-vinheta__emblema svg:first-child { position: absolute; inset: 0; width: 100%; height: 100%; }
+.atributos-vinheta__emblema .icone-grupo { position: relative; color: #5a3d1c; --medalhao-miolo: var(--pergaminho-100); }
+
+.atributos-legenda {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: min(100%, 15.5rem);
+  padding: .55rem 1.7rem .7rem;
+  text-align: center;
+}
+.atributos-legenda__fita { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 2px 2px #5a3a1433); }
+.atributos-legenda__corpo { fill: #f8ecd2; stroke: var(--atr-ouro); stroke-width: 1.4; }
+.atributos-legenda__ponta { fill: #e3cc9e; stroke: var(--atr-ouro); stroke-width: 1.2; }
+.atributos-legenda__titulo {
+  position: relative;
+  color: var(--atr-tinta);
+  font: 700 .9rem/1.15 var(--font-display);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  -webkit-text-stroke: .25px currentColor;
+}
+.atributos-legenda__frase { position: relative; color: #3a2a1a; font: italic 500 1rem/1.15 var(--font-display); white-space: nowrap; }
+/* Nó de filigrana entre as fitas. */
+.atributos-vinhetas__no { position: absolute; bottom: .1rem; width: 3.4rem; height: 3.4rem; margin-left: -1.7rem; color: #d7b36c; pointer-events: none; }
+.atributos-vinhetas__no--1 { left: 33.333%; }
+.atributos-vinhetas__no--2 { left: 66.666%; }
+
+.atributos-aviso { position: relative; z-index: 1; margin: .6rem 0 0; color: var(--atr-tinta-media); font-weight: 600; }
+.atributos-aviso--erro { color: var(--sangue-700); }
+
+/* ---------- Cartões ---------- */
+.atributos-cartoes {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.9rem .95rem;
+  margin-top: 2.7rem;
+}
+.atributos-cartao--outros { grid-column: 1 / -1; }
+
+.atributos-cartao {
+  --faixa-escura: #1f080b;
+  --faixa-media: #3b1410;
+  --faixa-clara: #5a2418;
+  --medalhao-miolo: #3b1a12;
+  --medalhao-miolo-claro: #6a2a1c;
+  --subtitulo: #c9a46a;
+  --faixa-tinta: #7a2a1c;
+  --icone-recorte: #f7ead0;
+  position: relative;
+  padding: 0 .55rem 1rem;
+  border: 2px solid var(--atr-ouro-medio);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fbf1dd 70%, transparent), color-mix(in srgb, #f3e2c2 55%, transparent)),
+    var(--pergaminho-100);
+  background-clip: padding-box;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, #fff6e2 70%, transparent), inset 0 0 0 4px color-mix(in srgb, var(--atr-ouro-medio) 55%, transparent), 0 3px 10px #5a3a1433;
+}
+.atributos-cartao--sociais { --faixa-escura: #0b1a14; --faixa-media: #173427; --faixa-clara: #29503d; --medalhao-miolo: #123528; --medalhao-miolo-claro: #25624a; --subtitulo: #c7b58a; --faixa-tinta: #2f6a50; }
+.atributos-cartao--mentais { --faixa-escura: #08131f; --faixa-media: #13263c; --faixa-clara: #213f60; --medalhao-miolo: #12243c; --medalhao-miolo-claro: #25497a; --subtitulo: #c9b58a; --faixa-tinta: #2c5a8e; }
+.atributos-cartao--outros { --faixa-escura: var(--noite-950); --faixa-media: var(--noite-800); --faixa-clara: var(--noite-600); --medalhao-miolo: var(--noite-800); --medalhao-miolo-claro: var(--noite-500); --subtitulo: var(--osso-300); }
+
+.atributos-cartao__cantos { position: absolute; inset: -2px; pointer-events: none; z-index: 3; }
+.atributos-cartao__cantos .resumo-canto-folha { width: 34px; height: 34px; color: var(--atr-ouro); }
+.atributos-cartao__cantos .resumo-canto-folha--se { top: -5px; left: -5px; }
+.atributos-cartao__cantos .resumo-canto-folha--sd { top: -5px; right: -5px; }
+.atributos-cartao__cantos .resumo-canto-folha--ie { bottom: -5px; left: -5px; }
+.atributos-cartao__cantos .resumo-canto-folha--id { bottom: -5px; right: -5px; }
+
+/* Faixa pintada no alto do cartão, com a moldura dourada e o medalhão sobre a borda. */
+.atributos-cartao__faixa {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  min-height: 7.6rem;
+  margin: -2px -.6rem 0;
+  padding: 2.9rem 1rem .8rem;
+  border: 2px solid var(--atr-ouro-medio);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px #3b2b13, inset 0 0 0 1px #0009, inset 0 0 0 2.5px color-mix(in srgb, var(--atr-ouro-claro) 55%, transparent);
+  color: #fff8ea;
+  text-align: center;
+}
+.atributos-cartao__cena {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse 60% 90% at 50% 100%, color-mix(in srgb, var(--faixa-escura) 70%, transparent), transparent 70%),
+    repeating-linear-gradient(125deg, #ffffff06 0 2px, transparent 2px 9px),
+    radial-gradient(ellipse 40% 70% at 12% 30%, color-mix(in srgb, var(--faixa-clara) 70%, transparent), transparent 70%),
+    radial-gradient(ellipse 40% 70% at 88% 30%, color-mix(in srgb, var(--faixa-clara) 70%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--faixa-media), var(--faixa-escura));
+}
+.atributos-cartao__cena::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 25%, color-mix(in srgb, var(--faixa-escura) 72%, transparent) 78%);
+}
+.atributos-cartao__pintura { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.55) brightness(.78) contrast(1.05); }
+/* A cena toma a cor do grupo (quase monocromática, como na referência); sem pintura, não há o que tingir. */
+.atributos-cartao__cena:has(.atributos-cartao__pintura)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--faixa-tinta, var(--faixa-clara));
+  mix-blend-mode: color;
+  opacity: .72;
+}
+.atributos-cartao__cena::after { z-index: 2; }
+.atributos-cartao__cena { isolation: isolate; }
+.atributos-cartao__faixa { isolation: isolate; }
+
+.atributos-cartao__ornatos { position: absolute; inset: 0; pointer-events: none; color: #e0bd76; }
+.atributos-cartao__ornato { position: absolute; }
+.atributos-cartao__ornato--se { top: -11px; left: -11px; width: 54px; height: 54px; }
+.atributos-cartao__ornato--sd { top: -11px; right: -11px; width: 54px; height: 54px; transform: scaleX(-1); }
+.atributos-cartao__ornato--ie { bottom: 2px; left: 3px; width: 92px; height: 66px; }
+.atributos-cartao__ornato--id { bottom: 2px; right: 3px; width: 92px; height: 66px; transform: scaleX(-1); }
+.atributos-cartao__filigrana { position: absolute; top: -14px; left: 50%; width: 17rem; height: 2.6rem; transform: translateX(-50%); }
+
+.atributos-cartao__medalhao {
+  position: absolute;
+  top: -2.35rem;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 5.4rem;
+  height: 5.4rem;
+  transform: translateX(-50%);
+  color: #f2dcaa;
+  filter: drop-shadow(0 4px 6px #0008);
+}
+.atributos-medalhao { position: absolute; inset: 0; width: 100%; height: 100%; }
+.atributos-medalhao__miolo { fill: var(--medalhao-miolo); }
+.atributos-cartao__medalhao .icone-grupo { position: relative; width: 2.95rem; height: 2.95rem; filter: drop-shadow(0 1px 1px #0009); }
+
+.atributos-cartao__titulo {
+  position: relative;
+  margin: 0;
+  color: #fffaf0;
+  font: 700 clamp(1.7rem, 2.4vw, 2.1rem)/1 var(--font-display);
+  -webkit-text-stroke: .6px currentColor;
+  text-shadow: 0 2px 6px #000c, 0 0 2px #000;
+}
+.atributos-cartao__subtitulo {
+  position: relative;
+  margin: .35rem 0 0;
+  color: var(--subtitulo);
+  font: 700 .78rem/1 var(--font-display);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px #000c;
+}
+
+/* ---------- Tabela ---------- */
+.atributos-tabela {
+  width: 100%;
+  margin-top: .45rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: var(--font-display);
+}
+.atributos-tabela th:nth-child(1) { width: 44%; }
+.atributos-tabela th:nth-child(2) { width: 15%; }
+.atributos-tabela th:nth-child(3) { width: 20%; }
+.atributos-tabela th:nth-child(4) { width: 21%; }
+.atributos-tabela thead th {
+  position: relative;
+  padding: .55rem .2rem .5rem;
+  color: var(--atr-tinta);
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.12;
+  -webkit-text-stroke: .35px currentColor;
+  text-align: center;
+  vertical-align: middle;
+}
+.atributos-tabela thead th:first-child { text-align: left; padding-left: 2.5rem; }
+.atributos-tabela thead tr { background: linear-gradient(90deg, transparent, var(--atr-ouro-medio) 8%, var(--atr-ouro-medio) 92%, transparent) bottom / 100% 1px no-repeat; }
+.atributos-tabela tbody tr + tr > * { border-top: 1px solid color-mix(in srgb, var(--atr-ouro-medio) 50%, transparent); }
+.atributos-tabela tbody tr.atributos-linha__erros > * { border-top: 0; }
+.atributos-tabela tbody th,
+.atributos-tabela tbody td { height: 3.6rem; padding: .3rem .2rem; text-align: center; vertical-align: middle; }
+.atributos-tabela tbody th { text-align: left; padding-left: .55rem; }
+
+.atributos-linha__nome { display: inline-flex; align-items: center; gap: .8rem; min-width: 0; color: var(--atr-tinta); font-size: 1.26rem; font-weight: 700; -webkit-text-stroke: .45px currentColor; }
+.atributos-linha__icone { display: inline-grid; place-items: center; width: 2.5rem; flex: none; color: #2a1d12; }
+.atributos-linha__icone .icone-atributo { width: 2.45rem; height: 2.45rem; }
+
+/* Base: disco escuro com aro de bronze. */
+.atributos-base {
+  display: inline-grid;
+  place-items: center;
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, #3e2c17 0 55%, #1d130a 72%) padding-box,
+    conic-gradient(from 210deg, #f1d8a0, #9a7434, #5c4219, #c79f5c, #f1d8a0, #7a5a26, #f1d8a0) border-box;
+  border: 3px solid transparent;
+  box-shadow: 0 0 0 1px #3b2b13, 0 2px 3px #0005, inset 0 2px 4px #0009;
+  color: #fbf1dc;
+  font: 700 1.35rem/1 var(--font-display);
+  -webkit-text-stroke: .4px currentColor;
+  text-shadow: 0 1px 1px #000;
+}
+/* Ajuste: caixa clara afundada. */
+.atributos-ajuste {
+  display: inline-grid;
+  place-items: center;
+  width: min(100%, 4.4rem);
+  height: 2.3rem;
+  border: 1px solid #cfb98f;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #efe2c9, #f5ead6);
+  box-shadow: inset 0 1px 3px #7a5a2633;
+  color: var(--atr-tinta);
+  font: 700 1.2rem/1 var(--font-display);
+  -webkit-text-stroke: .5px currentColor;
+}
+.atributos-base--campo, .atributos-ajuste--campo {
+  min-height: 0;
+  padding: 0 .2rem;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.atributos-base--campo { width: 3rem; height: 3rem; }
+.atributos-base--campo::-webkit-inner-spin-button, .atributos-ajuste--campo::-webkit-inner-spin-button,
+.atributos-base--campo::-webkit-outer-spin-button, .atributos-ajuste--campo::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.atributos-base--campo:focus-visible, .atributos-ajuste--campo:focus-visible { outline: 2px solid var(--atr-ouro); outline-offset: 2px; }
+.atributos-base--campo[aria-invalid="true"], .atributos-ajuste--campo[aria-invalid="true"] { box-shadow: 0 0 0 2px var(--sangue-500); }
+
+/* Total: placa dourada de cantos cortados; é o gatilho das fontes. */
+.atributos-linha__total .popover { display: inline-block; }
+.atributos-linha__total .derived-value__trigger,
+.atributos-total-vazio {
+  display: inline-grid;
+  place-items: center;
+  min-width: 3.7rem;
+  height: 2.55rem;
+  padding: 0 .6rem;
+  border: 0;
+  background: linear-gradient(180deg, #a88345, #7a5a26);
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  color: var(--atr-tinta);
+  font: 700 1.45rem/1 var(--font-display);
+  -webkit-text-stroke: .5px currentColor;
+  cursor: pointer;
+  position: relative;
+}
+.atributos-linha__total .derived-value__trigger::before,
+.atributos-total-vazio::before {
+  content: "";
+  position: absolute;
+  inset: 1.5px;
+  z-index: -1;
+  background: linear-gradient(180deg, #f8e7bf, #ecd29d 60%, #e3c486);
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+}
+.atributos-linha__total .derived-value__trigger { isolation: isolate; }
+.atributos-total-vazio { isolation: isolate; cursor: default; }
+.atributos-linha__total .derived-value__trigger b { font-weight: 700; }
+.atributos-linha__total .derived-value__trigger:focus-visible { outline: 2px solid var(--atr-ouro); outline-offset: 3px; }
+
+.atributos-linha__erros td { height: auto; padding: 0 .4rem .5rem; text-align: left; }
+.atributos-linha__erros .field-error { display: block; }
+
+.atributos-acoes {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .6rem;
+  margin-top: 1.2rem;
+}
+.atributos-acoes .atributos-aviso { margin: 0 auto 0 0; }
+
+/* ---------- Larguras menores ---------- */
+@container atributos (max-width: 1100px) {
+  .atributos-cabecalho {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "titulos acoes" "vinhetas vinhetas";
+  }
+  .atributos-vinhetas { margin: .4rem auto 0; }
+}
+/* Três cartões estreitos (folha de 1180 a 1320 px): nome e ícone menores para não encostar na base. */
+@container atributos (max-width: 1320px) {
+  .atributos-linha__nome { gap: .6rem; font-size: 1.14rem; }
+  .atributos-linha__icone { width: 2.1rem; }
+  .atributos-linha__icone .icone-atributo { width: 2.1rem; height: 2.1rem; }
+}
+@container atributos (max-width: 1180px) {
+  .atributos-cartoes { grid-template-columns: minmax(0, 1fr); gap: 2.4rem; max-width: 34rem; margin-inline: auto; margin-top: 2rem; }
+}
+@container atributos (max-width: 560px) {
+  .atributos-folha { padding: 2rem .9rem 1.4rem; }
+  .atributos-cabecalho { grid-template-columns: minmax(0, 1fr); grid-template-areas: "titulos" "acoes" "vinhetas"; }
+  .atributos-cabecalho__acoes { justify-content: flex-start; padding-top: 0; }
+  .atributos-vinhetas { margin-top: .2rem; }
+  .atributos-legenda { padding: .35rem .6rem .4rem; }
+  .atributos-legenda__titulo { font-size: .62rem; letter-spacing: .06em; }
+  .atributos-legenda__frase { display: none; }
+  .atributos-vinhetas__no { display: none; }
+  .atributos-folha__moldura .resumo-canto-folha { width: 52px; height: 52px; }
+  .atributos-folha__moldura .resumo-flor { display: none; }
+  .atributos-cartao { padding-inline: .35rem; }
+  .atributos-tabela th:nth-child(1) { width: 40%; }
+  .atributos-tabela th:nth-child(2) { width: 17%; }
+  .atributos-tabela th:nth-child(3) { width: 21%; }
+  .atributos-tabela th:nth-child(4) { width: 22%; }
+  .atributos-tabela thead th { font-size: .86rem; }
+  .atributos-tabela thead th:first-child { padding-left: .4rem; }
+  .atributos-linha__nome { gap: .35rem; font-size: .98rem; -webkit-text-stroke: .3px currentColor; }
+  .atributos-linha__icone { width: 1.4rem; }
+  .atributos-linha__icone .icone-atributo { width: 1.4rem; height: 1.4rem; }
+  .atributos-tabela tbody th { padding-left: .3rem; }
+  .atributos-base { width: 2.2rem; height: 2.2rem; font-size: 1.05rem; }
+  .atributos-ajuste { height: 2.1rem; }
+  .atributos-linha__total .derived-value__trigger, .atributos-total-vazio { min-width: 2.9rem; height: 2.2rem; font-size: 1.1rem; }
+  .atributos-base--campo { width: 2.6rem; height: 2.6rem; }
+}
+/* O atalho `font:` zera os algarismos; a folha usa sempre os alinhados, como na referência. */
+.atributos-folha, .atributos-folha * { font-variant-numeric: lining-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .atributos-editar, .atributos-linha__total .derived-value__trigger { transition: none; }
+}
