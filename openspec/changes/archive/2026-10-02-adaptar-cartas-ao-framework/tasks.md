@@ -30,7 +30,7 @@
 - [x] 5.3 Manter os campos comuns e recalcular Grau e Descansos ao trocar entre Habilidade e Magia, pedindo confirmação só quando a Escola ou a Disciplina forem descartadas; verificar com o teste do cenário "Troca de Magia para Habilidade"
 - [x] 5.4 Mostrar no detalhe da carta (ficha e biblioteca) os campos preenchidos, o Grau pelo nome, Disciplina nas habilidades e o rótulo "Acesso"; ajustar `cardFormat.ts`; verificar com testes de `CartasFicha` e `cardFormat` para os cenários de `visual-da-ficha`
 - [x] 5.5 Mostrar na pré-visualização da importação os campos, os valores calculados e os avisos de um código `CR1`; verificar com teste do diálogo de importação
-- [ ] 5.6 Capturar o editor de uma magia e o detalhe de uma magia com campos do Framework, em computador e em 375 px, e obter a aprovação do usuário por comparação com os conceitos aprovados
+- [x] 5.6 Capturar o editor de uma magia e o detalhe de uma magia com campos do Framework, em computador e em 375 px, e obter a aprovação do usuário por comparação com os conceitos aprovados
 
 ## 6. Migração
 
@@ -44,7 +44,7 @@
 
 - [x] 9.1 Gerar pelo Codex dois conceitos da pré-visualização no estilo de revelação de carta, escolher um e guardá-lo em `arte/conceito-previa.png`, com os prompts em `arte/prompts.md`
 - [x] 9.2 Reescrever o diálogo de importação como revelação (carta grande, destaques, campos, avisos e ações; só o código antes da prévia; celular em coluna; movimento reduzido), em SVG/CSS; verificar com testes do diálogo para os três cenários do requisito
-- [ ] 9.3 Capturar a pré-visualização em computador e em 375 px e obter a aprovação do usuário por comparação com o conceito
+- [x] 9.3 Capturar a pré-visualização em computador e em 375 px e obter a aprovação do usuário por comparação com o conceito
 
 ## 8. Verificação final
 

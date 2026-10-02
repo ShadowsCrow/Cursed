@@ -14,11 +14,15 @@ Cada carta publicada SHALL possuir tipo, versão, texto, requisitos, campos mec�
 - **THEN** o sistema cria uma nova versão e mantém personagens existentes vinculados à versão anterior até uma migração explícita
 
 ### Requirement: Campos mecânicos permanecem distintos
-Cartas de habilidade e magia SHALL preservar separadamente Custo de Aprendizado, Descansos Mínimos, Potência de Uso, Custo de Uso e custos adicionais quando definidos, e MUST NOT inferir automaticamente esses valores a partir do campo legado `custo`.
+Cartas de habilidade e magia SHALL preservar separadamente Custo de Aprendizado, Descansos Mínimos, Potência de Uso, Custo de Uso e custos adicionais quando definidos, e MUST NOT inferir automaticamente esses valores a partir do campo legado `custo`. Grau, Descansos Mínimos e Custo de Uso SHALL ser calculados a partir do Custo de Aprendizado e da Potência de Uso pelas tabelas do Framework, conforme a capacidade `criacoes-do-framework`; o campo legado `custo` SHALL continuar fora desse cálculo.
 
 #### Scenario: Carta legada possui apenas custo textual
 - **WHEN** a carta é migrada sem cálculo mecânico validado
 - **THEN** o sistema mantém os campos especializados indefinidos e sinaliza revisão em vez de inventar valores
+
+#### Scenario: Carta com custos calculados
+- **WHEN** uma magia tem Custo de Aprendizado `22` e Potência de Uso `11`
+- **THEN** o sistema mostra Grau "Simples", Descansos Mínimos `4` e Custo de Uso `2 PP`, sem consultar o custo legado
 
 ### Requirement: Concessão direta pelo Narrador
 O Narrador SHALL poder conceder uma carta diretamente a um personagem, escolhendo o destino correspondente ao tipo e declarando quando a concessão ignora o fluxo normal de aprendizado.
@@ -60,11 +64,15 @@ O Narrador SHALL poder apresentar uma carta a participantes sem transferir sua p
 - **THEN** a carta não é apresentada de novo a ele, e os demais destinatários que ainda não a viram continuam a recebê-la
 
 ### Requirement: Importação portátil com pré-visualização
-O sistema SHALL continuar aceitando formatos portáteis compatíveis para importação, mas SHALL exibir conteúdo, versão, procedência e avisos de validação antes de criar uma carta ou instância.
+O sistema SHALL continuar aceitando formatos portáteis compatíveis para importação, incluindo o código de criação `CR1` para habilidades e magias, mas SHALL exibir conteúdo, versão, procedência e avisos de validação antes de criar uma carta ou instância.
 
 #### Scenario: Código importado contém conteúdo inválido
 - **WHEN** o usuário tenta confirmar a importação
 - **THEN** o sistema rejeita o conteúdo sem alterar catálogo ou personagem e explica os problemas encontrados
+
+#### Scenario: Código de criação de uma habilidade
+- **WHEN** o Narrador pré-visualiza um código `CR1` de uma habilidade de combo
+- **THEN** a pré-visualização mostra o tipo Habilidade, o título, o Combo, os custos calculados e a procedência "importação CR1", e confirmar cria um rascunho no catálogo da mesa
 
 ### Requirement: Custos de aprendizado reservados ao Narrador
 O Custo de Aprendizado e os Descansos Mínimos de habilidades e magias SHALL ser visíveis só para o Narrador da mesa. Toda carta que o sistema entrega a outro participante MUST NOT conter esses dois valores. Isso vale para as cartas da ficha, as candidatas de uma oferta, a resposta a uma oferta, a resposta a uma mudança de estado da carta e as cartas apresentadas. A Potência de Uso, o Custo de Uso e os custos adicionais SHALL continuar visíveis a quem vê a carta. Os valores guardados, o catálogo do Narrador e o ciclo de aprendizado SHALL continuar como antes.

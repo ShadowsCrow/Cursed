@@ -370,9 +370,10 @@ Os quadros de dados SHALL ser, nesta ordem, os que se aplicam à carta:
 - Marcações e Origem;
 - Versão e Recebida em;
 - Potência de uso e Custo de uso, em habilidades e magias;
-- Escola e Grau, nas magias;
+- Escola e Grau, nas magias, com o Grau pelo nome (Básica a Lendária); Disciplina e Grau, nas habilidades, só quando definidos;
+- os campos do Framework preenchidos, na ordem da ficha de criação do Framework (Tipo, Lançamento, Combo, Persistência, Alcance, Forma, Alvo ou Área, Impactos, Duração, Efeito Principal, Efeitos Secundários, Efeitos Condicionais, Teste, Componentes, Limitações e Escalonamento); campos vazios SHALL NOT aparecer;
 - Custo de aprendizado e Descansos mínimos, só para o Narrador;
-- os custos adicionais, os requisitos e, só para o Narrador, o custo legado.
+- os custos adicionais, os requisitos (com o rótulo "Acesso" em habilidades e magias) e, só para o Narrador, o custo legado.
 
 Marcações vazias SHALL aparecer como "Nenhuma". Molduras, quadros, ícones e ornamentos SHALL ser SVG ou CSS. A cena de fundo SHALL ser pintura opcional, sem imagem quebrada quando falta. Em telas estreitas, as duas páginas SHALL ficar uma sobre a outra, sem rolagem horizontal.
 
@@ -395,6 +396,10 @@ As ações de hoje SHALL ficar no detalhe, com as mesmas permissões:
 #### Scenario: Grimório de uma habilidade
 - **WHEN** o jogador abre "Segundo round", concedida pela classe Especialista de Combate
 - **THEN** a página da esquerda mostra a arte, "HABILIDADE" e "Segundo round"; a da direita mostra o texto inteiro no quadro de citação e os quadros Marcações, Origem ("Classe: Especialista de Combate - automática"), Versão, Recebida em, Potência de uso e Custo de uso, sem Custo de aprendizado e sem Descansos mínimos
+
+#### Scenario: Magia com campos do Framework
+- **WHEN** o jogador abre uma magia Druídica com Alcance "15 metros", Forma "Círculo" e Teste preenchidos, e Combo vazio
+- **THEN** a página da direita mostra Escola "Druídica", o Grau pelo nome e os quadros Alcance, Forma e Teste, sem quadro de Combo e sem Custo de aprendizado
 
 #### Scenario: Celular
 - **WHEN** o detalhe é aberto numa tela de 375 pixels
