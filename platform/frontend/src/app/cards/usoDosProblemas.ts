@@ -29,11 +29,16 @@ export function ancoraDoProblema(campo: string): string {
 
 /** Rótulo das âncoras para o topo da página, quando o quadro não está na tela. */
 const ROTULOS: Record<string, string> = {
-  titulo: "Título", texto: "Descrição", requisitos: "Requisitos", tags: "Marcações", ativacao: "Ativação",
+  titulo: "Título", texto: "Descrição", requisitos: "Requisitos", tags: "Marcações", ativacao: "Tipo",
   escola: "Escola", grau: "Grau", custo_aprendizado: "Custo de Aprendizado", descansos_minimos: "Descansos Mínimos",
   potencia_uso: "Potência de Uso", custo_uso: "Custo de Uso", custo_legado: "Custo legado", formato: "O que é?",
   "formato.dimensao": "Espaço na bolsa", raridade: "Raridade", icone: "Ícone na bolsa", arte: "Arte da carta",
   quantidade: "Quantidade", modificadores: "Modificadores", duracao_rodadas: "Duração", tipo: "Tipo da carta",
+  // Campos do Framework (adaptar-cartas-ao-framework).
+  disciplina: "Disciplina", lancamento: "Lançamento", combo: "Combo", persistencia: "Persistência", alcance: "Alcance",
+  forma: "Forma", alvo_area: "Alvo ou Área", impactos: "Impactos", duracao: "Duração", efeito_principal: "Efeito principal",
+  efeitos_secundarios: "Efeitos secundários", efeitos_condicionais: "Efeitos condicionais", teste: "Teste",
+  componentes: "Componentes", limitacoes: "Limitações", escalonamento: "Escalonamento",
 };
 
 export function rotuloDaAncora(ancora: string): string {
@@ -48,6 +53,9 @@ export function rotuloDaAncora(ancora: string): string {
 /** Avisos de revisão (textos do servidor) vão para o quadro a que se referem. */
 export function ancoraDoAviso(aviso: string): string {
   if (/custo legado/i.test(aviso)) return "custo_legado";
+  if (/^Custo de Uso/.test(aviso)) return "custo_uso";
+  if (/^Custo de Aprendizado/.test(aviso)) return "custo_aprendizado";
+  if (/^Tipo:/.test(aviso)) return "ativacao";
   if (/arte|imagem|ícone/i.test(aviso)) return "arte";
   if (/dimens|formato|grade/i.test(aviso)) return "formato";
   return "carta";

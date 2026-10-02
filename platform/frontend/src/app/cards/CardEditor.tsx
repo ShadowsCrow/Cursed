@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Confirmation } from "../../ui/primitives";
 import { ModifiersEditor } from "../characters/sheet/EffectsPanel";
 import { ImageUpload } from "../assets/ImageUpload";
-import { useCatalogoItens, type CatalogoItens } from "../characters/sheet/catalogoApi";
+import { useCatalogoFramework, useCatalogoItens, type CatalogoFramework, type CatalogoItens } from "../characters/sheet/catalogoApi";
 import { categoriaDaCarta } from "../characters/sheet/cartas/apresentacao";
 import { ArteDoGrimorio, CantosDoGrimorio, MolduraDoGrimorio } from "../characters/sheet/cartas/DetalheDaCarta";
 import { EstrelaDoGrimorio } from "../characters/sheet/cartas/grimorio";
@@ -18,8 +18,9 @@ import { IconeCategoria } from "../inventory/iconesItem";
 import type { ApiClient, ModificadorResumo } from "../characters/types";
 import { cardKeys, useCatalogo, usePublicarCarta, useVersoesCarta } from "./api";
 import {
-  CampoEscolha, CampoEscolhas, CampoEtiquetas, CampoInteiro, CampoTexto, Quadro, type PropsDoControle,
+  CampoCalculado, CampoEscolha, CampoEscolhas, CampoEtiquetas, CampoInteiro, CampoTexto, CampoTextoLongo, Quadro, type PropsDoControle,
 } from "./camposDoEditor";
+import { calcular, ehNatureza, rotulo } from "./criacao";
 import { IconeDoCampo } from "./iconesDosCampos";
 import { MensagensDoCampo, ProvedorDeProblemas } from "./problemasDoEditor";
 import { useProblemasDoCampo, useProblemasDoEditor } from "./usoDosProblemas";
@@ -38,6 +39,13 @@ type Rascunho = Record<string, unknown>;
 
 /** Campos que todos os tipos têm: ficam ao trocar o tipo (D3). */
 const CAMPOS_COMUNS = new Set(["titulo", "texto", "requisitos", "tags", "ativos", "ativos_privados"]);
+/** Campos do Framework comuns a habilidades e magias: ficam ao trocar entre as duas (adaptar-cartas-ao-framework). */
+const CAMPOS_DE_CRIACAO = new Set([
+  "ativacao", "ativacao_legado", "lancamento", "combo", "persistencia", "alcance", "forma", "alvo_area", "impactos", "duracao",
+  "efeito_principal", "efeitos_secundarios", "efeitos_condicionais", "teste", "componentes", "limitacoes", "escalonamento",
+  "custo_aprendizado", "potencia_uso", "custo_uso", "custos_adicionais", "custo_legado",
+]);
+const ROTULO_DO_DESCARTE: Record<string, string> = { escola: "a Escola", disciplina: "a Disciplina" };
 const EMBLEMA_DO_TIPO: Record<TipoCarta, string> = { habilidade: "habilidades", magia: "magias", item: "acessorios", efeito: "efeitos" };
 const CATEGORIA_POR_SUBTIPO: Record<SubtipoCriavel, "arma" | "armadura" | "outro"> = {
   uma_mao: "arma", duas_maos: "arma",
@@ -50,9 +58,13 @@ const lista = (valor: unknown) => (Array.isArray(valor) ? valor.filter((v): v is
 const vazio = (valor: unknown) => valor === null || valor === undefined || valor === "" || (Array.isArray(valor) && valor.length === 0);
 const objeto = (valor: unknown): Rascunho => (valor && typeof valor === "object" && !Array.isArray(valor) ? valor as Rascunho : {});
 
+function ficaAoTrocar(chave: string, de: TipoCarta, para: TipoCarta): boolean {
+  return CAMPOS_COMUNS.has(chave) || (ehNatureza(de) && ehNatureza(para) && CAMPOS_DE_CRIACAO.has(chave));
+}
+
 /** Os valores preenchidos que deixam de valer ao trocar o tipo da carta. */
-function descartesDoTipo(rascunho: Rascunho): string[] {
-  return Object.entries(rascunho).filter(([chave, valor]) => !CAMPOS_COMUNS.has(chave) && !vazio(valor)
+function descartesDoTipo(rascunho: Rascunho, de: TipoCarta, para: TipoCarta): string[] {
+  return Object.entries(rascunho).filter(([chave, valor]) => !ficaAoTrocar(chave, de, para) && !vazio(valor)
     && !(chave === "quantidade" && valor === 1)).map(([chave]) => chave);
 }
 
@@ -97,6 +109,7 @@ function EditorDeCarta({ api, mesaId, definicao, onClose, onRecarregar }: CardEd
   });
   const estadoRef = useRef({ tipo, rascunho });
   const catalogo = useCatalogoItens(api, mesaId).data;
+  const framework = useCatalogoFramework(api, mesaId).data;
   const cartasDaMesa = useCatalogo(api, mesaId).data;
   const salvamento = useSalvamentoAutomatico({ api, mesaId, inicial: definicao, ler: () => estadoRef.current });
   const publicar = usePublicarCarta(api, mesaId);
@@ -119,19 +132,24 @@ function EditorDeCarta({ api, mesaId, definicao, onClose, onRecarregar }: CardEd
     setRascunho(novo);
   }
   function aplicarTipo(novoTipo: TipoCarta) {
-    const comuns = Object.fromEntries(Object.entries(estadoRef.current.rascunho).filter(([chave]) => CAMPOS_COMUNS.has(chave)));
-    estadoRef.current = { tipo: novoTipo, rascunho: comuns };
+    const de = estadoRef.current.tipo;
+    const mantidos = Object.fromEntries(Object.entries(estadoRef.current.rascunho).filter(([chave]) => ficaAoTrocar(chave, de, novoTipo)));
+    estadoRef.current = { tipo: novoTipo, rascunho: mantidos };
     setTipo(novoTipo);
-    setRascunho(comuns);
+    setRascunho(mantidos);
     salvamento.marcarAlteracao();
   }
   function trocarTipo(novoTipo: TipoCarta) {
     if (novoTipo === tipo) return;
-    const descartes = descartesDoTipo(rascunho);
+    const descartes = descartesDoTipo(rascunho, tipo, novoTipo);
     if (!descartes.length) return aplicarTipo(novoTipo);
+    const entreCriacoes = ehNatureza(tipo) && ehNatureza(novoTipo);
+    const nomes = descartes.map((c) => ROTULO_DO_DESCARTE[c] ?? c).join(" e ");
     setConfirmar({
       titulo: `Trocar para ${ROTULO_TIPO[novoTipo]}?`,
-      descricao: `Os campos próprios de ${ROTULO_TIPO[tipo].toLowerCase()} serão descartados. O título, a descrição, os requisitos, as marcações e a arte ficam.`,
+      descricao: entreCriacoes
+        ? `${nomes.charAt(0).toUpperCase()}${nomes.slice(1)} será descartada. Os demais campos, os custos e a arte ficam.`
+        : `Os campos próprios de ${ROTULO_TIPO[tipo].toLowerCase()} serão descartados. O título, a descrição, os requisitos, as marcações e a arte ficam.`,
       rotulo: "Trocar o tipo",
       acao: () => aplicarTipo(novoTipo),
     });
@@ -239,9 +257,9 @@ function EditorDeCarta({ api, mesaId, definicao, onClose, onRecarregar }: CardEd
                   sincronizar({ formato: { ...objeto(estadoRef.current.rascunho.formato), icone_grade: objetoIcone } });
                 }} />
             )}
-            {(tipo === "habilidade" || tipo === "magia") && <CamposDeHabilidade tipo={tipo} rascunho={rascunho} alterar={alterar} />}
+            {(tipo === "habilidade" || tipo === "magia") && <CamposDeHabilidade tipo={tipo} rascunho={rascunho} alterar={alterar} framework={framework} />}
             {tipo === "efeito" && <CamposDeEfeito rascunho={rascunho} alterar={alterar} />}
-            <CamposComuns rascunho={rascunho} alterar={alterar} tags={tags} />
+            <CamposComuns rascunho={rascunho} alterar={alterar} tags={tags} rotuloRequisitos={ehNatureza(tipo) ? "Acesso" : "Requisitos"} />
             {salvamento.definicao && (
               <details className="editor-versoes">
                 <summary>Versões publicadas ({versoes.data?.length ?? 0})</summary>
@@ -367,11 +385,15 @@ function Descricao({ rascunho, alterar }: { rascunho: Rascunho; alterar: (patch:
   );
 }
 
-function CamposComuns({ rascunho, alterar, tags }: { rascunho: Rascunho; alterar: (patch: Rascunho) => void; tags: string[] }) {
+function CamposComuns({ rascunho, alterar, tags, rotuloRequisitos }: {
+  rascunho: Rascunho; alterar: (patch: Rascunho) => void; tags: string[];
+  /** "Acesso" em habilidades e magias: o Acesso do Framework usa os requisitos da carta. */
+  rotuloRequisitos: string;
+}) {
   return (
     <div className="editor-quadros">
-      <Quadro ancora="requisitos" rotulo="Requisitos" icone="requisitos" largo grupo>
-        {(c) => <CampoEtiquetas controle={c} rotulo="Requisitos" valor={rascunho.requisitos} onMudar={(requisitos) => alterar({ requisitos })} />}
+      <Quadro ancora="requisitos" rotulo={rotuloRequisitos} icone="requisitos" largo grupo>
+        {(c) => <CampoEtiquetas controle={c} rotulo={rotuloRequisitos} valor={rascunho.requisitos} onMudar={(requisitos) => alterar({ requisitos })} />}
       </Quadro>
       <Quadro ancora="tags" rotulo="Marcações" icone="marcacoes" largo grupo>
         {(c) => <CampoEtiquetas controle={c} rotulo="Marcações" valor={rascunho.tags} sugestoes={tags} onMudar={(t) => alterar({ tags: t })} />}
@@ -380,47 +402,124 @@ function CamposComuns({ rascunho, alterar, tags }: { rascunho: Rascunho; alterar
   );
 }
 
-const CUSTOS: Array<[string, string, string, boolean]> = [
-  ["potencia_uso", "Potência de Uso", "potencia", false],
-  ["custo_uso", "Custo de Uso", "custo", false],
-  ["custo_aprendizado", "Custo de Aprendizado", "aprendizado", true],
-  ["descansos_minimos", "Descansos Mínimos", "descansos", true],
+/** Textos curtos do Framework, na ordem da ficha de criação (adaptar-cartas-ao-framework, D8). */
+/* Os textos que costumam ser longos ocupam a largura toda (`largo`); os curtos ficam em pares. */
+const TEXTOS_DO_FRAMEWORK = [
+  { campo: "lancamento", rotulo: "Lançamento", icone: "duracao", exemplo: "Uma ação" },
+  { campo: "combo", rotulo: "Combo", icone: "versatil", exemplo: "Bloqueio → Ataque Leve → Ataque Leve", largo: true },
+  { campo: "persistencia", rotulo: "Persistência", icone: "pilha", exemplo: "Ao receber 4 ataques do mesmo inimigo", largo: true },
+];
+const TEXTOS_DE_ALVO = [
+  { campo: "alvo_area", rotulo: "Alvo ou Área", icone: "pericia", exemplo: "Área de 5 metros", largo: true },
+  { campo: "impactos", rotulo: "Impactos", icone: "quantidade", exemplo: "Três" },
+  { campo: "duracao", rotulo: "Duração", icone: "duracao", exemplo: "Uma rodada", largo: true },
+];
+const EFEITOS_DO_FRAMEWORK = [
+  { campo: "efeito_principal", rotulo: "Efeito principal" },
+  { campo: "efeitos_secundarios", rotulo: "Efeitos secundários" },
+  { campo: "efeitos_condicionais", rotulo: "Efeitos condicionais" },
+];
+const TEXTOS_DE_USO = [
+  { campo: "teste", rotulo: "Teste", icone: "pericia", exemplo: "Destreza + Esquiva, CD 15", largo: true },
+  { campo: "componentes", rotulo: "Componentes", icone: "maos", exemplo: "Verbal e somático", largo: true },
+  { campo: "limitacoes", rotulo: "Limitações", icone: "penalidade", exemplo: "Uma vez por cena", largo: true },
+  { campo: "escalonamento", rotulo: "Escalonamento", icone: "atributo", exemplo: "+1d6 por PP adicional", largo: true },
 ];
 
-function CamposDeHabilidade({ tipo, rascunho, alterar }: { tipo: TipoCarta; rascunho: Rascunho; alterar: (patch: Rascunho) => void }) {
+/**
+ * Campos de habilidades e magias pelo Framework (adaptar-cartas-ao-framework, D8): Tipo, Escola e Forma vêm do
+ * catálogo; Grau e Descansos Mínimos são calculados e só aparecem; o Custo de Uso calculado é a sugestão do campo.
+ */
+function CamposDeHabilidade({ tipo, rascunho, alterar, framework }: {
+  tipo: "habilidade" | "magia"; rascunho: Rascunho; alterar: (patch: Rascunho) => void; framework: CatalogoFramework | undefined;
+}) {
   const adicionais = Array.isArray(rascunho.custos_adicionais) ? (rascunho.custos_adicionais as Rascunho[]) : [];
-  const ativacao = texto(rascunho.ativacao);
+  const calculados = framework ? calcular(framework, tipo, rascunho) : null;
+  const opcoes = (nome: "tipos" | "escolas" | "formas" | "alcances") => framework?.[nome] ?? [];
+  const alcance = objeto(rascunho.alcance);
+  const distancia = framework?.alcance_com_distancia ?? "metros";
+  const textoCurto = ({ campo, rotulo: nome, icone, exemplo, largo = false }: {
+    campo: string; rotulo: string; icone: string; exemplo: string; largo?: boolean;
+  }) => (
+    <Quadro key={campo} ancora={campo} rotulo={nome} icone={icone} largo={largo}>
+      {(c) => <CampoTexto controle={c} valor={rascunho[campo]} exemplo={exemplo} onMudar={(valor) => alterar({ [campo]: valor })} />}
+    </Quadro>
+  );
+  const registrado = typeof rascunho.custo_uso === "number" ? rascunho.custo_uso : null;
+  const usoDoFramework = calculados?.custoUsoFramework ?? null;
+  const divergente = registrado !== null && usoDoFramework !== null && registrado !== usoDoFramework;
   return (
     <>
       <Descricao rascunho={rascunho} alterar={alterar} />
       <div className="editor-quadros">
-        <Quadro ancora="ativacao" rotulo="Ativação" icone="ativacao" grupo>
+        <Quadro ancora="ativacao" rotulo="Tipo" icone="ativacao">
+          {(c) => <CampoEscolha controle={c} valor={rascunho.ativacao} opcoes={opcoes("tipos")} onMudar={(ativacao) => alterar({ ativacao })} />}
+        </Quadro>
+        {tipo === "magia" ? (
+          <Quadro ancora="escola" rotulo="Escola" icone="escola">
+            {(c) => <CampoEscolha controle={c} valor={rascunho.escola} opcoes={opcoes("escolas")} onMudar={(escola) => alterar({ escola })} />}
+          </Quadro>
+        ) : (
+          <Quadro ancora="disciplina" rotulo="Disciplina" icone="escola">
+            {(c) => <CampoTexto controle={c} valor={rascunho.disciplina} exemplo="Técnica de Combate" onMudar={(disciplina) => alterar({ disciplina })} />}
+          </Quadro>
+        )}
+        <Quadro ancora="grau" rotulo="Grau" icone="grau">
+          {(c) => <CampoCalculado controle={c} valor={calculados?.abaixoDoMinimo ? "Abaixo do mínimo" : rotulo(framework, "graus", calculados?.grau)} />}
+        </Quadro>
+        {TEXTOS_DO_FRAMEWORK.map(textoCurto)}
+        <Quadro ancora="alcance" rotulo="Alcance" icone="alcance" largo>
           {(c) => (
-            <span className="editor-escolhas" aria-describedby={c.descricao}>
-              {(["ativa", "passiva"] as const).map((valor) => (
-                <button key={valor} type="button" className="editor-escolhas__opcao" aria-pressed={ativacao === valor}
-                  onClick={() => alterar({ ativacao: ativacao === valor ? null : valor })}>
-                  {valor === "ativa" ? "Ativa" : "Passiva"}
-                </button>
-              ))}
+            <span className="editor-linha editor-alcance">
+              <CampoEscolha controle={c} valor={alcance.tipo} opcoes={opcoes("alcances")}
+                onMudar={(escolhido) => alterar({
+                  alcance: !escolhido ? null : escolhido === distancia
+                    ? { tipo: escolhido, metros: typeof alcance.metros === "number" ? alcance.metros : null }
+                    : { tipo: escolhido },
+                })} />
+              {alcance.tipo === distancia && (
+                <span className="editor-numero">
+                  <input className="editor-texto editor-texto--curto" type="number" inputMode="numeric" min={1} step={1} aria-label="Metros"
+                    value={typeof alcance.metros === "number" ? String(alcance.metros) : ""} placeholder="—"
+                    onChange={(e) => {
+                      const numero = Number(e.target.value);
+                      alterar({ alcance: { tipo: distancia, metros: e.target.value.trim() && Number.isInteger(numero) ? numero : null } });
+                    }} />
+                  <span className="editor-numero__unidade">m</span>
+                </span>
+              )}
             </span>
           )}
         </Quadro>
-        {tipo === "magia" && (
-          <>
-            <Quadro ancora="escola" rotulo="Escola" icone="escola">
-              {(c) => <CampoTexto controle={c} valor={rascunho.escola} onMudar={(escola) => alterar({ escola })} />}
-            </Quadro>
-            <Quadro ancora="grau" rotulo="Grau" icone="grau">
-              {(c) => <CampoInteiro controle={c} valor={rascunho.grau} onMudar={(grau) => alterar({ grau })} />}
-            </Quadro>
-          </>
-        )}
-        {CUSTOS.map(([campo, rotulo, icone, soVoce]) => (
-          <Quadro key={campo} ancora={campo} rotulo={rotulo} icone={icone} soVoce={soVoce}>
-            {(c) => <CampoInteiro controle={c} valor={rascunho[campo]} onMudar={(valor) => alterar({ [campo]: valor })} />}
+        <Quadro ancora="forma" rotulo="Forma" icone="grade">
+          {(c) => <CampoEscolha controle={c} valor={rascunho.forma} opcoes={opcoes("formas")} onMudar={(forma) => alterar({ forma })} />}
+        </Quadro>
+        {TEXTOS_DE_ALVO.map(textoCurto)}
+        {EFEITOS_DO_FRAMEWORK.map(({ campo, rotulo: nome }) => (
+          <Quadro key={campo} ancora={campo} rotulo={nome} icone="efeito" largo>
+            {(c) => <CampoTextoLongo controle={c} valor={rascunho[campo]} onMudar={(valor) => alterar({ [campo]: valor })} />}
           </Quadro>
         ))}
+        {TEXTOS_DE_USO.map(textoCurto)}
+        <Quadro ancora="potencia_uso" rotulo="Potência de Uso" icone="potencia">
+          {(c) => <CampoInteiro controle={c} valor={rascunho.potencia_uso} onMudar={(potencia_uso) => alterar({ potencia_uso })} />}
+        </Quadro>
+        <Quadro ancora="custo_uso" rotulo="Custo de Uso" icone="custo">
+          {(c) => (
+            <span className="editor-linha">
+              <CampoInteiro controle={c} valor={rascunho.custo_uso} sugestao={usoDoFramework} unidade="PP"
+                onMudar={(custo_uso) => alterar({ custo_uso })} />
+              {divergente && <small className="editor-campo__aviso">⚠ O Framework daria {usoDoFramework} PP.</small>}
+            </span>
+          )}
+        </Quadro>
+        <Quadro ancora="custo_aprendizado" rotulo="Custo de Aprendizado" icone="aprendizado" soVoce>
+          {(c) => <CampoInteiro controle={c} valor={rascunho.custo_aprendizado} unidade="PP"
+            onMudar={(custo_aprendizado) => alterar({ custo_aprendizado })} />}
+        </Quadro>
+        <Quadro ancora="descansos_minimos" rotulo="Descansos Mínimos" icone="descansos" soVoce>
+          {(c) => <CampoCalculado controle={c} valor={calculados?.descansos != null ? String(calculados.descansos) : null} />}
+        </Quadro>
         {adicionais.map((adicional, indice) => (
           <Quadro key={indice} ancora={`custos_adicionais.${indice}`} rotulo={`Custo adicional ${indice + 1}`} icone="custo" largo grupo>
             {(c) => (

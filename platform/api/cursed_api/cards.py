@@ -51,7 +51,8 @@ def _editavel(session: Session, mesa_id: str, carta_id: str) -> CartaDefinicaoRe
 def versao_resumo(versao: CartaVersaoRegistro) -> CartaVersaoResumo:
     return CartaVersaoResumo(
         id=versao.id, definicao_id=versao.definicao_id, numero=versao.numero, tipo=versao.tipo,
-        conteudo=versao.conteudo, procedencia=versao.procedencia, revisao_pendente=versao.revisao_pendente,
+        conteudo=versao.conteudo, calculados=cartas.calculados_da_carta(versao.tipo, versao.conteudo, narrador=True),
+        procedencia=versao.procedencia, revisao_pendente=versao.revisao_pendente,
         publicado_por=versao.publicado_por, publicado_em=versao.publicado_em,
     )
 
@@ -194,7 +195,8 @@ def previsualizar_importacao_carta(
     """Mostra conteúdo, procedência e avisos sem alterar o catálogo."""
     _exigir_narrador(session, mesa_id, ator)
     tipo, rascunho, avisos, _, validacao = _previa(pedido.codigo, mesa_id)
-    return PreviaImportacaoCarta(tipo=tipo, rascunho=rascunho, validacao=validacao, avisos=avisos)
+    return PreviaImportacaoCarta(tipo=tipo, rascunho=rascunho, validacao=validacao, avisos=avisos,
+                                 calculados=cartas.calculados_da_carta(tipo, rascunho, narrador=True))
 
 
 @router.post("/importacoes", response_model=CartaDefinicaoResumo, status_code=status.HTTP_201_CREATED)

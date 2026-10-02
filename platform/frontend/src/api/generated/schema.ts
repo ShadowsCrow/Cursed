@@ -404,6 +404,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/catalogos/framework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Framework
+         * @description Tabelas do Framework de Criação (adaptar-cartas-ao-framework, D4).
+         */
+        get: operations["listar_framework_mesas__mesa_id__catalogos_framework_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/catalogos/itens": {
         parameters: {
             query?: never;
@@ -2064,6 +2084,25 @@ export interface components {
             /** Versao Esperada */
             versao_esperada?: number | null;
         };
+        /**
+         * CalculadosCarta
+         * @description Valores que saem das tabelas do Framework (adaptar-cartas-ao-framework, D3); nunca guardados na carta.
+         *     `descansos_minimos` só chega ao Narrador.
+         */
+        CalculadosCarta: {
+            /**
+             * Custo Uso Framework
+             * @description Custo de Uso calculado pela Potência de Uso.
+             */
+            custo_uso_framework?: number | null;
+            /** Descansos Minimos */
+            descansos_minimos?: number | null;
+            /**
+             * Grau
+             * @description Id do grau no catálogo do Framework.
+             */
+            grau?: string | null;
+        };
         /** CamadaSala */
         CamadaSala: {
             /** Id */
@@ -2243,6 +2282,7 @@ export interface components {
         };
         /** CartaVersaoResumo */
         CartaVersaoResumo: {
+            calculados?: components["schemas"]["CalculadosCarta"] | null;
             /** Conteudo */
             conteudo: {
                 [key: string]: unknown;
@@ -2277,6 +2317,7 @@ export interface components {
          * @description Conteúdo publicado que um participante pode ver; sem procedência nem notas do catálogo.
          */
         CartaVisivel: {
+            calculados?: components["schemas"]["CalculadosCarta"] | null;
             /** Conteudo */
             conteudo: {
                 [key: string]: unknown;
@@ -2292,6 +2333,35 @@ export interface components {
             tipo: "habilidade" | "magia" | "item" | "efeito";
             /** Versao Id */
             versao_id: string;
+        };
+        /**
+         * CatalogoFrameworkResumo
+         * @description Tabelas do Framework de Criação (adaptar-cartas-ao-framework, D4): faixas de grau, regra do Custo de Uso
+         *     e opções fechadas de Tipo, Escola, Forma e Alcance.
+         */
+        CatalogoFrameworkResumo: {
+            /** Alcance Com Distancia */
+            alcance_com_distancia: string;
+            /** Alcances */
+            alcances: components["schemas"]["OpcaoResumo"][];
+            /** Divisor Uso */
+            divisor_uso: number;
+            /** Escolas */
+            escolas: components["schemas"]["OpcaoResumo"][];
+            /** Formas */
+            formas: components["schemas"]["OpcaoResumo"][];
+            /** Graus */
+            graus: components["schemas"]["OpcaoResumo"][];
+            /** Minimo Uso */
+            minimo_uso: number;
+            /** Naturezas */
+            naturezas: {
+                [key: string]: components["schemas"]["NaturezaCriacaoResumo"];
+            };
+            /** Sem Custo Uso */
+            sem_custo_uso: string[];
+            /** Tipos */
+            tipos: components["schemas"]["OpcaoResumo"][];
         };
         /**
          * CatalogoItensResumo
@@ -2967,6 +3037,20 @@ export interface components {
             /** Nome */
             nome: string;
         };
+        /** FaixaGrauResumo */
+        FaixaGrauResumo: {
+            /** Descansos */
+            descansos: number;
+            /** Grau */
+            grau: string;
+            /**
+             * Maximo
+             * @description Ausente na última faixa, que é aberta.
+             */
+            maximo: number | null;
+            /** Minimo */
+            minimo: number;
+        };
         /**
          * FichaContrato
          * @description Representação compatível de uma ficha transportada pela API.
@@ -3568,6 +3652,13 @@ export interface components {
             /** Rotulo */
             rotulo?: string | null;
         };
+        /** NaturezaCriacaoResumo */
+        NaturezaCriacaoResumo: {
+            /** Custo Minimo */
+            custo_minimo: number;
+            /** Faixas */
+            faixas: components["schemas"]["FaixaGrauResumo"][];
+        };
         /** OfertaItemResumo */
         OfertaItemResumo: {
             /** Altura */
@@ -3637,6 +3728,13 @@ export interface components {
         OfertarItemRequest: {
             /** Para Personagem Id */
             para_personagem_id: string;
+        };
+        /** OpcaoResumo */
+        OpcaoResumo: {
+            /** Id */
+            id: string;
+            /** Rotulo */
+            rotulo: string;
         };
         /**
          * OrigemConsequencia
@@ -3964,6 +4062,7 @@ export interface components {
         PreviaImportacaoCarta: {
             /** Avisos */
             avisos?: string[];
+            calculados?: components["schemas"]["CalculadosCarta"] | null;
             /** Rascunho */
             rascunho: {
                 [key: string]: unknown;
@@ -3972,7 +4071,7 @@ export interface components {
              * Tipo
              * @enum {string}
              */
-            tipo: "item" | "efeito";
+            tipo: "habilidade" | "magia" | "item" | "efeito";
             validacao: components["schemas"]["ValidacaoCarta"];
         };
         /** PreviaImportacaoRequest */
@@ -5237,6 +5336,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EstadoCatalogoResumo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_framework_mesas__mesa_id__catalogos_framework_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogoFrameworkResumo"];
                 };
             };
             /** @description Validation Error */

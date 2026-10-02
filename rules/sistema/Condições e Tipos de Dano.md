@@ -126,3 +126,11 @@ Ao sofrer dano, aplique os modificadores nesta ordem:
 Se a criatura possuir Resistência e Vulnerabilidade ao mesmo tipo, ambas se anulam antes do cálculo. Imunidade continua prevalecendo.
 
 Quando um ataque causar mais de um tipo, separe os valores antes de aplicar Resistências, Vulnerabilidades ou Imunidades. RDB só se aplica quando a regra de Bloqueio ou a fonte da proteção permitir.
+
+## Pontos de Vida Temporários
+
+**PV Temporários** absorvem dano antes dos PV. Depois de aplicar a ordem acima, subtraia o dano restante primeiro dos PV Temporários; o que sobrar passa aos PV.
+
+- PV Temporários não acumulam. Ao receber novos, a criatura fica com o maior valor entre os atuais e os novos.
+- Não são recuperação: não contam como cura, não estabilizam e não encerram a contagem de Morrendo.
+- Terminam quando chegam a `0` ou quando a duração declarada pela fonte acaba.

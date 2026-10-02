@@ -30,7 +30,9 @@ from cursed_platform.persistence import (
 )
 
 AUTOR = "sistema"
-ATIVACAO = {"passiva": "passiva", "ativa": "ativa"}
+# Tipo do Framework (adaptar-cartas-ao-framework, D2). "Passiva" fica sem tipo, com a marcação, até o usuário
+# decidir em classes.json se cada uma é condicional ou permanente.
+ATIVACAO = {"ativa": "ativa", "reação": "reacao", "reacao": "reacao"}
 
 
 @dataclass(frozen=True)
@@ -46,7 +48,7 @@ def _conteudo(habilidade: Habilidade, tag: str) -> dict[str, Any]:
     ativacao = ATIVACAO.get(tipo.casefold())
     tags = [tag]
     if tipo and ativacao is None:
-        # Reação, Ritual etc. não têm ativação própria na carta: o tipo original fica visível como tag.
+        # Passiva, Ritual etc. não têm tipo do Framework na carta: o tipo original fica visível como tag.
         tags.append(tipo)
     conteudo: dict[str, Any] = {"titulo": habilidade.nome, "texto": habilidade.descricao, "ativacao": ativacao, "tags": tags}
     if habilidade.custo_legado:

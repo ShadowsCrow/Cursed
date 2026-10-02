@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { NarratorLibrary } from "./NarratorLibrary";
 import { PlayerLibrary, PresentationOverlay } from "./PlayerLibrary";
-import { apiSimulada, renderComQuery, versao, visivel } from "./testing";
+import { CATALOGO_FRAMEWORK, apiSimulada, renderComQuery, versao, visivel } from "./testing";
 
 const PERSONAGENS = [{ id: "lia", mesa_id: "mesa", nome: "Lia", tipo: "personagem", visibilidade: "mesa", proprietario_id: "ana", versao: 0 }];
 const OFERTA = {
@@ -22,6 +22,27 @@ function definicao(id: string, tipo: "habilidade" | "magia" | "efeito", titulo: 
     publicada: versao(`v-${id}`, tipo, { titulo, texto: `Texto de ${titulo}` }) };
 }
 
+/** Pré-visualização de um código de criação (adaptar-cartas-ao-framework, 5.5). */
+const PREVIA_CR1 = { data: {
+  tipo: "magia",
+  rascunho: { titulo: "Raízes do Brejo Faminto", texto: "Raízes espinhosas.", escola: "druidica", alcance: { tipo: "metros", metros: 15 },
+    forma: "circulo", custo_aprendizado: 31, potencia_uso: 20 },
+  calculados: { grau: "intermediaria", descansos_minimos: 6, custo_uso_framework: 5 },
+  validacao: { valida: true, problemas: [], revisao_pendente: [] },
+  avisos: ["Grau do código (Básica) substituído pelo calculado (Intermediária)."],
+} };
+
+const PREVIA_CR1_INVALIDA = { data: {
+  ...PREVIA_CR1.data, avisos: [],
+  validacao: { valida: false, problemas: [{ campo: "alcance.metros", mensagem: "Use um número inteiro." }], revisao_pendente: [] },
+} };
+
+/** Pares rótulo/valor de uma lista de dados da revelação. */
+function pares(seletor: string): Record<string, string | null | undefined> {
+  return Object.fromEntries(Array.from((document.querySelector(seletor) as HTMLElement).querySelectorAll(":scope > div"))
+    .map((d) => [d.querySelector("dt")?.textContent, d.querySelector("dd")?.textContent]));
+}
+
 function narrador(ofertas: unknown[] = [OFERTA], cartas: unknown[] = [ANEL]) {
   const simulada = apiSimulada({
     GET: {
@@ -30,9 +51,11 @@ function narrador(ofertas: unknown[] = [OFERTA], cartas: unknown[] = [ANEL]) {
       "/mesas/{mesa_id}/personagens": { data: PERSONAGENS },
       "/mesas/{mesa_id}/participantes": { data: [{ usuario_id: "ana", papel: "jogador", nome: "Ana" }] },
       "/mesas/{mesa_id}/personagens/{personagem_id}/ficha": { data: { mesa_id: "mesa", personagem_id: "lia", versao: 7, ficha: {} } },
+      "/mesas/{mesa_id}/catalogos/framework": { data: CATALOGO_FRAMEWORK },
     },
     POST: {
-      "/mesas/{mesa_id}/cartas/importacoes/previa": { data: { tipo: "efeito", rascunho: { titulo: "Luz", texto: "Ilumina." }, validacao: { valida: true, problemas: [], revisao_pendente: [] }, avisos: ["A imagem não foi importada."] } },
+      "/mesas/{mesa_id}/cartas/importacoes/previa": ({ body }) => (String((body as { codigo: string }).codigo) === "CR1:ruim" ? PREVIA_CR1_INVALIDA
+        : String((body as { codigo: string }).codigo).startsWith("CR1:") ? PREVIA_CR1 : { data: { tipo: "efeito", rascunho: { titulo: "Luz", texto: "Ilumina." }, validacao: { valida: true, problemas: [], revisao_pendente: [] }, avisos: ["A imagem não foi importada."] } }),
       "/mesas/{mesa_id}/cartas/importacoes": { data: { id: "d2", tipo: "efeito", versao: 0, rascunho: {}, procedencia_rascunho: {}, versao_publicada: null, publicada: null, arquivada: false } },
       "/mesas/{mesa_id}/ofertas": { data: OFERTA },
       "/mesas/{mesa_id}/ofertas/{oferta_id}/cancelamento": { data: { ...OFERTA, estado: "cancelada" } },
@@ -52,12 +75,54 @@ describe("NarratorLibrary — catálogo e ofertas", () => {
   it("importa com prévia antes de criar o rascunho", async () => {
     const { POST } = narrador();
     fireEvent.click(await screen.findByRole("button", { name: "Importar código" }));
-    fireEvent.change(screen.getByLabelText(/Código E1/), { target: { value: "E1:abc" } });
+    fireEvent.change(screen.getByLabelText(/Código CR1, E1/), { target: { value: "E1:abc" } });
     fireEvent.click(screen.getByRole("button", { name: "Pré-visualizar" }));
-    expect(await screen.findByText("A imagem não foi importada.")).toBeTruthy();
+    expect(await screen.findByText(/A imagem não foi importada\./)).toBeTruthy();
     expect(POST).not.toHaveBeenCalledWith("/mesas/{mesa_id}/cartas/importacoes", expect.anything());
     fireEvent.click(screen.getByRole("button", { name: "Criar rascunho" }));
     await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/cartas/importacoes", expect.objectContaining({ body: { codigo: "E1:abc" } })));
+  });
+
+  it("código CR1: a revelação mostra a carta, os destaques, os campos e os avisos (adaptar-cartas-ao-framework, 9.2)", async () => {
+    narrador();
+    fireEvent.click(await screen.findByRole("button", { name: "Importar código" }));
+    // Antes da prévia, só o campo do código.
+    expect(document.querySelector(".revelacao__palco")).toBeNull();
+    fireEvent.change(screen.getByLabelText(/Código CR1/), { target: { value: "CR1:abc" } });
+    fireEvent.click(screen.getByRole("button", { name: "Pré-visualizar" }));
+    expect(await screen.findByText(/Grau do código \(Básica\) substituído pelo calculado \(Intermediária\)\./)).toBeTruthy();
+    expect(document.querySelector(".revelacao__carta .carta-ficha__titulo")?.textContent).toBe("Raízes do Brejo Faminto");
+    expect(screen.getByRole("heading", { name: /Prévia da importação/ }).textContent).toMatch(/CR1/);
+    await waitFor(() => expect(pares(".revelacao__destaques")).toEqual({ "Grau": "Intermediária", "Custo de uso": "5 PP", "Potência": "20" }));
+    expect(pares(".revelacao__dados")).toMatchObject({
+      "Escola": "Druídica", "Descansos mínimos": "6", "Alcance": "15 metros", "Forma": "Círculo", "Custo de aprendizado": "31",
+    });
+    expect((screen.getByRole("button", { name: "Criar rascunho" }) as HTMLButtonElement).disabled).toBe(false);
+    const resultado = await axe.run(document.querySelector('[role="dialog"]') as HTMLElement, { rules: { region: { enabled: false } } });
+    expect(resultado.violations).toEqual([]);
+    // Trocar o código volta ao campo, com o código colado.
+    fireEvent.click(screen.getByRole("button", { name: "Trocar código" }));
+    expect((await screen.findByLabelText(/Código CR1/) as HTMLTextAreaElement).value).toBe("CR1:abc");
+    expect(document.querySelector(".revelacao__palco")).toBeNull();
+  });
+
+  it("código CR1 com problemas: aparecem com o rótulo do campo e Criar rascunho fica indisponível", async () => {
+    narrador();
+    fireEvent.click(await screen.findByRole("button", { name: "Importar código" }));
+    fireEvent.change(screen.getByLabelText(/Código CR1/), { target: { value: "CR1:ruim" } });
+    fireEvent.click(screen.getByRole("button", { name: "Pré-visualizar" }));
+    expect((await screen.findByText(/Use um número inteiro\./)).closest("li")?.textContent).toBe("Alcance: Use um número inteiro.");
+    expect((screen.getByRole("button", { name: "Criar rascunho" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByText(/Código válido/)).toBeNull();
+  });
+
+  it("código sem avisos: indica que o código é válido", async () => {
+    narrador();
+    fireEvent.click(await screen.findByRole("button", { name: "Importar código" }));
+    fireEvent.change(screen.getByLabelText(/Código CR1/), { target: { value: "E1:abc" } });
+    fireEvent.click(screen.getByRole("button", { name: "Pré-visualizar" }));
+    await screen.findByText(/A imagem não foi importada/);
+    expect(document.querySelector(".revelacao__destaques")).toBeNull();
   });
 
   it("cria oferta com candidatas, destinatários e limites", async () => {

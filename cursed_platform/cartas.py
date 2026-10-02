@@ -14,18 +14,78 @@ from cursed_platform import catalogos, ficha_viva, narrador
 from cursed_platform.acesso_privado import BUCKET_PRIVADO
 from cursed_platform.migracao_ativos import ArmazenamentoObjetos, AtivoInvalido
 from cursed_platform.contracts import (
-    ConteudoEfeito, ConteudoHabilidade, ConteudoItem, ConteudoMagia, ProblemaValidacao, ValidacaoCarta,
+    CalculadosCarta, ConteudoEfeito, ConteudoHabilidade, ConteudoItem, ConteudoMagia, ProblemaValidacao, ValidacaoCarta,
 )
+from cursed_platform.domain import criacao, criacao_codec
 from cursed_platform.persistence import AtivoCatalogoRegistro, CartaDefinicaoRegistro, CartaVersaoRegistro
 
 
 MODELOS = {"habilidade": ConteudoHabilidade, "magia": ConteudoMagia, "item": ConteudoItem, "efeito": ConteudoEfeito}
-CUSTOS = ("custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso")
+CUSTOS = ("custo_aprendizado", "potencia_uso")
 AVISO_CUSTO_LEGADO = (
-    "Custo legado sem cálculo validado: Custo de Aprendizado, Descansos Mínimos, Potência de Uso e "
-    "Custo de Uso ficam indefinidos até revisão."
+    "Custo legado sem cálculo validado: Custo de Aprendizado e Potência de Uso ficam indefinidos até revisão."
 )
+AVISO_PASSIVA_LEGADA = "Tipo: defina se a passiva é condicional ou permanente."
 AVISO_ARTE_PRIVADA = "Arte legada privada: a publicação exige confirmação para copiá-la ao espaço da mesa."
+
+
+def _opcoes(lista) -> str:
+    return ", ".join(o.rotulo for o in lista)
+
+
+def _problemas_do_framework(tipo: str, conteudo: Mapping[str, Any]) -> list[ProblemaValidacao]:
+    """Opções fechadas do Framework, validadas contra o catálogo (adaptar-cartas-ao-framework, D1b e D2)."""
+    framework = catalogos.obter().framework
+    problemas: list[ProblemaValidacao] = []
+
+    def escolha(campo: str, lista, nome: str) -> None:
+        valor = conteudo.get(campo)
+        if valor is not None and valor not in {o.id for o in lista}:
+            problemas.append(ProblemaValidacao(campo=campo, mensagem=f"Escolha {nome}: {_opcoes(lista)}."))
+
+    escolha("ativacao", framework.tipos, "um destes tipos")
+    escolha("forma", framework.formas, "uma destas formas")
+    if tipo == "magia":
+        escolha("escola", framework.escolas, "uma destas escolas")
+    alcance = conteudo.get("alcance")
+    if alcance is not None:
+        if alcance["tipo"] not in {o.id for o in framework.alcances}:
+            problemas.append(ProblemaValidacao(campo="alcance", mensagem=f"Escolha um destes alcances: {_opcoes(framework.alcances)}."))
+        elif alcance["tipo"] == framework.alcance_com_distancia and alcance.get("metros") is None:
+            problemas.append(ProblemaValidacao(campo="alcance.metros", mensagem="Informe a distância em metros."))
+        elif alcance["tipo"] != framework.alcance_com_distancia and alcance.get("metros") is not None:
+            problemas.append(ProblemaValidacao(
+                campo="alcance.metros", mensagem=f"Só “{framework.rotulo('alcances', framework.alcance_com_distancia)}” leva metros."))
+    return problemas
+
+
+def avisos_do_framework(tipo: str, conteudo: Mapping[str, Any]) -> list[str]:
+    """Revisões pendentes que não impedem a publicação: custo abaixo do mínimo, Custo de Uso diferente do
+    Framework e passiva antiga sem tipo definido."""
+    framework = catalogos.obter().framework
+    calculados = criacao.calcular(framework, tipo, conteudo)
+    avisos: list[str] = []
+    if calculados.abaixo_do_minimo:
+        natureza = "magias" if tipo == "magia" else "habilidades"
+        minimo = framework.naturezas[tipo].custo_minimo
+        avisos.append(f"Custo de Aprendizado abaixo do mínimo: {natureza} custam no mínimo {minimo} PP para aprender; o Grau fica indefinido.")
+    registrado = conteudo.get("custo_uso")
+    if registrado is not None and calculados.custo_uso_framework is not None and registrado != calculados.custo_uso_framework:
+        avisos.append(f"Custo de Uso registrado ({registrado} PP) diferente do Framework ({calculados.custo_uso_framework} PP).")
+    if conteudo.get("ativacao_legado") == "passiva" and not conteudo.get("ativacao"):
+        avisos.append(AVISO_PASSIVA_LEGADA)
+    return avisos
+
+
+def calculados_da_carta(tipo: str, conteudo: Mapping[str, Any] | None, *, narrador: bool) -> CalculadosCarta | None:
+    """Grau, Descansos Mínimos e Custo de Uso pelo Framework; `None` fora de habilidades e magias."""
+    if tipo not in criacao.NATUREZAS or conteudo is None:
+        return None
+    calculados = criacao.calcular(catalogos.obter().framework, tipo, conteudo)
+    return CalculadosCarta(
+        grau=calculados.grau, descansos_minimos=calculados.descansos_minimos if narrador else None,
+        custo_uso_framework=calculados.custo_uso_framework,
+    )
 
 
 class ConflitoRascunho(Exception):
@@ -87,6 +147,8 @@ def validar(
             campo = ".".join(str(parte) for parte in item["loc"]) or "conteudo"
             problemas.append(ProblemaValidacao(campo=campo, mensagem=_mensagem(item)))
         return None, ValidacaoCarta(valida=False, problemas=problemas)
+    if tipo in criacao.NATUREZAS:
+        problemas.extend(_problemas_do_framework(tipo, conteudo))
     for indice, grupo in enumerate(_modificadores(conteudo)):
         try:
             narrador.modificadores_validos(grupo)
@@ -115,8 +177,10 @@ def validar(
         revisao.append(AVISO_FORMATO_PENDENTE)
     if privados or icone_privado:
         revisao.append(AVISO_ARTE_PRIVADA)
-    if tipo in {"habilidade", "magia"} and conteudo.get("custo_legado") and any(conteudo.get(c) is None for c in CUSTOS):
-        revisao.append(AVISO_CUSTO_LEGADO)
+    if tipo in criacao.NATUREZAS:
+        if conteudo.get("custo_legado") and any(conteudo.get(c) is None for c in CUSTOS):
+            revisao.append(AVISO_CUSTO_LEGADO)
+        revisao.extend(avisos_do_framework(tipo, conteudo))
     return (conteudo if not problemas else None), ValidacaoCarta(
         valida=not problemas, problemas=problemas, revisao_pendente=revisao,
     )
@@ -265,11 +329,20 @@ def versao_publicada(session: Session, definicao: CartaDefinicaoRegistro) -> Car
     ))
 
 
+FORMATOS_DE_CARTA = ("CR1", "E1", "E2", "EQ1", "EQ2")
+
+
 def rascunho_de_codigo(codigo: str) -> tuple[str, dict[str, Any], list[str], dict[str, Any]]:
-    """Converte um código portátil E/EQ em rascunho de carta. ValueError se inválido."""
-    previa = ficha_viva.preparar_importacao(codigo)
+    """Converte um código portátil CR/E/EQ em rascunho de carta. ValueError se inválido."""
     prefixo = (codigo or "").strip().split(":", 1)[0]
+    if prefixo not in FORMATOS_DE_CARTA:
+        raise ValueError("Código não reconhecido. Use um código de criação (CR1), de efeito (E1/E2) "
+                         "ou de equipamento (EQ1/EQ2).")
     procedencia = {"origem": "importacao", "formato": prefixo}
+    if prefixo == criacao_codec.PREFIXO:
+        tipo, rascunho, avisos = criacao_codec.preparar(criacao_codec.decodificar(codigo))
+        return tipo, rascunho, avisos, procedencia
+    previa = ficha_viva.preparar_importacao(codigo)
 
     def modificadores(efeito: ficha_viva.EfeitoImportado) -> list[dict[str, Any]]:
         return [

@@ -3,7 +3,7 @@ import axe from "axe-core";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { apiSimulada, renderComQuery, versao as versaoPublicada } from "../../../cards/testing";
+import { CATALOGO_FRAMEWORK, apiSimulada, renderComQuery, versao as versaoPublicada } from "../../../cards/testing";
 import type { CartaPersonagemResumo } from "../../../cards/types";
 import { CATALOGO_ITENS } from "../../../inventory/catalogoItensTeste";
 import { CARTAS_DA_REFERENCIA, CARTAS_PARA_FILTROS, semCustosReservados } from "../../../plataforma/cartasDemonstracao";
@@ -21,6 +21,7 @@ function montar({ cartas = semCustosReservados(TODAS), papel = "jogador", podeEd
     GET: {
       [ROTA_CARTAS]: { data: cartas },
       "/mesas/{mesa_id}/catalogos/itens": { data: CATALOGO_ITENS },
+      "/mesas/{mesa_id}/catalogos/framework": { data: CATALOGO_FRAMEWORK },
       "/mesas/{mesa_id}/cartas": { data: [
         { id: "d1", tipo: "magia", versao: 1, rascunho: {}, procedencia_rascunho: {}, versao_publicada: 1, arquivada: false,
           publicada: versaoPublicada("pv1", "magia", { titulo: "Relâmpago", texto: "Dano elétrico." }) },
@@ -245,7 +246,7 @@ describe("Detalhe e ações", () => {
     const { POST } = montar({ cartas: [disponivel] });
     fireEvent.click(await waitFor(() => cartaChamada("Luz das estrelas")));
     const detalhe = await screen.findByRole("dialog", { name: "Luz das estrelas" });
-    expect(within(detalhe).getByText("Ilusão")).toBeTruthy();
+    expect(await within(detalhe).findByText("Perceptiva")).toBeTruthy();
     fireEvent.click(within(detalhe).getByRole("button", { name: "Iniciar aprendizado" }));
     await waitFor(() => expect(POST).toHaveBeenCalledWith(ROTA_TRANSICAO, expect.objectContaining({
       params: { path: { mesa_id: "mesa", personagem_id: "lion", carta_id: disponivel.id, acao: "iniciar_aprendizado" } },
@@ -371,14 +372,40 @@ describe("Detalhe em grimório (D8 revisto)", () => {
 
   it("magia vista pelo Narrador: escola, grau e os custos reservados, com marcações sem o prefixo interno", async () => {
     const magia = { ...CARTAS_PARA_FILTROS[0]!, carta: { ...CARTAS_PARA_FILTROS[0]!.carta, conteudo: {
-      ...CARTAS_PARA_FILTROS[0]!.carta.conteudo, custo_aprendizado: 22, descansos_minimos: 4, tags: ["raca:Elfo", "Luz"] } } };
+      ...CARTAS_PARA_FILTROS[0]!.carta.conteudo, custo_aprendizado: 22, tags: ["raca:Elfo", "Luz"] },
+      calculados: { grau: "simples", descansos_minimos: 4, custo_uso_framework: 1 } } };
     montar({ papel: "narrador", cartas: [magia] });
     fireEvent.click(await waitFor(() => cartaChamada("Luz das estrelas")));
     const detalhe = await screen.findByRole("dialog", { name: "Luz das estrelas" });
     expect(Object.fromEntries(quadros(detalhe))).toMatchObject({
-      "Marcações": "Elfo • Luz", "Escola": "Ilusão", "Grau": "1", "Potência de uso": "2", "Custo de uso": "1",
+      "Marcações": "Elfo • Luz", "Escola": "Perceptiva", "Grau": "Simples", "Potência de uso": "2", "Custo de uso": "1",
       "Custo de aprendizado": "22", "Descansos mínimos": "4",
     });
+  });
+
+  it("magia com campos do Framework, vista pelo jogador (adaptar-cartas-ao-framework)", async () => {
+    const [base] = semCustosReservados(CARTAS_PARA_FILTROS);
+    const magia = { ...base!, carta: { ...base!.carta, conteudo: {
+      ...base!.carta.conteudo, escola: "druidica", ativacao: "ativa", alcance: { tipo: "metros", metros: 15 }, forma: "circulo",
+      teste: "Destreza + Esquiva, CD 15", combo: null, requisitos: ["Acesso à escola Druídica"],
+      efeito_principal: "1d8 de dano Perfurante e Imobilizado." },
+      calculados: { grau: "intermediaria", descansos_minimos: null, custo_uso_framework: 5 } } };
+    montar({ cartas: [magia] });
+    fireEvent.click(await waitFor(() => cartaChamada("Luz das estrelas")));
+    const detalhe = await screen.findByRole("dialog", { name: "Luz das estrelas" });
+    await within(detalhe).findByText("Druídica");
+    const dados = Object.fromEntries(quadros(detalhe));
+    expect(dados).toMatchObject({
+      "Escola": "Druídica", "Grau": "Intermediária", "Tipo": "Ativa", "Alcance": "15 metros", "Forma": "Círculo",
+      "Teste": "Destreza + Esquiva, CD 15", "Efeito principal": "1d8 de dano Perfurante e Imobilizado.",
+      "Acesso": "Acesso à escola Druídica",
+    });
+    expect(Object.keys(dados)).not.toContain("Combo");
+    expect(Object.keys(dados)).not.toContain("Custo de aprendizado");
+    expect(Object.keys(dados)).not.toContain("Descansos mínimos");
+    const rotulos = quadros(detalhe).map(([rotulo]) => rotulo);
+    expect(rotulos.indexOf("Grau")).toBeLessThan(rotulos.indexOf("Tipo"));
+    expect(rotulos.indexOf("Escalonamento")).toBe(-1);
   });
 
   it("item: sem quadros de custo, e a arte própria ocupa o quadro da página esquerda", async () => {

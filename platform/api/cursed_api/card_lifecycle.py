@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, cartas_ciclo, ficha_viva
+from cursed_platform import auditoria, cartas, cartas_ciclo, ficha_viva
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     ApresentacaoResumo, ApresentarCartaRequest, AquisicaoCartasResposta, CartaPersonagemResumo, CartaVisivel,
@@ -69,7 +69,8 @@ def _visivel(versao: CartaVersaoRegistro, narrador: bool) -> CartaVisivel:
         chave: valor for chave, valor in versao.conteudo.items() if chave not in RESERVADOS_AO_NARRADOR
     }
     return CartaVisivel(versao_id=versao.id, definicao_id=versao.definicao_id, numero=versao.numero,
-                        tipo=versao.tipo, conteudo=conteudo)
+                        tipo=versao.tipo, conteudo=conteudo,
+                        calculados=cartas.calculados_da_carta(versao.tipo, versao.conteudo, narrador=narrador))
 
 
 def _instancia_resumo(session: Session, instancia: CartaPersonagemRegistro, narrador: bool) -> CartaPersonagemResumo:

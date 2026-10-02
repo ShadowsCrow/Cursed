@@ -6,7 +6,7 @@ import { useAssetImage } from "../../../assets/useAssetImage";
 import { ACOES_JOGADOR, ACOES_NARRADOR } from "../../../cards/acoesDeCartas";
 import { ROTULO_TIPO, type AcaoCarta, type TipoCarta } from "../../../cards/types";
 import type { ApiClient } from "../../types";
-import type { CatalogoItens } from "../catalogoApi";
+import { useCatalogoFramework, type CatalogoItens } from "../catalogoApi";
 import { CantoDaFolha } from "../resumo/ornamentos";
 import { categoriaDaCarta, imagemPropria, rotuloDaCategoria, tituloDaCarta, type Carta } from "./apresentacao";
 import { dadosDaCarta, emColunas, type Dado } from "./dadosDoGrimorio";
@@ -92,6 +92,7 @@ export function ArteDoGrimorio({ tipo, conteudo, categoria, catalogo, api, mesaI
 export function DetalheDaCarta({
   carta, catalogo, narrador, podeEditar, api, mesaId, pendente, erro, onAcao, onMigrar, onRemover, onFechar,
 }: DetalheDaCartaProps) {
+  const framework = useCatalogoFramework(api, mesaId).data;
   const acoes = [
     ...(narrador || podeEditar ? ACOES_JOGADOR[carta.estado] ?? [] : []),
     ...(narrador ? ACOES_NARRADOR[carta.estado] ?? [] : []),
@@ -100,7 +101,7 @@ export function DetalheDaCarta({
   return (
     <Grimorio
       tipo={carta.tipo} conteudo={carta.carta.conteudo as Conteudo} titulo={tituloDaCarta(carta)}
-      categoria={categoriaDaCarta(carta, catalogo)} catalogo={catalogo} dados={dadosDaCarta(carta, narrador)}
+      categoria={categoriaDaCarta(carta, catalogo)} catalogo={catalogo} dados={dadosDaCarta(carta, narrador, framework)}
       api={api} mesaId={mesaId} onFechar={onFechar}
     >
       {(erro || acoes.length > 0 || migravel || narrador) && (

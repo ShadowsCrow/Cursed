@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 
 import { custosDaCarta } from "../../../cards/cardFormat";
+import { rotulo, textoDoAlcance, type CalculadosCarta } from "../../../cards/criacao";
 import type { TipoCarta } from "../../../cards/types";
+import type { CatalogoFramework } from "../catalogoApi";
 import { rotuloDaOrigem, type Carta } from "./apresentacao";
 import type { NomeIconeDado } from "./grimorio";
 
@@ -57,31 +59,76 @@ export function marcacoesDoConteudo(conteudo: Conteudo): Dado {
 }
 
 /** Os quadros de dados da página direita, na ordem da especificação; só os que se aplicam à carta. */
-export function dadosDaCarta(carta: Carta, narrador: boolean): Dado[] {
+export function dadosDaCarta(carta: Carta, narrador: boolean, framework?: CatalogoFramework): Dado[] {
   const conteudo = carta.carta.conteudo as Conteudo;
   return [
     marcacoesDoConteudo(conteudo),
     { icone: "origem", rotulo: "Origem", valor: rotuloDaOrigem(carta) },
     { icone: "versao", rotulo: "Versão", valor: String(carta.carta.numero) },
     { icone: "recebida", rotulo: "Recebida em", valor: dataDoQuadro(carta.adquirida_em) },
-    ...dadosDoConteudo(carta.tipo, conteudo, narrador),
+    ...dadosDoConteudo(carta.tipo, conteudo, narrador, { calculados: carta.carta.calculados, framework }),
   ];
 }
 
-/** Os quadros que dependem só do conteúdo (custos, escola, grau, requisitos e legado): a ficha e a biblioteca os usam. */
-export function dadosDoConteudo(tipo: TipoCarta, conteudo: Conteudo, narrador: boolean): Dado[] {
-  const custos = custosDaCarta(tipo, conteudo, { narrador });
+/** Campos do Framework na ordem da ficha de criação (adaptar-cartas-ao-framework); `largo` nos textos de efeito. */
+const CAMPOS_DO_FRAMEWORK: { campo: string; rotulo: string; icone: NomeIconeDado; largo?: boolean }[] = [
+  { campo: "ativacao", rotulo: "Tipo", icone: "tipo" },
+  { campo: "lancamento", rotulo: "Lançamento", icone: "lancamento" },
+  { campo: "combo", rotulo: "Combo", icone: "combo", largo: true },
+  { campo: "persistencia", rotulo: "Persistência", icone: "persistencia" },
+  { campo: "alcance", rotulo: "Alcance", icone: "alcance" },
+  { campo: "forma", rotulo: "Forma", icone: "forma" },
+  { campo: "alvo_area", rotulo: "Alvo ou Área", icone: "alvo" },
+  { campo: "impactos", rotulo: "Impactos", icone: "impactos" },
+  { campo: "duracao", rotulo: "Duração", icone: "duracao" },
+  { campo: "efeito_principal", rotulo: "Efeito principal", icone: "efeito", largo: true },
+  { campo: "efeitos_secundarios", rotulo: "Efeitos secundários", icone: "efeito", largo: true },
+  { campo: "efeitos_condicionais", rotulo: "Efeitos condicionais", icone: "efeito", largo: true },
+  { campo: "teste", rotulo: "Teste", icone: "teste" },
+  { campo: "componentes", rotulo: "Componentes", icone: "componentes" },
+  { campo: "limitacoes", rotulo: "Limitações", icone: "limitacoes" },
+  { campo: "escalonamento", rotulo: "Escalonamento", icone: "escalonamento" },
+];
+
+function valorDoFramework(campo: string, conteudo: Conteudo, framework: CatalogoFramework | undefined): string {
+  if (campo === "alcance") return textoDoAlcance(framework, conteudo.alcance) ?? "";
+  if (campo === "ativacao") return rotulo(framework, "tipos", conteudo.ativacao) ?? "";
+  if (campo === "forma") return rotulo(framework, "formas", conteudo.forma) ?? "";
+  return texto(conteudo[campo]);
+}
+
+/**
+ * Os quadros que dependem só do conteúdo (custos, escola, grau, campos do Framework, acesso e legado): a ficha e a
+ * biblioteca os usam. Grau e Descansos Mínimos vêm de `calculados` (adaptar-cartas-ao-framework, D3).
+ */
+export function dadosDoConteudo(
+  tipo: TipoCarta, conteudo: Conteudo, narrador: boolean,
+  { calculados = null, framework }: { calculados?: CalculadosCarta | null; framework?: CatalogoFramework } = {},
+): Dado[] {
+  const criacao = tipo === "habilidade" || tipo === "magia";
+  const custos = custosDaCarta(tipo, conteudo, { narrador, calculados });
   const valorDe = (rotulo: string) => custos.find((c) => c.label === rotulo)?.value ?? "Não definido";
   const dados: Dado[] = [];
-  if (tipo === "habilidade" || tipo === "magia") {
+  if (criacao) {
     dados.push({ icone: "potencia", rotulo: "Potência de uso", valor: valorDe("Potência de uso") });
     dados.push({ icone: "custo", rotulo: "Custo de uso", valor: valorDe("Custo de uso") });
   }
+  const grau = rotulo(framework, "graus", calculados?.grau);
   if (tipo === "magia") {
-    dados.push({ icone: "escola", rotulo: "Escola", valor: texto(conteudo.escola) || "Não definida" });
-    dados.push({ icone: "grau", rotulo: "Grau", valor: typeof conteudo.grau === "number" ? String(conteudo.grau) : "Não definido" });
+    dados.push({ icone: "escola", rotulo: "Escola", valor: rotulo(framework, "escolas", conteudo.escola) ?? (texto(conteudo.escola) || "Não definida") });
+    dados.push({ icone: "grau", rotulo: "Grau", valor: grau ?? "Não definido" });
   }
-  if (narrador && (tipo === "habilidade" || tipo === "magia")) {
+  if (tipo === "habilidade") {
+    if (texto(conteudo.disciplina)) dados.push({ icone: "escola", rotulo: "Disciplina", valor: texto(conteudo.disciplina) });
+    if (grau) dados.push({ icone: "grau", rotulo: "Grau", valor: grau });
+  }
+  if (criacao) {
+    for (const { campo, rotulo: nome, icone, largo } of CAMPOS_DO_FRAMEWORK) {
+      const valor = valorDoFramework(campo, conteudo, framework);
+      if (valor) dados.push({ icone, rotulo: nome, valor, largo });
+    }
+  }
+  if (narrador && criacao) {
     dados.push({ icone: "aprendizado", rotulo: "Custo de aprendizado", valor: valorDe("Custo de aprendizado") });
     dados.push({ icone: "descansos", rotulo: "Descansos mínimos", valor: valorDe("Descansos mínimos") });
   }
@@ -91,7 +138,7 @@ export function dadosDoConteudo(tipo: TipoCarta, conteudo: Conteudo, narrador: b
   }
   const requisitos = lista(conteudo.requisitos);
   if (requisitos.length) {
-    dados.push({ icone: "requisitos", rotulo: "Requisitos", largo: true,
+    dados.push({ icone: "requisitos", rotulo: criacao ? "Acesso" : "Requisitos", largo: true,
       valor: <ul className="grimorio-dado__lista">{requisitos.map((r) => <li key={r}>{r}</li>)}</ul> });
   }
   const legado = narrador ? texto(conteudo.custo_legado) : "";

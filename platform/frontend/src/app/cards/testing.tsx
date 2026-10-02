@@ -3,7 +3,23 @@ import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { vi } from "vitest";
 
+import type { CatalogoFramework } from "../characters/sheet/catalogoApi";
 import type { ApiClient } from "../characters/types";
+import framework from "../../../../../cursed_platform/catalogos/framework.json";
+
+/** O catálogo do Framework como a API o entrega, montado do próprio `framework.json`. */
+export const CATALOGO_FRAMEWORK: CatalogoFramework = {
+  graus: framework.graus,
+  naturezas: framework.naturezas,
+  divisor_uso: framework.custo_uso.divisor,
+  minimo_uso: framework.custo_uso.minimo,
+  sem_custo_uso: framework.custo_uso.sem_custo,
+  tipos: framework.tipos,
+  escolas: framework.escolas,
+  formas: framework.formas,
+  alcances: framework.alcances.map(({ id, rotulo }) => ({ id, rotulo })),
+  alcance_com_distancia: framework.alcances.find((a) => "distancia" in a && a.distancia)?.id ?? "metros",
+};
 
 type Resposta = { data?: unknown; error?: unknown; status?: number };
 type Rotas = Record<string, Resposta | ((opcoes: { params?: unknown; body?: unknown }) => Resposta)>;

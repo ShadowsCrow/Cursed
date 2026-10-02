@@ -21,7 +21,7 @@ const HABILIDADES: [string, string][] = [
   ["Curso do tempo", "Aprendeu a controlar brevemente o ritmo da batalha, ganhando vantagem em iniciativas."],
 ];
 
-const CUSTOS_INDEFINIDOS = { custo_aprendizado: null, descansos_minimos: null, potencia_uso: null, custo_uso: null };
+const CUSTOS_INDEFINIDOS = { custo_aprendizado: null, potencia_uso: null, custo_uso: null };
 
 function carta(indice: number, parcial: Omit<Partial<CartaPersonagemResumo>, "carta"> & {
   tipo: CartaPersonagemResumo["tipo"]; conteudo: Record<string, unknown>;
@@ -43,7 +43,7 @@ export const CARTAS_DA_REFERENCIA: CartaPersonagemResumo[] = HABILIDADES.map(([t
 /** Cartas a mais, fora da imagem, para os filtros de origem e de tipo. */
 export const CARTAS_PARA_FILTROS: CartaPersonagemResumo[] = [
   carta(10, { tipo: "magia", concedida_por: "raca:Elfo", conteudo: {
-    titulo: "Luz das estrelas", texto: "Uma centelha élfica ilumina a área e revela o que está escondido.", escola: "Ilusão", grau: 1,
+    titulo: "Luz das estrelas", texto: "Uma centelha élfica ilumina a área e revela o que está escondido.", escola: "perceptiva",
     ...CUSTOS_INDEFINIDOS, potencia_uso: 2, custo_uso: 1 } }),
   carta(11, { tipo: "item", estado: "no_inventario", conteudo: {
     titulo: "Espada longa", texto: "Lâmina reta de aço, equilibrada para golpes amplos.", item_tipo: "arma",

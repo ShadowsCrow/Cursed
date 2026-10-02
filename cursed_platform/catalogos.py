@@ -1,4 +1,4 @@
-"""Catálogos do sistema: classes, raças, efeitos default, listas da ficha e itens.
+"""Catálogos do sistema: classes, raças, efeitos default, listas da ficha, itens e tabelas do Framework.
 
 Os arquivos JSON de ``cursed_platform/catalogos/`` são a fonte de trabalho: o
 conteúdo ainda está em desenvolvimento e é editado direto no arquivo. A
@@ -22,7 +22,7 @@ from cursed_platform.domain.efeitos import validar_catalogo
 
 DIRETORIO = Path(__file__).resolve().parent / "catalogos"
 RAIZ_PROJETO = DIRETORIO.parents[1]
-ARQUIVOS = ("classes.json", "racas.json", "efeitos_default.json", "listas_ficha.json", "itens.json")
+ARQUIVOS = ("classes.json", "racas.json", "efeitos_default.json", "listas_ficha.json", "itens.json", "framework.json")
 
 _BASE = re.compile(r"^\s*(-?\d+)\s*\+\s*([^\W\d_]+)\s*$")
 _ACENTOS = str.maketrans("áàâãäéèêëíìîïóòôõöúùûüç", "aaaaaeeeeiiiiooooouuuuc")
@@ -300,6 +300,45 @@ class CatalogoItens:
 
 
 @dataclass(frozen=True)
+class Opcao:
+    id: str
+    rotulo: str
+
+
+@dataclass(frozen=True)
+class FaixaGrau:
+    grau: str
+    minimo: int
+    maximo: int | None  # None: a última faixa, aberta
+    descansos: int
+
+
+@dataclass(frozen=True)
+class NaturezaCriacao:
+    custo_minimo: int
+    faixas: tuple[FaixaGrau, ...]
+
+
+@dataclass(frozen=True)
+class CatalogoFramework:
+    """Tabelas do Framework de Criação (rules/sistema), lidas de ``framework.json``."""
+
+    graus: tuple[Opcao, ...]
+    naturezas: Mapping[str, NaturezaCriacao]  # habilidade | magia
+    divisor_uso: int
+    minimo_uso: int
+    sem_custo_uso: tuple[str, ...]  # tipos sem custo de ativação (passiva permanente)
+    tipos: tuple[Opcao, ...]
+    escolas: tuple[Opcao, ...]
+    formas: tuple[Opcao, ...]
+    alcances: tuple[Opcao, ...]
+    alcance_com_distancia: str  # id do alcance que exige metros
+
+    def rotulo(self, lista: str, id_: Any) -> str | None:
+        return next((o.rotulo for o in getattr(self, lista) if o.id == id_), None)
+
+
+@dataclass(frozen=True)
 class Catalogos:
     versao: str
     classes: tuple[Classe, ...]
@@ -307,6 +346,7 @@ class Catalogos:
     efeitos_default: tuple[dict[str, Any], ...]
     listas: Listas
     itens: CatalogoItens
+    framework: CatalogoFramework
 
     def classe(self, nome: Any) -> Classe | None:
         return next((c for c in self.classes if chave(c.nome) == chave(nome)), None)
@@ -353,10 +393,12 @@ def _lista(dados: Mapping[str, Any], campo: str, *, arquivo: str, onde: str) -> 
     return valor
 
 
-CUSTOS_DE_HABILIDADE = ("custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso")
+CUSTOS_DE_HABILIDADE = ("custo_aprendizado", "potencia_uso", "custo_uso")
 
 
 def _custos(bruta: Mapping[str, Any], *, arquivo: str, onde: str) -> tuple[tuple[str, int], ...]:
+    if "descansos_minimos" in bruta or "grau" in bruta:
+        raise CatalogoInvalido(arquivo, f"{onde}: Grau e Descansos Mínimos saem do Custo de Aprendizado; remova-os do JSON.")
     custos = []
     for campo in CUSTOS_DE_HABILIDADE:
         valor = bruta.get(campo)
@@ -880,6 +922,83 @@ def _campos_dos_itens(dados: Mapping[str, Any], arquivo: str) -> tuple[
     return listas, campos, por_subtipo
 
 
+def _inteiro(valor: Any, *, minimo: int = 0) -> bool:
+    return isinstance(valor, int) and not isinstance(valor, bool) and valor >= minimo
+
+
+def converter_framework(dados: Any, arquivo: str = "framework.json") -> CatalogoFramework:
+    """Faixas de grau por natureza, regra do Custo de Uso e opções fechadas das criações."""
+    if not isinstance(dados, Mapping):
+        raise CatalogoInvalido(arquivo, "o catálogo do Framework precisa ser um objeto.")
+
+    def opcoes(campo: str) -> tuple[Opcao, ...]:
+        lista: list[Opcao] = []
+        for indice, bruto in enumerate(_lista(dados, campo, arquivo=arquivo, onde="framework")):
+            onde = f"{campo}, opção {indice + 1}"
+            if not isinstance(bruto, Mapping):
+                raise CatalogoInvalido(arquivo, f"{onde}: precisa ser um objeto.")
+            valor = bruto.get("id")
+            if not isinstance(valor, str) or not _ID.match(valor):
+                raise CatalogoInvalido(arquivo, f"{onde}: 'id' precisa ser um identificador em minúsculas.")
+            lista.append(Opcao(valor, _texto(bruto, "rotulo", arquivo=arquivo, onde=onde)))
+        if not lista:
+            raise CatalogoInvalido(arquivo, f"'{campo}' precisa ter ao menos uma opção.")
+        _unicos([o.id for o in lista], arquivo=arquivo, tipo=f"{campo}: id")
+        return tuple(lista)
+
+    graus = opcoes("graus")
+    ids_graus = {g.id for g in graus}
+    brutas = dados.get("naturezas")
+    if not isinstance(brutas, Mapping) or set(brutas) != {"habilidade", "magia"}:
+        raise CatalogoInvalido(arquivo, "'naturezas' precisa ter exatamente 'habilidade' e 'magia'.")
+    naturezas: dict[str, NaturezaCriacao] = {}
+    for natureza, bruta in brutas.items():
+        onde = f"naturezas.{natureza}"
+        if not isinstance(bruta, Mapping) or not _inteiro(bruta.get("custo_minimo"), minimo=1):
+            raise CatalogoInvalido(arquivo, f"{onde}: 'custo_minimo' precisa ser um inteiro a partir de 1.")
+        faixas: list[FaixaGrau] = []
+        for indice, faixa in enumerate(_lista(bruta, "faixas", arquivo=arquivo, onde=onde)):
+            local = f"{onde}, faixa {indice + 1}"
+            if not isinstance(faixa, Mapping) or faixa.get("grau") not in ids_graus:
+                raise CatalogoInvalido(arquivo, f"{local}: 'grau' precisa ser um dos graus declarados.")
+            maximo = faixa.get("maximo")
+            if not _inteiro(faixa.get("minimo"), minimo=1) or not _inteiro(faixa.get("descansos"), minimo=1) \
+                    or (maximo is not None and not _inteiro(maximo, minimo=1)):
+                raise CatalogoInvalido(arquivo, f"{local}: 'minimo', 'maximo' e 'descansos' precisam ser inteiros a partir de 1.")
+            faixas.append(FaixaGrau(faixa["grau"], faixa["minimo"], maximo, faixa["descansos"]))
+        if not faixas:
+            raise CatalogoInvalido(arquivo, f"{onde}: 'faixas' precisa ter ao menos uma faixa.")
+        if faixas[0].minimo != bruta["custo_minimo"]:
+            raise CatalogoInvalido(arquivo, f"{onde}: a primeira faixa precisa começar no custo mínimo ({bruta['custo_minimo']}).")
+        for anterior, seguinte in zip(faixas, faixas[1:]):
+            if anterior.maximo is None or anterior.maximo < anterior.minimo or seguinte.minimo != anterior.maximo + 1:
+                raise CatalogoInvalido(
+                    arquivo, f"{onde}: as faixas '{anterior.grau}' e '{seguinte.grau}' se sobrepõem ou deixam um intervalo.")
+        if faixas[-1].maximo is not None:
+            raise CatalogoInvalido(arquivo, f"{onde}: a última faixa precisa ser aberta ('maximo': null).")
+        _unicos([f.grau for f in faixas], arquivo=arquivo, tipo=f"{onde}: grau")
+        naturezas[natureza] = NaturezaCriacao(bruta["custo_minimo"], tuple(faixas))
+
+    tipos = opcoes("tipos")
+    uso = dados.get("custo_uso")
+    if not isinstance(uso, Mapping) or not _inteiro(uso.get("divisor"), minimo=1) or not _inteiro(uso.get("minimo")):
+        raise CatalogoInvalido(arquivo, "'custo_uso' precisa declarar 'divisor' (a partir de 1) e 'minimo' (a partir de 0).")
+    sem_custo = uso.get("sem_custo", [])
+    if not isinstance(sem_custo, list) or any(t not in {o.id for o in tipos} for t in sem_custo):
+        raise CatalogoInvalido(arquivo, "'custo_uso.sem_custo' precisa listar tipos declarados.")
+
+    alcances = opcoes("alcances")
+    brutos_alcance = dados["alcances"]
+    com_distancia = [o.id for o, b in zip(alcances, brutos_alcance) if b.get("distancia") is True]
+    if len(com_distancia) != 1:
+        raise CatalogoInvalido(arquivo, "exatamente um alcance precisa ter 'distancia': true.")
+    return CatalogoFramework(
+        graus=graus, naturezas=naturezas, divisor_uso=uso["divisor"], minimo_uso=uso["minimo"],
+        sem_custo_uso=tuple(sem_custo), tipos=tipos, escolas=opcoes("escolas"), formas=opcoes("formas"),
+        alcances=alcances, alcance_com_distancia=com_distancia[0],
+    )
+
+
 def ler(diretorio: Path = DIRETORIO) -> Catalogos:
     """Lê e valida os arquivos. Levanta ``CatalogoInvalido`` com o arquivo e o motivo."""
     brutos: dict[str, bytes] = {}
@@ -904,6 +1023,7 @@ def ler(diretorio: Path = DIRETORIO) -> Catalogos:
         efeitos_default=converter_efeitos(dados["efeitos_default.json"]),
         listas=listas,
         itens=converter_itens(dados["itens.json"]),
+        framework=converter_framework(dados["framework.json"]),
     )
 
 

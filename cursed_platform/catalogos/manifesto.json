@@ -47,6 +47,17 @@
         "Raridades (Comum, Incomum, Raro, Épico, Lendário) e categorias de item; Criaturas cobre o subtipo criatura dos corpos carregados.",
         "Listas, campos e campos por subtipo tirados de Equipamentos.md e de Condições e Tipos de Dano.md (simplificar-criacao-de-cartas, 2026-09-30); o terceiro tipo físico de dano é Contundente, por decisão do usuário; sem peso."
       ]
+    },
+    "framework.json": {
+      "origem": "rules/sistema/Framework de Criação, Aprendizado e Uso de Magias e Habilidades.md",
+      "sha256_origem": {
+        "rules/sistema/Framework de Criação, Aprendizado e Uso de Magias e Habilidades.md": "12259db5495ca262e05d99c7d328b7197e3dd9833f3b0a96d507b326de64f46a"
+      },
+      "copiado_em": "2026-10-01",
+      "transformacoes": [
+        "Faixas de Grau e Descansos Mínimos das seções 23 e 24, custos mínimos da seção 22 e fórmula do Custo de Uso da seção 27 (Potência² ÷ 80, mínimo 1 PP, passiva permanente sem custo), aprovadas pelo usuário em 2026-10-01.",
+        "Listas de Tipo (seção 4), Forma (seção 2) e Alcance (seção 6: Pessoal, Toque, Alcance da arma ou metros de 1 em 1, decisão do usuário em 2026-10-01) e as oito escolas de Escolas de Magia.md (mudança adaptar-cartas-ao-framework)."
+      ]
     }
   }
 }

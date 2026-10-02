@@ -936,6 +936,48 @@
         "title": "Body_enviar_imagem_mesas__mesa_id__imagens__destino__put",
         "type": "object"
       },
+      "CalculadosCarta": {
+        "description": "Valores que saem das tabelas do Framework (adaptar-cartas-ao-framework, D3); nunca guardados na carta.\n`descansos_minimos` só chega ao Narrador.",
+        "properties": {
+          "custo_uso_framework": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Custo de Uso calculado pela Potência de Uso.",
+            "title": "Custo Uso Framework"
+          },
+          "descansos_minimos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descansos Minimos"
+          },
+          "grau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id do grau no catálogo do Framework.",
+            "title": "Grau"
+          }
+        },
+        "title": "CalculadosCarta",
+        "type": "object"
+      },
       "CamadaSala": {
         "properties": {
           "id": {
@@ -1377,6 +1419,16 @@
       },
       "CartaVersaoResumo": {
         "properties": {
+          "calculados": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CalculadosCarta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "conteudo": {
             "additionalProperties": true,
             "title": "Conteudo",
@@ -1442,6 +1494,16 @@
       "CartaVisivel": {
         "description": "Conteúdo publicado que um participante pode ver; sem procedência nem notas do catálogo.",
         "properties": {
+          "calculados": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CalculadosCarta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "conteudo": {
             "additionalProperties": true,
             "title": "Conteudo",
@@ -1478,6 +1540,86 @@
           "conteudo"
         ],
         "title": "CartaVisivel",
+        "type": "object"
+      },
+      "CatalogoFrameworkResumo": {
+        "description": "Tabelas do Framework de Criação (adaptar-cartas-ao-framework, D4): faixas de grau, regra do Custo de Uso\ne opções fechadas de Tipo, Escola, Forma e Alcance.",
+        "properties": {
+          "alcance_com_distancia": {
+            "title": "Alcance Com Distancia",
+            "type": "string"
+          },
+          "alcances": {
+            "items": {
+              "$ref": "#/components/schemas/OpcaoResumo"
+            },
+            "title": "Alcances",
+            "type": "array"
+          },
+          "divisor_uso": {
+            "title": "Divisor Uso",
+            "type": "integer"
+          },
+          "escolas": {
+            "items": {
+              "$ref": "#/components/schemas/OpcaoResumo"
+            },
+            "title": "Escolas",
+            "type": "array"
+          },
+          "formas": {
+            "items": {
+              "$ref": "#/components/schemas/OpcaoResumo"
+            },
+            "title": "Formas",
+            "type": "array"
+          },
+          "graus": {
+            "items": {
+              "$ref": "#/components/schemas/OpcaoResumo"
+            },
+            "title": "Graus",
+            "type": "array"
+          },
+          "minimo_uso": {
+            "title": "Minimo Uso",
+            "type": "integer"
+          },
+          "naturezas": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NaturezaCriacaoResumo"
+            },
+            "title": "Naturezas",
+            "type": "object"
+          },
+          "sem_custo_uso": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sem Custo Uso",
+            "type": "array"
+          },
+          "tipos": {
+            "items": {
+              "$ref": "#/components/schemas/OpcaoResumo"
+            },
+            "title": "Tipos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "graus",
+          "naturezas",
+          "divisor_uso",
+          "minimo_uso",
+          "sem_custo_uso",
+          "tipos",
+          "escolas",
+          "formas",
+          "alcances",
+          "alcance_com_distancia"
+        ],
+        "title": "CatalogoFrameworkResumo",
         "type": "object"
       },
       "CatalogoItensResumo": {
@@ -3403,6 +3545,42 @@
         "title": "FaixaDesgaste",
         "type": "object"
       },
+      "FaixaGrauResumo": {
+        "properties": {
+          "descansos": {
+            "title": "Descansos",
+            "type": "integer"
+          },
+          "grau": {
+            "title": "Grau",
+            "type": "string"
+          },
+          "maximo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ausente na última faixa, que é aberta.",
+            "title": "Maximo"
+          },
+          "minimo": {
+            "title": "Minimo",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "grau",
+          "minimo",
+          "maximo",
+          "descansos"
+        ],
+        "title": "FaixaGrauResumo",
+        "type": "object"
+      },
       "FichaContrato": {
         "additionalProperties": true,
         "description": "Representação compatível de uma ficha transportada pela API.",
@@ -4932,6 +5110,27 @@
         "title": "MudancaAuditoria",
         "type": "object"
       },
+      "NaturezaCriacaoResumo": {
+        "properties": {
+          "custo_minimo": {
+            "title": "Custo Minimo",
+            "type": "integer"
+          },
+          "faixas": {
+            "items": {
+              "$ref": "#/components/schemas/FaixaGrauResumo"
+            },
+            "title": "Faixas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "custo_minimo",
+          "faixas"
+        ],
+        "title": "NaturezaCriacaoResumo",
+        "type": "object"
+      },
       "OfertaItemResumo": {
         "properties": {
           "altura": {
@@ -5129,6 +5328,24 @@
           "para_personagem_id"
         ],
         "title": "OfertarItemRequest",
+        "type": "object"
+      },
+      "OpcaoResumo": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rotulo"
+        ],
+        "title": "OpcaoResumo",
         "type": "object"
       },
       "OrigemConsequencia": {
@@ -6013,6 +6230,16 @@
             "title": "Avisos",
             "type": "array"
           },
+          "calculados": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CalculadosCarta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "rascunho": {
             "additionalProperties": true,
             "title": "Rascunho",
@@ -6020,6 +6247,8 @@
           },
           "tipo": {
             "enum": [
+              "habilidade",
+              "magia",
               "item",
               "efeito"
             ],
@@ -8777,6 +9006,54 @@
           }
         ],
         "summary": "Estado Do Catalogo",
+        "tags": [
+          "Catálogos"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/catalogos/framework": {
+      "get": {
+        "description": "Tabelas do Framework de Criação (adaptar-cartas-ao-framework, D4).",
+        "operationId": "listar_framework_mesas__mesa_id__catalogos_framework_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoFrameworkResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Framework",
         "tags": [
           "Catálogos"
         ]

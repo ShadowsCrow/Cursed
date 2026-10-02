@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 from cursed_platform.persistence import ItemInventarioRegistro, MigracaoLegadaRegistro, PersonagemRegistro
 
 
-CAMPOS_CUSTO = ("custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso", "custos_adicionais")
+# Descansos Mínimos saem do Custo de Aprendizado (adaptar-cartas-ao-framework): não são campo próprio.
+CAMPOS_CUSTO = ("custo_aprendizado", "potencia_uso", "custo_uso", "custos_adicionais")
 
 
 @dataclass(frozen=True)

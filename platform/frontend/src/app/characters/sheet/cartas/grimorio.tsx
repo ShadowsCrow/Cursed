@@ -34,7 +34,10 @@ export function FechoDoLivro({ lado }: { lado: "esquerda" | "direita" }) {
 
 export type NomeIconeDado =
   | "marcacoes" | "origem" | "versao" | "recebida" | "potencia" | "custo" | "escola" | "grau"
-  | "aprendizado" | "descansos" | "adicional" | "requisitos" | "legado";
+  | "aprendizado" | "descansos" | "adicional" | "requisitos" | "legado"
+  // Campos do Framework de Criação (adaptar-cartas-ao-framework); traços do Lucide (licença ISC).
+  | "tipo" | "lancamento" | "combo" | "persistencia" | "alcance" | "forma" | "alvo" | "impactos" | "duracao"
+  | "efeito" | "teste" | "componentes" | "limitacoes" | "escalonamento";
 
 const TRACOS: Record<NomeIconeDado, string[]> = {
   // Raio, como no conceito.
@@ -63,6 +66,34 @@ const TRACOS: Record<NomeIconeDado, string[]> = {
   requisitos: ["M6 10.5h12v10H6Z", "M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5", "M12 14.5v2.5"],
   // Pergaminho.
   legado: ["M7 4h11v13.5a2.5 2.5 0 0 1-2.5 2.5H6", "M7 4a2 2 0 0 0-2 2v1.5h2", "M6 20a2.5 2.5 0 0 1-2.5-2.5V16H14v1.5a2.5 2.5 0 0 0 2.5 2.5", "M10 8h5M10 11h5"],
+  // Raio (zap).
+  tipo: ["M13 2 3 14h9l-1 8 10-12h-9l1-8Z"],
+  // Cronômetro (timer).
+  lancamento: ["M10 2h4", "M12 14l3-3", "M12 6a8 8 0 1 1 0 16 8 8 0 0 1 0-16"],
+  // Elos (link).
+  combo: ["M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"],
+  // Repetição (repeat).
+  persistencia: ["m17 2 4 4-4 4", "M3 11v-1a4 4 0 0 1 4-4h14", "m7 22-4-4 4-4", "M21 13v1a4 4 0 0 1-4 4H3"],
+  // Mira (crosshair).
+  alcance: ["M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20", "M22 12h-4M6 12H2M12 6V2M12 22v-4"],
+  // Formas (shapes).
+  forma: ["M8.3 10a.7.7 0 0 1-.63-1.08L11.4 3a.7.7 0 0 1 1.2-.04L16.3 8.9a.7.7 0 0 1-.57 1.1Z", "M4 14h6v7H4Z", "M17.5 14a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7"],
+  // Alvo (target).
+  alvo: ["M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20", "M12 6a6 6 0 1 1 0 12 6 6 0 0 1 0-12", "M12 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4"],
+  // Cerquilha (hash).
+  impactos: ["M4 9h16M4 15h16", "M10 3 8 21M16 3l-2 18"],
+  // Relógio (clock).
+  duracao: ["M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18", "M12 7v5l3 2"],
+  // Brilho (sparkle).
+  efeito: ["M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0Z"],
+  // Dado (dice-5).
+  teste: ["M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z", "M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"],
+  // Mão aberta (hand).
+  componentes: ["M18 11V6a2 2 0 0 0-4 0", "M14 10V4a2 2 0 0 0-4 0v2", "M10 10.5V6a2 2 0 0 0-4 0v8", "M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-6-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"],
+  // Tendência de queda (trending-down).
+  limitacoes: ["M22 17 13.5 8.5l-5 5L2 7", "M16 17h6v-6"],
+  // Tendência de alta (trending-up).
+  escalonamento: ["M22 7l-8.5 8.5-5-5L2 17", "M16 7h6v6"],
 };
 
 const ESCURO = "#3a2412";

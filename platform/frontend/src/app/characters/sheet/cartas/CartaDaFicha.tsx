@@ -3,15 +3,17 @@ import { forwardRef, type Ref } from "react";
 import { ImagemAjustada } from "../../../assets/ImagemAjustada";
 import { useAssetImage } from "../../../assets/useAssetImage";
 import { custosDaCarta } from "../../../cards/cardFormat";
+import { calculadosDoConteudo, type CalculadosCarta } from "../../../cards/criacao";
 import { ROTULO_TIPO, type TipoCarta } from "../../../cards/types";
 import type { ApiClient } from "../../types";
-import type { CatalogoItens } from "../catalogoApi";
+import { useCatalogoFramework, type CatalogoItens } from "../catalogoApi";
 import {
   categoriaDaCarta, imagemPropria, rotuloDaCarta, rotuloDaCategoria, rotuloDaOrigem, tituloDaCarta, type Carta,
 } from "./apresentacao";
 import "./cartas.css";
 import { MedalhaoDaCarta, VolutaDaCarta } from "./emblemas";
 import { arteDaFaixa, arteDoMedalhao, usePintura } from "./pinturasDasCartas";
+import { useInclinacao } from "./useInclinacao";
 
 /*
  * Carta da aba Cartas (redesenhar-aba-cartas, D7), medida na referência a 1448 px: 262 × 307 px, faixa
@@ -72,6 +74,8 @@ function FaixaDaCarta({ conteudo, categoria, icone, api, mesaId }: {
 export interface CartaVisualProps {
   tipo: TipoCarta;
   conteudo: Conteudo;
+  /** Valores do Framework vindos do servidor; sem eles, a carta os calcula pelo catálogo (biblioteca, editor). */
+  calculados?: CalculadosCarta | null;
   titulo: string;
   /** Categoria do filtro de tipo (define a pintura da faixa e o ícone do medalhão). */
   categoria: string;
@@ -90,12 +94,15 @@ export interface CartaVisualProps {
 
 /** A carta da aba Cartas como figura reutilizável: a ficha, o detalhe e a biblioteca da mesa desenham a mesma carta. */
 export const CartaVisual = forwardRef(function CartaVisual(
-  { tipo, conteudo, titulo, categoria, catalogo, narrador, rodape, selo, api, mesaId, onAbrir, rotulo }: CartaVisualProps,
+  { tipo, conteudo, calculados, titulo, categoria, catalogo, narrador, rodape, selo, api, mesaId, onAbrir, rotulo }: CartaVisualProps,
   ref: Ref<HTMLButtonElement>,
 ) {
   const { icone } = rotuloDaCategoria(categoria, catalogo);
-  const custos = custosDaCarta(tipo, conteudo, { narrador }).slice(0, narrador ? 4 : 2);
+  const framework = useCatalogoFramework(api, mesaId).data;
+  const custos = custosDaCarta(tipo, conteudo, { narrador, calculados: calculados ?? calculadosDoConteudo(framework, tipo, conteudo) })
+    .slice(0, narrador ? 4 : 2);
   const texto = typeof conteudo.texto === "string" ? conteudo.texto : "";
+  const inclinacao = useInclinacao();
 
   const miolo = (
     <>
@@ -124,9 +131,9 @@ export const CartaVisual = forwardRef(function CartaVisual(
   );
 
   const classes = `carta-ficha carta-ficha--${tipo}`;
-  if (!onAbrir) return <div className={`${classes} carta-ficha--figura`}>{miolo}</div>;
+  if (!onAbrir) return <div className={`${classes} carta-ficha--figura`} {...inclinacao}>{miolo}</div>;
   return (
-    <button ref={ref} type="button" className={classes} aria-label={rotulo} aria-haspopup="dialog" onClick={onAbrir}>
+    <button ref={ref} type="button" className={classes} aria-label={rotulo} aria-haspopup="dialog" onClick={onAbrir} {...inclinacao}>
       {miolo}
     </button>
   );
@@ -148,7 +155,7 @@ export const CartaDaFicha = forwardRef(function CartaDaFicha(
   const desatualizada = narrador && carta.versao_mais_recente != null && carta.versao_mais_recente > carta.carta.numero;
   return (
     <CartaVisual
-      ref={ref} tipo={carta.tipo} conteudo={carta.carta.conteudo as Conteudo} titulo={tituloDaCarta(carta)}
+      ref={ref} tipo={carta.tipo} conteudo={carta.carta.conteudo as Conteudo} calculados={carta.carta.calculados} titulo={tituloDaCarta(carta)}
       categoria={categoriaDaCarta(carta, catalogo)} catalogo={catalogo} narrador={narrador} rodape={rotuloDaOrigem(carta)}
       selo={desatualizada ? `v${carta.versao_mais_recente} disponível` : undefined}
       api={api} mesaId={mesaId} onAbrir={onAbrir} rotulo={rotuloDaCarta(carta)}

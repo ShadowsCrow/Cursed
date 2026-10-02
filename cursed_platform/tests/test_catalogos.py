@@ -422,3 +422,58 @@ class RecargaTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FrameworkTest(unittest.TestCase):
+    """Tabelas do Framework de Criação (adaptar-cartas-ao-framework, D4)."""
+
+    def setUp(self):
+        self.dados = json.loads((catalogos.DIRETORIO / "framework.json").read_text(encoding="utf-8"))
+
+    def _invalido(self, dados) -> str:
+        with self.assertRaises(CatalogoInvalido) as erro:
+            catalogos.converter_framework(dados)
+        self.assertEqual(erro.exception.arquivo, "framework.json")
+        return erro.exception.motivo
+
+    def test_faixas_e_opcoes_das_regras(self):
+        framework = catalogos.converter_framework(self.dados)
+        magia = framework.naturezas["magia"]
+        self.assertEqual(magia.custo_minimo, 12)
+        self.assertEqual([(f.grau, f.minimo, f.maximo, f.descansos) for f in magia.faixas], [
+            ("basica", 12, 16, 3), ("simples", 17, 23, 4), ("intermediaria", 24, 32, 6), ("avancada", 33, 44, 8),
+            ("especialista", 45, 59, 12), ("mestra", 60, 79, 18), ("lendaria", 80, None, 25)])
+        habilidade = framework.naturezas["habilidade"]
+        self.assertEqual(habilidade.custo_minimo, 6)
+        self.assertEqual([(f.minimo, f.maximo) for f in habilidade.faixas],
+                         [(6, 10), (11, 16), (17, 24), (25, 34), (35, 47), (48, 63), (64, None)])
+        self.assertEqual((framework.divisor_uso, framework.minimo_uso, framework.sem_custo_uso), (80, 1, ("passiva_permanente",)))
+        self.assertEqual(len(framework.escolas), 8)
+        self.assertEqual(framework.rotulo("escolas", "sagrada"), "Sagrada da Criação")
+        self.assertEqual([o.id for o in framework.tipos], ["ativa", "reacao", "passiva_condicional", "passiva_permanente"])
+        self.assertEqual([o.id for o in framework.alcances], ["pessoal", "toque", "arma", "metros"])
+        self.assertEqual(framework.alcance_com_distancia, "metros")
+        self.assertIn("framework.json", ARQUIVOS)
+
+    def test_faixas_sobrepostas_sao_recusadas(self):
+        self.dados["naturezas"]["magia"]["faixas"][1]["minimo"] = 15
+        self.assertIn("'basica' e 'simples' se sobrepõem", self._invalido(self.dados))
+
+    def test_ultima_faixa_precisa_ser_aberta(self):
+        self.dados["naturezas"]["habilidade"]["faixas"][-1]["maximo"] = 99
+        self.assertIn("última faixa precisa ser aberta", self._invalido(self.dados))
+
+    def test_primeira_faixa_comeca_no_custo_minimo(self):
+        self.dados["naturezas"]["magia"]["custo_minimo"] = 10
+        self.assertIn("custo mínimo", self._invalido(self.dados))
+
+    def test_id_repetido_e_recusado(self):
+        self.dados["escolas"].append({"id": "elemental", "rotulo": "Outra"})
+        self.assertIn("escolas: id 'elemental' repetida", self._invalido(self.dados))
+
+    def test_grau_desconhecido_e_alcance_sem_distancia(self):
+        self.dados["naturezas"]["magia"]["faixas"][0]["grau"] = "novata"
+        self.assertIn("um dos graus declarados", self._invalido(self.dados))
+        self.setUp()
+        self.dados["alcances"][-1].pop("distancia")
+        self.assertIn("'distancia': true", self._invalido(self.dados))

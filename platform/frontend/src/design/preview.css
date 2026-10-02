@@ -152,6 +152,9 @@ textarea { min-height: 5rem; resize: vertical; }
 
 .import-preview ul { margin: .3rem 0; padding-left: 1.1rem; }
 .import-preview li { margin: .2rem 0; }
+.import-preview__dados { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .4rem .8rem; margin: .6rem 0; }
+.import-preview__dados dt { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; opacity: .75; }
+.import-preview__dados dd { margin: 0; }
 
 .character-list-reset { list-style: none; margin: 0; padding: 0; }
 .character-tile__actions { display: flex; gap: .5rem; flex-wrap: wrap; }

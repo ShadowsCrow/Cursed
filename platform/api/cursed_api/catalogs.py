@@ -14,7 +14,7 @@ from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.catalogos import Base, Habilidade
 from cursed_platform.contracts import (
     ArquetipoResumo, BaseClasseResumo, CampoDoSubtipoResumo, CampoItemResumo, CampoPersonalidadeResumo,
-    CatalogoItensResumo, CategoriaItemResumo,
+    CatalogoFrameworkResumo, CatalogoItensResumo, CategoriaItemResumo, FaixaGrauResumo, NaturezaCriacaoResumo, OpcaoResumo,
     ClasseCatalogoResumo, EfeitoDefaultResumo, GrupoPersonalidadeResumo, RaridadeResumo, TopoPersonalidadeResumo,
     ErroCatalogoResumo, EstadoCatalogoResumo, FaixaAlturaResumo, HabilidadeCatalogoResumo, IconeResumo,
     IntervaloAlturaResumo, ListasFichaResumo, ModificadorCatalogoResumo, PecadoResumo, RacaCatalogoResumo,
@@ -107,6 +107,27 @@ def listar_catalogo_de_itens(mesa_id: str, ator: Ator = Depends(get_actor),
                                 exemplo=c.exemplo, unidade=c.unidade) for c in itens.campos.values()],
         campos_por_subtipo={subtipo: [CampoDoSubtipoResumo(campo=c.campo, sugestoes=c.sugestoes) for c in campos]
                             for subtipo, campos in itens.campos_por_subtipo.items()},
+    )
+
+
+@router.get("/framework", response_model=CatalogoFrameworkResumo)
+def listar_framework(mesa_id: str, ator: Ator = Depends(get_actor),
+                     session: Session = Depends(get_session)) -> CatalogoFrameworkResumo:
+    """Tabelas do Framework de Criação (adaptar-cartas-ao-framework, D4)."""
+    _exigir(session, mesa_id, ator)
+    framework = catalogos.obter().framework
+
+    def opcoes(lista) -> list[OpcaoResumo]:
+        return [OpcaoResumo(id=o.id, rotulo=o.rotulo) for o in lista]
+
+    return CatalogoFrameworkResumo(
+        graus=opcoes(framework.graus),
+        naturezas={nome: NaturezaCriacaoResumo(custo_minimo=n.custo_minimo, faixas=[
+            FaixaGrauResumo(grau=f.grau, minimo=f.minimo, maximo=f.maximo, descansos=f.descansos) for f in n.faixas])
+            for nome, n in framework.naturezas.items()},
+        divisor_uso=framework.divisor_uso, minimo_uso=framework.minimo_uso, sem_custo_uso=list(framework.sem_custo_uso),
+        tipos=opcoes(framework.tipos), escolas=opcoes(framework.escolas), formas=opcoes(framework.formas),
+        alcances=opcoes(framework.alcances), alcance_com_distancia=framework.alcance_com_distancia,
     )
 
 

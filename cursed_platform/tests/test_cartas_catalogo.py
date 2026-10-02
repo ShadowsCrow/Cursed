@@ -86,12 +86,18 @@ class MaterializacaoTest(_Base):
         self.assertTrue(todas)
         self.assertEqual([h for h in todas if h.origem.startswith("racas/")], [])
 
-    def test_tipo_sem_ativacao_propria_vira_tag(self):
+    def test_tipo_do_framework_e_passiva_como_tag(self):
+        """adaptar-cartas-ao-framework, D2: Reação vira tipo; Passiva espera a decisão do usuário."""
+        todas = [h.conteudo for h in cartas_catalogo.todas_as_habilidades(CATALOGO)]
         gatuno = {h.conteudo["titulo"]: h.conteudo for h in cartas_catalogo.todas_as_habilidades(CATALOGO)
                   if h.concedida_por.startswith(("classe:Gatuno", "arquetipo:Gatuno"))}
-        reacoes = [c for c in gatuno.values() if "Reação" in c["tags"]]
+        reacoes = [c for c in gatuno.values() if c["ativacao"] == "reacao"]
         self.assertTrue(reacoes)
-        self.assertTrue(all(c["ativacao"] is None for c in reacoes))
+        self.assertTrue(all("Reação" not in c["tags"] for c in reacoes))
+        passivas = [c for c in todas if "Passiva" in c["tags"]]
+        self.assertTrue(passivas)
+        self.assertTrue(all(c["ativacao"] is None for c in passivas))
+        self.assertTrue(all(c["ativacao"] in {None, "ativa", "reacao"} for c in todas))
 
 
 class ConcessaoTest(_Base):
@@ -187,7 +193,7 @@ class SincronizacaoTest(_Base):
         definicao = next(d for d in self.definicoes() if d.origem_sistema.endswith(f"/{nome}"))
         vigente = cartas.versao_publicada(self.session, definicao)
         self.assertEqual(vigente.numero, 2)
-        self.assertEqual([vigente.conteudo.get(c) for c in cartas.CUSTOS], [3, None, None, None])
+        self.assertEqual([vigente.conteudo.get(c) for c in cartas.CUSTOS], [3, None])
 
     def test_custo_legado_nao_preenche_os_custos(self):
         legado = Habilidade("Golpe Antigo", "Texto.", "Ativa", custo_legado="2 PP")

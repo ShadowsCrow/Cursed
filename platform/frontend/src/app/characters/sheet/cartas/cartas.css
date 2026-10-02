@@ -244,10 +244,17 @@
 }
 /* Toda carta tem a altura da referência (310 px): itens e efeitos, sem custos, guardam a pílula no pé. */
 .cartas-secao__lista .carta-ficha { min-height: 19.375rem; }
-button.carta-ficha { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
-button.carta-ficha:hover { transform: translateY(-2px); }
+button.carta-ficha { cursor: pointer; transition: transform .45s ease-out, box-shadow .15s ease; }
+button.carta-ficha:hover { transform: perspective(800px) translateY(-2px); }
+/* Com o mouse sobre a carta, `useInclinacao` grava --inc-x e --inc-y; o acompanhamento é rápido e o retorno, suave. */
+.carta-ficha--figura { transition: transform .45s ease-out; }
+.carta-ficha[data-inclinada] {
+  transform: perspective(800px) rotateX(var(--inc-x, 0deg)) rotateY(var(--inc-y, 0deg)) translateY(-2px);
+  transition: transform .08s linear, box-shadow .15s ease;
+}
+.carta-ficha--figura[data-inclinada] { transition: transform .08s linear; }
 button.carta-ficha:focus-visible { outline: 3px solid #7a5a26; outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { button.carta-ficha { transition: none; } button.carta-ficha:hover { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .carta-ficha { transition: none; } button.carta-ficha:hover, .carta-ficha[data-inclinada] { transform: none; } }
 .carta-ficha--magia { --carta-cor: #2b1d4a; --carta-cor-clara: #4b3480; }
 .carta-ficha--item { --carta-cor: #3a2a16; --carta-cor-clara: #6b4d26; }
 .carta-ficha--efeito { --carta-cor: #1d3a33; --carta-cor-clara: #2f5f53; }

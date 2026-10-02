@@ -46,7 +46,7 @@ Toda magia ou habilidade deve possuir os campos aplicáveis abaixo.
 |**Combo**|Obrigatório para habilidades de combo.|
 |**Persistência**|Evento, limite, contador e reinício de uma Reação por Persistência.|
 |**Alcance**|Pessoal, toque, arma ou distância em metros.|
-|**Forma**|Golpe, projétil, corrente, cone, aura, barreira etc.|
+|**Forma**|Formato geométrico do efeito: círculo, esfera, cone, linha, quadrado ou cubo. Sem área, a entrega: golpe, projétil, corrente ou aura.|
 |**Alvo ou Área**|Quantidade de criaturas ou tamanho da área.|
 |**Impactos**|Quantidade total de aplicações do efeito.|
 |**Duração**|Tempo durante o qual o efeito permanece.|
@@ -133,6 +133,7 @@ Uma passiva permanentemente ativa paga os `+6` pontos de Tipo, mas não paga tam
 |1 minuto|-2|
 |30 segundos|-1|
 |Uma ação ou disparo|0|
+|Ação Bônus|+2|
 |Instantâneo após um gatilho|+2|
 
 Gatilhos incluem:
@@ -145,6 +146,8 @@ Gatilhos incluem:
 - obter um acerto crítico.
 
 O lançamento da criação já representa a ativação de seu primeiro efeito ou ataque.
+
+Uma criação lançada com **Ação Bônus** pode ser usada no mesmo turno de uma Ação Padrão; os `+2` pontos são a mesma economia de ação de um ataque adicional. Um efeito secundário que exija do usuário uma Ação Bônus extra não recebe desconto nem cobrança por isso, pois consome um recurso do próprio usuário. Consulte [Turnos e Ações](Turnos%20e%20A%C3%A7%C3%B5es.md).
 
 ---
 
@@ -176,9 +179,42 @@ O lançamento da criação já representa a ativação de seu primeiro efeito ou
 
 Linhas, cones, explosões e auras utilizam o valor da área equivalente.
 
+A medida da área depende da Forma:
+
+|Forma|Medida usada na tabela|
+|---|---|
+|Círculo ou esfera|Raio|
+|Cone|Comprimento|
+|Linha|Comprimento, com `1 m` de largura|
+|Quadrado ou cubo|Lado|
+
+Para uma medida entre duas faixas da tabela, use a faixa imediatamente superior. Um círculo de `7 m` de raio paga a área de `10 metros`.
+
+|Área seletiva|Pontos|
+|---|---|
+|O usuário escolhe quais criaturas da área não são afetadas|+2|
+
+Sem área seletiva, a área afeta todas as criaturas dentro dela, inclusive aliados.
+
 A quantidade de alvos diferentes e a quantidade de impactos são calculadas separadamente.
 
 Uma criação que causa dano simultaneamente em uma área paga o pacote de dano uma vez, além do custo da área. Ela não paga o dano novamente para cada criatura atingida.
+
+## Área e alvos de efeitos fortes
+
+Espalhar um efeito forte vale mais do que espalhar um efeito fraco. Por isso, os pontos de **Área** e de **Alvos adicionais** são multiplicados conforme a **força do efeito**. O custo não depende de quantas criaturas estão de fato na área quando a criação é usada: depende do tamanho da área ou da quantidade de alvos que a criação declara e do que cada criatura atingida sofre.
+
+|Força do efeito|Multiplicador da Área ou dos Alvos|
+|---|---|
+|1–4|×1|
+|5–9|×1,5|
+|10 ou mais|×2|
+
+A força do efeito é a soma dos pontos de Dano, Controle, penalidades, Proteção e Recuperação que **uma** criatura atingida recebe. Alcance, Duração, Testes, Componentes e Limitações não entram nessa soma. Arredonde o resultado para cima.
+
+A Área seletiva não é multiplicada. O multiplicador vale também para a Potência de Uso.
+
+Exemplo: uma criação que causa `2d8 + atributo` (`10` pontos) num círculo de `5 m` paga `+4 × 2 = +8` de Área. Com `1d8` (`3` pontos), paga apenas `+4`.
 
 ---
 
@@ -205,6 +241,28 @@ Escreva sempre de quem é o turno: "até o fim do turno do usuário", "até o fi
 Para uma duração entre duas faixas da tabela, use a faixa imediatamente superior. Por exemplo, três rodadas usam a pontuação de um minuto; os impactos recorrentes continuam sendo calculados pela quantidade real de aplicações descrita na criação.
 
 O valor de Duração permanente se aplica a um efeito criado que continua existindo após a ativação, como uma alteração duradoura em um objeto. Ele não se soma ao Tipo de uma passiva pelo mesmo estado sempre ativo.
+
+## Duração de efeitos contínuos
+
+Manter um efeito forte por mais tempo vale mais do que manter um efeito fraco. Por isso, a Duração de um efeito contínuo é multiplicada conforme os pontos desse efeito:
+
+|Pontos do efeito contínuo|Multiplicador da Duração|
+|---|---|
+|1–2|×1|
+|3–5|×2|
+|6 ou mais|×3|
+
+Um efeito é contínuo quando age durante toda a duração: Controle, penalidades, bônus e Proteção que permanecem ativos. Quando vários efeitos contínuos compartilham a mesma duração, some seus pontos para escolher o multiplicador e pague a Duração uma vez.
+
+O multiplicador não se aplica a:
+
+- reservas consumidas uma única vez, como PV Temporários, que pagam a Duração normal pelo tempo em que ficam disponíveis;
+- dano e outros efeitos instantâneos;
+- ao modificador de Concentração contínua nem ao desconto de nova resistência, que permanecem com seus valores normais.
+
+Exemplo: Imobilizado (`+4`) por um minuto paga `+3 × 2 = +6` de Duração, num total de `10` pontos. Por uma rodada, paga `+2 × 2 = +4`, num total de `8`. Uma penalidade de `-1` por um minuto continua pagando `+3`.
+
+O multiplicador vale também para a Potência de Uso. Um efeito que ocorre somente em acerto crítico aplica o multiplicador antes de dividir os pontos pela metade.
 
 ## Concentração contínua
 
@@ -241,8 +299,14 @@ Paralisado não encerra automaticamente uma Concentração, pois a condição ai
 |1d12|+5|
 |2d6|+5|
 |2d8 ou 3d6|+8|
-|Cada dado adicional semelhante|+2|
+|2d10|+10|
+|2d12|+12|
+|Cada d4 adicional|+1|
+|Cada d6 ou d8 adicional|+2|
+|Cada d10 ou d12 adicional|+3|
 |Adicionar um atributo ao dano|+2|
+
+Os dados adicionais são somados à linha da tabela com o mesmo dado: `4d8` parte de `2d8` (`+8`) e soma dois d8 adicionais, num total de `+12`; `4d12` parte de `2d12` (`+12`) e soma dois d12 adicionais, num total de `+18`.
 
 O tipo de dano normalmente não altera o custo.
 
@@ -395,6 +459,16 @@ Nunca conceda simultaneamente o dano normal da arma e um valor listado sem decla
 
 Um efeito que ocorre somente em um acerto crítico paga metade dos pontos de seu efeito e de sua duração, arredondada para cima.
 
+## Movimento forçado
+
+|Empurrar ou puxar|Pontos|
+|---|---|
+|Até 3 metros|+1|
+|Até 6 metros|+2|
+|Cada 3 metros adicionais|+1|
+
+Movimento forçado segue [Iniciativa, Movimento e Posicionamento](Iniciativa,%20Movimento%20e%20Posicionamento.md): não consome o Deslocamento do alvo e não provoca ataques de oportunidade. Dano de queda ou de colisão causado pelo deslocamento é resolvido à parte, conforme [Dano de queda](Dano%20de%20queda.md), e não é pago pela criação, salvo quando ela própria declarar um dano adicional pelo impacto.
+
 Outras condições, como exigir que dois ataques acertem, não reduzem automaticamente o custo. Somente condições previstas como limitações concedem desconto.
 
 ## Glossário de condições para criações
@@ -441,6 +515,20 @@ Se a criação produzir um efeito próprio, descreva o que ele faz, quando se ap
 |Redução de 2d6 de dano|+5|
 |Resistência a um tipo de dano|+5|
 |Imunidade limitada|+8|
+|Anular uma criação de alvo único dirigida ao usuário|+6|
+|Devolver ao conjurador a criação anulada|+3|
+
+|PV Temporários|Pontos|
+|---|---|
+|1d4|+2|
+|1d6|+3|
+|2d6|+5|
+|Cada dado adicional|como na tabela de Dano|
+|Adicionar um atributo|+2|
+
+PV Temporários seguem as regras gerais de [Condições e Tipos de Dano](Condições%20e%20Tipos%20de%20Dano.md): não acumulam e são gastos antes dos PV. A criação paga a Duração pelo tempo em que eles ficam disponíveis, sem o multiplicador de efeitos contínuos.
+
+Anular ou devolver uma criação só funciona contra criações de **grau igual ou menor** que o grau da criação que anula. A criação devolvida usa o próprio teste e os próprios efeitos contra seu conjurador. Uma criação em cadeia ou em área exige cálculo próprio e não é coberta por esses valores.
 
 Para esta tabela, Resistência a um tipo de dano reduz à metade o dano restante desse tipo depois da RDB, arredondando para baixo. Imunidade limitada anula o dano restante de um tipo ou fonte estreitamente definido pela criação. Proteção contra todos os danos físicos, múltiplos tipos ou outras fontes amplas exige cálculo adicional; os `+8` pontos não cobrem automaticamente qualquer imunidade.
 
@@ -466,6 +554,8 @@ A manifestação da proteção depende da criação:
 |Remover uma condição leve|+3|
 |Restaurar 1d6 de vida|+4|
 |Restaurar 2d6 de vida|+6|
+|Cada d6 adicional de vida restaurada|+3|
+|Adicionar um atributo à vida restaurada|+3|
 |Restaurar órgão ou membro|+10|
 |Reviver|+15|
 
@@ -493,6 +583,13 @@ Referências:
 |Conceder voo ou invisibilidade|+5|
 |Teletransportar|+8 ou mais|
 |Viajar para outra dimensão|+10 ou mais|
+
+|Efeito com atraso|Pontos|
+|---|---|
+|O usuário escolhe, no lançamento, quanto tempo o efeito leva para ocorrer|+1|
+|O efeito fica armado e dispara por um gatilho declarado, como uma runa ou armadilha|+2|
+
+Um efeito armado também paga a Duração pelo tempo em que pode permanecer armado.
 
 Quando um efeito não estiver previsto, compare-o ao efeito mais semelhante e explique a pontuação escolhida.
 
@@ -597,6 +694,16 @@ Uma Reação por Persistência usa o campo **Persistência** e paga normalmente 
 |Permite alterar o tipo de dano|+2|
 
 Um modo adicional precisa produzir uma diferença mecânica real, não apenas uma alteração visual ou narrativa.
+
+## Melhorias opcionais
+
+Uma melhoria opcional é um acréscimo que o usuário escolhe ao usar a criação, pagando PP adicional.
+
+- **Aprendizado:** paga a versão completa, com a versão base, o pacote de cada melhoria e `+1` por melhoria.
+- **Potência de Uso:** calculada pela versão base.
+- **Custo de cada melhoria:** a diferença entre o Custo de Uso com a melhoria e o Custo de Uso da versão base.
+
+Exemplo: se a versão base tem Potência `12` (`2 PP`) e, com a melhoria, chega a `16` (`3 PP`), a melhoria custa `+1 PP` quando escolhida.
 
 ---
 
@@ -748,42 +855,38 @@ As regras de Tipo e Duração para passivas da seção 4 também valem aqui. A P
 
 # 27. Custo de Uso
 
+O Custo de Uso cresce mais rápido do que a Potência de Uso. Uma criação pequena custa pouco; uma criação muito poderosa custa uma parte grande dos PP do personagem. Assim, o próprio PP limita o uso de criações fortes em níveis baixos, sem exigir nível mínimo (seção 28).
+
+```
+Custo de Uso = Potência de Uso² ÷ 80, arredondado para cima, com mínimo de 1 PP
+```
+
 |Potência de Uso|Custo|
 |---|---|
-|0–6|1 PP|
-|7–12|2 PP|
-|13–18|3 PP|
-|19–24|4 PP|
-|25–30|5 PP|
-|31–36|6 PP|
-|37–42|8 PP|
-|43–48|10 PP|
-|49–54|12 PP|
-|55–60|14 PP|
-|61–66|16 PP|
-|67–72|18 PP|
-|73–78|20 PP|
-|79–84|22 PP|
-|85–90|24 PP|
-|Cada 6 pontos adicionais|+2 PP|
+|0–8|1 PP|
+|9–12|2 PP|
+|13–15|3 PP|
+|16–17|4 PP|
+|18–20|5 PP|
+|21|6 PP|
+|22–23|7 PP|
+|24–25|8 PP|
+|26|9 PP|
+|27–28|10 PP|
+|29|11 PP|
+|30|12 PP|
+|31–32|13 PP|
+|33|14 PP|
+|34|15 PP|
+|35|16 PP|
+|36|17 PP|
+|37|18 PP|
+|38|19 PP|
+|39–40|20 PP|
+
+Acima de `40`, use a fórmula. Por exemplo, Potência `48` custa `29 PP`, e Potência `54` custa `37 PP`.
 
 Passivas permanentemente ativas normalmente não possuem custo de ativação.
-
-## Referência por grau
-
-|Grau|Custo de uso comum|
-|---|---|
-|Básica|1 PP|
-|Simples|2 PP|
-|Intermediária|3–4 PP|
-|Avançada|5–7 PP|
-|Especialista|8–10 PP|
-|Mestra|11–15 PP|
-|Lendária|16–24 PP|
-
-Esses valores são apenas referências. O custo real é determinado pela Potência de Uso.
-
-Os limites entre faixas são intencionais. Ao testar as criações em mesa, observe especialmente habilidades com Potência de Uso 6/7 e 36/37, onde um ponto altera o Custo de Uso. Ajuste a tabela com base nesses testes, sem arredondar a Potência para evitar um degrau.
 
 ## Apresentar os custos de uma criação
 
@@ -1106,4 +1209,4 @@ Metade do pacote = 5 pontosEconomia de ação = +2Total = 7 pontos
 |Combo de três etapas|-3|
 |**Total**|**22**|
 
-**Custo de Uso:** `4 PP`
+**Custo de Uso:** `7 PP`

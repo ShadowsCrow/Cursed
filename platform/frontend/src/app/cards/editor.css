@@ -318,6 +318,13 @@
 .editor-quadro--descricao .editor-quadro__rotulo { display: flex; align-items: center; gap: 1cqw; font-size: .85cqw; letter-spacing: .32em; }
 .editor-quadro--descricao .editor-quadro__rotulo::after { content: ""; flex: 1; border-top: .08cqw solid #9a743888; }
 .editor-carta .editor-descricao { width: 100%; min-height: 5.4cqw; resize: vertical; font-size: 1.45cqw; line-height: 1.4; border-bottom: 0; }
+/* Campos do Framework (adaptar-cartas-ao-framework): efeitos em texto mais curto, valores calculados sem edição. */
+.editor-carta .editor-descricao--efeito { min-height: 3.2cqw; font-size: 1.2cqw; }
+/* Alcance: a escolha ocupa o que sobra, e os metros ficam ao lado quando a opção é a distância. */
+.editor-alcance > .editor-escolha { flex: 1 1 auto; min-width: 0; }
+.editor-alcance > .editor-numero { flex: none; }
+/* O valor calculado tem a mesma letra dos campos, sem o filete de edição. */
+.editor-calculado { display: block; color: inherit; font: inherit; }
 
 /* Várias escolhas e etiquetas. */
 .editor-escolhas { display: flex; flex-wrap: wrap; gap: .4cqw; }
@@ -460,7 +467,8 @@
   .editor-titulo__pena { width: 22px; height: 22px; }
   .editor-titulo__raridade { font-size: .9rem; padding: 2px 14px; }
   .editor-carta .grimorio-pagina--direita.editor-pagina-direita { margin-top: 26px; }
-  .editor-formulario { overflow: visible; padding: 0; }
+  /* No fluxo do celular a página não tem altura: o formulário cresce com os campos (sem isso, o pé subia sobre eles). */
+  .editor-formulario { flex: none; overflow: visible; padding: 0; }
   .image-upload--camera { right: 14px; bottom: 14px; }
   .image-upload__camera { width: 40px; height: 40px; font-size: 20px; }
   .image-upload__remover { width: 32px; height: 32px; font-size: 18px; }
@@ -484,6 +492,7 @@
   .editor-quadro--descricao { grid-template-columns: minmax(0, 1fr); padding: 12px 14px; }
   .editor-quadro--descricao .editor-quadro__rotulo { font-size: .7rem; }
   .editor-descricao { min-height: 6rem; font-size: 1rem; }
+  .editor-carta .editor-descricao--efeito { min-height: 4rem; font-size: .95rem; }
   .editor-escolhas__opcao, .editor-etiquetas__etiqueta { font-size: .85rem; }
   .editor-etiquetas__etiqueta button { font-size: 1rem; }
   .editor-quadro .editor-etiquetas__entrada, .editor-marcar { font-size: .95rem; }

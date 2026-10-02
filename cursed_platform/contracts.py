@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 
 from cursed_platform import catalogos
 
@@ -771,23 +771,67 @@ class CustoAdicional(BaseModel):
     descricao: str | None = Field(default=None, max_length=500)
 
 
-class ConteudoHabilidade(_ConteudoBase):
-    """Custos permanecem separados; `custo_legado` é só texto histórico e nunca preenche os demais."""
+class AlcanceCriacao(BaseModel):
+    """Alcance do Framework: uma opção do catálogo e, para a distância, metros inteiros (adaptar-cartas-ao-framework, D1b)."""
 
-    tipo: Literal["habilidade"] = "habilidade"
-    ativacao: Literal["ativa", "passiva"] | None = None
+    model_config = ConfigDict(extra="forbid")
+
+    tipo: str = Field(min_length=1, max_length=40)
+    metros: StrictInt | None = Field(default=None, ge=1, le=10_000)
+
+
+_TEXTO_CURTO = 500
+_TEXTO_DE_EFEITO = 4_000
+
+
+class _ConteudoCriacao(_ConteudoBase):
+    """Habilidade ou magia pelo Framework de Criação.
+
+    Custos permanecem separados; `custo_legado` é só texto histórico e nunca preenche os demais. Grau e
+    Descansos Mínimos não são guardados: saem do Custo de Aprendizado pelas tabelas do catálogo. `custo_uso`
+    só existe quando o Narrador registra um valor próprio; sem ele, vale o calculado pela Potência de Uso.
+    Tipo (`ativacao`), Forma e Alcance são validados contra as opções do catálogo em `cartas.validar`.
+    """
+
+    ativacao: str | None = Field(default=None, max_length=40)
+    ativacao_legado: Literal["passiva"] | None = None
     custo_aprendizado: int | None = Field(default=None, ge=0)
-    descansos_minimos: int | None = Field(default=None, ge=0)
     potencia_uso: int | None = Field(default=None, ge=0)
     custo_uso: int | None = Field(default=None, ge=0)
     custos_adicionais: list[CustoAdicional] = Field(default_factory=list, max_length=10)
     custo_legado: str | None = Field(default=None, max_length=500)
+    lancamento: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    combo: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    persistencia: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    alcance: AlcanceCriacao | None = None
+    forma: str | None = Field(default=None, max_length=40)
+    alvo_area: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    impactos: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    duracao: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    efeito_principal: str | None = Field(default=None, max_length=_TEXTO_DE_EFEITO)
+    efeitos_secundarios: str | None = Field(default=None, max_length=_TEXTO_DE_EFEITO)
+    efeitos_condicionais: str | None = Field(default=None, max_length=_TEXTO_DE_EFEITO)
+    teste: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    componentes: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    limitacoes: str | None = Field(default=None, max_length=_TEXTO_CURTO)
+    escalonamento: str | None = Field(default=None, max_length=_TEXTO_CURTO)
 
 
-class ConteudoMagia(ConteudoHabilidade):
+class ConteudoHabilidade(_ConteudoCriacao):
+    tipo: Literal["habilidade"] = "habilidade"
+    disciplina: str | None = Field(default=None, max_length=100)
+
+
+class ConteudoMagia(_ConteudoCriacao):
     tipo: Literal["magia"] = "magia"
-    escola: str | None = Field(default=None, max_length=100)
-    grau: int | None = Field(default=None, ge=0)
+    escola: str | None = Field(default=None, max_length=40)
+
+
+CAMPOS_DO_FRAMEWORK = (
+    "lancamento", "combo", "persistencia", "alcance", "forma", "alvo_area", "impactos", "duracao",
+    "efeito_principal", "efeitos_secundarios", "efeitos_condicionais", "teste", "componentes", "limitacoes",
+    "escalonamento",
+)
 
 
 class EfeitoDeclarado(BaseModel):
@@ -926,12 +970,22 @@ class ValidacaoCarta(BaseModel):
     revisao_pendente: list[str] = Field(default_factory=list)
 
 
+class CalculadosCarta(BaseModel):
+    """Valores que saem das tabelas do Framework (adaptar-cartas-ao-framework, D3); nunca guardados na carta.
+    `descansos_minimos` só chega ao Narrador."""
+
+    grau: str | None = Field(default=None, description="Id do grau no catálogo do Framework.")
+    descansos_minimos: int | None = None
+    custo_uso_framework: int | None = Field(default=None, description="Custo de Uso calculado pela Potência de Uso.")
+
+
 class CartaVersaoResumo(BaseModel):
     id: str
     definicao_id: str
     numero: int
     tipo: Literal["habilidade", "magia", "item", "efeito"]
     conteudo: dict[str, Any]
+    calculados: CalculadosCarta | None = None
     procedencia: dict[str, Any]
     revisao_pendente: list[str] = Field(default_factory=list)
     publicado_por: str
@@ -956,8 +1010,9 @@ class ImportarCartaRequest(BaseModel):
 
 
 class PreviaImportacaoCarta(BaseModel):
-    tipo: Literal["item", "efeito"]
+    tipo: Literal["habilidade", "magia", "item", "efeito"]
     rascunho: dict[str, Any]
+    calculados: CalculadosCarta | None = None
     validacao: ValidacaoCarta
     avisos: list[str] = Field(default_factory=list)
 
@@ -970,6 +1025,7 @@ class CartaVisivel(BaseModel):
     numero: int
     tipo: Literal["habilidade", "magia", "item", "efeito"]
     conteudo: dict[str, Any]
+    calculados: CalculadosCarta | None = None
 
 
 class CartaPersonagemResumo(BaseModel):
@@ -1479,6 +1535,39 @@ class CatalogoItensResumo(BaseModel):
     listas: dict[str, list[str]] = Field(default_factory=dict)
     campos: list[CampoItemResumo] = Field(default_factory=list)
     campos_por_subtipo: dict[str, list[CampoDoSubtipoResumo]] = Field(default_factory=dict)
+
+
+class OpcaoResumo(BaseModel):
+    id: str
+    rotulo: str
+
+
+class FaixaGrauResumo(BaseModel):
+    grau: str
+    minimo: int
+    maximo: int | None = Field(description="Ausente na última faixa, que é aberta.")
+    descansos: int
+
+
+class NaturezaCriacaoResumo(BaseModel):
+    custo_minimo: int
+    faixas: list[FaixaGrauResumo]
+
+
+class CatalogoFrameworkResumo(BaseModel):
+    """Tabelas do Framework de Criação (adaptar-cartas-ao-framework, D4): faixas de grau, regra do Custo de Uso
+    e opções fechadas de Tipo, Escola, Forma e Alcance."""
+
+    graus: list[OpcaoResumo]
+    naturezas: dict[str, NaturezaCriacaoResumo]
+    divisor_uso: int
+    minimo_uso: int
+    sem_custo_uso: list[str]
+    tipos: list[OpcaoResumo]
+    escolas: list[OpcaoResumo]
+    formas: list[OpcaoResumo]
+    alcances: list[OpcaoResumo]
+    alcance_com_distancia: str
 
 
 class ModificadorCatalogoResumo(BaseModel):

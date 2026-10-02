@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 from PIL import Image
 
+from cursed_platform import cartas
 from cursed_platform.config import PlatformSettings
 from cursed_platform.acesso_privado import BUCKET_PRIVADO
 from cursed_platform.migracao_ativos import ArmazenamentoLocal
@@ -35,8 +36,8 @@ with patch.dict("os.environ", {"CURSED_PLATFORM_DATABASE_URL": "sqlite:///:memor
     from cursed_api.auth import Ator, get_actor  # noqa: E402
     from cursed_api.main import create_app  # noqa: E402
 
-BOLA = {"titulo": "Bola de Fogo", "texto": "Explosão em área.", "escola": "Evocação", "grau": 2,
-        "custo_aprendizado": 3, "descansos_minimos": 1, "potencia_uso": 4, "custo_uso": 2}
+BOLA = {"titulo": "Bola de Fogo", "texto": "Explosão em área.", "escola": "elemental",
+        "custo_aprendizado": 13, "potencia_uso": 4, "custo_uso": 1}
 ESPADA = {"titulo": "Espada Rúnica", "texto": "Lâmina antiga.", "item_tipo": "arma", "dados": {"dano": "1d8", "tipo_dano": "Cortante"},
           "formato": {"subtipo": "uma_mao", "largura": 1, "altura": 3},
           "efeitos": [{"nome": "Runas", "descricao": "+1 em Arcanismo.",
@@ -174,12 +175,14 @@ class CartasTest(unittest.TestCase):
 
     def test_custos_separados_sem_inferencia_do_legado(self):
         legado = self.publicar("habilidade", {"titulo": "Golpe", "texto": "Ataque forte.", "custo_legado": "2 PP + 1 PV"})
-        self.assertEqual([legado["conteudo"][c] for c in ("custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso")],
-                         [None, None, None, None])
+        self.assertEqual([legado["conteudo"][c] for c in ("custo_aprendizado", "potencia_uso", "custo_uso")],
+                         [None, None, None])
+        self.assertNotIn("descansos_minimos", legado["conteudo"])
         self.assertEqual(legado["conteudo"]["custo_legado"], "2 PP + 1 PV")
         self.assertEqual(len(legado["revisao_pendente"]), 1)
         completa = self.publicar("magia", {**BOLA, "custo_legado": "3 PP"})
-        self.assertEqual((completa["conteudo"]["custo_uso"], completa["revisao_pendente"]), (2, []))
+        self.assertEqual((completa["conteudo"]["custo_uso"], completa["revisao_pendente"]), (1, []))
+        self.assertEqual(completa["calculados"], {"grau": "basica", "descansos_minimos": 3, "custo_uso_framework": 1})
 
         definicao = self.as_("mestre").post("/mesas/mesa/cartas", json={"tipo": "item", "rascunho": {
             **ESPADA, "custo_uso": 1, "ativos": ["mesas/outra/mesa/x.png"],
@@ -216,6 +219,43 @@ class CartasTest(unittest.TestCase):
         importada = self.client.post("/mesas/mesa/cartas/importacoes", json={"codigo": codigo}).json()
         self.assertEqual((importada["procedencia_rascunho"]["origem"], importada["publicada"]), ("importacao", None))
         self.assertEqual(self.client.post("/mesas/mesa/cartas/importacoes", json={"codigo": "EQ1:quebrado"}).status_code, 422)
+        self.assertEqual(len(self.catalogo_do_narrador()), 1)
+
+    def test_importacao_de_criacao_cr1(self):
+        """adaptar-cartas-ao-framework, 4.2."""
+        from cursed_platform.domain.criacao_codec import _encode_payload, codificar
+
+        raizes = {"tipo": "magia", "titulo": "Raízes do Brejo Faminto", "texto": "Raízes espinhosas.", "escola": "druidica",
+                  "alcance": {"tipo": "metros", "metros": 15}, "forma": "circulo", "custo_aprendizado": 31, "potencia_uso": 20,
+                  "grau": "Básica"}
+        codigo = _encode_payload("CR1", raizes)  # código montado fora da skill, com o Grau errado
+        previa = self.as_("mestre").post("/mesas/mesa/cartas/importacoes/previa", json={"codigo": codigo}).json()
+        self.assertEqual((previa["tipo"], previa["validacao"]["valida"], previa["rascunho"]["forma"]), ("magia", True, "circulo"))
+        self.assertEqual(previa["calculados"], {"grau": "intermediaria", "descansos_minimos": 6, "custo_uso_framework": 5})
+        self.assertEqual(previa["avisos"], ["Grau do código (Básica) substituído pelo calculado (Intermediária)."])
+        self.assertNotIn("grau", previa["rascunho"])
+        self.assertEqual(self.catalogo_do_narrador(), [])
+        importada = self.as_("mestre").post("/mesas/mesa/cartas/importacoes", json={"codigo": codigo})
+        self.assertEqual(importada.status_code, 201, importada.text)
+        self.assertEqual(importada.json()["procedencia_rascunho"]["formato"], "CR1")
+        self.assertEqual(importada.json()["rascunho"]["alcance"], {"tipo": "metros", "metros": 15})
+
+        combo = codificar({"tipo": "habilidade", "titulo": "Resposta Tática", "texto": "Reduz a Defesa.",
+                           "combo": "Bloqueio → Ataque Leve → Ataque Leve", "disciplina": "Técnica de Combate",
+                           "custo_aprendizado": 7, "potencia_uso": 4})
+        previa = self.as_("mestre").post("/mesas/mesa/cartas/importacoes/previa", json={"codigo": combo}).json()
+        self.assertEqual((previa["tipo"], previa["rascunho"]["combo"], previa["calculados"]["grau"]),
+                         ("habilidade", "Bloqueio → Ataque Leve → Ataque Leve", "basica"))
+
+        invalido = _encode_payload("CR1", {**raizes, "alcance": {"tipo": "metros", "metros": 7.5}})
+        previa = self.as_("mestre").post("/mesas/mesa/cartas/importacoes/previa", json={"codigo": invalido}).json()
+        self.assertIn("alcance.metros", [p["campo"] for p in previa["validacao"]["problemas"]])
+        self.assertEqual(self.as_("mestre").post("/mesas/mesa/cartas/importacoes", json={"codigo": invalido}).status_code, 422)
+        quebrado = self.as_("mestre").post("/mesas/mesa/cartas/importacoes/previa", json={"codigo": "CR1:quebrado"})
+        self.assertEqual(quebrado.status_code, 422)
+        self.assertIn("Código inválido", quebrado.text)
+        desconhecido = self.as_("mestre").post("/mesas/mesa/cartas/importacoes/previa", json={"codigo": "XX9:abc"})
+        self.assertIn("criação (CR1), de efeito (E1/E2) ou de equipamento (EQ1/EQ2)", desconhecido.json()["detail"])
         self.assertEqual(len(self.catalogo_do_narrador()), 1)
 
     def test_e1_eq1_viram_versoes_publicadas_com_procedencia(self):
@@ -481,43 +521,45 @@ class CartasTest(unittest.TestCase):
         magia = self.publicar("magia", {**BOLA, "custo_legado": "3 PP e 1 descanso", "custos_adicionais": adicional})
         outra = self.publicar("magia", {**BOLA, "titulo": "Raio"})
 
-        def conferir(conteudo, narrador):
+        def conferir(carta, narrador):
+            conteudo, calculados = carta["conteudo"], carta["calculados"]
             with self.subTest(narrador=narrador, titulo=conteudo["titulo"]):
                 if narrador:
-                    self.assertEqual((conteudo["custo_aprendizado"], conteudo["descansos_minimos"]), (3, 1))
+                    self.assertEqual((conteudo["custo_aprendizado"], calculados["descansos_minimos"]), (13, 3))
                 else:
                     self.assertFalse(reservados & set(conteudo), conteudo)
-                self.assertEqual((conteudo["potencia_uso"], conteudo["custo_uso"]), (4, 2))
+                    self.assertIsNone(calculados["descansos_minimos"])
+                self.assertEqual((conteudo["potencia_uso"], conteudo["custo_uso"], calculados["grau"]), (4, 1, "basica"))
 
         # Ficha: lista e transição.
         carta = self.conceder(magia["id"]).json()["cartas"][0]
-        conferir(carta["carta"]["conteudo"], narrador=True)
+        conferir(carta["carta"], narrador=True)
         [minha] = self.cartas("ana", "lia")
-        conferir(minha["carta"]["conteudo"], narrador=False)
+        conferir(minha["carta"], narrador=False)
         self.assertEqual(minha["carta"]["conteudo"]["custos_adicionais"], [{**adicional[0], "descricao": None}])
-        conferir(self.cartas("mestre", "lia")[0]["carta"]["conteudo"], narrador=True)
+        conferir(self.cartas("mestre", "lia")[0]["carta"], narrador=True)
         iniciada = self.transicao("ana", "lia", carta["id"], "iniciar_aprendizado").json()["cartas"][0]
-        conferir(iniciada["carta"]["conteudo"], narrador=False)
+        conferir(iniciada["carta"], narrador=False)
         concluida = self.transicao("mestre", "lia", carta["id"], "concluir_aprendizado").json()["cartas"][0]
         self.assertEqual(concluida["estado"], "aprendida")
-        conferir(concluida["carta"]["conteudo"], narrador=True)
+        conferir(concluida["carta"], narrador=True)
         self.assertEqual(self.cartas("mestre", "lia")[0]["carta"]["conteudo"]["custo_legado"], "3 PP e 1 descanso")
 
         # Oferta: candidatas e resposta.
         oferta = self.criar_oferta([outra["id"]], ["bram"], minimo=1, maximo=1).json()
-        conferir(oferta["candidatas"][0]["conteudo"], narrador=True)
+        conferir(oferta["candidatas"][0], narrador=True)
         [vista] = self.as_("bruno").get("/mesas/mesa/ofertas").json()
-        conferir(vista["candidatas"][0]["conteudo"], narrador=False)
-        conferir(self.as_("mestre").get("/mesas/mesa/ofertas").json()[0]["candidatas"][0]["conteudo"], narrador=True)
+        conferir(vista["candidatas"][0], narrador=False)
+        conferir(self.as_("mestre").get("/mesas/mesa/ofertas").json()[0]["candidatas"][0], narrador=True)
         resposta = self.as_("bruno").post(f"/mesas/mesa/ofertas/{oferta['id']}/respostas/bram",
                                           json={"escolhas": [outra["id"]], "versao_esperada": 0})
         self.assertEqual(resposta.status_code, 200, resposta.text)
-        conferir(resposta.json()["cartas"][0]["carta"]["conteudo"], narrador=False)
+        conferir(resposta.json()["cartas"][0]["carta"], narrador=False)
 
         # Apresentação.
         self.as_("mestre").post("/mesas/mesa/apresentacoes", json={"versao_id": outra["id"], "destinatarios": []})
-        conferir(self.as_("ana").get("/mesas/mesa/apresentacoes").json()[0]["carta"]["conteudo"], narrador=False)
-        conferir(self.as_("mestre").get("/mesas/mesa/apresentacoes").json()[0]["carta"]["conteudo"], narrador=True)
+        conferir(self.as_("ana").get("/mesas/mesa/apresentacoes").json()[0]["carta"], narrador=False)
+        conferir(self.as_("mestre").get("/mesas/mesa/apresentacoes").json()[0]["carta"], narrador=True)
 
     def test_ciclos_de_item_efeito_e_apresentacao(self):
         espada, bencao, bola = self.publicar("item", ESPADA), self.publicar("efeito", BENCAO), self.publicar("magia", BOLA)
@@ -558,7 +600,7 @@ class CartasTest(unittest.TestCase):
         base = f"/mesas/mesa/personagens/lia/cartas/{carta}/migracao"
         previa = self.as_("mestre").get(f"{base}/previa", params={"versao_destino_id": v2["id"]}).json()
         self.assertEqual((previa["origem_numero"], previa["destino_numero"]), (1, 2))
-        self.assertEqual([(d["campo"], d["antes"], d["depois"]) for d in previa["diferencas"]], [("custo_uso", 2, 3)])
+        self.assertEqual([(d["campo"], d["antes"], d["depois"]) for d in previa["diferencas"]], [("custo_uso", 1, 3)])
         self.assertEqual(self.cartas("mestre", "lia")[0]["carta"]["numero"], 1)
         self.assertEqual(self.as_("ana").get(f"{base}/previa", params={"versao_destino_id": v2["id"]}).status_code, 403)
         self.assertEqual(self.as_("ana").post(base, json={"versao_destino_id": v2["id"], "versao_esperada": 1}).status_code, 403)
@@ -569,6 +611,15 @@ class CartasTest(unittest.TestCase):
         [evento] = self.as_("ana").get("/mesas/mesa/auditoria", params={"categoria": "carta"}).json()["eventos"][:1]
         self.assertEqual((evento["acao"], evento["mudancas"][0]["campo"]), ("carta.migrada", "carta.custo_uso"))
         self.assertEqual(self.as_("mestre").post(base, json={"versao_destino_id": v2["id"], "versao_esperada": 2}).status_code, 409)
+
+    def test_catalogo_do_framework_para_a_mesa(self):
+        resposta = self.as_("ana").get("/mesas/mesa/catalogos/framework")
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        framework = resposta.json()
+        self.assertEqual(framework["naturezas"]["magia"]["faixas"][-1], {"grau": "lendaria", "minimo": 80, "maximo": None, "descansos": 25})
+        self.assertEqual((framework["divisor_uso"], framework["alcance_com_distancia"]), (80, "metros"))
+        self.assertIn({"id": "druidica", "rotulo": "Druídica"}, framework["escolas"])
+        self.assertEqual(self.as_("ana").get("/mesas/outra/catalogos/framework").status_code, 404)
 
 
 if __name__ == "__main__":
@@ -654,3 +705,88 @@ class OfertaConcorrentePostgresTest(unittest.TestCase):
             with admin.connect() as conexao:
                 conexao.execute(text(f'DROP DATABASE IF EXISTS "{banco}" WITH (FORCE)'))
             admin.dispose()
+
+
+class FrameworkNaCartaTest(unittest.TestCase):
+    """adaptar-cartas-ao-framework: campos do Framework, opções do catálogo e avisos (3.1 e 3.3)."""
+
+    RAIZES = {
+        "titulo": "Raízes do Brejo Faminto", "texto": "Raízes espinhosas brotam do solo.", "escola": "druidica",
+        "ativacao": "ativa", "lancamento": "Uma ação", "alcance": {"tipo": "metros", "metros": 15}, "forma": "circulo",
+        "alvo_area": "Área de 5 metros", "impactos": "Um", "duracao": "Instantânea; Imobilizado por até um minuto",
+        "efeito_principal": "1d8 de dano Perfurante e Imobilizado.", "teste": "Destreza + Esquiva, CD 15",
+        "componentes": "Verbal e somático", "custo_aprendizado": 31, "potencia_uso": 20,
+    }
+
+    def validar(self, tipo, rascunho):
+        return cartas.validar(tipo, rascunho, "mesa")
+
+    def campos(self, validacao):
+        return {p.campo: p.mensagem for p in validacao.problemas}
+
+    def test_magia_com_campos_do_framework(self):
+        conteudo, validacao = self.validar("magia", self.RAIZES)
+        self.assertTrue(validacao.valida, validacao.problemas)
+        self.assertEqual(conteudo["alcance"], {"tipo": "metros", "metros": 15})
+        self.assertEqual((conteudo["forma"], conteudo["duracao"]), ("circulo", "Instantânea; Imobilizado por até um minuto"))
+        self.assertEqual(conteudo["texto"], "Raízes espinhosas brotam do solo.")
+        self.assertEqual(validacao.revisao_pendente, [])
+        calculados = cartas.calculados_da_carta("magia", conteudo, narrador=True)
+        self.assertEqual((calculados.grau, calculados.descansos_minimos, calculados.custo_uso_framework), ("intermediaria", 6, 5))
+
+    def test_opcao_fora_da_lista(self):
+        _, validacao = self.validar("magia", {**self.RAIZES, "escola": "arcana", "forma": "hexagono", "ativacao": "passiva"})
+        campos = self.campos(validacao)
+        self.assertFalse(validacao.valida)
+        self.assertIn("Elemental", campos["escola"])
+        self.assertIn("Círculo", campos["forma"])
+        self.assertIn("Passiva permanente", campos["ativacao"])
+
+    def test_chave_desconhecida_e_escola_em_habilidade(self):
+        _, validacao = self.validar("habilidade", {"titulo": "Golpe", "texto": "Ataque.", "escola": "elemental", "grau": 2})
+        campos = self.campos(validacao)
+        self.assertEqual(set(campos), {"escola", "grau"})
+        self.assertTrue(all("não pertence" in m for m in campos.values()))
+        conteudo, validacao = self.validar("habilidade", {"titulo": "Golpe", "texto": "Ataque.", "disciplina": "Técnica de Combate",
+                                                         "combo": "Bloqueio → Ataque Leve → Ataque Leve"})
+        self.assertTrue(validacao.valida)
+        self.assertEqual(conteudo["disciplina"], "Técnica de Combate")
+        _, validacao = self.validar("magia", {"titulo": "X", "texto": "Y", "disciplina": "Técnica"})
+        self.assertIn("disciplina", self.campos(validacao))
+
+    def test_alcance_em_metros(self):
+        casos = {
+            "fração": ({"tipo": "metros", "metros": 7.5}, "alcance.metros"),
+            "zero": ({"tipo": "metros", "metros": 0}, "alcance.metros"),
+            "sem distância": ({"tipo": "metros"}, "alcance.metros"),
+            "metros no toque": ({"tipo": "toque", "metros": 3}, "alcance.metros"),
+            "opção inexistente": ({"tipo": "visao"}, "alcance"),
+        }
+        for nome, (alcance, campo) in casos.items():
+            with self.subTest(nome):
+                _, validacao = self.validar("magia", {**self.RAIZES, "alcance": alcance})
+                self.assertFalse(validacao.valida)
+                self.assertIn(campo, self.campos(validacao))
+        conteudo, validacao = self.validar("magia", {**self.RAIZES, "alcance": {"tipo": "toque"}})
+        self.assertTrue(validacao.valida)
+        self.assertEqual(conteudo["alcance"], {"tipo": "toque", "metros": None})
+
+    def test_avisos_de_revisao(self):
+        _, validacao = self.validar("magia", {**self.RAIZES, "custo_aprendizado": 10})
+        self.assertTrue(validacao.valida)
+        self.assertEqual(validacao.revisao_pendente, [
+            "Custo de Aprendizado abaixo do mínimo: magias custam no mínimo 12 PP para aprender; o Grau fica indefinido."])
+        _, validacao = self.validar("habilidade", {"titulo": "Punição", "texto": "Radiante.", "potencia_uso": 1, "custo_uso": 3})
+        self.assertTrue(validacao.valida)
+        self.assertEqual(validacao.revisao_pendente, ["Custo de Uso registrado (3 PP) diferente do Framework (1 PP)."])
+        _, validacao = self.validar("habilidade", {"titulo": "Pele", "texto": "Casca.", "ativacao_legado": "passiva"})
+        self.assertEqual(validacao.revisao_pendente, [cartas.AVISO_PASSIVA_LEGADA])
+        _, validacao = self.validar("habilidade", {"titulo": "Pele", "texto": "Casca.", "ativacao_legado": "passiva",
+                                                   "ativacao": "passiva_permanente", "potencia_uso": 8})
+        self.assertEqual(validacao.revisao_pendente, [])
+
+    def test_passiva_permanente_sem_custo_de_uso(self):
+        calculados = cartas.calculados_da_carta(
+            "habilidade", {"ativacao": "passiva_permanente", "potencia_uso": 8, "custo_aprendizado": 26}, narrador=False)
+        self.assertEqual((calculados.grau, calculados.descansos_minimos, calculados.custo_uso_framework), ("avancada", None, 0))
+        self.assertIsNone(cartas.calculados_da_carta("item", {}, narrador=True))

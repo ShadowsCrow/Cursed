@@ -37,7 +37,7 @@ class MigracaoAmbiguidadesTest(unittest.TestCase):
         self.assertEqual(origem["custo"], carta.custo_legado)
         self.assertNotIn("custo", resultado)
         self.assertTrue(all(getattr(carta, campo) is None for campo in (
-            "custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso")))
+            "custo_aprendizado", "potencia_uso", "custo_uso")))
         self.assertEqual(origem["custo"], "1 PP + 1 de Exaustão")
         with self.assertRaisesRegex(ValueError, "não textual"):
             preservar_custo_legado({"custo": 3})

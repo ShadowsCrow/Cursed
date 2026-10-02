@@ -1,6 +1,6 @@
 # Acesso e Graus de Magia
 
-Para aprender uma magia, o personagem precisa ter **Acesso à escola** e cumprir os requisitos da criação específica. O Grau de Acesso da escola, a complexidade de uma magia individual e seu custo de uso são coisas diferentes.
+Para aprender uma magia, o personagem precisa ter **Acesso à escola** e cumprir os requisitos da criação específica. O **Círculo** da escola, o **Grau** de uma magia individual e seu custo de uso são coisas diferentes.
 
 ## Escolha de especialização
 
@@ -10,9 +10,9 @@ A escolha representa a formação, afinidade ou prática inicial do personagem. 
 
 Outras escolas podem ser obtidas durante a campanha por meio de uma nova fonte de Acesso. Ao obtê-la, o personagem pode aprender magias dessa escola normalmente, desde que cumpra os demais requisitos. Um personagem sem acesso a magia não precisa escolher escola.
 
-## Graus de Acesso das escolas
+## Círculos das escolas
 
-|Grau de Acesso|Escola atual|Escopo|Fonte de acesso esperada|
+|Círculo|Escola atual|Escopo|Fonte de acesso esperada|
 |---|---|---|---|
 |1|Elemental|Fogo, água, terra, ar, gelo e eletricidade.|Ensino ou aptidão elemental.|
 |2|Somática|Corpo, sentidos físicos e capacidades corporais.|Formação somática, mutação ou habilidade específica.|
@@ -23,7 +23,7 @@ Outras escolas podem ser obtidas durante a campanha por meio de uma nova fonte d
 |Especial|Sagrada da Criação|Cura verdadeira, bênçãos, proteção e purificação.|Bênção, vínculo divino ou classe apropriada.|
 |Especial|Druídica|Plantas, animais, transformações e espíritos naturais.|Vínculo com a natureza ou classe apropriada.|
 
-Esses graus classificam a **forma de obter acesso** à tradição mágica. Não são um requisito de nível automático: alcançar nível `4`, por exemplo, não libera uma escola de Grau de Acesso 4. A lista de aplicações permitidas de cada escola está em [Escolas de Magia](Escolas%20de%20Magia.md).
+O Círculo classifica a **forma de obter acesso** à tradição mágica. Não é um requisito de nível automático: alcançar nível `4`, por exemplo, não libera uma escola de 4º Círculo. A lista de aplicações permitidas de cada escola está em [Escolas de Magia](Escolas%20de%20Magia.md).
 
 O livro antigo reunia ilusões, mente, sonhos e Pixie em uma categoria sensorial. A organização atual separa **Perceptiva** de **Psíquica** para definir melhor o que cada escola pode fazer. Uma magia Pixie deve declarar qual escola atual utiliza conforme seu efeito.
 
@@ -42,7 +42,7 @@ Observar uma magia em uso pode servir como pista ou início de pesquisa, mas nã
 
 O **Grau da Magia** é calculado pelo Custo de Aprendizado no framework: Básica, Simples, Intermediária, Avançada, Especialista, Mestra ou Lendária. Ele determina os Descansos Mínimos de aprendizado.
 
-Uma magia Elemental pode ser Lendária. Uma magia Dimensional começa no mínimo como Avançada, pois seu custo-base de aprendizado já é `33 PP`. O Grau de Acesso da escola não muda essa classificação. O nível do personagem não impede diretamente o uso de uma magia que já foi aprendida e cujo custo pode ser pago, conforme o framework.
+Uma magia Elemental pode ser Lendária. Uma magia Dimensional dificilmente fica abaixo de Avançada e nunca é Básica, pois seus pontos-base já somam `33 PP`; só descontos como ritual, Concentração, componentes e limitações a trazem para um grau menor. O Círculo da escola não muda essa classificação. O nível do personagem não impede diretamente o uso de uma magia que já foi aprendida e cujo custo pode ser pago, conforme o framework.
 
 ## Acesso concedido pelas classes
 

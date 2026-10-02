@@ -46,20 +46,38 @@ export function Quadro({ ancora, rotulo, icone, largo = false, soVoce = false, g
   );
 }
 
-export function CampoInteiro({ controle, valor, onMudar, min = 0, max, unidade }: {
+export function CampoInteiro({ controle, valor, onMudar, min = 0, max, unidade, sugestao }: {
   controle: PropsDoControle; valor: unknown; onMudar: (valor: number | null) => void; min?: number; max?: number; unidade?: string | null;
+  /** Valor que vale quando o campo fica vazio (ex.: o Custo de Uso calculado pelo Framework). */
+  sugestao?: number | null;
 }) {
   return (
     <span className="editor-numero">
-      <input id={controle.id} type="number" inputMode="numeric" min={min} max={max} aria-describedby={controle.descricao}
+      <input id={controle.id} type="number" inputMode="numeric" min={min} max={max} step={1} aria-describedby={controle.descricao}
         aria-invalid={controle.invalido || undefined} value={typeof valor === "number" ? String(valor) : ""}
-        placeholder="—" onChange={(e) => {
+        placeholder={typeof sugestao === "number" ? String(sugestao) : "—"} onChange={(e) => {
           const limpo = e.target.value.trim();
           const numero = Number(limpo);
           onMudar(limpo === "" || !Number.isInteger(numero) ? null : numero);
         }} />
       {unidade && <span className="editor-numero__unidade">{unidade}</span>}
     </span>
+  );
+}
+
+/** Valor calculado pelo sistema, sem edição (Grau e Descansos Mínimos, adaptar-cartas-ao-framework). */
+export function CampoCalculado({ controle, valor }: { controle: PropsDoControle; valor: string | null }) {
+  return <output id={controle.id} className="editor-calculado" aria-describedby={controle.descricao}>{valor ?? "—"}</output>;
+}
+
+/** Texto em várias linhas, para os efeitos do Framework. */
+export function CampoTextoLongo({ controle, valor, onMudar, exemplo }: {
+  controle: PropsDoControle; valor: unknown; onMudar: (valor: string | null) => void; exemplo?: string;
+}) {
+  return (
+    <textarea id={controle.id} className="editor-descricao editor-descricao--efeito" value={typeof valor === "string" ? valor : ""}
+      placeholder={exemplo ? `Ex.: ${exemplo}` : "—"} aria-describedby={controle.descricao} aria-invalid={controle.invalido || undefined}
+      onChange={(e) => onMudar(e.target.value || null)} />
   );
 }
 

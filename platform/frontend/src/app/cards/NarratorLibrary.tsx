@@ -4,7 +4,7 @@ import { Icone } from "../../ui/Ornamentos";
 import { Confirmation, Dialog } from "../../ui/primitives";
 import { useParticipantes, usePersonagens } from "../characters/api";
 import type { ApiClient } from "../characters/types";
-import { useCatalogoItens, type CatalogoItens } from "../characters/sheet/catalogoApi";
+import { useCatalogoFramework, useCatalogoItens, type CatalogoItens } from "../characters/sheet/catalogoApi";
 import { BuscaInventario } from "../characters/sheet/InventarioFicha";
 import {
   filtrarCartas, ORIGENS, SEM_FILTROS, type CartaFiltravel, type Filtros, type OpcaoDeOrigem,
@@ -13,17 +13,19 @@ import { FiltrosDasCartas } from "../characters/sheet/cartas/FiltrosDasCartas";
 import "../characters/sheet/cartas/cartas.css";
 import {
   useApresentarCarta, useCancelarOferta, useCatalogo, useCriarOferta,
-  ofertaAceita, useEnviarCarta, useImportarCarta, useOfertas, usePreviaImportacaoCarta,
+  ofertaAceita, useEnviarCarta, useOfertas,
 } from "./api";
 import { CardEditor } from "./CardEditor";
+import { ImportarCartaDialog } from "./RevelacaoDaImportacao";
 import { CatalogStatusNotice } from "./CatalogStatusNotice";
 import { EffectIconsPanel } from "./EffectIconsPanel";
 import { Grimorio } from "../characters/sheet/cartas/DetalheDaCarta";
 import { dadosDoConteudo, dataDoQuadro, marcacoesDoConteudo } from "../characters/sheet/cartas/dadosDoGrimorio";
+import { calculadosDoConteudo } from "./criacao";
 import { categoriaDoConteudo } from "./cardFormat";
 import { CardFace } from "./cardView";
 import {
-  ROTULO_TIPO, type CartaDefinicaoResumo, type CartaVersaoResumo, type ProblemaValidacao, type TipoCarta,
+  ROTULO_TIPO, type CartaDefinicaoResumo, type CartaVersaoResumo, type TipoCarta,
 } from "./types";
 
 /** No catálogo, o que não veio de classe nem de raça é da própria mesa: criado pelo Narrador ou corpo padrão. */
@@ -57,12 +59,13 @@ function DetalheDoCatalogo({ api, mesaId, carta, catalogo, onEditar, onEnviar, o
 }) {
   const { definicao, conteudo, padrao } = carta;
   const publicada = definicao.publicada;
+  const framework = useCatalogoFramework(api, mesaId).data;
   const dados = [
     marcacoesDoConteudo(conteudo),
     { icone: "origem", rotulo: "Origem", valor: origemNoCatalogo(definicao, padrao) } as const,
     { icone: "versao", rotulo: "Versão", valor: publicada ? String(publicada.numero) : "Rascunho, sem versão publicada" } as const,
     { icone: "recebida", rotulo: "Publicada em", valor: publicada ? dataDoQuadro(publicada.publicado_em) : "—" } as const,
-    ...dadosDoConteudo(definicao.tipo, conteudo, true),
+    ...dadosDoConteudo(definicao.tipo, conteudo, true, { calculados: calculadosDoConteudo(framework, definicao.tipo, conteudo), framework }),
   ];
   return (
     <Grimorio
@@ -84,44 +87,6 @@ function seloDaCarta(definicao: CartaDefinicaoResumo, padrao: boolean): string |
   if (padrao) return "Padrão do sistema";
   if (!definicao.publicada) return "Rascunho";
   return definicao.publicada.revisao_pendente?.length ? "Revisão pendente" : undefined;
-}
-
-function ImportarCartaDialog({ api, mesaId, onClose }: { api: ApiClient; mesaId: string; onClose: () => void }) {
-  const [codigo, setCodigo] = useState("");
-  const previa = usePreviaImportacaoCarta(api, mesaId);
-  const importar = useImportarCarta(api, mesaId);
-  const erro = (importar.error ?? previa.error) as (Error & { problemas?: ProblemaValidacao[] }) | null;
-  return (
-    <Dialog open title="Importar carta por código" onClose={onClose}>
-      <label>Código E1, E2, EQ1 ou EQ2
-        <textarea value={codigo} onChange={(e) => { setCodigo(e.target.value); previa.reset(); }} />
-      </label>
-      <div className="dialog__actions">
-        <button type="button" className="button button--secondary" disabled={!codigo.trim() || previa.isPending} onClick={() => previa.mutate(codigo.trim())}>
-          Pré-visualizar
-        </button>
-      </div>
-      {erro && <p role="alert">{erro.message}</p>}
-      {erro?.problemas?.length ? <ul>{erro.problemas.map((p) => <li key={p.campo}>{p.campo}: {p.mensagem}</li>)}</ul> : null}
-      {previa.data && (
-        <div className="import-preview">
-          <CardFace tipo={previa.data.tipo} conteudo={previa.data.rascunho} api={api} mesaId={mesaId} narrador />
-          {!previa.data.validacao.valida && (
-            <ul role="status">{previa.data.validacao.problemas?.map((p) => <li key={p.campo}>{p.campo}: {p.mensagem}</li>)}</ul>
-          )}
-          {(previa.data.avisos ?? []).map((aviso) => <p key={aviso} role="note">{aviso}</p>)}
-          <p>A carta será criada como rascunho; publicar continua sendo uma decisão sua.</p>
-          <div className="dialog__actions">
-            <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
-            <button type="button" className="button" disabled={!previa.data.validacao.valida || importar.isPending}
-              onClick={() => importar.mutate(codigo.trim(), { onSuccess: onClose })}>
-              Criar rascunho
-            </button>
-          </div>
-        </div>
-      )}
-    </Dialog>
-  );
 }
 
 function NovaOfertaDialog({ api, mesaId, publicadas, onClose }: {

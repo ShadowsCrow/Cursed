@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CATALOGO_ITENS } from "../inventory/catalogoItensTeste";
 import { CardEditor } from "./CardEditor";
-import { apiSimulada, renderComQuery, versao } from "./testing";
+import { CATALOGO_FRAMEWORK, apiSimulada, renderComQuery, versao } from "./testing";
 import type { CartaDefinicaoResumo, ValidacaoCarta } from "./types";
 
 /*
@@ -31,6 +31,7 @@ function montar(inicial: CartaDefinicaoResumo | null, rotas: Rotas = {}, onClose
       "/mesas/{mesa_id}/cartas/{carta_id}/versoes": { data: [] },
       "/mesas/{mesa_id}/cartas": { data: [] },
       "/mesas/{mesa_id}/catalogos/itens": { data: CATALOGO_ITENS },
+      "/mesas/{mesa_id}/catalogos/framework": { data: CATALOGO_FRAMEWORK },
       ...rotas.GET,
     },
     POST: {
@@ -121,17 +122,32 @@ describe("CardEditor — criação numa etapa só", () => {
 });
 
 describe("CardEditor — tipo trocável até a primeira publicação", () => {
-  it("de Magia para Habilidade: avisa do descarte e mantém o título e o texto", async () => {
-    const { PUT } = montar(definicao("magia", { titulo: "Bola de Fogo", texto: "Explode.", escola: "Evocação", grau: 2 }));
+  it("de Magia para Habilidade: avisa que a Escola será descartada e mantém os campos do Framework", async () => {
+    const { PUT } = montar(definicao("magia", {
+      titulo: "Bola de Fogo", texto: "Explode.", escola: "elemental", alcance: { tipo: "metros", metros: 15 }, custo_aprendizado: 26,
+    }));
+    await waitFor(() => expect(screen.getByLabelText("Grau").textContent).toBe("Intermediária"));
     fireEvent.click(screen.getByRole("radio", { name: "Habilidade" }));
     const confirmacao = screen.getByRole("dialog", { name: "Trocar para Habilidade?" });
-    expect(confirmacao.textContent).toMatch(/campos próprios de magia serão descartados/);
+    expect(confirmacao.textContent).toMatch(/A Escola será descartada/);
     fireEvent.click(within(confirmacao).getByRole("button", { name: "Trocar o tipo" }));
     await esperarSalvo();
     expect(corpo(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho")).toEqual({
-      rascunho: { titulo: "Bola de Fogo", texto: "Explode." }, versao_esperada: 0, tipo: "habilidade",
+      rascunho: { titulo: "Bola de Fogo", texto: "Explode.", alcance: { tipo: "metros", metros: 15 }, custo_aprendizado: 26 },
+      versao_esperada: 0, tipo: "habilidade",
     });
     expect(screen.queryByLabelText("Escola")).toBeNull();
+    expect(screen.getByLabelText("Disciplina")).toBeTruthy();
+    expect(screen.getByLabelText("Grau").textContent).toBe("Avançada");
+    expect(screen.getByLabelText("Descansos Mínimos").textContent).toBe("8");
+    expect((screen.getByLabelText("Metros") as HTMLInputElement).value).toBe("15");
+  });
+
+  it("entre Habilidade e Magia sem Escola nem Disciplina, troca sem confirmação", async () => {
+    montar(definicao("habilidade", { titulo: "Golpe", texto: "x", combo: "Bloqueio → Ataque Leve" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Magia" }));
+    expect(screen.queryByRole("dialog", { name: "Trocar para Magia?" })).toBeNull();
+    expect((screen.getByLabelText("Combo") as HTMLInputElement).value).toBe("Bloqueio → Ataque Leve");
   });
 
   it("carta já publicada: só o tipo atual fica selecionável", () => {
@@ -208,6 +224,68 @@ describe("CardEditor — salvamento, validação e publicação", () => {
     expect(await screen.findByText(/Versão 1 publicada/)).toBeTruthy();
     // Depois de publicada, o tipo fica.
     expect((screen.getByRole("radio", { name: "Habilidade" }) as HTMLInputElement).disabled).toBe(true);
+  });
+});
+
+describe("CardEditor — campos do Framework (adaptar-cartas-ao-framework)", () => {
+  it("grau calculado ao digitar o custo, sem edição", async () => {
+    const { PUT } = montar(definicao("magia", { titulo: "Raízes", texto: "x" }));
+    const grau = await screen.findByLabelText("Grau");
+    expect(grau.tagName).toBe("OUTPUT");
+    expect(grau.textContent).toBe("—");
+    fireEvent.change(screen.getByLabelText("Custo de Aprendizado"), { target: { value: "26" } });
+    expect(screen.getByLabelText("Grau").textContent).toBe("Intermediária");
+    expect(screen.getByLabelText("Descansos Mínimos").textContent).toBe("6");
+    fireEvent.change(screen.getByLabelText("Custo de Aprendizado"), { target: { value: "10" } });
+    expect(screen.getByLabelText("Grau").textContent).toBe("Abaixo do mínimo");
+    await esperarSalvo();
+    const rascunho = corpo(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho")?.rascunho as Record<string, unknown>;
+    expect(rascunho).not.toHaveProperty("grau");
+    expect(rascunho).not.toHaveProperty("descansos_minimos");
+  });
+
+  it("Custo de Uso: o calculado é a sugestão; outro valor mostra o aviso e Publicar continua disponível", async () => {
+    montar(definicao("habilidade", { titulo: "Punição", texto: "x" }));
+    fireEvent.change(await screen.findByLabelText("Potência de Uso"), { target: { value: "1" } });
+    const custo = screen.getByLabelText("Custo de Uso") as HTMLInputElement;
+    expect(custo.placeholder).toBe("1");
+    expect(custo.value).toBe("");
+    fireEvent.change(custo, { target: { value: "3" } });
+    expect(custo.value).toBe("3");
+    expect(custo.closest(".editor-quadro")?.textContent).toMatch(/O Framework daria 1 PP/);
+    await esperarSalvo();
+    expect(screen.getByRole("button", { name: /Publicar/ }).getAttribute("aria-disabled")).toBeNull();
+  });
+
+  it("Tipo, Escola, Forma e Alcance vêm do catálogo; metros só na distância; Acesso nos requisitos", async () => {
+    const { PUT } = montar(definicao("magia", { titulo: "Raízes", texto: "x" }));
+    const escola = await screen.findByLabelText("Escola") as HTMLSelectElement;
+    await waitFor(() => expect(Array.from(escola.options).map((o) => o.textContent)).toContain("Druídica"));
+    expect(Array.from((screen.getByLabelText("Tipo") as HTMLSelectElement).options).map((o) => o.textContent))
+      .toEqual(["—", "Ativa", "Reação", "Passiva condicional", "Passiva permanente"]);
+    expect(Array.from((screen.getByLabelText("Forma") as HTMLSelectElement).options).map((o) => o.value)).toContain("circulo");
+    expect(screen.queryByLabelText("Disciplina")).toBeNull();
+    expect(screen.getByRole("group", { name: "Acesso" })).toBeTruthy();
+    fireEvent.change(escola, { target: { value: "druidica" } });
+    fireEvent.change(screen.getByLabelText("Alcance"), { target: { value: "toque" } });
+    expect(screen.queryByLabelText("Metros")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Alcance"), { target: { value: "metros" } });
+    fireEvent.change(screen.getByLabelText("Metros"), { target: { value: "12" } });
+    fireEvent.change(screen.getByLabelText("Efeito principal"), { target: { value: "1d8 de dano." } });
+    await esperarSalvo();
+    expect(corpo(PUT, "/mesas/{mesa_id}/cartas/{carta_id}/rascunho")?.rascunho).toMatchObject({
+      escola: "druidica", alcance: { tipo: "metros", metros: 12 }, efeito_principal: "1d8 de dano.",
+    });
+  });
+
+  it("aviso de revisão do servidor aparece junto do campo Tipo", async () => {
+    montar(definicao("habilidade", { titulo: "Pele", texto: "x", ativacao_legado: "passiva" }), {
+      POST: { "/mesas/{mesa_id}/cartas/{carta_id}/validacao": { data: {
+        valida: true, problemas: [], revisao_pendente: ["Tipo: defina se a passiva é condicional ou permanente."] } } },
+    });
+    fireEvent.change(screen.getByLabelText("Descrição"), { target: { value: "Casca." } });
+    const aviso = await screen.findByText(/defina se a passiva é condicional ou permanente/);
+    expect(aviso.closest(".editor-quadro")?.textContent).toMatch(/^.*Tipo/);
   });
 });
 

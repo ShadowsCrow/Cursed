@@ -1,20 +1,12 @@
 import type { CardCost } from "../../ui/Display";
 import type { CatalogoItens } from "../characters/sheet/catalogoApi";
 import { categoriaDoItem } from "../inventory/filtro";
+import { custoDeUsoEfetivo, type CalculadosCarta } from "./criacao";
 import type { TipoCarta } from "./types";
 
 type Conteudo = Record<string, unknown>;
 
 export const EMBLEMA: Record<TipoCarta, string> = { habilidade: "✦", magia: "✧", item: "⚔", efeito: "◈" };
-/** Custo de Aprendizado e Descansos Mínimos são só do Narrador (redesenhar-aba-cartas, D2). */
-const CUSTOS_DO_NARRADOR: [string, string][] = [
-  ["custo_aprendizado", "Custo de aprendizado"],
-  ["descansos_minimos", "Descansos mínimos"],
-];
-const CUSTOS_DE_USO: [string, string][] = [
-  ["potencia_uso", "Potência de uso"],
-  ["custo_uso", "Custo de uso"],
-];
 
 export function texto(valor: unknown, padrao = ""): string {
   return typeof valor === "string" && valor.trim() ? valor : padrao;
@@ -22,14 +14,24 @@ export function texto(valor: unknown, padrao = ""): string {
 
 /**
  * Custos exibidos separadamente; ausentes aparecem como "Não definido", nunca como zero. O papel decide
- * quais aparecem, e não a presença da chave: para o jogador, os dois custos do Narrador nem entram.
+ * quais aparecem, e não a presença da chave: para o jogador, os dois custos do Narrador (Custo de Aprendizado e
+ * Descansos Mínimos, redesenhar-aba-cartas D2) nem entram. Descansos Mínimos e o Custo de Uso não registrado
+ * vêm dos valores calculados pelo Framework (adaptar-cartas-ao-framework, D3).
  */
-export function custosDaCarta(tipo: TipoCarta, conteudo: Conteudo, { narrador = false }: { narrador?: boolean } = {}): CardCost[] {
+export function custosDaCarta(
+  tipo: TipoCarta, conteudo: Conteudo,
+  { narrador = false, calculados = null }: { narrador?: boolean; calculados?: CalculadosCarta | null } = {},
+): CardCost[] {
   if (tipo !== "habilidade" && tipo !== "magia") return [];
-  const custos = [...(narrador ? CUSTOS_DO_NARRADOR : []), ...CUSTOS_DE_USO].map(([campo, label]) => {
-    const valor = conteudo[campo];
-    return { label, value: typeof valor === "number" ? String(valor) : "Não definido" };
-  });
+  const valor = (numero: unknown) => (typeof numero === "number" ? String(numero) : "Não definido");
+  const custos = [
+    ...(narrador ? [
+      { label: "Custo de aprendizado", value: valor(conteudo.custo_aprendizado) },
+      { label: "Descansos mínimos", value: valor(calculados?.descansos_minimos) },
+    ] : []),
+    { label: "Potência de uso", value: valor(conteudo.potencia_uso) },
+    { label: "Custo de uso", value: valor(custoDeUsoEfetivo(conteudo, calculados)) },
+  ];
   const adicionais = Array.isArray(conteudo.custos_adicionais) ? conteudo.custos_adicionais : [];
   for (const adicional of adicionais as Conteudo[]) {
     const valor = typeof adicional.valor === "number" ? String(adicional.valor) : "Não definido";
@@ -42,7 +44,6 @@ export function metaDaCarta(tipo: TipoCarta, conteudo: Conteudo, numero?: number
   const partes: string[] = [];
   if (tipo === "magia") {
     if (texto(conteudo.escola)) partes.push(texto(conteudo.escola));
-    if (typeof conteudo.grau === "number") partes.push(`Grau ${conteudo.grau}`);
   }
   if (tipo === "item" && texto(conteudo.item_tipo)) partes.push(texto(conteudo.item_tipo));
   if (tipo === "efeito" && typeof conteudo.duracao_rodadas === "number") partes.push(`${conteudo.duracao_rodadas} rodada(s)`);

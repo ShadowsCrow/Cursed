@@ -51,14 +51,18 @@ export async function semear() {
   } })).personagem_id;
 
   const magias = [];
-  for (const [titulo, texto, escola, grau, custos] of [
-    ["Bola de Fogo", "Uma esfera flamejante explode num raio de 6 m.", "Evocação", 2, [3, 1, 4, 2]],
-    ["Passo Nebuloso", "Teleporta você até 9 m para um ponto que possa ver.", "Conjuração", 1, [2, 1, 2, 1]],
-    ["Escudo Arcano", "Reação: +2 na Defesa até o início do seu turno.", "Abjuração", 1, [2, 0, 1, 1]],
-    ["Sussurros do Véu", "Ouve pensamentos superficiais de uma criatura próxima.", "Adivinhação", 2, [null, null, null, null]],
+  // Magias no formato do Framework (adaptar-cartas-ao-framework): Grau, Descansos e Custo de Uso saem dos custos.
+  for (const [titulo, texto, escola, custos, campos] of [
+    ["Bola de Fogo", "Uma esfera flamejante explode num raio de 6 m.", "elemental", [22, 11],
+      { ativacao: "ativa", alcance: { tipo: "metros", metros: 30 }, forma: "esfera", alvo_area: "Área de 6 metros", teste: "Destreza + Esquiva, CD 15" }],
+    ["Passo Nebuloso", "Teleporta você até 9 m para um ponto que possa ver.", "dimensional", [41, 8],
+      { ativacao: "ativa", alcance: { tipo: "metros", metros: 9 }, forma: "golpe" }],
+    ["Escudo Arcano", "Reação: +2 na Defesa até o início do seu turno.", "elemental", [14, 6],
+      { ativacao: "reacao", alcance: { tipo: "pessoal" }, duracao: "Até o início do turno do usuário" }],
+    ["Sussurros do Véu", "Ouve pensamentos superficiais de uma criatura próxima.", "psiquica", [null, null], {}],
   ]) {
-    const [custo_aprendizado, descansos_minimos, potencia_uso, custo_uso] = custos;
-    magias.push(await publicar(m, "magia", { titulo, texto, escola, grau, custo_aprendizado, descansos_minimos, potencia_uso, custo_uso,
+    const [custo_aprendizado, potencia_uso] = custos;
+    magias.push(await publicar(m, "magia", { titulo, texto, escola, custo_aprendizado, potencia_uso, ...campos,
       ...(custos[0] === null ? { custo_legado: "2 PP por cena" } : {}) }));
   }
   const espada = await publicar(m, "item", { titulo: "Lâmina Rúnica", texto: "Aço antigo gravado com runas que brilham no escuro.",

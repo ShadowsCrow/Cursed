@@ -10,6 +10,7 @@ export type EfeitoDefault = components["schemas"]["EfeitoDefaultResumo"];
 export type EstadoCatalogo = components["schemas"]["EstadoCatalogoResumo"];
 export type IconeResumo = components["schemas"]["IconeResumo"];
 export type CatalogoItens = components["schemas"]["CatalogoItensResumo"];
+export type CatalogoFramework = components["schemas"]["CatalogoFrameworkResumo"];
 
 /** Catálogos do sistema (JSON da plataforma); a leitura passa pela mesa. */
 export const catalogoKeys = {
@@ -19,6 +20,7 @@ export const catalogoKeys = {
   efeitosDefault: (mesaId: string) => ["catalogo", mesaId, "efeitos-default"] as const,
   estado: (mesaId: string) => ["catalogo", mesaId, "estado"] as const,
   itens: (mesaId: string) => ["catalogo", mesaId, "itens"] as const,
+  framework: (mesaId: string) => ["catalogo", mesaId, "framework"] as const,
 };
 
 /** Raridades e categorias de item (reformular-visual-da-ficha); vêm do JSON do sistema, nunca do código. */
@@ -32,6 +34,22 @@ export function useCatalogoItens(api: ApiClient | undefined, mesaId: string | un
       // Sem as duas listas, a tela segue sem raridade e categorias em vez de quebrar.
       if (error || !data || !Array.isArray(data.raridades) || !Array.isArray(data.categorias)) {
         throw new Error(extractErrorMessage(error, "Não foi possível carregar o catálogo de itens."));
+      }
+      return data;
+    },
+  });
+}
+
+/** Tabelas do Framework de Criação (adaptar-cartas-ao-framework): graus, Custo de Uso e opções fechadas. */
+export function useCatalogoFramework(api: ApiClient | undefined, mesaId: string | undefined): UseQueryResult<CatalogoFramework, Error> {
+  return useQuery({
+    queryKey: catalogoKeys.framework(mesaId ?? ""),
+    enabled: Boolean(api && mesaId),
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await api!.GET("/mesas/{mesa_id}/catalogos/framework", { params: { path: { mesa_id: mesaId! } } });
+      if (error || !data || !Array.isArray(data.graus)) {
+        throw new Error(extractErrorMessage(error, "Não foi possível carregar as tabelas do Framework."));
       }
       return data;
     },
