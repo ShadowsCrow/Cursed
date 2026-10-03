@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { CATALOGO_ITENS } from "../../../inventory/catalogoItensTeste";
 import {
-  categoriaDaCarta, filtrarCartas, opcoesDeOrigem, opcoesDeTipo, ordenarCartas, origemDaCarta, rotuloDaOrigem,
+  categoriaDaCarta, ehCorpo, filtrarCartas, rotuloDaCategoria, opcoesDeOrigem, opcoesDeTipo, ordenarCartas, origemDaCarta, rotuloDaOrigem,
   SEM_FILTROS, type Carta,
 } from "./apresentacao";
 
@@ -57,6 +57,20 @@ describe("categoria do filtro de tipo", () => {
     expect(categoriaDaCarta(pocao, CATALOGO_ITENS)).toBe("consumiveis");
     expect(categoriaDaCarta(antiga, CATALOGO_ITENS)).toBe("armaduras");
     expect(categoriaDaCarta(semNada, CATALOGO_ITENS)).toBe("diversos");
+  });
+
+  it("os corpos do sistema ficam na categoria Corpos, separados dos demais itens (experiencia-da-mesa, item 6)", () => {
+    const formato = { subtipo: "outro", largura: 4, altura: 5 };
+    const corpo = carta({ tipo: "item", conteudo: { item_tipo: "outro", tags: ["corpo", "padrão"], formato } });
+    const soCorpo = carta({ tipo: "item", conteudo: { item_tipo: "outro", tags: ["corpo"], formato } });
+    const magia = carta({ tipo: "magia", conteudo: { tags: ["corpo", "padrão"] } });
+    expect(ehCorpo("item", corpo.carta.conteudo)).toBe(true);
+    expect(categoriaDaCarta(corpo, CATALOGO_ITENS)).toBe("corpos");
+    expect(rotuloDaCategoria("corpos", CATALOGO_ITENS)).toEqual({ rotulo: "Corpos", icone: "corpos" });
+    expect(ehCorpo("item", soCorpo.carta.conteudo)).toBe(false);
+    expect(categoriaDaCarta(soCorpo, CATALOGO_ITENS)).toBe("diversos");
+    expect(ehCorpo("magia", magia.carta.conteudo)).toBe(false);
+    expect(categoriaDaCarta(magia, CATALOGO_ITENS)).toBe("magias");
   });
 });
 

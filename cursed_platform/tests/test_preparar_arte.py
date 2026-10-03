@@ -245,10 +245,12 @@ class ArteDasCartasTest(unittest.TestCase):
     def test_uma_faixa_por_categoria_do_catalogo(self):
         catalogo = json.loads(preparar_arte.CATALOGO_DE_ITENS.read_text(encoding="utf-8"))
         categorias = preparar_arte.categorias_das_cartas()
-        self.assertEqual(set(categorias), {"habilidades", "magias", "efeitos", *(c["id"] for c in catalogo["categorias"])})
+        # "corpos" é categoria de carta fora do catálogo de itens (experiencia-da-mesa, item 6).
+        self.assertEqual(set(categorias), {"habilidades", "magias", "efeitos", "corpos", *(c["id"] for c in catalogo["categorias"])})
         self.assertEqual((categorias[:2], categorias[-1]), (["habilidades", "magias"], "efeitos"))
         self.assertIn("cartas-faixa-itens-de-missao", preparar_arte.artes_das_cartas())
         self.assertIn("cartas-arte-itens-de-missao", preparar_arte.artes_das_cartas())
+        self.assertIn("cartas-faixa-corpos", preparar_arte.artes_das_cartas())
 
     def test_gravura_e_faixas_nos_tamanhos_sem_recorte(self):
         artes = preparar_arte.artes_das_cartas()

@@ -99,11 +99,23 @@ class SalaApiTest(unittest.TestCase):
         jogador = self.como("ana").get("/mesas/mesa/sala").json()["cena"]
         self.assertEqual(len(jogador["camadas"]), 1)
         tokens = {t["id"]: t for t in jogador["tokens"]}
-        self.assertEqual(set(tokens), {proprio["id"], delegado["id"], alheio["id"]})
+        # Ficha oculta não esconde o token (decisões do usuário, 2026-10-02): o NPC aparece com o nome real, sem o
+        # vínculo com a ficha (que o jogador não pode abrir); quem esconde o token é o próprio token oculto.
+        self.assertEqual(set(tokens), {proprio["id"], delegado["id"], alheio["id"], npc["id"]})
+        self.assertEqual((tokens[npc["id"]]["rotulo"], tokens[npc["id"]]["personagem_id"]), ("NPC", None))
+        self.assertFalse(tokens[npc["id"]]["controlavel"])
+        self.assertEqual(self.como("ana").post(
+            f"/mesas/mesa/sala/tokens/{npc['id']}/movimento", json={"x": 1, "y": 1, "versao_esperada": 0},
+        ).status_code, 403)
+        # O token informa o tipo do personagem (arte padrão) e o retrato vem pela rota do token, que segue a
+        # visibilidade do token: o NPC sem foto enviada dá 404; o token oculto, também (não existe para o jogador).
+        self.assertEqual(tokens[npc["id"]]["tipo_personagem"], "personagem")
+        self.assertEqual(self.como("ana").get(f"/mesas/mesa/sala/tokens/{npc['id']}/retrato").status_code, 404)
+        self.assertEqual(self.como("ana").get(f"/mesas/mesa/sala/tokens/{oculto['id']}/retrato").status_code, 404)
         self.assertTrue(tokens[proprio["id"]]["controlavel"])
         self.assertTrue(tokens[delegado["id"]]["controlavel"])
         self.assertFalse(tokens[alheio["id"]]["controlavel"])
-        for segredo in (oculto, privado, npc):
+        for segredo in (oculto, privado):
             self.assertNotIn(segredo["id"], self.como("ana").get("/mesas/mesa/sala").text)
             self.assertEqual(self.client.post(
                 f"/mesas/mesa/sala/tokens/{segredo['id']}/movimento",
@@ -116,7 +128,8 @@ class SalaApiTest(unittest.TestCase):
         caminho = f"/mesas/mesa/sala/tokens/{token['id']}/movimento"
         pedido = {"x": 5, "y": 4, "versao_esperada": 0}
         self.assertEqual(self.como("ana").post(caminho, json=pedido).status_code, 403)
-        self.assertEqual(self.como("bia").post(caminho, json={**pedido, "x": 8}).status_code, 422)
+        # Cena sem bordas (experiencia-da-mesa, item 7): só o limite de sanidade de ±2000 casas é recusado.
+        self.assertEqual(self.como("bia").post(caminho, json={**pedido, "x": 5000}).status_code, 422)
         self.assertEqual(self.client.post(caminho, json=pedido).status_code, 200)
         self.assertEqual(self.client.post(caminho, json={**pedido, "x": 6}).status_code, 409)
         atual = {t["id"]: t for t in self.client.get("/mesas/mesa/sala").json()["cena"]["tokens"]}
@@ -130,6 +143,83 @@ class SalaApiTest(unittest.TestCase):
         self.assertEqual(self.client.delete(
             f"/mesas/mesa/sala/tokens/{token['id']}?versao_esperada=1"
         ).status_code, 204)
+
+    def test_cena_sem_bordas_aceita_qualquer_casa_ate_o_limite_de_sanidade(self):
+        """A cena é um espaço da mesa, não um tabuleiro: colunas e linhas são só a área do mapa (item 7)."""
+        cena, camadas = self.preparar_cena()  # criada com 8 x 6
+        longe = self.criar_token(cena, camadas["mesa"], x=-10, y=40)
+        self.assertEqual((longe["x"], longe["y"]), (-10, 40))
+        token = self.criar_token(cena, camadas["mesa"], personagem_id="bia-p")
+        caminho = f"/mesas/mesa/sala/tokens/{token['id']}/movimento"
+        movido = self.como("bia").post(caminho, json={"x": 35, "y": -4, "versao_esperada": 0})
+        self.assertEqual(movido.status_code, 200, movido.text)
+        atual = {t["id"]: t for t in self.client.get("/mesas/mesa/sala").json()["cena"]["tokens"]}
+        self.assertEqual((atual[token["id"]]["x"], atual[token["id"]]["y"]), (35, -4))
+        self.assertEqual(self.como("bia").post(caminho, json={"x": 0, "y": -2001, "versao_esperada": 1}).status_code, 422)
+        # Um token grande não passa do limite pela borda de baixo.
+        self.assertEqual(self.como("mestre").post(f"/mesas/mesa/sala/cenas/{cena}/tokens", json={
+            "camada_id": camadas["mesa"], "rotulo": "Gigante", "x": 1999, "y": 0, "tamanho": 3,
+        }).status_code, 422)
+
+    def test_area_do_mapa_muda_so_pelo_narrador_e_nao_mexe_nos_tokens(self):
+        """Quantas casas o mapa ocupa (experiencia-da-mesa, item 12)."""
+        cena, camadas = self.preparar_cena()  # 8 x 6
+        token = self.criar_token(cena, camadas["mesa"], x=2, y=3)
+        caminho = f"/mesas/mesa/sala/cenas/{cena}/area-do-mapa"
+        self.assertEqual(self.como("bia").post(caminho, json={"colunas": 16, "linhas": 12}).status_code, 403)
+        for invalido in ({"colunas": 0, "linhas": 5}, {"colunas": 5, "linhas": 201}):
+            with self.subTest(invalido=invalido):
+                self.assertEqual(self.como("mestre").post(caminho, json=invalido).status_code, 422)
+        resposta = self.como("mestre").post(caminho, json={"colunas": 16, "linhas": 12})
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        snapshot = resposta.json()["cena"]
+        self.assertEqual((snapshot["colunas"], snapshot["linhas"]), (16, 12))
+        movido = {t["id"]: t for t in snapshot["tokens"]}[token["id"]]
+        self.assertEqual((movido["x"], movido["y"]), (2, 3))
+
+    def test_permissao_de_movimento_por_token_e_em_lote(self):
+        """Bloqueado só o Narrador move; liberado, o dono ou os escolhidos (experiencia-da-mesa, item 13)."""
+        cena, camadas = self.preparar_cena()
+        bia_token = self.criar_token(cena, camadas["mesa"], personagem_id="bia-p")
+        carroca = self.criar_token(cena, camadas["mesa"], rotulo="Carroça", x=4, y=4)
+        sala_mestre = {t["id"]: t for t in self.como("mestre").get("/mesas/mesa/sala").json()["cena"]["tokens"]}
+        # Padrão: personagem de jogador entra liberado; token sem dono, bloqueado.
+        self.assertTrue(sala_mestre[bia_token["id"]]["movimento_liberado"])
+        self.assertFalse(sala_mestre[carroca["id"]]["movimento_liberado"])
+
+        def mover(quem, token_id, versao):
+            return self.como(quem).post(f"/mesas/mesa/sala/tokens/{token_id}/movimento",
+                                        json={"x": 1, "y": 1, "versao_esperada": versao})
+
+        def permitir(token_id, versao, **corpo):
+            return self.como("mestre").post(f"/mesas/mesa/sala/tokens/{token_id}/movimento-permitido",
+                                            json={"versao_esperada": versao, **corpo})
+
+        # Bloquear o token da Bia: ela não move mais; o Narrador continua movendo.
+        self.assertEqual(permitir(bia_token["id"], 0, liberado=False).status_code, 200)
+        self.assertEqual(mover("bia", bia_token["id"], 1).status_code, 403)
+        self.assertEqual(self.como("bia").post(f"/mesas/mesa/sala/tokens/{bia_token['id']}/movimento-permitido",
+                                               json={"liberado": True, "versao_esperada": 1}).status_code, 403)
+        # Liberar a Carroça só para a Ana (opção B): a Ana move, a Bia não.
+        self.assertEqual(permitir(carroca["id"], 0, liberado=True, controladores=["intruso"]).status_code, 422)
+        self.assertEqual(permitir(carroca["id"], 0, liberado=True, controladores=["ana"]).status_code, 200)
+        self.assertEqual(mover("bia", carroca["id"], 1).status_code, 403)
+        self.assertEqual(mover("ana", carroca["id"], 1).status_code, 200)
+        # Em lote: "só personagens principais" libera a Bia e bloqueia a Carroça; "bloquear todos" bloqueia tudo.
+        caminho = f"/mesas/mesa/sala/cenas/{cena}/permissoes"
+        self.assertEqual(self.como("bia").post(caminho, json={"modo": "bloquear_todos"}).status_code, 403)
+        self.assertEqual(self.como("mestre").post(caminho, json={"modo": "qualquer"}).status_code, 422)
+        tokens = {t["id"]: t for t in self.como("mestre").post(caminho, json={"modo": "so_principais"}).json()["cena"]["tokens"]}
+        self.assertEqual((tokens[bia_token["id"]]["movimento_liberado"], tokens[carroca["id"]]["movimento_liberado"]), (True, False))
+        tokens = {t["id"]: t for t in self.como("mestre").post(caminho, json={"modo": "bloquear_todos"}).json()["cena"]["tokens"]}
+        self.assertFalse(any(t["movimento_liberado"] for t in tokens.values()))
+        self.assertEqual(mover("bia", bia_token["id"], tokens[bia_token["id"]]["versao"]).status_code, 403)
+        tokens = {t["id"]: t for t in self.como("mestre").post(caminho, json={"modo": "liberar_todos"}).json()["cena"]["tokens"]}
+        self.assertTrue(all(t["movimento_liberado"] for t in tokens.values()))
+        self.assertEqual(mover("bia", bia_token["id"], tokens[bia_token["id"]]["versao"]).status_code, 200)
+        # O jogador não recebe o campo de permissão; só vê se controla.
+        jogador = {t["id"]: t for t in self.como("bia").get("/mesas/mesa/sala").json()["cena"]["tokens"]}
+        self.assertIsNone(jogador[bia_token["id"]]["movimento_liberado"])
 
     def test_modulo_desativado_e_isolamento_da_mesa(self):
         self.assertEqual(self.como("mestre").post(
@@ -148,7 +238,8 @@ class SalaApiTest(unittest.TestCase):
         base = {"camada_id": camadas["mesa"], "rotulo": "Peça", "x": 2, "y": 3}
         for alteracao in (
             {"personagem_id": "outro-p"}, {"controladores": ["intruso"]},
-            {"x": 8}, {"y": 6}, {"tamanho": 7},
+            # Sem bordas (item 7): só o limite de sanidade de ±2000 casas, inclusive pelo tamanho do token.
+            {"x": 2001}, {"y": -2001}, {"x": 1999, "tamanho": 3},
         ):
             with self.subTest(alteracao=alteracao):
                 self.assertEqual(self.como("mestre").post(

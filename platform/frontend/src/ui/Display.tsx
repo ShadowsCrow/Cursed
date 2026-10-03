@@ -5,7 +5,7 @@ import { Popover } from "./primitives/Popover";
 export type GlyphName =
   | "spark" | "grid" | "users" | "scroll" | "cards" | "map" | "shield"
   | "chevron" | "arrow" | "moon" | "heart" | "bolt" | "book" | "sword"
-  | "bag" | "eye" | "clock" | "settings" | "star" | "menu" | "close";
+  | "bag" | "eye" | "clock" | "settings" | "star" | "menu" | "close" | "music" | "eye-off" | "lock" | "unlock";
 
 const paths: Record<GlyphName, ReactNode> = {
   spark: <><path d="m12 2 1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2Z" /><path d="m19 17 .7 2.3L22 20l-2.3.7L19 23l-.7-2.3L16 20l2.3-.7L19 17Z" /></>,
@@ -29,6 +29,10 @@ const paths: Record<GlyphName, ReactNode> = {
   star: <path d="m12 2 2.9 6 6.6 1-4.8 4.6 1.2 6.5L12 17l-5.9 3.1 1.2-6.5L2.5 9l6.6-1L12 2Z" />,
   menu: <path d="M3 6h18M3 12h18M3 18h18" />,
   close: <path d="M5 5l14 14M19 5 5 19" />,
+  "eye-off": <><path d="M3 3l18 18" /><path d="M10.6 6.1A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.1 3.7M6.6 6.6C3.7 8.3 2 12 2 12s3.5 6 10 6a9.7 9.7 0 0 0 4.4-1" /><path d="M9.9 9.9a2.5 2.5 0 0 0 3.5 3.5" /></>,
+  lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+  unlock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.8-1.2" /></>,
+  music: <><path d="M9 18V5l11-2v13" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="16" r="2.5" /></>,
 };
 
 export function Glyph({ name, size = 20, className = "" }: { name: GlyphName; size?: number; className?: string }) {

@@ -81,6 +81,8 @@ const TRACOS_CATEGORIA: Record<string, string[]> = {
   diversos: TRACOS.outro,
   moedas: TRACOS.moedas,
   criaturas: TRACOS.criatura,
+  // Corpos carregados (cartas padrão do sistema): a mesma figura humanoide do subtipo criatura.
+  corpos: TRACOS.criatura,
   // Filtros da aba Cartas (redesenhar-aba-cartas): tipos que não são de item e origens.
   habilidades: ["M4 4h3.5l9 9", "M4 4v3.5l9 9", "M20 4h-3.5l-9 9", "M20 4v3.5l-9 9",
     "M5.5 15.5l3 3", "M15.5 18.5l3-3", "M4 20l2.5-2.5", "M20 20l-2.5-2.5"],

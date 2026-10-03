@@ -659,7 +659,7 @@ class TokenRegistro(Base):
 
     __tablename__ = "scene_tokens"
     __table_args__ = (
-        CheckConstraint("x >= 0 AND y >= 0", name="ck_scene_tokens_posicao"),
+        CheckConstraint("x BETWEEN -2000 AND 2000 AND y BETWEEN -2000 AND 2000", name="ck_scene_tokens_posicao"),
         CheckConstraint("tamanho BETWEEN 1 AND 10", name="ck_scene_tokens_tamanho"),
         CheckConstraint("versao >= 0", name="ck_scene_tokens_versao"),
         ForeignKeyConstraint(["mesa_id", "cena_id"], ["scenes.mesa_id", "scenes.id"], name="fk_scene_tokens_scene"),
@@ -682,6 +682,8 @@ class TokenRegistro(Base):
     y: Mapped[int] = mapped_column(Integer, nullable=False)
     tamanho: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     oculto: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    # Liberado para os jogadores moverem (o dono do personagem ou os controladores); bloqueado, só o Narrador.
+    movimento_liberado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
     controladores: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 

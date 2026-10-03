@@ -1327,11 +1327,29 @@ class CriarCenaRequest(BaseModel):
     mapa_objeto: str | None = Field(default=None, max_length=500)
 
 
+class AreaDoMapaRequest(BaseModel):
+    """Quantas casas o mapa da cena ocupa (experiencia-da-mesa, item 12)."""
+    colunas: int = Field(ge=1, le=200)
+    linhas: int = Field(ge=1, le=200)
+
+
+class PermitirMovimentoRequest(BaseModel):
+    """Libera ou bloqueia o movimento do token pelos jogadores (experiencia-da-mesa, item 13)."""
+    liberado: bool
+    controladores: list[str] | None = Field(default=None, max_length=20, description="Quem pode mover um token sem dono.")
+    versao_esperada: int = Field(ge=0)
+
+
+class PermissoesEmLoteRequest(BaseModel):
+    modo: Literal["bloquear_todos", "so_principais", "liberar_todos"]
+
+
 class CriarTokenRequest(BaseModel):
     camada_id: str = Field(min_length=1, max_length=100)
     rotulo: str = Field(min_length=1, max_length=100)
-    x: int = Field(ge=0)
-    y: int = Field(ge=0)
+    # Cena sem bordas (experiencia-da-mesa, item 7): só o limite de sanidade de sala.LIMITE_DA_CENA.
+    x: int = Field(ge=-2000, le=2000)
+    y: int = Field(ge=-2000, le=2000)
     tamanho: int = Field(default=1, ge=1, le=10)
     personagem_id: str | None = Field(default=None, max_length=100)
     controladores: list[str] = Field(default_factory=list, max_length=20)
@@ -1339,8 +1357,9 @@ class CriarTokenRequest(BaseModel):
 
 
 class MoverTokenRequest(BaseModel):
-    x: int = Field(ge=0)
-    y: int = Field(ge=0)
+    # Cena sem bordas (experiencia-da-mesa, item 7): só o limite de sanidade de sala.LIMITE_DA_CENA.
+    x: int = Field(ge=-2000, le=2000)
+    y: int = Field(ge=-2000, le=2000)
     versao_esperada: int = Field(ge=0)
 
 
@@ -1363,6 +1382,9 @@ class TokenSala(BaseModel):
     oculto: bool | None = Field(default=None, description="Somente para o Narrador.")
     visivel_para_jogadores: bool | None = Field(default=None, description="Somente para o Narrador.")
     controladores: list[str] | None = Field(default=None, description="Somente para o Narrador.")
+    movimento_liberado: bool | None = Field(default=None, description="Somente para o Narrador: jogadores podem mover.")
+    tipo_personagem: Literal["personagem", "npc", "monstro"] | None = Field(
+        default=None, description="Tipo do personagem ligado (para a arte padrão do retrato); o retrato vem de /sala/tokens/{id}/retrato.")
 
 
 class CamadaSala(BaseModel):

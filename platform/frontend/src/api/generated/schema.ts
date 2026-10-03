@@ -1525,6 +1525,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/area-do-mapa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redimensionar Mapa
+         * @description Quantas casas o mapa da cena ocupa no grid; só o Narrador (experiencia-da-mesa, item 12).
+         */
+        post: operations["redimensionar_mapa_mesas__mesa_id__sala_cenas__cena_id__area_do_mapa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/sala/cenas/{cena_id}/ativacao": {
         parameters: {
             query?: never;
@@ -1536,6 +1556,26 @@ export interface paths {
         put?: never;
         /** Ativar Cena */
         post: operations["ativar_cena_mesas__mesa_id__sala_cenas__cena_id__ativacao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/permissoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Permissoes Em Lote
+         * @description Bloquear todos, só personagens principais ou liberar todos; só o Narrador (experiencia-da-mesa, item 13).
+         */
+        post: operations["permissoes_em_lote_mesas__mesa_id__sala_cenas__cena_id__permissoes_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1648,6 +1688,49 @@ export interface paths {
          * @description Movimentos não geram evento de auditoria: são estado tático frequente, não decisões a revisar.
          */
         post: operations["mover_token_mesas__mesa_id__sala_tokens__token_id__movimento_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/movimento-permitido": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Permitir Movimento
+         * @description Libera ou bloqueia o movimento do token pelos jogadores; só o Narrador (experiencia-da-mesa, item 13).
+         */
+        post: operations["permitir_movimento_mesas__mesa_id__sala_tokens__token_id__movimento_permitido_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/retrato": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrato Do Token
+         * @description O retrato do personagem ligado ao token, para quem vê o token (experiencia-da-mesa, item 12).
+         *
+         *     O jogador vê a foto de um monstro no mapa sem poder abrir a ficha dele: a autorização é a do token, não a da
+         *     ficha. Sem retrato enviado, 404, e o cliente usa a arte padrão do tipo.
+         */
+        get: operations["retrato_do_token_mesas__mesa_id__sala_tokens__token_id__retrato_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1997,6 +2080,16 @@ export interface components {
             cartas: components["schemas"]["CartaPersonagemResumo"][];
             /** Versao */
             versao: number;
+        };
+        /**
+         * AreaDoMapaRequest
+         * @description Quantas casas o mapa da cena ocupa (experiencia-da-mesa, item 12).
+         */
+        AreaDoMapaRequest: {
+            /** Colunas */
+            colunas: number;
+            /** Linhas */
+            linhas: number;
         };
         /** ArquetipoResumo */
         ArquetipoResumo: {
@@ -3857,6 +3950,14 @@ export interface components {
             /** Usuario Id */
             usuario_id: string;
         };
+        /** PermissoesEmLoteRequest */
+        PermissoesEmLoteRequest: {
+            /**
+             * Modo
+             * @enum {string}
+             */
+            modo: "bloquear_todos" | "so_principais" | "liberar_todos";
+        };
         /** PermissoesFicha */
         PermissoesFicha: {
             /** Campos Bloqueados */
@@ -3874,6 +3975,21 @@ export interface components {
             papel: "narrador" | "jogador";
             /** Transferir */
             transferir: boolean;
+        };
+        /**
+         * PermitirMovimentoRequest
+         * @description Libera ou bloqueia o movimento do token pelos jogadores (experiencia-da-mesa, item 13).
+         */
+        PermitirMovimentoRequest: {
+            /**
+             * Controladores
+             * @description Quem pode mover um token sem dono.
+             */
+            controladores?: string[] | null;
+            /** Liberado */
+            liberado: boolean;
+            /** Versao Esperada */
+            versao_esperada: number;
         };
         /** PersonagemResumo */
         PersonagemResumo: {
@@ -4325,6 +4441,11 @@ export interface components {
             /** Id */
             id: string;
             /**
+             * Movimento Liberado
+             * @description Somente para o Narrador: jogadores podem mover.
+             */
+            movimento_liberado?: boolean | null;
+            /**
              * Oculto
              * @description Somente para o Narrador.
              */
@@ -4335,6 +4456,11 @@ export interface components {
             rotulo: string;
             /** Tamanho */
             tamanho: number;
+            /**
+             * Tipo Personagem
+             * @description Tipo do personagem ligado (para a arte padrão do retrato); o retrato vem de /sala/tokens/{id}/retrato.
+             */
+            tipo_personagem?: ("personagem" | "npc" | "monstro") | null;
             /** Versao */
             versao: number;
             /**
@@ -7763,6 +7889,42 @@ export interface operations {
             };
         };
     };
+    redimensionar_mapa_mesas__mesa_id__sala_cenas__cena_id__area_do_mapa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                cena_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AreaDoMapaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalaSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ativar_cena_mesas__mesa_id__sala_cenas__cena_id__ativacao_post: {
         parameters: {
             query?: never;
@@ -7774,6 +7936,42 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalaSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    permissoes_em_lote_mesas__mesa_id__sala_cenas__cena_id__permissoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                cena_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PermissoesEmLoteRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -8025,6 +8223,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenSala"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    permitir_movimento_mesas__mesa_id__sala_tokens__token_id__movimento_permitido_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PermitirMovimentoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenSala"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retrato_do_token_mesas__mesa_id__sala_tokens__token_id__retrato_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtivoResposta"];
                 };
             };
             /** @description Validation Error */

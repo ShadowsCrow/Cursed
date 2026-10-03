@@ -48,6 +48,8 @@ const CATEGORIAS_DE_CARTA = {
   habilidades: { rotulo: "Habilidades", icone: "habilidades" },
   magias: { rotulo: "Magias", icone: "magias" },
   efeitos: { rotulo: "Efeitos", icone: "efeitos" },
+  // Corpos do sistema: categoria própria com figura humanoide (experiencia-da-mesa, item 6).
+  corpos: { rotulo: "Corpos", icone: "corpos" },
 } as const;
 
 type Conteudo = Record<string, unknown>;
@@ -89,12 +91,24 @@ export function rotuloDaOrigem(carta: Carta): string {
   return carta.origem === "oferta" ? "Escolhida em oferta" : "Concedida pelo Narrador";
 }
 
-/** Categoria do filtro de tipo: habilidades, magias, efeitos ou a categoria do item no catálogo. */
+/**
+ * Corpo do sistema (Corpo Minúsculo… Grande, inteiro ou "com ajuda"): item com as etiquetas "corpo" e
+ * "padrão" juntas, gravadas por `cursed_platform/corpos.py`. O dado continua sendo item Outros (D7 de
+ * carga-por-espacos); só a apresentação o separa dos demais itens (experiencia-da-mesa, item 6).
+ */
+export function ehCorpo(tipo: string, conteudo: Conteudo): boolean {
+  if (tipo !== "item" || !Array.isArray(conteudo.tags)) return false;
+  return conteudo.tags.includes("corpo") && conteudo.tags.includes("padrão");
+}
+
+/** Categoria do filtro de tipo: habilidades, magias, efeitos, corpos ou a categoria do item no catálogo. */
 export function categoriaDaCarta(carta: CartaFiltravel, catalogo: CatalogoItens | undefined): string {
   if (carta.tipo === "habilidade") return "habilidades";
   if (carta.tipo === "magia") return "magias";
   if (carta.tipo === "efeito") return "efeitos";
   const conteudo = conteudoDe(carta);
+  // Corpo é pessoa carregada, não fera: categoria e figura próprias, e não as de Criaturas (pedido do usuário).
+  if (ehCorpo(carta.tipo, conteudo)) return "corpos";
   const formato = (conteudo.formato ?? {}) as Conteudo;
   const item = {
     id: carta.id, nome: tituloDaCarta(carta), tipo: texto(conteudo.item_tipo) || null,

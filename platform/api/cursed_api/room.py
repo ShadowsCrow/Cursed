@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from cursed_platform import auditoria, sala
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
-    CriarCenaRequest, CriarTokenRequest, ModulosMesa, MoverTokenRequest, SalaSnapshot, TokenSala,
+    CriarCenaRequest, AreaDoMapaRequest, CriarTokenRequest, PermissoesEmLoteRequest, PermitirMovimentoRequest, ModulosMesa, MoverTokenRequest, SalaSnapshot, TokenSala,
     VisibilidadeTokenRequest,
 )
-from cursed_platform.persistence import CenaRegistro, TokenRegistro
+from cursed_platform.persistence import CenaRegistro, PersonagemRegistro, TokenRegistro
 from cursed_platform.repositories import MesaRepository
 
+from .assets import AtivoResposta, ler_imagem
 from .auth import Ator, get_actor
 from .dependencies import get_correlacao, get_session
 
@@ -79,10 +80,8 @@ ERROS = (sala.RegraSala, sala.SemControle)
 
 def _token_resposta(session: Session, token: TokenRegistro, leitor: sala.Leitor) -> TokenSala:
     _, personagem, visivel = sala._contexto_token(session, token)
-    dados = sala.token_publico(token, sala.pode_controlar(token, leitor, visivel, personagem))
-    if leitor.narrador:
-        dados |= {"oculto": token.oculto, "visivel_para_jogadores": visivel, "controladores": list(token.controladores or [])}
-    return TokenSala(**dados)
+    return TokenSala(**sala.token_para(token, leitor, visivel, personagem))
+
 
 
 # ---------------------------------------------------------------- módulos
@@ -170,6 +169,29 @@ def ativar_cena(
     return SalaSnapshot(**sala.snapshot(session, mesa_id, sala.Leitor(ator.usuario_id, True), cena.id))
 
 
+@router.post("/mesas/{mesa_id}/sala/cenas/{cena_id}/area-do-mapa", response_model=SalaSnapshot)
+def redimensionar_mapa(
+    mesa_id: str, cena_id: str, pedido: AreaDoMapaRequest,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
+) -> SalaSnapshot:
+    """Quantas casas o mapa da cena ocupa no grid; só o Narrador (experiencia-da-mesa, item 12)."""
+    _exigir_narrador(session, mesa_id, ator)
+    _exigir_modulo(session, mesa_id)
+    cena = _cena(session, mesa_id, cena_id)
+    try:
+        sala.redimensionar_mapa(session, cena, pedido.colunas, pedido.linhas)
+    except ERROS as erro:
+        raise _erro(erro, session) from None
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="cena.mapa_redimensionado",
+        relevancia="narrativa", alvo_tipo="cena", alvo_id=cena.id,
+        resumo=f"Mapa da cena {cena.nome}: {pedido.colunas} x {pedido.linhas} casas"[:500], correlacao_id=correlacao,
+    )
+    session.commit()
+    return SalaSnapshot(**sala.snapshot(session, mesa_id, sala.Leitor(ator.usuario_id, True), cena.id))
+
+
 @router.post("/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens", response_model=TokenSala, status_code=status.HTTP_201_CREATED)
 def criar_token(
     mesa_id: str, cena_id: str, pedido: CriarTokenRequest,
@@ -191,6 +213,26 @@ def criar_token(
     )
     session.commit()
     return _token_resposta(session, token, sala.Leitor(ator.usuario_id, True))
+
+
+@router.get("/mesas/{mesa_id}/sala/tokens/{token_id}/retrato", response_model=AtivoResposta)
+def retrato_do_token(
+    mesa_id: str, token_id: str, request: Request,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+) -> AtivoResposta:
+    """O retrato do personagem ligado ao token, para quem vê o token (experiencia-da-mesa, item 12).
+
+    O jogador vê a foto de um monstro no mapa sem poder abrir a ficha dele: a autorização é a do token, não a da
+    ficha. Sem retrato enviado, 404, e o cliente usa a arte padrão do tipo.
+    """
+    leitor = _leitor(session, mesa_id, ator)
+    _exigir_modulo(session, mesa_id)
+    token = _token(session, mesa_id, token_id, leitor)
+    personagem = session.get(PersonagemRegistro, token.personagem_id) if token.personagem_id else None
+    caminho = ((personagem.ficha or {}).get("personagem") or {}).get("imagem_ativo") if personagem else None
+    if not isinstance(caminho, str) or not caminho.startswith(f"mesas/{mesa_id}/"):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Este token não tem retrato.")
+    return ler_imagem(request, caminho, exibicao=True)
 
 
 @router.post("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento", response_model=TokenSala)
@@ -232,6 +274,56 @@ def alterar_visibilidade(
     )
     session.commit()
     return _token_resposta(session, token, leitor)
+
+
+@router.post("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento-permitido", response_model=TokenSala)
+def permitir_movimento(
+    mesa_id: str, token_id: str, pedido: PermitirMovimentoRequest,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
+) -> TokenSala:
+    """Libera ou bloqueia o movimento do token pelos jogadores; só o Narrador (experiencia-da-mesa, item 13)."""
+    _exigir_narrador(session, mesa_id, ator)
+    _exigir_modulo(session, mesa_id)
+    leitor = sala.Leitor(ator.usuario_id, True)
+    token = _token(session, mesa_id, token_id, leitor)
+    try:
+        sala.permitir_movimento(session, token, liberado=pedido.liberado, controladores=pedido.controladores,
+                                versao_esperada=pedido.versao_esperada)
+    except ERROS as erro:
+        raise _erro(erro, session) from None
+    except sala.ConflitoSala as erro:
+        raise _erro(erro, session) from None
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="token.movimento_permitido",
+        relevancia="narrativa", alvo_tipo="token", alvo_id=token.id, visibilidade="narrador",
+        resumo=f"Movimento do token {token.rotulo} {'liberado' if pedido.liberado else 'bloqueado'}"[:500], correlacao_id=correlacao,
+    )
+    session.commit()
+    return _token_resposta(session, token, leitor)
+
+
+@router.post("/mesas/{mesa_id}/sala/cenas/{cena_id}/permissoes", response_model=SalaSnapshot)
+def permissoes_em_lote(
+    mesa_id: str, cena_id: str, pedido: PermissoesEmLoteRequest,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
+) -> SalaSnapshot:
+    """Bloquear todos, só personagens principais ou liberar todos; só o Narrador (experiencia-da-mesa, item 13)."""
+    _exigir_narrador(session, mesa_id, ator)
+    _exigir_modulo(session, mesa_id)
+    cena = _cena(session, mesa_id, cena_id)
+    try:
+        sala.permissoes_em_lote(session, cena, pedido.modo)
+    except ERROS as erro:
+        raise _erro(erro, session) from None
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="cena.permissoes_de_movimento",
+        relevancia="narrativa", alvo_tipo="cena", alvo_id=cena.id, visibilidade="narrador",
+        resumo=f"Permissões de movimento na cena {cena.nome}: {pedido.modo}"[:500], correlacao_id=correlacao,
+    )
+    session.commit()
+    return SalaSnapshot(**sala.snapshot(session, mesa_id, sala.Leitor(ator.usuario_id, True), cena.id))
 
 
 @router.delete("/mesas/{mesa_id}/sala/tokens/{token_id}", status_code=status.HTTP_204_NO_CONTENT)

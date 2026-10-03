@@ -34,6 +34,11 @@ def ler_ativo(mesa_id: str, caminho: str, request: Request, exibicao: bool = Fal
         ator.usuario_id, BUCKET_PRIVADO, caminho
     ).permitido:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ativo não encontrado.")
+    return ler_imagem(request, caminho, exibicao)
+
+
+def ler_imagem(request: Request, caminho: str, exibicao: bool) -> AtivoResposta:
+    """Lê uma imagem já autorizada do armazenamento privado (a reduzida, com ``exibicao``, quando existe)."""
     armazenamento = request.app.state.armazenamento_objetos
     if armazenamento is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Armazenamento indisponível.")

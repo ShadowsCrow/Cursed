@@ -23,7 +23,7 @@ const narratorCopy: Record<TableView, { eyebrow: string; title: string; descript
   character: { eyebrow: "PERSONAGENS", title: "O elenco da mesa", description: "Crie, abra, transfira e administre os personagens desta mesa, incluindo NPCs e fichas ocultas." },
   activity: { eyebrow: "REGISTRO", title: "História das mudanças", description: "Acompanhe, filtre e corrija as ações confirmadas desta mesa." },
   cards: { eyebrow: "BIBLIOTECA", title: "Cartas da campanha", description: "Crie, publique, ofereça e apresente habilidades, magias, itens e efeitos." },
-  room: { eyebrow: "SALA", title: "Cena compartilhada", description: "A sala em tempo real será ativada quando o módulo de grid estiver implementado para esta mesa." },
+  room: { eyebrow: "SALA", title: "Sala", description: "" },
 };
 
 /** Ferramentas exclusivas do Narrador, sempre visíveis na barra lateral, em toda seção da mesa. */
@@ -70,6 +70,7 @@ export function NarratorShell({ mesa, view, onNavigate, onSignOut, api, userId, 
       headerEyebrow={copy.eyebrow}
       headerDescription={copy.description}
       roomPresence={roomPresence}
+      palco={view === "room"}
       sidebarExtra={<NarratorToolsPanel api={api} mesaId={mesa.id} />}
     >
       {view === "character" ? (

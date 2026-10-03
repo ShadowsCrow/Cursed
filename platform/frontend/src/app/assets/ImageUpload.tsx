@@ -29,7 +29,9 @@ export interface ImageUploadProps {
    * `camera`: só um botão redondo com o ícone de câmera (a arte do editor de cartas), com o nome no rótulo
    * acessível; a dica e as mensagens aparecem junto dele.
    */
-  aparencia?: "texto" | "camera";
+  aparencia?: "texto" | "camera" | "miniatura";
+  /** Na aparência "miniatura": a imagem atual, mostrada no quadro (sem ela, um quadro vazio convida a enviar). */
+  previa?: string;
 }
 
 /** Câmera do Lucide (licença ISC), em traço. */
@@ -48,7 +50,7 @@ function IconeCamera() {
  * JPEG e WEBP; o servidor confere o conteúdo e o limite, e a recusa aparece em texto junto ao botão.
  */
 export function ImageUpload({
-  api, mesaId, destino, alvo, versao, rotulo, temImagem = false, onConcluido, prepararEnvio, aparencia = "texto",
+  api, mesaId, destino, alvo, versao, rotulo, temImagem = false, onConcluido, prepararEnvio, aparencia = "texto", previa,
 }: ImageUploadProps) {
   const entrada = useRef<HTMLInputElement>(null);
   const [pendente, setPendente] = useState(false);
@@ -90,6 +92,32 @@ export function ImageUpload({
   }
 
   const remover = () => void executar((v, a) => removerImagem(api, mesaId, destino, a, v), `Imagem de ${rotulo} removida.`);
+  if (aparencia === "miniatura") {
+    // Quadro com a amostra da imagem atual, ou vazio e tracejado: fica claro onde se envia (pedido do usuário).
+    return (
+      <div className="image-upload image-upload--miniatura">
+        <input ref={entrada} type="file" accept={TIPOS_IMAGEM.join(",")} hidden onChange={escolher}
+          aria-label={`Arquivo de imagem para ${rotulo}`} data-testid={`upload-${destino}`} />
+        <button type="button" className={`image-upload__quadro ${previa ? "" : "image-upload__quadro--vazio"}`.trim()}
+          disabled={pendente} aria-describedby={erro ? idErro : undefined}
+          aria-label={pendente ? "Enviando…" : temImagem ? `Trocar ${rotulo}` : `Enviar ${rotulo}`}
+          title={`${temImagem ? "Trocar" : "Enviar"} ${rotulo} (PNG, JPEG ou WEBP, até ${limite} MB)`}
+          onClick={() => entrada.current?.click()}>
+          {previa
+            ? <img src={previa} alt="" />
+            : <span className="image-upload__vazio" aria-hidden="true"><IconeCamera /><span>{pendente ? "Enviando…" : `Enviar ${rotulo}`}</span></span>}
+          {previa && <span className="image-upload__trocar" aria-hidden="true">{pendente ? "Enviando…" : "Trocar"}</span>}
+        </button>
+        {temImagem && (
+          <button type="button" className="image-upload__remover" disabled={pendente} aria-label={`Remover ${rotulo}`}
+            title={`Remover ${rotulo}`} onClick={remover}>×</button>
+        )}
+        {erro && <p id={idErro} role="alert" className="image-upload__mensagem field-error">{erro}</p>}
+        {aviso && <p role="status" className="image-upload__mensagem">{aviso}</p>}
+      </div>
+    );
+  }
+
   if (aparencia === "camera") {
     return (
       <div className="image-upload image-upload--camera">

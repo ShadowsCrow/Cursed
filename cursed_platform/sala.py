@@ -79,19 +79,44 @@ def _camadas(session: Session, cena_id: str) -> dict[str, CamadaCenaRegistro]:
 
 
 def token_visivel(token: TokenRegistro, camada: CamadaCenaRegistro, personagem: PersonagemRegistro | None) -> bool:
-    """Visível a jogadores: camada da mesa, token não oculto e personagem ligado não oculto."""
+    """Visível a jogadores: camada da mesa e token não oculto (personagem ligado não excluído).
+
+    Ficha oculta e token oculto são coisas separadas (decisões do usuário, 2026-10-02): a ficha oculta só impede o
+    jogador de abrir a ficha; quem decide se o jogador vê o token é o Narrador, ao colocá-lo (oculto ou não) e pelo
+    olho. O token visível mostra o nome real; com a ficha oculta, vai sem o vínculo com a ficha (`token_para`).
+    """
     if camada.visibilidade != "mesa" or token.oculto:
         return False
-    return personagem is None or (personagem.visibilidade == "mesa" and personagem.excluido_em is None)
+    return personagem is None or personagem.excluido_em is None
+
+
+def ficha_oculta(personagem: PersonagemRegistro | None) -> bool:
+    return personagem is not None and personagem.visibilidade != "mesa"
 
 
 def pode_controlar(token: TokenRegistro, leitor: Leitor, visivel: bool, personagem: PersonagemRegistro | None) -> bool:
+    """O Narrador sempre move; o jogador só move token visível e liberado (experiencia-da-mesa, item 13), e só se for o
+    dono do personagem ligado ou um dos controladores escolhidos pelo Narrador."""
     if leitor.narrador:
         return True
-    if not visivel:
+    if not visivel or not token.movimento_liberado:
         return False
     dono = personagem is not None and personagem.proprietario_id == leitor.usuario_id
     return dono or leitor.usuario_id in (token.controladores or [])
+
+
+def token_para(token: TokenRegistro, leitor: Leitor, visivel: bool, personagem: PersonagemRegistro | None) -> dict[str, Any]:
+    """O token como o leitor pode vê-lo: o Narrador vê tudo; o jogador não recebe o vínculo com uma ficha oculta,
+    que ele não pode abrir."""
+    dados = token_publico(token, pode_controlar(token, leitor, visivel, personagem))
+    if personagem is not None:
+        dados["tipo_personagem"] = personagem.tipo
+    if leitor.narrador:
+        dados |= {"oculto": token.oculto, "visivel_para_jogadores": visivel, "controladores": list(token.controladores or []),
+                  "movimento_liberado": token.movimento_liberado}
+    elif ficha_oculta(personagem):
+        dados |= {"personagem_id": None}
+    return dados
 
 
 def _contexto_token(session: Session, token: TokenRegistro) -> tuple[CamadaCenaRegistro, PersonagemRegistro | None, bool]:
@@ -128,10 +153,7 @@ def snapshot(session: Session, mesa_id: str, leitor: Leitor, cena_id: str | None
         personagem = session.get(PersonagemRegistro, token.personagem_id) if token.personagem_id else None
         visivel = token_visivel(token, camadas[token.camada_id], personagem)
         if leitor.narrador or visivel:
-            dados = token_publico(token, pode_controlar(token, leitor, visivel, personagem))
-            if leitor.narrador:
-                dados |= {"oculto": token.oculto, "visivel_para_jogadores": visivel, "controladores": list(token.controladores or [])}
-            tokens.append(dados)
+            tokens.append(token_para(token, leitor, visivel, personagem))
     resultado["cena"] = {
         "id": alvo.id, "nome": alvo.nome, "colunas": alvo.colunas, "linhas": alvo.linhas, "ativa": alvo.ativa,
         "versao": alvo.versao, "mapa_objeto": alvo.mapa_objeto,
@@ -173,6 +195,16 @@ def criar_cena(
     return cena
 
 
+def redimensionar_mapa(session: Session, cena: CenaRegistro, colunas: int, linhas: int) -> None:
+    """Muda a área do mapa (colunas × linhas) da cena; a cena não tem bordas, então os tokens não mudam."""
+    if not (1 <= colunas <= 200 and 1 <= linhas <= 200):
+        raise RegraSala("A área do mapa vai de 1 a 200 casas em cada lado.")
+    cena.colunas = colunas
+    cena.linhas = linhas
+    versao = _avancar_cena(session, cena)
+    emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=cena.ativa)
+
+
 def ativar_cena(session: Session, cena: CenaRegistro) -> None:
     session.execute(update(CenaRegistro).where(CenaRegistro.mesa_id == cena.mesa_id, CenaRegistro.id != cena.id)
                     .values(ativa=False).execution_options(synchronize_session=False))
@@ -181,9 +213,15 @@ def ativar_cena(session: Session, cena: CenaRegistro) -> None:
     emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "motivo": "cena_ativada"}, publico=True)
 
 
+# A cena não tem bordas (experiencia-da-mesa, item 7): colunas e linhas são só a área do mapa. O limite
+# abaixo é de sanidade, para recusar coordenadas absurdas; o mesmo valor está nos contratos e no banco (0023).
+LIMITE_DA_CENA = 2000
+
+
 def _dentro(cena: CenaRegistro, x: int, y: int, tamanho: int) -> None:
-    if x < 0 or y < 0 or x + tamanho > cena.colunas or y + tamanho > cena.linhas:
-        raise RegraSala("O token precisa ficar dentro da grade da cena.")
+    if not (-LIMITE_DA_CENA <= x and x + tamanho - 1 <= LIMITE_DA_CENA
+            and -LIMITE_DA_CENA <= y and y + tamanho - 1 <= LIMITE_DA_CENA):
+        raise RegraSala(f"O token precisa ficar a até {LIMITE_DA_CENA} casas da origem da cena.")
 
 
 def criar_token(
@@ -203,9 +241,12 @@ def criar_token(
     if not rotulo.strip():
         raise RegraSala("Dê um rótulo ao token.")
     _dentro(cena, x, y, tamanho)
+    # Padrão (item 13): personagem de jogador entra liberado; NPC, monstro ou token solto, só se vierem controladores.
+    dono = personagem.proprietario_id if personagem_id is not None else None
     token = TokenRegistro(
         id=uuid4().hex, mesa_id=cena.mesa_id, cena_id=cena.id, camada_id=camada_id, personagem_id=personagem_id,
         rotulo=rotulo.strip()[:100], x=x, y=y, tamanho=tamanho, oculto=oculto, controladores=list(controladores or []),
+        movimento_liberado=bool(dono) or bool(controladores),
     )
     session.add(token)
     session.flush()
@@ -264,6 +305,56 @@ def alterar_visibilidade(
     # O Narrador também assina o tópico da mesa, então um único evento basta.
     emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=antes or depois)
     return token
+
+
+def permitir_movimento(
+    session: Session, token: TokenRegistro, *, liberado: bool, controladores: list[str] | None, versao_esperada: int,
+) -> TokenRegistro:
+    """Libera ou bloqueia o movimento do token pelos jogadores; `controladores` troca quem pode mover (item 13)."""
+    cena = session.get(CenaRegistro, token.cena_id)
+    valores: dict[str, Any] = {"movimento_liberado": liberado, "versao": TokenRegistro.versao + 1}
+    if controladores is not None:
+        membros = {m.usuario_id for m in MesaRepository(session).listar_membros(cena.mesa_id)}
+        if any(c not in membros for c in controladores):
+            raise RegraSala("Controladores precisam participar da mesa.")
+        valores["controladores"] = list(dict.fromkeys(controladores))
+    resultado = session.execute(
+        update(TokenRegistro).where(TokenRegistro.id == token.id, TokenRegistro.versao == versao_esperada)
+        .values(**valores).execution_options(synchronize_session=False)
+    )
+    if resultado.rowcount != 1:
+        raise ConflitoSala("O token foi alterado por outra pessoa.")
+    session.refresh(token)
+    _, _, visivel = _contexto_token(session, token)
+    versao = _avancar_cena(session, cena)
+    emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=visivel)
+    return token
+
+
+MODOS_DE_PERMISSAO = ("bloquear_todos", "so_principais", "liberar_todos")
+
+
+def permissoes_em_lote(session: Session, cena: CenaRegistro, modo: str) -> int:
+    """Bloqueia todos, libera só os de personagens de jogador, ou libera todos (item 13). Devolve quantos mudaram."""
+    if modo not in MODOS_DE_PERMISSAO:
+        raise RegraSala("Modo de permissão desconhecido.")
+    mudaram = 0
+    for token in session.scalars(select(TokenRegistro).where(TokenRegistro.cena_id == cena.id)):
+        if modo == "bloquear_todos":
+            liberado = False
+        elif modo == "liberar_todos":
+            liberado = True
+        else:
+            personagem = session.get(PersonagemRegistro, token.personagem_id) if token.personagem_id else None
+            liberado = bool(personagem is not None and personagem.proprietario_id)
+        if token.movimento_liberado != liberado:
+            token.movimento_liberado = liberado
+            token.versao += 1
+            mudaram += 1
+    session.flush()
+    versao = _avancar_cena(session, cena)
+    emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=True)
+    return mudaram
 
 
 def remover_token(session: Session, token: TokenRegistro, versao_esperada: int) -> None:

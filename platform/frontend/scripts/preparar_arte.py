@@ -287,9 +287,10 @@ TAMANHO_DA_FAIXA = (1024, 304)  # a proporção da faixa na carta, 266 × 79 px
 
 
 def categorias_das_cartas(catalogo: Path = CATALOGO_DE_ITENS) -> list[str]:
-    """Habilidades, magias e efeitos, mais as categorias de item do catálogo, na ordem da barra de filtros."""
+    """Habilidades, magias e efeitos, mais as categorias de item do catálogo e a de corpos, na ordem da barra de filtros."""
     itens = [c["id"] for c in json.loads(catalogo.read_text(encoding="utf-8"))["categorias"]]
-    return [*CATEGORIAS_DE_CARTA[:2], *itens, CATEGORIAS_DE_CARTA[2]]
+    # Corpos do sistema: categoria de carta própria, fora do catálogo de itens (experiencia-da-mesa, item 6).
+    return [*CATEGORIAS_DE_CARTA[:2], *itens, "corpos", CATEGORIAS_DE_CARTA[2]]
 
 
 # Arte quadrada da categoria no quadro da página esquerda do grimório (D8 revisto): o painel com o medalhão

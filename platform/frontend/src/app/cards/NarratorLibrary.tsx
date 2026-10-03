@@ -89,13 +89,15 @@ function seloDaCarta(definicao: CartaDefinicaoResumo, padrao: boolean): string |
   return definicao.publicada.revisao_pendente?.length ? "Revisão pendente" : undefined;
 }
 
-function NovaOfertaDialog({ api, mesaId, publicadas, onClose }: {
+export function NovaOfertaDialog({ api, mesaId, publicadas, onClose, inicial = [] }: {
   api: ApiClient; mesaId: string; publicadas: CartaVersaoResumo[]; onClose: () => void;
+  /** Versões já marcadas como candidatas ao abrir (ex.: "Ofertar" a partir de uma carta). */
+  inicial?: string[];
 }) {
   const personagens = usePersonagens(api, mesaId, false);
   const criar = useCriarOferta(api, mesaId);
   const [titulo, setTitulo] = useState("");
-  const [candidatas, setCandidatas] = useState<string[]>([]);
+  const [candidatas, setCandidatas] = useState<string[]>(inicial);
   const [destinatarios, setDestinatarios] = useState<string[]>([]);
   const [minimo, setMinimo] = useState(1);
   const [maximo, setMaximo] = useState(1);
@@ -144,7 +146,7 @@ function NovaOfertaDialog({ api, mesaId, publicadas, onClose }: {
   );
 }
 
-function ApresentarDialog({ api, mesaId, versao, onClose }: { api: ApiClient; mesaId: string; versao: CartaVersaoResumo; onClose: () => void }) {
+export function ApresentarDialog({ api, mesaId, versao, onClose }: { api: ApiClient; mesaId: string; versao: CartaVersaoResumo; onClose: () => void }) {
   const participantes = useParticipantes(api, mesaId);
   const apresentar = useApresentarCarta(api, mesaId);
   const [destinatarios, setDestinatarios] = useState<string[]>([]);
@@ -180,7 +182,7 @@ const DESTINO_DO_ENVIO: Record<TipoCarta, string> = {
   efeito: "O efeito é aplicado ao personagem na hora.",
 };
 
-function EnviarCartaDialog({ api, mesaId, versao, onEnviada, onClose }: {
+export function EnviarCartaDialog({ api, mesaId, versao, onEnviada, onClose }: {
   api: ApiClient; mesaId: string; versao: CartaVersaoResumo; onEnviada: (aviso: string) => void; onClose: () => void;
 }) {
   const personagens = usePersonagens(api, mesaId, false);

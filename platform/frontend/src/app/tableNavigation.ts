@@ -5,25 +5,26 @@ export type TableView = "overview" | "character" | "activity" | "cards" | "room"
 
 export const tableNavigation: Record<TableRole, { id: TableView; label: string; icon: GlyphName }[]> = {
   narrador: [
+    { id: "room", label: "Sala", icon: "map" },
     { id: "overview", label: "Visão geral", icon: "grid" },
     { id: "character", label: "Personagens", icon: "users" },
     { id: "activity", label: "Registro", icon: "scroll" },
     { id: "cards", label: "Biblioteca", icon: "cards" },
-    { id: "room", label: "Sala", icon: "map" },
   ],
   jogador: [
+    { id: "room", label: "Sala", icon: "map" },
     { id: "character", label: "Minha ficha", icon: "shield" },
     { id: "overview", label: "Grupo", icon: "users" },
     { id: "activity", label: "Registro", icon: "scroll" },
     { id: "cards", label: "Biblioteca", icon: "cards" },
-    { id: "room", label: "Sala", icon: "map" },
   ],
 };
 
-export function defaultTableView(role: TableRole): TableView {
-  return role === "narrador" ? "overview" : "character";
+/** A Sala é a página principal da mesa para os dois papéis (experiencia-da-mesa, item 2). */
+export function defaultTableView(): TableView {
+  return "room";
 }
 
 export function permittedTableView(role: TableRole, candidate: string | null): TableView {
-  return tableNavigation[role].find((item) => item.id === candidate)?.id ?? defaultTableView(role);
+  return tableNavigation[role].find((item) => item.id === candidate)?.id ?? defaultTableView();
 }

@@ -11,7 +11,9 @@ import { routes } from "./routes";
 type Clients = ReturnType<typeof createPlatformClients>;
 
 function renderTable(initialEntry: string, rows: { id: string; nome: string; papel: "narrador" | "jogador" }[], failure = false) {
-  const get = failure ? vi.fn().mockRejectedValue(new Error("Sem acesso")) : vi.fn().mockResolvedValue({ data: rows, error: undefined });
+  // Só a lista de mesas devolve as linhas; as demais consultas da mesa (sala, apresentações…) vêm vazias.
+  const get = failure ? vi.fn().mockRejectedValue(new Error("Sem acesso"))
+    : vi.fn().mockImplementation(async (caminho: string) => ({ data: caminho === "/mesas" ? rows : [], error: undefined }));
   const clients = { api: { GET: get } } as unknown as Clients;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(<QueryClientProvider client={queryClient}><MemoryRouter initialEntries={[initialEntry]}><Link to={routes.table("mesa-b")}>Abrir mesa B</Link><Routes><Route path="/mesas/:mesaId" element={<TablePage api={clients.api} userId="usuario-1" onSignOut={vi.fn()} />} /></Routes></MemoryRouter></QueryClientProvider>);
@@ -27,13 +29,18 @@ describe("shell autenticado da mesa", () => {
       { id: "mesa-a", nome: "Campanha do Norte", papel: "narrador" },
       { id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" },
     ]);
-    expect(await screen.findByRole("heading", { name: "A mesa em um relance" })).toBeTruthy();
+    // A Sala é a página principal: a mesa abre nela, e ela é o primeiro item da navegação.
+    expect(await screen.findByRole("heading", { name: "Sala desativada" })).toBeTruthy();
     const desktop = screen.getByRole("navigation", { name: "Navegação da mesa" });
+    const primeiro = within(desktop).getAllByRole("button")[0]!;
+    expect(primeiro.textContent).toBe("Sala");
+    expect(primeiro.getAttribute("aria-current")).toBe("page");
+    expect(within(screen.getByRole("navigation", { name: "Navegação móvel da mesa" })).getAllByRole("button")[0]?.textContent).toBe("Sala");
     const mobile = screen.getByRole("navigation", { name: "Navegação móvel da mesa" });
     expect(within(desktop).getByRole("button", { name: "Registro" })).toBeTruthy();
     expect(within(mobile).getByRole("button", { name: "Registro" })).toBeTruthy();
     fireEvent.click(screen.getByRole("link", { name: "Abrir mesa B" }));
-    expect(await screen.findByRole("heading", { name: "Seu personagem em foco" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Abrir minha ficha" })).toBeTruthy();
     expect(screen.getByText("Caminhos de Sal", { selector: ".sidebar__campaign strong" })).toBeTruthy();
     expect(within(screen.getByRole("navigation", { name: "Navegação da mesa" })).getByRole("button", { name: "Minha ficha" })).toBeTruthy();
     expect(within(screen.getByRole("navigation", { name: "Navegação móvel da mesa" })).getByRole("button", { name: "Registro" })).toBeTruthy();
@@ -42,12 +49,25 @@ describe("shell autenticado da mesa", () => {
 
   it("não apresenta uma mesa fora da lista autorizada, nem aceita um painel inexistente por URL", async () => {
     renderTable("/mesas/mesa-b?painel=inexistente", [{ id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" }]);
-    expect(await screen.findByRole("heading", { name: "Seu personagem em foco" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Sala desativada" })).toBeTruthy();
     expect(within(screen.getByRole("navigation", { name: "Navegação da mesa" })).getByRole("button", { name: "Registro" })).toBeTruthy();
     cleanup();
     renderTable("/mesas/mesa-oculta", [{ id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" }]);
     expect(await screen.findByRole("heading", { name: "Mesa indisponível" })).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "Navegação da mesa" })).toBeNull();
+  });
+
+  it("um endereço com seção válida continua abrindo essa seção", async () => {
+    renderTable("/mesas/mesa-a?painel=overview", [{ id: "mesa-a", nome: "Campanha do Norte", papel: "narrador" }]);
+    expect(await screen.findByRole("heading", { name: "A mesa em um relance" })).toBeTruthy();
+    expect(within(screen.getByRole("navigation", { name: "Navegação da mesa" })).getByRole("button", { name: "Visão geral" })
+      .getAttribute("aria-current")).toBe("page");
+  });
+
+  it("o jogador numa mesa sem Sala tem o atalho para a própria ficha", async () => {
+    renderTable("/mesas/mesa-b", [{ id: "mesa-b", nome: "Caminhos de Sal", papel: "jogador" }]);
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir minha ficha" }));
+    expect(await screen.findByRole("heading", { name: "Seu personagem em foco" })).toBeTruthy();
   });
 
   it("não mostra conteúdo de mesa quando a consulta falha", async () => {

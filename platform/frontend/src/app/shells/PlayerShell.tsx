@@ -21,7 +21,7 @@ const playerCopy: Record<TableView, { eyebrow: string; title: string; descriptio
   character: { eyebrow: "MINHA FICHA", title: "Seu personagem em foco", description: "Abra, crie ou exclua suas fichas conforme a política definida pelo Narrador desta mesa." },
   activity: { eyebrow: "REGISTRO", title: "Registro", description: "As ações que dizem respeito a você e ao grupo, na ordem em que aconteceram." },
   cards: { eyebrow: "BIBLIOTECA", title: "Suas cartas", description: "Ofertas do Narrador aguardando sua escolha." },
-  room: { eyebrow: "SALA", title: "Cena compartilhada", description: "A sala mostrará somente a cena e os elementos revelados ao grupo quando o módulo estiver ativo." },
+  room: { eyebrow: "SALA", title: "Sala", description: "" },
 };
 
 /** Cartão do próprio personagem, exclusivo do jogador, sempre visível na barra lateral. */
@@ -72,6 +72,7 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
       headerEyebrow={copy.eyebrow}
       headerDescription={copy.description}
       roomPresence={roomPresence}
+      palco={view === "room"}
       sidebarExtra={<PlayerSnapshotPanel />}
     >
       {view === "character" ? (
@@ -82,7 +83,7 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
       ) : view === "cards" ? (
         <PlayerLibrary api={api} mesaId={mesa.id} />
       ) : view === "room" ? (
-        <RoomView api={api} mesaId={mesa.id} userId={userId} realtime={realtime} narrator={false} />
+        <RoomView api={api} mesaId={mesa.id} userId={userId} realtime={realtime} narrator={false} onAbrirFicha={() => onNavigate("character")} />
       ) : view === "overview" ? (
         <div className="screen-content">
           <section className="panel panel--wide workspace-status">

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 
 import type { ApiClient } from "../characters/types";
 import { sheetKeys } from "../characters/sheet/sheetApi";
@@ -143,19 +143,30 @@ export function useImportarCarta(api: ApiClient, mesaId: string) {
 
 // --------------------------------------------------------------------- posse
 
-export function useCartasDoPersonagem(
-  api: ApiClient, mesaId: string, personagemId: string,
-): UseQueryResult<CartaPersonagemResumo[], Error> {
-  return useQuery({
+function consultaCartasDoPersonagem(api: ApiClient, mesaId: string, personagemId: string) {
+  return {
     queryKey: cardKeys.doPersonagem(mesaId, personagemId),
-    queryFn: async () => {
+    queryFn: async (): Promise<CartaPersonagemResumo[]> => {
       const { data, error } = await api.GET("/mesas/{mesa_id}/personagens/{personagem_id}/cartas", {
         params: { path: { mesa_id: mesaId, personagem_id: personagemId } },
       });
       if (error) throw erroDaApi(error, "Não foi possível carregar as cartas do personagem.");
       return data ?? [];
     },
-  });
+  };
+}
+
+export function useCartasDoPersonagem(
+  api: ApiClient, mesaId: string, personagemId: string,
+): UseQueryResult<CartaPersonagemResumo[], Error> {
+  return useQuery(consultaCartasDoPersonagem(api, mesaId, personagemId));
+}
+
+/** As cartas de vários personagens de uma vez, na ordem pedida (mesma consulta e chave de `useCartasDoPersonagem`). */
+export function useCartasDosPersonagens(
+  api: ApiClient, mesaId: string, personagemIds: readonly string[],
+): UseQueryResult<CartaPersonagemResumo[], Error>[] {
+  return useQueries({ queries: personagemIds.map((id) => consultaCartasDoPersonagem(api, mesaId, id)) });
 }
 
 /** Após qualquer comando de posse: nova versão da ficha e dados que dependem das cartas. */

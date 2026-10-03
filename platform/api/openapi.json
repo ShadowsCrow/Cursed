@@ -691,6 +691,29 @@
         "title": "AquisicaoCartasResposta",
         "type": "object"
       },
+      "AreaDoMapaRequest": {
+        "description": "Quantas casas o mapa da cena ocupa (experiencia-da-mesa, item 12).",
+        "properties": {
+          "colunas": {
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Colunas",
+            "type": "integer"
+          },
+          "linhas": {
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Linhas",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "colunas",
+          "linhas"
+        ],
+        "title": "AreaDoMapaRequest",
+        "type": "object"
+      },
       "ArquetipoResumo": {
         "properties": {
           "conceito": {
@@ -2622,12 +2645,14 @@
             "type": "integer"
           },
           "x": {
-            "minimum": 0.0,
+            "maximum": 2000.0,
+            "minimum": -2000.0,
             "title": "X",
             "type": "integer"
           },
           "y": {
-            "minimum": 0.0,
+            "maximum": 2000.0,
+            "minimum": -2000.0,
             "title": "Y",
             "type": "integer"
           }
@@ -5057,12 +5082,14 @@
             "type": "integer"
           },
           "x": {
-            "minimum": 0.0,
+            "maximum": 2000.0,
+            "minimum": -2000.0,
             "title": "X",
             "type": "integer"
           },
           "y": {
-            "minimum": 0.0,
+            "maximum": 2000.0,
+            "minimum": -2000.0,
             "title": "Y",
             "type": "integer"
           }
@@ -5685,6 +5712,24 @@
         "title": "PerfilResposta",
         "type": "object"
       },
+      "PermissoesEmLoteRequest": {
+        "properties": {
+          "modo": {
+            "enum": [
+              "bloquear_todos",
+              "so_principais",
+              "liberar_todos"
+            ],
+            "title": "Modo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "modo"
+        ],
+        "title": "PermissoesEmLoteRequest",
+        "type": "object"
+      },
       "PermissoesFicha": {
         "properties": {
           "campos_bloqueados": {
@@ -5729,6 +5774,42 @@
           "transferir"
         ],
         "title": "PermissoesFicha",
+        "type": "object"
+      },
+      "PermitirMovimentoRequest": {
+        "description": "Libera ou bloqueia o movimento do token pelos jogadores (experiencia-da-mesa, item 13).",
+        "properties": {
+          "controladores": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Quem pode mover um token sem dono.",
+            "title": "Controladores"
+          },
+          "liberado": {
+            "title": "Liberado",
+            "type": "boolean"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "liberado",
+          "versao_esperada"
+        ],
+        "title": "PermitirMovimentoRequest",
         "type": "object"
       },
       "PersonagemResumo": {
@@ -7005,6 +7086,18 @@
             "title": "Id",
             "type": "string"
           },
+          "movimento_liberado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Somente para o Narrador: jogadores podem mover.",
+            "title": "Movimento Liberado"
+          },
           "oculto": {
             "anyOf": [
               {
@@ -7035,6 +7128,23 @@
           "tamanho": {
             "title": "Tamanho",
             "type": "integer"
+          },
+          "tipo_personagem": {
+            "anyOf": [
+              {
+                "enum": [
+                  "personagem",
+                  "npc",
+                  "monstro"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tipo do personagem ligado (para a arte padrão do retrato); o retrato vem de /sala/tokens/{id}/retrato.",
+            "title": "Tipo Personagem"
           },
           "versao": {
             "title": "Versao",
@@ -13445,6 +13555,73 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/area-do-mapa": {
+      "post": {
+        "description": "Quantas casas o mapa da cena ocupa no grid; só o Narrador (experiencia-da-mesa, item 12).",
+        "operationId": "redimensionar_mapa_mesas__mesa_id__sala_cenas__cena_id__area_do_mapa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cena_id",
+            "required": true,
+            "schema": {
+              "title": "Cena Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AreaDoMapaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Redimensionar Mapa",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/sala/cenas/{cena_id}/ativacao": {
       "post": {
         "operationId": "ativar_cena_mesas__mesa_id__sala_cenas__cena_id__ativacao_post",
@@ -13496,6 +13673,73 @@
           }
         ],
         "summary": "Ativar Cena",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/cenas/{cena_id}/permissoes": {
+      "post": {
+        "description": "Bloquear todos, só personagens principais ou liberar todos; só o Narrador (experiencia-da-mesa, item 13).",
+        "operationId": "permissoes_em_lote_mesas__mesa_id__sala_cenas__cena_id__permissoes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cena_id",
+            "required": true,
+            "schema": {
+              "title": "Cena Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissoesEmLoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Permissoes Em Lote",
         "tags": [
           "Sala"
         ]
@@ -13937,6 +14181,130 @@
           }
         ],
         "summary": "Mover Token",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/movimento-permitido": {
+      "post": {
+        "description": "Libera ou bloqueia o movimento do token pelos jogadores; só o Narrador (experiencia-da-mesa, item 13).",
+        "operationId": "permitir_movimento_mesas__mesa_id__sala_tokens__token_id__movimento_permitido_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermitirMovimentoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSala"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Permitir Movimento",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/retrato": {
+      "get": {
+        "description": "O retrato do personagem ligado ao token, para quem vê o token (experiencia-da-mesa, item 12).\n\nO jogador vê a foto de um monstro no mapa sem poder abrir a ficha dele: a autorização é a do token, não a da\nficha. Sem retrato enviado, 404, e o cliente usa a arte padrão do tipo.",
+        "operationId": "retrato_do_token_mesas__mesa_id__sala_tokens__token_id__retrato_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtivoResposta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Retrato Do Token",
         "tags": [
           "Sala"
         ]

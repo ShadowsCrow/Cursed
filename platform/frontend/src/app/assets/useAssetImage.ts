@@ -23,8 +23,9 @@ export function useAssetImage(api: ApiClient, mesaId: string, caminho: string, {
 }
 
 /** Várias imagens de uma vez (ex.: ícones da grade); devolve só as já carregadas, por caminho. */
-export function useAssetImages(api: ApiClient, mesaId: string, caminhos: readonly string[]): Record<string, string | undefined> {
+export function useAssetImages(api: ApiClient, mesaId: string, caminhos: readonly string[],
+  { exibicao = false } = {}): Record<string, string | undefined> {
   const unicos = [...new Set(caminhos.filter(Boolean))];
-  const resultados = useQueries({ queries: unicos.map((caminho) => consultaImagem(api, mesaId, caminho, false)) });
+  const resultados = useQueries({ queries: unicos.map((caminho) => consultaImagem(api, mesaId, caminho, exibicao)) });
   return Object.fromEntries(unicos.map((caminho, i) => [caminho, resultados[i]?.data]));
 }

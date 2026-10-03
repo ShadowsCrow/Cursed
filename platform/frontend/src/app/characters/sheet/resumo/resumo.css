@@ -520,7 +520,9 @@
     grid-template-rows: none;
   }
   .resumo-ficha__cena { display: none; }
-  .resumo-ficha__figura { min-height: 0; aspect-ratio: 2 / 3; max-height: 72vh; }
+  /* A altura vai até 72vh; a largura acompanha a proporção 2:3 e a figura fica centrada na coluna
+     (antes, com a altura no limite, a largura encolhia e a figura colava à esquerda). */
+  .resumo-ficha__figura { min-height: 0; aspect-ratio: 2 / 3; width: min(100%, calc(72vh * 2 / 3)); justify-self: center; }
   .resumo-ficha__figura-imagem { -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent); }
   .resumo-medalhao { width: 58px; height: 58px; }
   .resumo-recurso .resumo-numero { font-size: 1.7rem; }

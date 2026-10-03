@@ -7,6 +7,7 @@ import { Marca, Selo, TituloOrnado } from "../../ui/Tema";
 import { ConnectivityBadge } from "../connectivity/ConnectivityBadge";
 import { routes } from "../routes";
 import { tableNavigation, type TableRole, type TableView } from "../tableNavigation";
+import { useBarraRecolhida } from "./usePreferenciaLocal";
 
 export interface WorkspaceChromeProps {
   role: TableRole;
@@ -27,6 +28,8 @@ export interface WorkspaceChromeProps {
   sidebarExtra?: ReactNode;
   /** Substitui o painel de abertura padrão (ex.: cabeçalho ilustrado do assistente de criação). */
   hero?: ReactNode;
+  /** Palco: a seção ocupa toda a área abaixo da barra superior, sem cabeçalho ilustrado nem rodapé (a Sala). */
+  palco?: boolean;
   children: ReactNode;
 }
 
@@ -40,9 +43,10 @@ function Navigation({ role, view, onNavigate, badges = {}, mobile = false }: { r
           onClick={() => onNavigate(item.id)}
           aria-current={view === item.id ? "page" : undefined}
           className={mobile ? (view === item.id ? "mobile-nav__active" : "") : `nav-item ${view === item.id ? "nav-item--active" : ""}`}
+          data-dica={mobile ? undefined : item.label}
         >
           <Glyph name={item.icon} size={mobile ? 20 : 19} />
-          <span>{item.label}</span>
+          <span className={mobile ? undefined : "nav-item__rotulo"}>{item.label}</span>
           {(badges[item.id] ?? 0) > 0 && (
             <>
               <span className="nav-badge" aria-hidden="true">{badges[item.id]}</span>
@@ -76,23 +80,34 @@ export function WorkspaceChrome({
   roomPresence,
   badges,
   hero,
+  palco = false,
   children,
 }: WorkspaceChromeProps) {
   const voltar = mesaId ? routes.campanha(mesaId) : routes.campanhas();
+  const [recolhida, setRecolhida] = useBarraRecolhida();
+  const classes = ["preview-app", "workspace-app", `workspace-app--${role}`,
+    recolhida && "workspace-app--barra-recolhida", palco && "workspace-app--palco"].filter(Boolean).join(" ");
+  const acaoBarra = recolhida ? "Expandir barra lateral" : "Recolher barra lateral";
   return (
-    <div className={`preview-app workspace-app workspace-app--${role}`}>
-      <aside className="sidebar">
-        <div className="brand"><Marca tamanho={44} /></div>
-        <div className="sidebar__campaign">
+    <div className={classes}>
+      <aside className="sidebar" id="barra-lateral-mesa">
+        <div className="brand">
+          <Marca tamanho={44} compacta={recolhida} />
+          <button type="button" className="sidebar__alternar" aria-expanded={!recolhida} aria-controls="barra-lateral-mesa"
+            aria-label={acaoBarra} title={acaoBarra} onClick={() => setRecolhida(!recolhida)}>
+            <Glyph name="chevron" size={18} />
+          </button>
+        </div>
+        <div className="sidebar__campaign" hidden={recolhida}>
           <span className="eyebrow">CAMPANHA ATUAL</span>
           <strong>{mesaNome}</strong>
           <Selo tom={role === "narrador" ? "sangue" : "ouro"}>{roleLabel}</Selo>
         </div>
-        <div className="sidebar__label">MESA</div>
+        <div className="sidebar__label" hidden={recolhida}>MESA</div>
         <Navigation role={role} view={view} onNavigate={onNavigate} badges={badges} />
-        {sidebarExtra}
+        {sidebarExtra && <div className="sidebar__extra" hidden={recolhida}>{sidebarExtra}</div>}
         <div className="sidebar__bottom">
-          <Link className="nav-item" to={voltar}><Glyph name="grid" size={19} /><span>Campanhas</span></Link>
+          <Link className="nav-item" to={voltar} data-dica="Campanhas"><Glyph name="grid" size={19} /><span className="nav-item__rotulo">Campanhas</span></Link>
         </div>
       </aside>
       <div className="preview-main">
@@ -110,18 +125,24 @@ export function WorkspaceChrome({
             <Portrait name={role === "narrador" ? "Narrador" : "Jogador"} hue={role === "narrador" ? "copper" : "violet"} />
           </div>
         </header>
-        <main id="main-content" className="preview-content">
-          <div className="screen-content">
-            {hero ?? (
-              <CabecalhoIlustrado className={`hero-panel--tema ${role === "jogador" ? "hero-panel--player" : ""}`.trim()}>
-                <TituloOrnado nivel={1} sobretitulo={headerEyebrow}>{headerTitle}</TituloOrnado>
-                {headerDescription && <p>{headerDescription}</p>}
-              </CabecalhoIlustrado>
-            )}
-            {children}
-          </div>
-        </main>
-        <footer className="preview-footer"><span>CURSED <span>✦</span> PLATAFORMA RPG</span><span>Área autenticada · {mesaNome}</span></footer>
+        {palco ? (
+          <main id="main-content" className="preview-content preview-content--palco">{children}</main>
+        ) : (
+          <>
+            <main id="main-content" className="preview-content">
+              <div className="screen-content">
+                {hero ?? (
+                  <CabecalhoIlustrado className={`hero-panel--tema ${role === "jogador" ? "hero-panel--player" : ""}`.trim()}>
+                    <TituloOrnado nivel={1} sobretitulo={headerEyebrow}>{headerTitle}</TituloOrnado>
+                    {headerDescription && <p>{headerDescription}</p>}
+                  </CabecalhoIlustrado>
+                )}
+                {children}
+              </div>
+            </main>
+            <footer className="preview-footer"><span>CURSED <span>✦</span> PLATAFORMA RPG</span><span>Área autenticada · {mesaNome}</span></footer>
+          </>
+        )}
       </div>
       <Navigation role={role} view={view} onNavigate={onNavigate} badges={badges} mobile />
     </div>
