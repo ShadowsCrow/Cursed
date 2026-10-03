@@ -68,8 +68,7 @@ class SalaApiTest(unittest.TestCase):
         return self.client
 
     def preparar_cena(self):
-        self.assertEqual(self.como("mestre").put("/mesas/mesa/modulos", json={"sala": True}).status_code, 200)
-        criada = self.client.post("/mesas/mesa/sala/cenas", json={"nome": "Pátio", "colunas": 8, "linhas": 6})
+        criada = self.como("mestre").post("/mesas/mesa/sala/cenas", json={"nome": "Pátio", "colunas": 8, "linhas": 6})
         self.assertEqual(criada.status_code, 201, criada.text)
         cena = criada.json()["cena"]
         ativada = self.client.post(f"/mesas/mesa/sala/cenas/{cena['id']}/ativacao")
@@ -83,6 +82,33 @@ class SalaApiTest(unittest.TestCase):
         })
         self.assertEqual(resposta.status_code, 201, resposta.text)
         return resposta.json()
+
+    def test_narrador_muda_o_tamanho_do_token_sempre_quadrado(self):
+        """melhorias-da-sala, item 6: de 1×1 a 10×10, com versão conferida; só o Narrador."""
+        cena, camadas = self.preparar_cena()
+        token = self.criar_token(cena, camadas["mesa"], rotulo="Ogro", personagem_id="ana-p")
+        resposta = self.como("mestre").post(f"/mesas/mesa/sala/tokens/{token['id']}/tamanho",
+                                            json={"tamanho": 3, "versao_esperada": token["versao"]})
+        self.assertEqual(resposta.status_code, 200, resposta.text)
+        self.assertEqual(resposta.json()["tamanho"], 3)
+        visto = next(t for t in self.como("ana").get("/mesas/mesa/sala").json()["cena"]["tokens"] if t["id"] == token["id"])
+        self.assertEqual(visto["tamanho"], 3)
+        # Versão velha: conflito; fora de 1 a 10: recusado; jogador, mesmo dono do personagem: negado.
+        self.assertEqual(self.como("mestre").post(f"/mesas/mesa/sala/tokens/{token['id']}/tamanho",
+                                                  json={"tamanho": 2, "versao_esperada": token["versao"]}).status_code, 409)
+        atual = resposta.json()["versao"]
+        for tamanho in (0, 11):
+            self.assertEqual(self.como("mestre").post(f"/mesas/mesa/sala/tokens/{token['id']}/tamanho",
+                                                      json={"tamanho": tamanho, "versao_esperada": atual}).status_code, 422)
+        self.assertEqual(self.como("ana").post(f"/mesas/mesa/sala/tokens/{token['id']}/tamanho",
+                                               json={"tamanho": 1, "versao_esperada": atual}).status_code, 403)
+
+    def test_tamanho_respeita_o_limite_da_cena(self):
+        cena, camadas = self.preparar_cena()
+        token = self.criar_token(cena, camadas["mesa"], x=1995, y=0)
+        resposta = self.como("mestre").post(f"/mesas/mesa/sala/tokens/{token['id']}/tamanho",
+                                            json={"tamanho": 10, "versao_esperada": token["versao"]})
+        self.assertEqual(resposta.status_code, 422)
 
     def test_visibilidade_e_controle_por_personagem_camada_e_token(self):
         cena, camadas = self.preparar_cena()
@@ -221,12 +247,14 @@ class SalaApiTest(unittest.TestCase):
         jogador = {t["id"]: t for t in self.como("bia").get("/mesas/mesa/sala").json()["cena"]["tokens"]}
         self.assertIsNone(jogador[bia_token["id"]]["movimento_liberado"])
 
-    def test_modulo_desativado_e_isolamento_da_mesa(self):
-        self.assertEqual(self.como("mestre").post(
-            "/mesas/mesa/sala/cenas", json={"nome": "X", "colunas": 5, "linhas": 5},
-        ).status_code, 409)
+    def test_sala_sempre_ligada_e_isolamento_da_mesa(self):
+        """melhorias-da-sala, item 9: sem módulo a ativar; a rota de módulos não existe mais."""
+        self.assertEqual(self.como("outro").get("/mesas/outra/sala").json()["cena"], None)
+        self.assertEqual(self.como("outro").post(
+            "/mesas/outra/sala/cenas", json={"nome": "X", "colunas": 5, "linhas": 5},
+        ).status_code, 201)
+        self.assertIn(self.como("mestre").put("/mesas/mesa/modulos", json={"sala": True}).status_code, (404, 405))
         self.preparar_cena()
-        self.assertEqual(self.como("outro").get("/mesas/outra/modulos").json(), {"sala": False})
         self.assertEqual(self.como("ana").get("/mesas/outra/sala").status_code, 404)
         self.assertEqual(self.como("mestre").post(
             "/mesas/mesa/sala/cenas", json={"nome": "", "colunas": 5, "linhas": 5},
@@ -254,7 +282,7 @@ class SalaApiTest(unittest.TestCase):
         }).status_code, 422)
 
     def test_mapa_referencia_somente_arquivo_compartilhado_da_mesa(self):
-        self.assertEqual(self.como("mestre").put("/mesas/mesa/modulos", json={"sala": True}).status_code, 200)
+        self.ator = "mestre"
         caminho = "/mesas/mesa/sala/cenas"
         base = {"nome": "Bosque", "colunas": 8, "linhas": 6}
         for objeto in (

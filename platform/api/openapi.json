@@ -4032,6 +4032,27 @@
         "title": "GradeInventario",
         "type": "object"
       },
+      "GrupoDeDados": {
+        "properties": {
+          "faces": {
+            "title": "Faces",
+            "type": "integer"
+          },
+          "valores": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Valores",
+            "type": "array"
+          }
+        },
+        "required": [
+          "faces",
+          "valores"
+        ],
+        "title": "GrupoDeDados",
+        "type": "object"
+      },
       "GrupoPersonalidadeResumo": {
         "properties": {
           "campos": {
@@ -5001,17 +5022,6 @@
           "valor"
         ],
         "title": "ModificadorResumo",
-        "type": "object"
-      },
-      "ModulosMesa": {
-        "properties": {
-          "sala": {
-            "default": false,
-            "title": "Sala",
-            "type": "boolean"
-          }
-        },
-        "title": "ModulosMesa",
         "type": "object"
       },
       "MoedasRequest": {
@@ -6508,6 +6518,27 @@
         "title": "PublicarCartaRequest",
         "type": "object"
       },
+      "QuantidadeDeDados": {
+        "properties": {
+          "faces": {
+            "description": "Tipo de dado: 4, 6, 8, 10, 12, 20 ou 100.",
+            "title": "Faces",
+            "type": "integer"
+          },
+          "quantidade": {
+            "maximum": 99.0,
+            "minimum": 0.0,
+            "title": "Quantidade",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "faces",
+          "quantidade"
+        ],
+        "title": "QuantidadeDeDados",
+        "type": "object"
+      },
       "RacaCatalogoResumo": {
         "properties": {
           "altura": {
@@ -6960,6 +6991,153 @@
         "title": "RevelacaoContrato",
         "type": "object"
       },
+      "RolagemDeDados": {
+        "properties": {
+          "autor_id": {
+            "title": "Autor Id",
+            "type": "string"
+          },
+          "criado_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criado Em"
+          },
+          "expressao": {
+            "title": "Expressao",
+            "type": "string"
+          },
+          "grupos": {
+            "items": {
+              "$ref": "#/components/schemas/GrupoDeDados"
+            },
+            "title": "Grupos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "modificador": {
+            "title": "Modificador",
+            "type": "integer"
+          },
+          "oculta": {
+            "default": false,
+            "title": "Oculta",
+            "type": "boolean"
+          },
+          "personagem_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personagem Id"
+          },
+          "termos": {
+            "items": {
+              "$ref": "#/components/schemas/TermoDaRolagem"
+            },
+            "title": "Termos",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "autor_id",
+          "expressao",
+          "grupos",
+          "modificador",
+          "total"
+        ],
+        "title": "RolagemDeDados",
+        "type": "object"
+      },
+      "RolarDadosRequest": {
+        "description": "Montagem da aba Dados: quantos dados de cada tipo e o modificador. O sorteio é do servidor.",
+        "properties": {
+          "atributo": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chave do atributo, ex.: atributo:destreza.",
+            "title": "Atributo"
+          },
+          "dados": {
+            "items": {
+              "$ref": "#/components/schemas/QuantidadeDeDados"
+            },
+            "maxItems": 7,
+            "minItems": 1,
+            "title": "Dados",
+            "type": "array"
+          },
+          "modificador": {
+            "default": 0,
+            "maximum": 99.0,
+            "minimum": -99.0,
+            "title": "Modificador",
+            "type": "integer"
+          },
+          "oculta": {
+            "default": false,
+            "description": "Rolagem oculta dos jogadores; só o Narrador pode pedir.",
+            "title": "Oculta",
+            "type": "boolean"
+          },
+          "pericia": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chave da perícia, ex.: pericia:furtividade.",
+            "title": "Pericia"
+          },
+          "personagem_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rolagem pela ficha deste personagem.",
+            "title": "Personagem Id"
+          }
+        },
+        "required": [
+          "dados"
+        ],
+        "title": "RolarDadosRequest",
+        "type": "object"
+      },
       "SalaSnapshot": {
         "properties": {
           "cena": {
@@ -6979,15 +7157,8 @@
             },
             "title": "Cenas",
             "type": "array"
-          },
-          "modulo_ativo": {
-            "title": "Modulo Ativo",
-            "type": "boolean"
           }
         },
-        "required": [
-          "modulo_ativo"
-        ],
         "title": "SalaSnapshot",
         "type": "object"
       },
@@ -7055,6 +7226,52 @@
           "efeito_id"
         ],
         "title": "SituacionalResumo",
+        "type": "object"
+      },
+      "TamanhoTokenRequest": {
+        "description": "Casas que o token ocupa de cada lado (sempre quadrado): 1 a 10.",
+        "properties": {
+          "tamanho": {
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Tamanho",
+            "type": "integer"
+          },
+          "versao_esperada": {
+            "minimum": 0.0,
+            "title": "Versao Esperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tamanho",
+          "versao_esperada"
+        ],
+        "title": "TamanhoTokenRequest",
+        "type": "object"
+      },
+      "TermoDaRolagem": {
+        "description": "Parcela somada da ficha, com o total calculado pelo servidor.",
+        "properties": {
+          "chave": {
+            "title": "Chave",
+            "type": "string"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "chave",
+          "rotulo",
+          "valor"
+        ],
+        "title": "TermoDaRolagem",
         "type": "object"
       },
       "TokenSala": {
@@ -9761,108 +9978,6 @@
         "summary": "Enviar Imagem",
         "tags": [
           "Imagens"
-        ]
-      }
-    },
-    "/mesas/{mesa_id}/modulos": {
-      "get": {
-        "operationId": "ler_modulos_mesas__mesa_id__modulos_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "mesa_id",
-            "required": true,
-            "schema": {
-              "title": "Mesa Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModulosMesa"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Ler Modulos",
-        "tags": [
-          "Sala"
-        ]
-      },
-      "put": {
-        "operationId": "configurar_modulos_mesas__mesa_id__modulos_put",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "mesa_id",
-            "required": true,
-            "schema": {
-              "title": "Mesa Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ModulosMesa"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ModulosMesa"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Configurar Modulos",
-        "tags": [
-          "Sala"
         ]
       }
     },
@@ -14060,6 +14175,131 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/sala/rolagens": {
+      "get": {
+        "description": "Rolagens da mesa depois do id dado, em ordem (até 50, as mais recentes). Só para quem é da mesa;\nas rolagens ocultas do Narrador só ele vê.",
+        "operationId": "listar_rolagens_mesas__mesa_id__sala_rolagens_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "depois",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Depois"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RolagemDeDados"
+                  },
+                  "title": "Response Listar Rolagens Mesas  Mesa Id  Sala Rolagens Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Rolagens",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "post": {
+        "description": "Sorteia a rolagem da aba Dados no servidor, guarda e avisa a mesa (melhorias-da-sala, item 3).",
+        "operationId": "rolar_dados_mesas__mesa_id__sala_rolagens_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolarDadosRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolagemDeDados"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rolar Dados",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/sala/tokens/{token_id}": {
       "delete": {
         "operationId": "remover_token_mesas__mesa_id__sala_tokens__token_id__delete",
@@ -14305,6 +14545,73 @@
           }
         ],
         "summary": "Retrato Do Token",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/tamanho": {
+      "post": {
+        "description": "Muda quantas casas o token ocupa, sempre quadrado (melhorias-da-sala, item 6). Só o Narrador.",
+        "operationId": "redimensionar_token_mesas__mesa_id__sala_tokens__token_id__tamanho_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TamanhoTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSala"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Redimensionar Token",
         "tags": [
           "Sala"
         ]

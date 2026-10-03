@@ -1316,8 +1316,46 @@ class ConsequenciaComandoResposta(BaseModel):
 
 # ------------------------------------------------------------------- sala
 
-class ModulosMesa(BaseModel):
-    sala: bool = False
+class QuantidadeDeDados(BaseModel):
+    faces: int = Field(description="Tipo de dado: 4, 6, 8, 10, 12, 20 ou 100.")
+    quantidade: int = Field(ge=0, le=99)
+
+
+class RolarDadosRequest(BaseModel):
+    """Montagem da aba Dados: quantos dados de cada tipo e o modificador. O sorteio é do servidor."""
+
+    dados: list[QuantidadeDeDados] = Field(min_length=1, max_length=7)
+    modificador: int = Field(default=0, ge=-99, le=99)
+    oculta: bool = Field(default=False, description="Rolagem oculta dos jogadores; só o Narrador pode pedir.")
+    personagem_id: str | None = Field(default=None, max_length=100, description="Rolagem pela ficha deste personagem.")
+    atributo: str | None = Field(default=None, max_length=100, description="Chave do atributo, ex.: atributo:destreza.")
+    pericia: str | None = Field(default=None, max_length=100, description="Chave da perícia, ex.: pericia:furtividade.")
+
+
+class TermoDaRolagem(BaseModel):
+    """Parcela somada da ficha, com o total calculado pelo servidor."""
+
+    chave: str
+    rotulo: str
+    valor: int
+
+
+class GrupoDeDados(BaseModel):
+    faces: int
+    valores: list[int]
+
+
+class RolagemDeDados(BaseModel):
+    id: int
+    autor_id: str
+    expressao: str
+    grupos: list[GrupoDeDados]
+    modificador: int
+    total: int
+    oculta: bool = False
+    personagem_id: str | None = None
+    termos: list[TermoDaRolagem] = Field(default_factory=list)
+    criado_em: datetime | None = None
 
 
 class CriarCenaRequest(BaseModel):
@@ -1360,6 +1398,13 @@ class MoverTokenRequest(BaseModel):
     # Cena sem bordas (experiencia-da-mesa, item 7): só o limite de sanidade de sala.LIMITE_DA_CENA.
     x: int = Field(ge=-2000, le=2000)
     y: int = Field(ge=-2000, le=2000)
+    versao_esperada: int = Field(ge=0)
+
+
+class TamanhoTokenRequest(BaseModel):
+    """Casas que o token ocupa de cada lado (sempre quadrado): 1 a 10."""
+
+    tamanho: int = Field(ge=1, le=10)
     versao_esperada: int = Field(ge=0)
 
 
@@ -1413,7 +1458,6 @@ class CenaResumoSala(BaseModel):
 
 
 class SalaSnapshot(BaseModel):
-    modulo_ativo: bool
     cenas: list[CenaResumoSala] = Field(default_factory=list, description="Somente para o Narrador.")
     cena: CenaSala | None = None
 

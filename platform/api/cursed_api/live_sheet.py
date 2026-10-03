@@ -177,16 +177,21 @@ def listar_efeitos(
             for e in inventario_grade.efeitos_com_derivados(session, personagem)]
 
 
+def valores_da_ficha(session: Session, mesa_id: str, personagem: PersonagemRegistro) -> list[ficha_viva.ValorDerivado]:
+    """Atributos, perícias e demais valores derivados como a ficha os mostra (base, ajustes e efeitos ativos)."""
+    return ficha_viva.calcular_valores_derivados(
+        personagem.ficha or {},
+        ficha_viva.itens(session, mesa_id, personagem.id),
+        [*inventario_grade.efeitos_com_derivados(session, personagem), *efeitos_de_faixa(personagem.ficha or {})],
+    )
+
+
 @router.get("/valores-derivados", response_model=list[ValorDerivadoResumo])
 def listar_valores_derivados(
     mesa_id: str, personagem_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
 ) -> list[ValorDerivadoResumo]:
     personagem = _personagem(session, mesa_id, personagem_id, ator)
-    valores = ficha_viva.calcular_valores_derivados(
-        personagem.ficha or {},
-        ficha_viva.itens(session, mesa_id, personagem_id),
-        [*inventario_grade.efeitos_com_derivados(session, personagem), *efeitos_de_faixa(personagem.ficha or {})],
-    )
+    valores = valores_da_ficha(session, mesa_id, personagem)
     return [
         *(
             ValorDerivadoResumo(

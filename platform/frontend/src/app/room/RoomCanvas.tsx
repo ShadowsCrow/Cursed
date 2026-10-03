@@ -3,6 +3,7 @@ import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture, Til
 import type { components } from "../../api/generated/schema";
 import { ARRASTE_DE_PERSONAGEM } from "./arrastes";
 import { areaDeInteresse, dentroDoLimite, enquadrar, LIMITE_DA_CENA, pontoFixoNoZoom, proximoZoom } from "./viewport";
+import { Glyph } from "../../ui/Display";
 
 type Cena = components["schemas"]["CenaSala"];
 type Sinal = { x: number; y: number };
@@ -110,7 +111,8 @@ function desenharSinais(marcadores: Container, cursores: Sinal[], pings: Sinal[]
 
 /** Canvas visual da cena. A lista de tokens no DOM oferece seleção por teclado e toque. */
 export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel,
-  cursores = [], pings = [], arrastes = [], mapaUrl, reservaDireita = 0, retratos = {}, centroDaVistaRef, onSoltarPersonagem }: {
+  cursores = [], pings = [], arrastes = [], mapaUrl, reservaDireita = 0, retratos = {}, centroDaVistaRef, onSoltarPersonagem,
+  onMenuDoToken }: {
   cena: Cena;
   /** URL do retrato de cada token ligado a personagem (por id do token); sem ele, o token mostra as iniciais. */
   retratos?: Record<string, string>;
@@ -123,6 +125,8 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   /** Imagem do mapa da cena (URL de dados), quando houver. */
   mapaUrl?: string;
   onSelectToken: (id: string) => void;
+  /** Botão direito sobre um token (só o Narrador recebe): abre o menu do token na posição do cursor. */
+  onMenuDoToken?: (tokenId: string, posicao: { x: number; y: number }) => void;
   onCursor?: (x: number, y: number) => void;
   onPing?: (x: number, y: number) => void;
   onDragPreview?: (tokenId: string, x: number, y: number) => void;
@@ -286,9 +290,9 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   }, [pronto, cena, cursores, pings, arrastes]);
 
   // As funções recebidas, sempre as mais recentes, sem recriar os ouvintes do ponteiro.
-  const acoes = useRef({ onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel });
+  const acoes = useRef({ onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, onMenuDoToken });
   useEffect(() => {
-    acoes.current = { onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel };
+    acoes.current = { onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, onMenuDoToken };
   });
 
   // Ouvintes do ponteiro, criados uma vez: leem a cena e as funções por referência. Antes dependiam da cena
@@ -311,6 +315,8 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
       x >= item.x && x < item.x + item.tamanho && y >= item.y && y < item.y + item.tamanho);
     const dentro = (x: number, y: number) => dentroDoLimite(x, y, 1);
     const descer = (evento: PointerEvent) => {
+      // Só o botão principal arrasta e seleciona; o direito abre o menu do token (item 6).
+      if (evento.button !== 0) return;
       const ponto = celula(evento.clientX, evento.clientY);
       const token = tokenEm(ponto.x, ponto.y);
       // Token que a pessoa controla: arrastar já move (clique sem arrastar só seleciona). Os outros: arrastar
@@ -372,6 +378,14 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
       inicio = null;
     };
     const tecla = (evento: KeyboardEvent) => { if (evento.key === "Escape") cancelar(); };
+    const menu = (evento: MouseEvent) => {
+      const abrir = acoes.current.onMenuDoToken;
+      if (!abrir) return;
+      evento.preventDefault();
+      const ponto = celula(evento.clientX, evento.clientY);
+      const token = tokenEm(ponto.x, ponto.y);
+      if (token) abrir(token.id, { x: evento.clientX, y: evento.clientY });
+    };
     const ping = (evento: MouseEvent) => {
       const ponto = celula(evento.clientX, evento.clientY);
       if (dentro(ponto.x, ponto.y)) acoes.current.onPing?.(ponto.x, ponto.y);
@@ -391,12 +405,14 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
     canvas.addEventListener("pointerup", soltar);
     canvas.addEventListener("pointercancel", cancelar);
     canvas.addEventListener("dblclick", ping);
+    canvas.addEventListener("contextmenu", menu);
     window.addEventListener("keydown", tecla);
     canvas.addEventListener("wheel", roda, { passive: false });
     return () => {
       canvas.removeEventListener("pointerdown", descer);
       canvas.removeEventListener("pointermove", mover);
       canvas.removeEventListener("pointerup", soltar);
+      canvas.removeEventListener("contextmenu", menu);
       canvas.removeEventListener("pointercancel", cancelar);
       canvas.removeEventListener("dblclick", ping);
       window.removeEventListener("keydown", tecla);
@@ -418,11 +434,15 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   }
 
   return <div className="room-canvas">
-    <div className="room-canvas__controls" aria-label="Controles do mapa">
-      <button type="button" onClick={() => ampliar(1 / 1.2)} aria-label="Reduzir mapa">−</button>
-      <span aria-live="polite">{Math.round(escala * 100)}%</span>
-      <button type="button" onClick={() => ampliar(1.2)} aria-label="Ampliar mapa">+</button>
-      <button type="button" onClick={enquadrarMapa}>Centralizar</button>
+    {/* Controle de zoom compacto, no visual das sobreposições da Sala (melhorias-da-sala, item 2). */}
+    <div className="room-canvas__controls" role="group" aria-label="Controles do mapa">
+      <button type="button" onClick={() => ampliar(1 / 1.2)} aria-label="Reduzir mapa" title="Reduzir mapa">−</button>
+      <span className="room-canvas__zoom" aria-live="polite">{Math.round(escala * 100)}%</span>
+      <button type="button" onClick={() => ampliar(1.2)} aria-label="Ampliar mapa" title="Ampliar mapa">+</button>
+      <span className="room-canvas__divisor" aria-hidden="true" />
+      <button type="button" onClick={enquadrarMapa} aria-label="Centralizar" title="Centralizar">
+        <Glyph name="crosshair" size={16} />
+      </button>
     </div>
     <div ref={mount} className="room-canvas__surface" role="img"
       onDragOver={onSoltarPersonagem ? (evento: DragEvent<HTMLDivElement>) => {

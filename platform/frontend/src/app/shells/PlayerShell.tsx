@@ -83,7 +83,7 @@ export function PlayerShell({ mesa, view, onNavigate, onSignOut, api, userId, on
       ) : view === "cards" ? (
         <PlayerLibrary api={api} mesaId={mesa.id} />
       ) : view === "room" ? (
-        <RoomView api={api} mesaId={mesa.id} userId={userId} realtime={realtime} narrator={false} onAbrirFicha={() => onNavigate("character")} />
+        <RoomView api={api} mesaId={mesa.id} userId={userId} realtime={realtime} narrator={false} />
       ) : view === "overview" ? (
         <div className="screen-content">
           <section className="panel panel--wide workspace-status">

@@ -23,9 +23,6 @@ from cursed_platform.persistence import CamadaCenaRegistro, CenaRegistro, Person
 from cursed_platform.repositories import MesaRepository
 
 
-MODULO = "sala"
-
-
 class RegraSala(ValueError):
     """Pedido inválido para a sala (422)."""
 
@@ -42,10 +39,6 @@ class SemControle(PermissionError):
 class Leitor:
     usuario_id: str
     narrador: bool
-
-
-def modulo_ativo(session: Session, mesa_id: str) -> bool:
-    return MODULO in MesaRepository(session).modulos_ativos(mesa_id)
 
 
 # ---------------------------------------------------------------- eventos
@@ -141,7 +134,6 @@ def snapshot(session: Session, mesa_id: str, leitor: Leitor, cena_id: str | None
     if leitor.narrador and cena_id:
         alvo = next((c for c in cenas if c.id == cena_id), None)
     resultado: dict[str, Any] = {
-        "modulo_ativo": modulo_ativo(session, mesa_id),
         "cenas": [{"id": c.id, "nome": c.nome, "ativa": c.ativa} for c in cenas] if leitor.narrador else [],
         "cena": None,
     }
@@ -250,6 +242,29 @@ def criar_token(
     )
     session.add(token)
     session.flush()
+    _, _, visivel = _contexto_token(session, token)
+    versao = _avancar_cena(session, cena)
+    emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=visivel)
+    return token
+
+
+TAMANHO_MAXIMO_DO_TOKEN = 10
+
+
+def redimensionar_token(session: Session, token: TokenRegistro, *, tamanho: int, versao_esperada: int) -> TokenRegistro:
+    """Quantas casas o token ocupa, sempre quadrado (tamanho × tamanho), a partir do canto de cima à esquerda.
+    Só o Narrador (conferido pela rota); melhorias-da-sala, item 6."""
+    if not 1 <= tamanho <= TAMANHO_MAXIMO_DO_TOKEN:
+        raise RegraSala(f"O token ocupa de 1×1 a {TAMANHO_MAXIMO_DO_TOKEN}×{TAMANHO_MAXIMO_DO_TOKEN} casas.")
+    cena = session.get(CenaRegistro, token.cena_id)
+    _dentro(cena, token.x, token.y, tamanho)
+    resultado = session.execute(
+        update(TokenRegistro).where(TokenRegistro.id == token.id, TokenRegistro.versao == versao_esperada)
+        .values(tamanho=tamanho, versao=TokenRegistro.versao + 1).execution_options(synchronize_session=False)
+    )
+    if resultado.rowcount != 1:
+        raise ConflitoSala("O token foi alterado por outra pessoa.")
+    session.refresh(token)
     _, _, visivel = _contexto_token(session, token)
     versao = _avancar_cena(session, cena)
     emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=visivel)

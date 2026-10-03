@@ -1,20 +1,21 @@
-"""Sala e grid: módulos da mesa, snapshot autorizado e comandos autoritativos sobre tokens."""
+"""Sala e grid: snapshot autorizado e comandos autoritativos sobre tokens. A Sala está sempre ligada
+em toda mesa (melhorias-da-sala, item 9): não há módulo a ativar."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, sala
+from cursed_platform import auditoria, rolagens, sala
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
-    CriarCenaRequest, AreaDoMapaRequest, CriarTokenRequest, PermissoesEmLoteRequest, PermitirMovimentoRequest, ModulosMesa, MoverTokenRequest, SalaSnapshot, TokenSala,
-    VisibilidadeTokenRequest,
+    CriarCenaRequest, AreaDoMapaRequest, CriarTokenRequest, PermissoesEmLoteRequest, PermitirMovimentoRequest, MoverTokenRequest, SalaSnapshot, TokenSala,
+    RolagemDeDados, RolarDadosRequest, TamanhoTokenRequest, VisibilidadeTokenRequest,
 )
 from cursed_platform.persistence import CenaRegistro, PersonagemRegistro, TokenRegistro
-from cursed_platform.repositories import MesaRepository
 
 from .assets import AtivoResposta, ler_imagem
+from .live_sheet import _personagem as personagem_legivel, valores_da_ficha
 from .auth import Ator, get_actor
 from .dependencies import get_correlacao, get_session
 
@@ -43,10 +44,6 @@ def _exigir_narrador(session: Session, mesa_id: str, ator: Ator) -> None:
     if not decisao.permitido:
         _negar(decisao)
 
-
-def _exigir_modulo(session: Session, mesa_id: str) -> None:
-    if not sala.modulo_ativo(session, mesa_id):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="O módulo Sala está desativado nesta mesa.")
 
 
 def _cena(session: Session, mesa_id: str, cena_id: str) -> CenaRegistro:
@@ -84,37 +81,6 @@ def _token_resposta(session: Session, token: TokenRegistro, leitor: sala.Leitor)
 
 
 
-# ---------------------------------------------------------------- módulos
-
-@router.get("/mesas/{mesa_id}/modulos", response_model=ModulosMesa)
-def ler_modulos(mesa_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session)) -> ModulosMesa:
-    _leitor(session, mesa_id, ator)
-    return ModulosMesa(sala=sala.modulo_ativo(session, mesa_id))
-
-
-@router.put("/mesas/{mesa_id}/modulos", response_model=ModulosMesa)
-def configurar_modulos(
-    mesa_id: str, pedido: ModulosMesa,
-    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
-    correlacao: str = Depends(get_correlacao),
-) -> ModulosMesa:
-    decisao = Autorizador(session).decidir(Acao.CONFIGURAR_MODULO, usuario_id=ator.usuario_id, mesa_id=mesa_id)
-    if not decisao.permitido:
-        _negar(decisao)
-    antes = sala.modulo_ativo(session, mesa_id)
-    if antes != pedido.sala:
-        MesaRepository(session).configurar_modulo(mesa_id, sala.MODULO, pedido.sala)
-        auditoria.registrar(
-            session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="modulo.configurado",
-            relevancia="organizacional", resumo=f"Módulo Sala {'ativado' if pedido.sala else 'desativado'}",
-            mudancas=[{"campo": "modulos.sala", "antes": antes, "depois": pedido.sala, "completo": True}],
-            correlacao_id=correlacao,
-        )
-        sala.emitir(session, mesa_id, "sala.atualizada", {"motivo": "modulo"}, publico=True)
-        session.commit()
-    return ModulosMesa(sala=pedido.sala)
-
-
 # --------------------------------------------------------------- snapshot
 
 @router.get("/mesas/{mesa_id}/sala", response_model=SalaSnapshot)
@@ -136,7 +102,6 @@ def criar_cena(
     correlacao: str = Depends(get_correlacao),
 ) -> SalaSnapshot:
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     try:
         cena = sala.criar_cena(session, mesa_id, **pedido.model_dump())
     except ERROS as erro:
@@ -157,7 +122,6 @@ def ativar_cena(
     correlacao: str = Depends(get_correlacao),
 ) -> SalaSnapshot:
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     cena = _cena(session, mesa_id, cena_id)
     sala.ativar_cena(session, cena)
     auditoria.registrar(
@@ -177,7 +141,6 @@ def redimensionar_mapa(
 ) -> SalaSnapshot:
     """Quantas casas o mapa da cena ocupa no grid; só o Narrador (experiencia-da-mesa, item 12)."""
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     cena = _cena(session, mesa_id, cena_id)
     try:
         sala.redimensionar_mapa(session, cena, pedido.colunas, pedido.linhas)
@@ -199,7 +162,6 @@ def criar_token(
     correlacao: str = Depends(get_correlacao),
 ) -> TokenSala:
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     cena = _cena(session, mesa_id, cena_id)
     try:
         token = sala.criar_token(session, cena, **pedido.model_dump())
@@ -226,7 +188,6 @@ def retrato_do_token(
     ficha. Sem retrato enviado, 404, e o cliente usa a arte padrão do tipo.
     """
     leitor = _leitor(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     token = _token(session, mesa_id, token_id, leitor)
     personagem = session.get(PersonagemRegistro, token.personagem_id) if token.personagem_id else None
     caminho = ((personagem.ficha or {}).get("personagem") or {}).get("imagem_ativo") if personagem else None
@@ -242,7 +203,6 @@ def mover_token(
 ) -> TokenSala:
     """Movimentos não geram evento de auditoria: são estado tático frequente, não decisões a revisar."""
     leitor = _leitor(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     token = _token(session, mesa_id, token_id, leitor)
     try:
         sala.mover_token(session, token, leitor, pedido.x, pedido.y, pedido.versao_esperada)
@@ -259,7 +219,6 @@ def alterar_visibilidade(
     correlacao: str = Depends(get_correlacao),
 ) -> TokenSala:
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     leitor = sala.Leitor(ator.usuario_id, True)
     token = _token(session, mesa_id, token_id, leitor)
     try:
@@ -276,6 +235,29 @@ def alterar_visibilidade(
     return _token_resposta(session, token, leitor)
 
 
+@router.post("/mesas/{mesa_id}/sala/tokens/{token_id}/tamanho", response_model=TokenSala)
+def redimensionar_token(
+    mesa_id: str, token_id: str, pedido: TamanhoTokenRequest,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
+) -> TokenSala:
+    """Muda quantas casas o token ocupa, sempre quadrado (melhorias-da-sala, item 6). Só o Narrador."""
+    _exigir_narrador(session, mesa_id, ator)
+    leitor = sala.Leitor(ator.usuario_id, True)
+    token = _token(session, mesa_id, token_id, leitor)
+    try:
+        sala.redimensionar_token(session, token, tamanho=pedido.tamanho, versao_esperada=pedido.versao_esperada)
+    except ERROS as erro:
+        raise _erro(erro, session) from None
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="token.tamanho_alterado",
+        relevancia="narrativa", alvo_tipo="token", alvo_id=token.id, visibilidade="narrador",
+        resumo=f"Token {token.rotulo} passou a ocupar {token.tamanho}×{token.tamanho} casas"[:500], correlacao_id=correlacao,
+    )
+    session.commit()
+    return _token_resposta(session, token, leitor)
+
+
 @router.post("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento-permitido", response_model=TokenSala)
 def permitir_movimento(
     mesa_id: str, token_id: str, pedido: PermitirMovimentoRequest,
@@ -284,7 +266,6 @@ def permitir_movimento(
 ) -> TokenSala:
     """Libera ou bloqueia o movimento do token pelos jogadores; só o Narrador (experiencia-da-mesa, item 13)."""
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     leitor = sala.Leitor(ator.usuario_id, True)
     token = _token(session, mesa_id, token_id, leitor)
     try:
@@ -311,7 +292,6 @@ def permissoes_em_lote(
 ) -> SalaSnapshot:
     """Bloquear todos, só personagens principais ou liberar todos; só o Narrador (experiencia-da-mesa, item 13)."""
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     cena = _cena(session, mesa_id, cena_id)
     try:
         sala.permissoes_em_lote(session, cena, pedido.modo)
@@ -333,7 +313,6 @@ def remover_token(
     correlacao: str = Depends(get_correlacao),
 ) -> None:
     _exigir_narrador(session, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     token = _token(session, mesa_id, token_id, sala.Leitor(ator.usuario_id, True))
     rotulo, _, visivel = token.rotulo, *sala._contexto_token(session, token)[1:]
     try:
@@ -346,3 +325,66 @@ def remover_token(
         resumo=f"Token removido: {rotulo}"[:500], correlacao_id=correlacao,
     )
     session.commit()
+
+
+# --------------------------------------------------------------- rolagens de dados
+
+@router.post("/mesas/{mesa_id}/sala/rolagens", response_model=RolagemDeDados, status_code=status.HTTP_201_CREATED)
+def rolar_dados(
+    mesa_id: str, comando: RolarDadosRequest,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+) -> RolagemDeDados:
+    """Sorteia a rolagem da aba Dados no servidor, guarda e avisa a mesa (melhorias-da-sala, item 3)."""
+    leitor = _leitor(session, mesa_id, ator)
+    dados: dict[int, int] = {}
+    for item in comando.dados:
+        dados[item.faces] = dados.get(item.faces, 0) + item.quantidade
+    termos = _termos_da_ficha(session, mesa_id, ator, comando)
+    try:
+        rolagem = rolagens.rolar(session, mesa_id, ator.usuario_id, dados, comando.modificador,
+                                 oculta=comando.oculta, narrador=leitor.narrador,
+                                 personagem_id=comando.personagem_id, termos=termos)
+    except rolagens.OcultarSoNarrador as erro:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(erro)) from erro
+    except rolagens.RolagemInvalida as erro:
+        raise _erro(erro, session) from erro
+    session.commit()
+    session.refresh(rolagem)
+    return RolagemDeDados(**rolagens.para_resposta(rolagem))
+
+
+def _termos_da_ficha(session: Session, mesa_id: str, ator: Ator, comando: RolarDadosRequest) -> list[dict]:
+    """Atributo e Perícia da ficha, com o total que o servidor calcula (item 8). Quem não lê a ficha não rola por
+    ela: o jogador só pelas próprias; o Narrador por qualquer uma da mesa."""
+    escolhidos = [(chave, grupo) for chave, grupo in ((comando.atributo, "atributo"), (comando.pericia, "pericia")) if chave]
+    if comando.personagem_id is None:
+        if escolhidos:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                                detail="Escolha a ficha para somar Atributo ou Perícia.")
+        return []
+    personagem = personagem_legivel(session, mesa_id, comando.personagem_id, ator)
+    valores = {v.chave: v for v in valores_da_ficha(session, mesa_id, personagem)}
+    termos = []
+    for chave, grupo in escolhidos:
+        valor = valores.get(chave)
+        if valor is None or valor.grupo != grupo:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                                detail=f"{'Atributo' if grupo == 'atributo' else 'Perícia'} inexistente nesta ficha.")
+        if valor.total is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                                detail=f"{valor.rotulo} não tem valor calculável nesta ficha.")
+        termos.append({"chave": chave, "rotulo": valor.rotulo, "valor": int(valor.total)})
+    return termos
+
+
+@router.get("/mesas/{mesa_id}/sala/rolagens", response_model=list[RolagemDeDados])
+def listar_rolagens(
+    mesa_id: str, depois: int | None = Query(default=None, ge=0),
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+) -> list[RolagemDeDados]:
+    """Rolagens da mesa depois do id dado, em ordem (até 50, as mais recentes). Só para quem é da mesa;
+    as rolagens ocultas do Narrador só ele vê."""
+    leitor = _leitor(session, mesa_id, ator)
+    return [RolagemDeDados(**rolagens.para_resposta(r))
+            for r in rolagens.listar(session, mesa_id, depois, narrador=leitor.narrador)]

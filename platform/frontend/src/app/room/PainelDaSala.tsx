@@ -32,7 +32,7 @@ export function MusicaReservada() {
 }
 
 /**
- * Painel direito da Sala com abas fixas no topo (Cena, Chat, Fichas, Bolsa, Cartas, Música) e o botão de recolher.
+ * Painel direito da Sala com abas fixas no topo (Cena, Dados, Chat, Fichas, Bolsa, Cartas, Música) e o botão de recolher.
  * Com o painel estreito, as abas mostram só o ícone; o nome continua para leitores de tela e como dica.
  * Segue o padrão de abas: setas, Home e End trocam de aba e levam o foco junto.
  */

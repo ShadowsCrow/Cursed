@@ -2,6 +2,7 @@ import type { DragEvent } from "react";
 
 import type { components } from "../../api/generated/schema";
 import type { ApiClient } from "../characters/types";
+import { Glyph } from "../../ui/Display";
 import { useRetrato } from "../plataforma/imagens";
 import { ARRASTE_DE_PERSONAGEM } from "./arrastes";
 import { SecaoRetratil } from "./SecaoRetratil";
@@ -11,7 +12,7 @@ type Personagem = components["schemas"]["PersonagemResumo"];
 const ROTULO_DO_TIPO: Record<Personagem["tipo"], string> = { personagem: "Personagem", npc: "NPC", monstro: "Monstro" };
 
 function Linha({ api, mesaId, personagem, naCena, comTipo, onColocar }: {
-  api: ApiClient; mesaId: string; personagem: Personagem; naCena: boolean; comTipo: boolean; onColocar: () => void;
+  api: ApiClient; mesaId: string; personagem: Personagem; naCena: boolean; comTipo: boolean; onColocar: (oculto?: boolean) => void;
 }) {
   const retrato = useRetrato(api, mesaId, personagem.retrato_objeto, personagem.tipo, true);
   function iniciar(evento: DragEvent<HTMLLIElement>) {
@@ -30,7 +31,11 @@ function Linha({ api, mesaId, personagem, naCena, comTipo, onColocar }: {
           title="A ficha está oculta dos jogadores; o token aparece com o nome público">ficha oculta</span>}
         {naCena && <span className="personagens-cena__marca">na cena</span>}
       </span>
-      <button type="button" className="personagens-cena__colocar" aria-label={`Colocar ${personagem.nome}`} onClick={onColocar}>Colocar</button>
+      <button type="button" className="personagens-cena__colocar" aria-label={`Colocar ${personagem.nome}`} onClick={() => onColocar()}>Colocar</button>
+      {/* Já oculto, token a token, sem mexer na chave (melhorias-da-sala, item 4). */}
+      <button type="button" className="personagens-cena__colocar personagens-cena__colocar--oculto"
+        aria-label={`Colocar ${personagem.nome} oculto dos jogadores`} title="Colocar oculto dos jogadores"
+        onClick={() => onColocar(true)}><Glyph name="eye-off" size={15} /></button>
     </li>
   );
 }
@@ -38,7 +43,7 @@ function Linha({ api, mesaId, personagem, naCena, comTipo, onColocar }: {
 /** Uma lista de personagens para o Narrador pôr na cena, arrastando o retrato ou com "Colocar". */
 function ListaDePersonagens({ api, mesaId, id, titulo, vazio, personagens, naCena, comTipo, onColocar }: {
   api: ApiClient; mesaId: string; id: string; titulo: string; vazio: string; personagens: readonly Personagem[];
-  naCena: ReadonlySet<string>; comTipo: boolean; onColocar: (personagem: Personagem) => void;
+  naCena: ReadonlySet<string>; comTipo: boolean; onColocar: (personagem: Personagem, oculto?: boolean) => void;
 }) {
   return (
     <SecaoRetratil id={id} titulo={titulo} contagem={personagens.length} interna>
@@ -47,7 +52,7 @@ function ListaDePersonagens({ api, mesaId, id, titulo, vazio, personagens, naCen
         : <ul className="personagens-cena__lista">
           {personagens.map((p) => (
             <Linha key={p.id} api={api} mesaId={mesaId} personagem={p} naCena={naCena.has(p.id)} comTipo={comTipo}
-              onColocar={() => onColocar(p)} />
+              onColocar={(oculto) => onColocar(p, oculto)} />
           ))}
         </ul>}
     </SecaoRetratil>
@@ -58,21 +63,16 @@ function ListaDePersonagens({ api, mesaId, id, titulo, vazio, personagens, naCen
  * As listas do Narrador na seção "Tokens" da aba Cena (experiencia-da-mesa, itens 9, 10 e 15): personagens dos
  * jogadores e, separados, NPCs e monstros (os sem dono). "Colocar" usa a casa livre mais próxima do centro da vista.
  */
-export function PersonagensDosJogadores({ api, mesaId, personagens, naCena, colocarOculto, onColocarOculto, onColocar }: {
+export function PersonagensDosJogadores({ api, mesaId, personagens, naCena, onColocar }: {
   api: ApiClient; mesaId: string; personagens: readonly Personagem[]; naCena: ReadonlySet<string>;
-  colocarOculto: boolean; onColocarOculto: (oculto: boolean) => void;
-  onColocar: (personagem: Personagem) => void;
+  /** `oculto` vem do botão "Colocar oculto"; "Colocar" e o arraste põem o token visível. */
+  onColocar: (personagem: Personagem, oculto?: boolean) => void;
 }) {
   return (
     <div className="personagens-cena__grupos">
-      <p className="room-view__hint">Arraste um retrato para o grid, ou use “Colocar” para pô-lo perto do centro da vista.</p>
-      {/* Quem decide se o jogador vê o token é o Narrador, ao colocar (item 12); depois, pelo olho da lista de tokens. */}
-      <label className="chave personagens-cena__oculto" title="Ligada, os tokens entram ocultos dos jogadores">
-        <input type="checkbox" role="switch" className="chave__entrada" checked={colocarOculto}
-          onChange={(e) => onColocarOculto(e.target.checked)} aria-label="Colocar oculto dos jogadores" />
-        <span className="chave__trilho" aria-hidden="true"><span className="chave__botao" /></span>
-        <span className="chave__rotulo chave__rotulo--texto" aria-hidden="true">Colocar oculto dos jogadores</span>
-      </label>
+      <p className="room-view__hint">Arraste um retrato para o grid, ou use “Colocar” para pô-lo perto do centro da vista; o olho cortado coloca já oculto dos jogadores.</p>
+      {/* Quem decide se o jogador vê o token é o Narrador: ao colocar, pelo olho cortado de cada personagem
+          (a chave geral saiu em melhorias-da-sala, item 4); depois, pelo olho da lista de tokens. */}
       <ListaDePersonagens api={api} mesaId={mesaId} id="jogadores" titulo="Personagens dos jogadores" comTipo={false}
         vazio="Nenhum jogador tem personagem nesta mesa ainda." personagens={personagens.filter((p) => p.proprietario_id)}
         naCena={naCena} onColocar={onColocar} />

@@ -49,6 +49,10 @@ ESPERADO = {
        if nome.startswith("cartas-arte-") and (preparar_arte.ORIGEM / f"{nome}.png").exists()},
     **{nome: (largura, None) for nome, largura in preparar_arte.PECAS_DO_EDITOR.items()
        if (preparar_arte.ORIGEM / f"{nome}.png").exists()},
+    # Dados do rolador da Sala (melhorias-da-sala): opcionais por matriz.
+    **{f"dados-{dado}": (preparar_arte.LADO_DO_DADO,) * 2 for dado in preparar_arte.DADOS_DA_SALA
+       if (preparar_arte.ORIGEM / f"dados-{dado}.png").exists()},
+    **({"dados-pedra": (preparar_arte.LADO_DA_PEDRA,) * 2} if (preparar_arte.ORIGEM / "dados-pedra.png").exists() else {}),
     # Couro e peças da bolsa do Inventário (reformular-visual-da-ficha): opcionais por matriz.
     **({"inventario-couro": (preparar_arte.LADO_TEXTURA, preparar_arte.LADO_TEXTURA)}
        if (preparar_arte.ORIGEM / "inventario-couro.png").exists() else {}),
@@ -272,6 +276,38 @@ class ArteDasCartasTest(unittest.TestCase):
                 padrao = (800, 800) if caminho.stem.startswith("cartas-arte-") else (1024, 304)
                 self.assertEqual(imagem.size, tamanhos.get(caminho.stem, padrao))
 
+
+    def test_dados_da_sala_sem_fundo_e_centralizados(self):
+        """melhorias-da-sala, item 1: cada dado perde o pergaminho e fica centrado num quadrado transparente."""
+        # O d6 vem sobre pergaminho liso; o d100, já com fundo transparente.
+        d6 = Image.new("RGB", (1024, 1024), (233, 220, 192))
+        ImageDraw.Draw(d6).polygon(((512, 200), (812, 700), (212, 700)), fill=(20, 30, 60))
+        d6.save(self.pasta / "dados-d6.png")
+        d100 = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
+        ImageDraw.Draw(d100).polygon(((150, 420), (874, 420), (874, 620), (150, 620)), fill=(20, 30, 60, 255))
+        d100.save(self.pasta / "dados-d100.png")
+        saidas = preparar_arte.preparar_dados_da_sala(self.pasta, self.pasta / "arte")
+        self.assertEqual({s.stem for s in saidas}, {"dados-d6", "dados-d100"})
+        for caminho in saidas:
+            with Image.open(caminho) as imagem:
+                self.assertEqual(imagem.mode, "RGBA")
+                self.assertEqual(imagem.size, (preparar_arte.LADO_DO_DADO,) * 2)
+                lado = preparar_arte.LADO_DO_DADO
+                self.assertGreater(imagem.getpixel((lado // 2, lado // 2 + 10))[3], 250)
+                self.assertLess(imagem.getpixel((0, 0))[3], 10)
+                # O lado maior do dado ocupa o quadrado inteiro; o menor fica centrado.
+                caixa = imagem.getchannel("A").point(lambda v: 255 if v >= 128 else 0).getbbox()
+                self.assertTrue(caixa[2] - caixa[0] >= lado - 4 or caixa[3] - caixa[1] >= lado - 4)
+                self.assertAlmostEqual((caixa[1] + caixa[3]) / 2, lado / 2, delta=3)
+
+    def test_pedra_dos_dados_quadrada_e_opaca(self):
+        """melhorias-da-sala, item 3: a pedra das faces vira uma textura quadrada de 512 px, sem transparência."""
+        Image.new("RGB", (1254, 1254), (20, 30, 90)).save(self.pasta / "dados-pedra.png")
+        saidas = preparar_arte.preparar_dados_da_sala(self.pasta, self.pasta / "arte")
+        self.assertEqual([s.stem for s in saidas], ["dados-pedra"])
+        with Image.open(saidas[0]) as imagem:
+            self.assertEqual(imagem.size, (preparar_arte.LADO_DA_PEDRA,) * 2)
+            self.assertEqual(imagem.mode, "RGB")
 
     def test_pecas_do_editor_sem_fundo_e_recortadas(self):
         """simplificar-criacao-de-cartas, D9: marcador e selo sobre pergaminho liso perdem o fundo."""

@@ -42,18 +42,28 @@
 .room-view__details ul { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: 0; }
 .room-view__details p { margin: 0; }
 
-/* Estados sem grid: carregando, erro e Sala desativada. */
+/* Estados sem grid: carregando e erro (a Sala é sempre ligada; melhorias-da-sala, item 9). */
 .room-view--aviso { place-items: center; padding: 2rem 1rem; }
-.room-view__desativada { display: grid; gap: .8rem; justify-items: start; max-width: 30rem; }
-.room-view__desativada h1 { margin: 0; font: 600 1.6rem/1.2 var(--font-display); }
-.room-view__desativada p { margin: 0; }
 
 /* Grid */
 .room-canvas { position: relative; width: 100%; min-width: 0; }
 .room-canvas__surface { height: min(65vh, 650px); min-height: 300px; width: 100%; overflow: hidden; border: 1px solid var(--border, #716a80); border-radius: .75rem; touch-action: none; }
 .room-canvas__surface canvas { display: block; }
-.room-canvas__controls { position: absolute; z-index: 1; right: .75rem; top: .75rem; display: flex; align-items: center; gap: .35rem; padding: .35rem; color: white; background: #191822ed; border-radius: .5rem; }
-.room-canvas__controls button { min-width: 2.5rem; min-height: 2.5rem; cursor: pointer; }
+/* Controle de zoom compacto, na moldura do nome da cena (melhorias-da-sala, item 2). */
+.room-canvas__controls {
+  position: absolute; z-index: 1; right: .75rem; top: .75rem; display: flex; align-items: center; gap: .1rem;
+  height: 2.25rem; padding: .2rem; color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: .6rem;
+  background: rgb(11 17 24 / .88); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgb(0 0 0 / .35);
+}
+.room-canvas__controls button {
+  display: grid; place-items: center; width: 1.75rem; height: 1.75rem; min-height: 0; padding: 0; cursor: pointer;
+  border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font: 600 1.05rem/1 var(--font-display);
+  transition: color var(--motion-fast), background var(--motion-fast);
+}
+.room-canvas__controls button:hover { color: var(--accent-strong); background: color-mix(in srgb, var(--border-ornate) 16%, transparent); }
+.room-canvas__zoom { min-width: 2.6rem; color: var(--text-muted); font-size: .72rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; text-align: center; }
+.room-canvas__divisor { width: 1px; height: 1.1rem; margin: 0 .15rem; background: color-mix(in srgb, var(--border-ornate) 35%, transparent); }
 .room-view .room-canvas { flex: 1; height: 100%; }
 .room-view .room-canvas__surface { height: 100%; min-height: 0; border: 0; border-radius: 0; }
 .room-view .room-canvas__controls { top: auto; bottom: .75rem; z-index: 2; }
@@ -196,13 +206,15 @@
 .personagens-cena { display: grid; gap: .5rem; }
 .personagens-cena h2 { margin: 0; font: 600 1.05rem/1.2 var(--font-display); }
 .personagens-cena__lista { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
-.personagens-cena__item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; align-items: center; gap: .6rem; padding: .35rem .5rem; border: 1px solid var(--border-subtle); border-radius: .5rem; background: rgb(255 255 255 / .02); cursor: grab; }
+.personagens-cena__item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto auto; align-items: center; gap: .6rem; padding: .35rem .5rem; border: 1px solid var(--border-subtle); border-radius: .5rem; background: rgb(255 255 255 / .02); cursor: grab; }
 .personagens-cena__item:active { cursor: grabbing; }
 .personagens-cena__retrato { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-ornate); }
 .personagens-cena__nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .personagens-cena__marca { padding: .1rem .45rem; border-radius: 999px; border: 1px solid var(--border-subtle); color: var(--quiet); font-size: .72rem; white-space: nowrap; }
 .personagens-cena__colocar { min-height: 1.9rem; padding: .25rem .65rem; border-radius: .4rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); background: none; color: var(--text); font-size: .78rem; font-weight: 700; }
 .personagens-cena__colocar:hover { border-color: var(--border-ornate); color: var(--accent-strong, var(--gold)); }
+/* "Colocar oculto" ao lado de "Colocar" (melhorias-da-sala, item 4): só o olho cortado, com o nome na dica. */
+.personagens-cena__colocar--oculto { display: grid; place-items: center; width: 1.9rem; padding: 0; color: var(--text-muted); }
 .personagens-cena__grupos { display: grid; gap: 1rem; }
 .personagens-cena__nome { display: grid; }
 .personagens-cena__tipo { color: var(--quiet); font-size: .72rem; font-weight: 600; }
@@ -254,8 +266,6 @@
 .tamanho-mapa__barra { width: 100%; accent-color: var(--gold); cursor: pointer; }
 .tamanho-mapa__barra:disabled { cursor: progress; opacity: .6; }
 
-/* Chave "Colocar oculto dos jogadores" (item 12) */
-.personagens-cena__oculto { justify-self: start; }
 .chave__rotulo--texto { font-size: .8rem; font-weight: 600; letter-spacing: 0; }
 
 /* Seções retráteis da aba Cena (item 14) */
@@ -299,3 +309,166 @@
 }
 .room-view .image-upload--miniatura .image-upload__remover:hover { border-color: var(--gold); }
 .room-view .image-upload--miniatura .image-upload__mensagem { position: static; max-width: none; margin: 0; font-size: .8rem; }
+
+/* ---------- Aba Dados: rolador de dados (melhorias-da-sala, item 1) ---------- */
+.rolador { display: grid; gap: .9rem; min-width: 0; }
+.rolador__visor {
+  display: grid; gap: .3rem; justify-items: end; padding: .6rem .8rem; min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-radius: .6rem;
+  background: linear-gradient(180deg, rgb(0 0 0 / .32), rgb(0 0 0 / .18));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent-strong) 10%, transparent);
+}
+.rolador__expressao { margin: 0; max-width: 100%; color: var(--text-muted); font-size: .85rem; font-variant-numeric: lining-nums tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.rolador__expressao[data-vazia] { color: var(--quiet); font-style: italic; }
+.rolador__resultado { display: flex; align-items: baseline; gap: .6rem; min-height: 2.6rem; }
+.rolador__total { color: var(--accent-strong); font: 600 2.6rem/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; animation: rolador-surge 260ms ease-out; }
+.rolador__total--vazio { color: var(--quiet); animation: none; }
+.rolador__rolada { order: -1; color: var(--quiet); font-size: .78rem; }
+@keyframes rolador-surge { from { opacity: 0; transform: translateY(-.35rem) scale(.92); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rolador__total { animation: none; } }
+
+.rolador__grupos { display: grid; gap: .3rem; justify-items: end; margin: 0; padding: 0; list-style: none; }
+.rolador__grupos li { display: flex; align-items: center; justify-content: flex-end; gap: .45rem; flex-wrap: wrap; }
+.rolador__grupo-tipo { color: var(--quiet); font-size: .75rem; font-weight: 700; }
+.rolador__valores { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .25rem; }
+.rolador__valor {
+  display: inline-grid; place-items: center; min-width: 1.6rem; height: 1.6rem; padding: 0 .3rem;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); border-radius: .35rem;
+  background: rgb(255 255 255 / .04); color: var(--text); font-size: .8rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums;
+}
+.rolador__valor--mod { border-style: dashed; color: var(--text-muted); }
+
+.rolador__dados { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr)); gap: .45rem; }
+.rolador__dado {
+  position: relative; display: grid; justify-items: center; gap: .1rem; padding: .35rem .25rem .4rem; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .55rem;
+  background: var(--surface-raised); color: var(--text-muted);
+  transition: color var(--motion-fast), border-color var(--motion-fast), transform var(--motion-fast);
+}
+.rolador__dado:hover:not(:disabled) { color: var(--accent-strong); border-color: var(--border-ornate); }
+.rolador__dado:active:not(:disabled) { transform: translateY(1px); }
+.rolador__dado:disabled { opacity: .4; cursor: default; }
+.rolador__silhueta, .rolador__pintura { width: 3.5rem; height: 3.5rem; }
+.rolador__silhueta { padding: .55rem; }
+.rolador__pintura { object-fit: contain; filter: drop-shadow(0 3px 4px rgb(0 0 0 / .55)); transition: transform var(--motion-fast); }
+.rolador__dado:hover:not(:disabled) .rolador__pintura { transform: rotate(-8deg) scale(1.06); }
+@media (prefers-reduced-motion: reduce) { .rolador__dado:hover:not(:disabled) .rolador__pintura { transform: none; } }
+.rolador__dado-nome { color: var(--text); font: 600 .95rem/1 var(--font-display); }
+.rolador__contagem {
+  position: absolute; top: -.4rem; right: -.35rem; min-width: 1.35rem; padding: .1rem .3rem; border-radius: 999px;
+  background: var(--accent-strong); color: var(--tinta-900, #111); font-size: .68rem; font-weight: 800; line-height: 1.1;
+}
+.rolador__dado:has(.rolador__contagem) { border-color: var(--border-ornate); color: var(--accent-strong); }
+
+.rolador__linha { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.rolador__modificador {
+  display: inline-flex; align-items: center; gap: .1rem; height: 2.4rem; padding: .2rem;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .2);
+}
+.rolador__modificador button {
+  display: grid; place-items: center; width: 1.9rem; height: 1.9rem; padding: 0; cursor: pointer;
+  border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font: 600 1.1rem/1 var(--font-display);
+}
+.rolador__modificador button:hover:not(:disabled) { color: var(--accent-strong); background: color-mix(in srgb, var(--border-ornate) 16%, transparent); }
+.rolador__modificador button:disabled { opacity: .35; cursor: default; }
+.rolador__modificador-valor { min-width: 2.2rem; color: var(--text); font-size: .9rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; text-align: center; }
+.rolador__limpar, .rolador__rolar { min-height: 2.4rem; padding: .4rem .9rem; }
+.rolador__rolar { flex: 1; min-width: 6rem; }
+.rolador__aviso { margin: -.3rem 0 0; color: var(--quiet); font-size: .75rem; }
+
+.rolador__historico { display: grid; gap: .5rem; padding-top: .8rem; border-top: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); }
+.rolador__historico-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.rolador__historico h3 { margin: 0; color: var(--quiet); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.rolador__historico ol { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.rolador__item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3rem .6rem; padding: .5rem .65rem; border-radius: .5rem; background: rgb(0 0 0 / .18); }
+.rolador__item > .rolador__item-autor, .rolador__item > .rolador__item-cabeca { grid-column: 1 / -1; }
+.rolador__item > .rolador__texto { justify-self: end; }
+.rolador__item-cabeca { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.rolador__item-expressao { color: var(--text-muted); font-size: .82rem; overflow-wrap: anywhere; }
+.rolador__item-total { color: var(--accent-strong); font: 600 1.25rem/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; }
+.rolador__item .rolador__grupos { justify-items: start; }
+.rolador__item .rolador__grupos li { justify-content: flex-start; }
+.rolador__item .rolador__valor { min-width: 1.35rem; height: 1.35rem; font-size: .72rem; }
+.rolador__texto { justify-self: start; padding: .15rem 0; border: 0; background: none; color: var(--accent); font-size: .75rem; font-weight: 700; cursor: pointer; }
+.rolador__texto:hover { color: var(--accent-strong); text-decoration: underline; }
+
+/* ---------- Item 3: opções da aba Dados e dados 3D no tabuleiro ---------- */
+.rolador__total--rolando { font-size: 1.4rem; color: var(--text-muted); font-style: italic; animation: rolador-pulso 900ms ease-in-out infinite alternate; }
+@keyframes rolador-pulso { from { opacity: .55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rolador__total--rolando { animation: none; } }
+.rolador__item-autor { color: var(--accent); font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.rolador__opcoes { margin: 0; min-width: 0; border: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .14); }
+.rolador__opcoes-titulo { display: flex; align-items: center; gap: .45rem; padding: .5rem .75rem; color: var(--text-muted); font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; list-style: none; }
+.rolador__opcoes-titulo::-webkit-details-marker { display: none; }
+.rolador__opcoes-titulo::before { content: ""; width: .45rem; height: .45rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform var(--motion-fast); }
+.rolador__opcoes[open] > .rolador__opcoes-titulo::before { transform: rotate(45deg); }
+.rolador__opcoes-titulo:hover { color: var(--text); }
+.rolador__opcoes-titulo:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: .55rem; }
+.rolador__opcoes-campos { display: grid; gap: .55rem; margin: 0; padding: 0 .75rem .7rem; border: 0; min-width: 0; }
+.rolador__opcao { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.rolador__opcao-nome { color: var(--text-muted); font-size: .8rem; font-weight: 700; }
+.rolador__segmentos { display: inline-flex; padding: .15rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .5rem; background: rgb(0 0 0 / .2); }
+.rolador__segmento { position: relative; cursor: pointer; }
+.rolador__segmento input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.rolador__segmento span { display: block; padding: .3rem .6rem; border-radius: .38rem; color: var(--text-muted); font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.rolador__segmento input:checked + span { background: color-mix(in srgb, var(--border-ornate) 28%, transparent); color: var(--accent-strong); }
+.rolador__segmento input:focus-visible + span { box-shadow: var(--focus-ring); }
+.rolador__chave { position: relative; cursor: pointer; }
+.rolador__chave input { position: absolute; opacity: 0; width: 2.4rem; height: 1.35rem; right: 0; margin: 0; cursor: pointer; }
+.rolador__chave-trilho { position: relative; flex: none; width: 2.4rem; height: 1.35rem; border-radius: 999px; background: rgb(255 255 255 / .12); border: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); transition: background var(--motion-fast); }
+.rolador__chave-trilho::after { content: ""; position: absolute; top: .12rem; left: .14rem; width: 1rem; height: 1rem; border-radius: 50%; background: var(--text-muted); transition: transform var(--motion-fast), background var(--motion-fast); }
+.rolador__chave input:checked + .rolador__chave-trilho { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.rolador__chave input:checked + .rolador__chave-trilho::after { transform: translateX(1.02rem); background: var(--accent-strong); }
+.rolador__chave input:focus-visible + .rolador__chave-trilho { box-shadow: var(--focus-ring); }
+.rolador__opcoes .rolador__aviso { margin: 0; }
+
+/* Camada dos dados 3D: por cima do grid, fora do painel aberto, sem receber cliques. */
+.dados-no-tabuleiro { position: absolute; z-index: 2; inset: 0; pointer-events: none; transition: opacity 450ms ease; }
+.room-view--painel-aberto .dados-no-tabuleiro { right: var(--largura-painel, 22rem); }
+@media (max-width: 760px) { .room-view--painel-aberto .dados-no-tabuleiro { right: 0; } }
+.dados-no-tabuleiro canvas { display: block; pointer-events: none; }
+.dados-no-tabuleiro--sumindo { opacity: 0; }
+.rolador__erro { margin: 0; justify-self: stretch; color: var(--danger); font-size: .8rem; text-align: right; }
+.rolador__oculta { order: -2; padding: .05rem .45rem; border: 1px dashed color-mix(in srgb, var(--border-ornate) 50%, transparent); border-radius: 999px; color: var(--text-muted); font-size: .7rem; font-weight: 700; }
+
+/* Tamanho do token escolhido (melhorias-da-sala, item 6) */
+.tamanho-token { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .5rem .65rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .14); }
+.tamanho-token__titulo { color: var(--quiet); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.tamanho-token__controle { display: inline-flex; align-items: center; gap: .1rem; padding: .15rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .5rem; background: rgb(0 0 0 / .2); }
+.tamanho-token__controle button { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; padding: 0; border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font: 600 1.1rem/1 var(--font-display); cursor: pointer; }
+.tamanho-token__controle button:hover:not(:disabled) { color: var(--accent-strong); background: color-mix(in srgb, var(--border-ornate) 16%, transparent); }
+.tamanho-token__controle button:disabled { opacity: .35; cursor: default; }
+.tamanho-token__valor { min-width: 5.5rem; color: var(--text); font-size: .85rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; text-align: center; }
+
+/* Menu do botão direito sobre o token (item 6): flutua junto ao cursor, na moldura das sobreposições da Sala. */
+.menu-do-token { position: fixed; z-index: 30; display: grid; gap: .5rem; min-width: 15rem; padding: .55rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 55%, transparent); border-radius: .65rem; background: rgb(11 17 24 / .96); backdrop-filter: blur(8px); box-shadow: 0 12px 30px rgb(0 0 0 / .5); }
+.menu-do-token:focus-visible { outline: none; box-shadow: var(--focus-ring), 0 12px 30px rgb(0 0 0 / .5); }
+.menu-do-token__topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: 0 .1rem; }
+.menu-do-token__nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 1rem/1.2 var(--font-display); }
+.menu-do-token__fechar { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; padding: 0; border: 0; border-radius: .35rem; background: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; }
+.menu-do-token__fechar:hover { color: var(--text); background: rgb(255 255 255 / .06); }
+.menu-do-token__erro { margin: 0; color: var(--danger); font-size: .78rem; }
+
+/* Histórico das rolagens com barra de rolagem própria (melhorias-da-sala, item 7). Em tela larga e alta, o
+   histórico ocupa o espaço que sobra no painel e só ele rola; o visor, os dados e as opções ficam parados. */
+.rolador__lista { max-height: 20rem; overflow-y: auto; overscroll-behavior: contain; align-content: start; padding-right: .3rem;
+  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--border-ornate) 55%, transparent) transparent; }
+.rolador__lista:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: .4rem; }
+@media (min-width: 761px) and (min-height: 620px) {
+  .room-view__painel:has(.rolador) { display: flex; flex-direction: column; }
+  .room-view__painel:has(.rolador) .painel-sala__conteudo { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .rolador { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .rolador > * { flex: none; }
+  .rolador__historico { flex: 1 1 auto; min-height: 10rem; grid-template-rows: auto minmax(0, 1fr); }
+  .rolador__lista { max-height: none; min-height: 0; }
+}
+
+/* Rolar pela ficha (melhorias-da-sala, item 8): faixa de retratos compacta e Atributo + Perícia. */
+.fichas-painel__faixa--compacta .fichas-painel__retrato { width: 44px; height: 44px; }
+.fichas-painel__faixa--compacta .fichas-painel__seta { height: 2rem; font-size: 1.6rem; }
+.fichas-painel__sem-ficha { display: grid; place-items: center; color: var(--text-muted); background: rgb(0 0 0 / .25); }
+.fichas-painel__sem-ficha[aria-pressed="true"] { color: var(--accent-strong); }
+.rolador__ficha { display: grid; gap: .5rem; min-width: 0; }
+.rolador__ficha-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .45rem; }
+.rolador__seletor { display: grid; gap: .2rem; min-width: 0; color: var(--quiet); font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.rolador__seletor select { min-width: 0; width: 100%; min-height: 2.2rem; padding: .3rem .5rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .45rem; background: rgb(0 0 0 / .25); color: var(--text); font-size: .85rem; font-weight: 600; letter-spacing: 0; text-transform: none; }

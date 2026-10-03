@@ -366,6 +366,53 @@ def preparar_pecas_do_editor(origem: Path = ORIGEM, destino: Path = DESTINO) -> 
     return saidas
 
 
+# Dados do rolador da Sala (melhorias-da-sala, item 1), pedidos com fundo transparente. Se a matriz vier
+# sobre pergaminho liso, o fundo é removido. São recortados rente ao dado e centralizados num quadrado
+# transparente, para todos ocuparem o mesmo espaço.
+DADOS_DA_SALA = ("d4", "d6", "d8", "d10", "d12", "d20", "d100")
+LADO_DO_DADO = 192
+LADO_DA_PEDRA = 512
+
+
+def recortar_transparente(imagem: Image.Image) -> Image.Image | None:
+    """Recorte rente ao objeto pela transparência, quando a matriz já vem sem fundo (os quatro cantos transparentes)."""
+    if "A" not in imagem.getbands():
+        return None
+    alfa = imagem.getchannel("A")
+    largura, altura = alfa.size
+    if any(alfa.getpixel(ponto) > 16 for ponto in ((0, 0), (largura - 1, 0), (0, altura - 1), (largura - 1, altura - 1))):
+        return None
+    rgba = imagem.convert("RGBA")
+    caixa = alfa.point(lambda v: 255 if v >= 32 else 0).getbbox() or (0, 0, largura, altura)
+    return rgba.crop(caixa)
+
+
+def preparar_dados_da_sala(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    saidas: list[Path] = []
+    for dado in DADOS_DA_SALA:
+        matriz = origem / f"dados-{dado}.png"
+        if not matriz.exists():
+            continue
+        (destino / "sala").mkdir(parents=True, exist_ok=True)
+        with Image.open(matriz) as imagem:
+            objeto = recortar_transparente(imagem) or recortar_objeto(imagem)[0]
+        escala = LADO_DO_DADO / max(objeto.size)
+        reduzido = objeto.resize((max(1, round(objeto.width * escala)), max(1, round(objeto.height * escala))), Image.LANCZOS)
+        quadro = Image.new("RGBA", (LADO_DO_DADO, LADO_DO_DADO), (0, 0, 0, 0))
+        quadro.paste(reduzido, ((LADO_DO_DADO - reduzido.width) // 2, (LADO_DO_DADO - reduzido.height) // 2), reduzido)
+        caminho = destino / "sala" / f"dados-{dado}.webp"
+        quadro.save(caminho, "WEBP", quality=90, method=6)
+        saidas.append(caminho)
+    # Pedra das faces dos dados 3D (item 3): textura quadrada, desenhada recortada em cada face.
+    pedra = origem / "dados-pedra.png"
+    if pedra.exists():
+        (destino / "sala").mkdir(parents=True, exist_ok=True)
+        with Image.open(pedra) as imagem:
+            textura = imagem.convert("RGB").resize((LADO_DA_PEDRA, LADO_DA_PEDRA), Image.LANCZOS)
+        saidas.append(_salvar(textura, destino / "sala", "dados-pedra", qualidade=85))
+    return saidas
+
+
 def preparar_arte_das_cartas(origem: Path = ORIGEM, destino: Path = DESTINO, catalogo: Path = CATALOGO_DE_ITENS) -> list[Path]:
     """Gera as pinturas opcionais da aba Cartas cujas matrizes existirem em `origem`, e os medalhões das artes."""
     saidas = preparar_pinturas(artes_das_cartas(catalogo), origem, destino / "cartas")
@@ -742,6 +789,7 @@ def preparar(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
     saidas.extend(preparar_arte_das_cartas(origem, destino))
     saidas.extend(preparar_arte_do_inventario(origem, destino))
     saidas.extend(preparar_arte_da_navegacao(origem, destino))
+    saidas.extend(preparar_dados_da_sala(origem, destino))
     return saidas
 
 

@@ -837,3 +837,27 @@ class IconeEfeitoRegistro(Base):
     associacao: Mapped[str] = mapped_column(String(100), primary_key=True)
     objeto: Mapped[str] = mapped_column(String(500), nullable=False)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class RolagemRegistro(Base):
+    """Rolagem de dados da Sala, sorteada pelo servidor (melhorias-da-sala, item 3). O número cresce na ordem
+    das rolagens e serve de cursor para quem busca as novas."""
+
+    __tablename__ = "dice_rolls"
+    __table_args__ = (
+        CheckConstraint("modificador BETWEEN -99 AND 99", name="ck_dice_rolls_modificador"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="RESTRICT"), nullable=False, index=True)
+    autor_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    expressao: Mapped[str] = mapped_column(String(200), nullable=False)
+    grupos: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
+    modificador: Mapped[int] = mapped_column(Integer, nullable=False)
+    total: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Rolagem pela ficha (item 8): o personagem e as parcelas somadas da ficha, como [{chave, rotulo, valor}].
+    personagem_id: Mapped[str | None] = mapped_column(String(100))
+    termos: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+    # Rolagem oculta do Narrador: só ele a vê (melhorias-da-sala, item 5).
+    oculta: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

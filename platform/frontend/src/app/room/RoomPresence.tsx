@@ -119,6 +119,10 @@ export function RoomPresence({
         canal.on("broadcast", { event: "oferta.alterada" }, () => {
           if (ativo) void recarregarTrocas(queryClient, mesaId);
         });
+        // Rolagem nova na mesa (melhorias-da-sala, item 3): busca na hora, sem esperar a consulta periódica.
+        canal.on("broadcast", { event: "sala.rolagem" }, () => {
+          if (ativo) void queryClient.invalidateQueries({ queryKey: ["rolagens", mesaId] });
+        });
         canal.subscribe((status) => {
           if (!ativo) return;
           if (status === "SUBSCRIBED") {

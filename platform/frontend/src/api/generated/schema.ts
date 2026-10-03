@@ -590,24 +590,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/mesas/{mesa_id}/modulos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Ler Modulos */
-        get: operations["ler_modulos_mesas__mesa_id__modulos_get"];
-        /** Configurar Modulos */
-        put: operations["configurar_modulos_mesas__mesa_id__modulos_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/mesas/{mesa_id}/ofertas": {
         parameters: {
             query?: never;
@@ -1657,6 +1639,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/sala/rolagens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Rolagens
+         * @description Rolagens da mesa depois do id dado, em ordem (até 50, as mais recentes). Só para quem é da mesa;
+         *     as rolagens ocultas do Narrador só ele vê.
+         */
+        get: operations["listar_rolagens_mesas__mesa_id__sala_rolagens_get"];
+        put?: never;
+        /**
+         * Rolar Dados
+         * @description Sorteia a rolagem da aba Dados no servidor, guarda e avisa a mesa (melhorias-da-sala, item 3).
+         */
+        post: operations["rolar_dados_mesas__mesa_id__sala_rolagens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/sala/tokens/{token_id}": {
         parameters: {
             query?: never;
@@ -1731,6 +1738,26 @@ export interface paths {
         get: operations["retrato_do_token_mesas__mesa_id__sala_tokens__token_id__retrato_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/tokens/{token_id}/tamanho": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redimensionar Token
+         * @description Muda quantas casas o token ocupa, sempre quadrado (melhorias-da-sala, item 6). Só o Narrador.
+         */
+        post: operations["redimensionar_token_mesas__mesa_id__sala_tokens__token_id__tamanho_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3327,6 +3354,13 @@ export interface components {
             /** Versao */
             versao: number;
         };
+        /** GrupoDeDados */
+        GrupoDeDados: {
+            /** Faces */
+            faces: number;
+            /** Valores */
+            valores: number[];
+        };
         /** GrupoPersonalidadeResumo */
         GrupoPersonalidadeResumo: {
             /**
@@ -3697,14 +3731,6 @@ export interface components {
             contexto?: string | null;
             /** Valor */
             valor: number;
-        };
-        /** ModulosMesa */
-        ModulosMesa: {
-            /**
-             * Sala
-             * @default false
-             */
-            sala: boolean;
         };
         /**
          * MoedasRequest
@@ -4245,6 +4271,16 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** QuantidadeDeDados */
+        QuantidadeDeDados: {
+            /**
+             * Faces
+             * @description Tipo de dado: 4, 6, 8, 10, 12, 20 ou 100.
+             */
+            faces: number;
+            /** Quantidade */
+            quantidade: number;
+        };
         /** RacaCatalogoResumo */
         RacaCatalogoResumo: {
             /** @description Intervalo típico de altura da raça, na média. */
@@ -4391,6 +4427,66 @@ export interface components {
             /** Nome Publico */
             nome_publico?: string | null;
         };
+        /** RolagemDeDados */
+        RolagemDeDados: {
+            /** Autor Id */
+            autor_id: string;
+            /** Criado Em */
+            criado_em?: string | null;
+            /** Expressao */
+            expressao: string;
+            /** Grupos */
+            grupos: components["schemas"]["GrupoDeDados"][];
+            /** Id */
+            id: number;
+            /** Modificador */
+            modificador: number;
+            /**
+             * Oculta
+             * @default false
+             */
+            oculta: boolean;
+            /** Personagem Id */
+            personagem_id?: string | null;
+            /** Termos */
+            termos?: components["schemas"]["TermoDaRolagem"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * RolarDadosRequest
+         * @description Montagem da aba Dados: quantos dados de cada tipo e o modificador. O sorteio é do servidor.
+         */
+        RolarDadosRequest: {
+            /**
+             * Atributo
+             * @description Chave do atributo, ex.: atributo:destreza.
+             */
+            atributo?: string | null;
+            /** Dados */
+            dados: components["schemas"]["QuantidadeDeDados"][];
+            /**
+             * Modificador
+             * @default 0
+             */
+            modificador: number;
+            /**
+             * Oculta
+             * @description Rolagem oculta dos jogadores; só o Narrador pode pedir.
+             * @default false
+             */
+            oculta: boolean;
+            /**
+             * Pericia
+             * @description Chave da perícia, ex.: pericia:furtividade.
+             */
+            pericia?: string | null;
+            /**
+             * Personagem Id
+             * @description Rolagem pela ficha deste personagem.
+             */
+            personagem_id?: string | null;
+        };
         /** SalaSnapshot */
         SalaSnapshot: {
             cena?: components["schemas"]["CenaSala"] | null;
@@ -4399,8 +4495,6 @@ export interface components {
              * @description Somente para o Narrador.
              */
             cenas?: components["schemas"]["CenaResumoSala"][];
-            /** Modulo Ativo */
-            modulo_ativo: boolean;
         };
         /** SalvarRascunhoRequest */
         SalvarRascunhoRequest: {
@@ -4424,6 +4518,28 @@ export interface components {
             descricao: string;
             /** Efeito Id */
             efeito_id: string;
+            /** Valor */
+            valor: number;
+        };
+        /**
+         * TamanhoTokenRequest
+         * @description Casas que o token ocupa de cada lado (sempre quadrado): 1 a 10.
+         */
+        TamanhoTokenRequest: {
+            /** Tamanho */
+            tamanho: number;
+            /** Versao Esperada */
+            versao_esperada: number;
+        };
+        /**
+         * TermoDaRolagem
+         * @description Parcela somada da ficha, com o total calculado pelo servidor.
+         */
+        TermoDaRolagem: {
+            /** Chave */
+            chave: string;
+            /** Rotulo */
+            rotulo: string;
             /** Valor */
             valor: number;
         };
@@ -5828,72 +5944,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImagemResposta"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    ler_modulos_mesas__mesa_id__modulos_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                mesa_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModulosMesa"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    configurar_modulos_mesas__mesa_id__modulos_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                mesa_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModulosMesa"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModulosMesa"];
                 };
             };
             /** @description Validation Error */
@@ -8168,6 +8218,74 @@ export interface operations {
             };
         };
     };
+    listar_rolagens_mesas__mesa_id__sala_rolagens_get: {
+        parameters: {
+            query?: {
+                depois?: number | null;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolagemDeDados"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rolar_dados_mesas__mesa_id__sala_rolagens_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolarDadosRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RolagemDeDados"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     remover_token_mesas__mesa_id__sala_tokens__token_id__delete: {
         parameters: {
             query: {
@@ -8291,6 +8409,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AtivoResposta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redimensionar_token_mesas__mesa_id__sala_tokens__token_id__tamanho_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TamanhoTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenSala"];
                 };
             };
             /** @description Validation Error */

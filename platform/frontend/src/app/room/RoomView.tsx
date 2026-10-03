@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { components } from "../../api/generated/schema";
 import { extractErrorMessage, type ApiClient } from "../characters/types";
@@ -13,10 +13,21 @@ import { FichasDoPainel } from "./FichasDoPainel";
 import { abaValida, CHAVE_ABA_DO_PAINEL } from "./abasDoPainel";
 import { BolsaDoPainel } from "./BolsaDoPainel";
 import { ChatReservado, MusicaReservada, PainelDaSala } from "./PainelDaSala";
+import { RoladorDeDados } from "./RoladorDeDados";
+import { FaixaDeRetratos } from "./FaixaDeRetratos";
+import { useOpcoesDaFicha } from "./useOpcoesDaFicha";
+import { useRolador } from "./useRolador";
+import { useDadosNoTabuleiro } from "./useDadosNoTabuleiro";
+import {
+  CHAVE_ANIMACAO_DOS_DADOS, CHAVE_MOSTRAR_ROLAGENS, CHAVE_ROLAR_OCULTO, deServidor, rolarNoServidor, useRolagensDaMesa,
+  type MostrarRolagens,
+} from "./rolagensDaMesa";
+import { SEM_FICHA, type EscolhaDaFicha, type Montagem, type Rolagem } from "./dados";
 import { useRoomEphemera } from "./useRoomEphemera";
 import { casaLivre } from "./viewport";
 import { useMovimentoDeTokens } from "./useMovimentoDeTokens";
 import { PersonagensDosJogadores } from "./PersonagensDosJogadores";
+import { ControleDeTamanho, MenuDoToken } from "./MenuDoToken";
 import { TamanhoDoMapa } from "./TamanhoDoMapa";
 import { SecaoRetratil } from "./SecaoRetratil";
 import { useParticipantes, usePersonagens } from "../characters/api";
@@ -27,8 +38,6 @@ import { Glyph } from "../../ui/Display";
 import { usePreferenciaLocal, usePreferenciaNumerica, usePreferenciaTexto } from "../shells/usePreferenciaLocal";
 import "./room.css";
 
-/** Se os tokens que o Narrador põe na cena entram ocultos dos jogadores (item 12), lembrado neste navegador. */
-export const CHAVE_COLOCAR_OCULTO = "cursed:mesa:colocar-oculto";
 /** Chão e baús (menu retrátil embaixo do grid) aberto ou fechado neste navegador. */
 export const CHAVE_CHAO_ABERTO = "cursed:mesa:chao-aberto";
 /** Painel da Sala aberto ou fechado neste navegador; o padrão depende do papel. */
@@ -58,8 +67,13 @@ function reservaDoPainel(aberto: boolean, largura: number): number {
 
 type Token = components["schemas"]["TokenSala"];
 
+/** Preferência do sistema por menos movimento: a animação dos dados começa desligada (item 3). */
+function movimentoReduzido(): boolean {
+  return typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 /**
- * Sala de página única: o grid ocupa a área toda; o painel da Sala (abas Cena, Chat, Fichas e Cartas)
+ * Sala de página única: o grid ocupa a área toda; o painel da Sala (abas Cena, Dados, Chat, Fichas, Bolsa, Cartas e Música)
  * e o menu de chão e baús ficam por cima dele, nunca empilhados abaixo.
  */
 /** Para o Narrador, tudo sobre tokens fica numa seção retrátil "Tokens" (item 15); o jogador só tem a lista da cena. */
@@ -67,18 +81,14 @@ function SecaoComTokens({ narrator, children }: { narrator: boolean; children: R
   return narrator ? <SecaoRetratil id="tokens-grupo" titulo="Tokens">{children}</SecaoRetratil> : <>{children}</>;
 }
 
-export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha }: {
+export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   api: ApiClient; mesaId: string; userId: string; narrator: boolean; realtime?: RealtimeSession;
-  /** Atalho do jogador para Minha ficha quando a Sala está desativada. */
-  onAbrirFicha?: () => void;
 }) {
   const queryClient = useQueryClient();
   const [painelAberto, setPainelAberto] = usePreferenciaLocal(CHAVE_PAINEL_DA_CENA, narrator);
   const [abaGuardada, setAba] = usePreferenciaTexto(CHAVE_ABA_DO_PAINEL, "cena");
   const aba = abaValida(abaGuardada);
   const [chaoAberto, setChaoAberto] = usePreferenciaLocal(CHAVE_CHAO_ABERTO, false);
-  // O Narrador decide, ao colocar, se o jogador vê o token (item 12): a chave "Colocar oculto".
-  const [colocarOculto, setColocarOculto] = usePreferenciaLocal(CHAVE_COLOCAR_OCULTO, false);
   const [larguraGuardada, setLarguraGuardada] = usePreferenciaNumerica(CHAVE_LARGURA_PAINEL, LARGURA_PAINEL_PADRAO);
   // Durante o arraste a largura é só prévia visual; ao soltar, é confirmada e o mapa se reenquadra uma vez.
   const [previaLargura, setPreviaLargura] = useState<number | null>(null);
@@ -87,10 +97,42 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
   const [cenaEscolhida, setCenaEscolhida] = useState<string | null>(null);
   const [tokenEscolhido, setTokenEscolhido] = useState<string | null>(null);
   const [nomeCena, setNomeCena] = useState("");
+  // Opções da aba Dados (item 3), de cada pessoa e guardadas neste navegador.
+  const [mostrarGuardado, setMostrarRolagens] = usePreferenciaTexto(CHAVE_MOSTRAR_ROLAGENS, "todas");
+  const mostrarRolagens: MostrarRolagens = mostrarGuardado === "minhas" ? "minhas" : "todas";
+  const [animacaoDosDados, setAnimacaoDosDados] = usePreferenciaLocal(CHAVE_ANIMACAO_DOS_DADOS, !movimentoReduzido());
+  // Por padrão, as rolagens do Narrador saem ocultas dos jogadores; ele pode mostrar (item 5).
+  const [rolarOculto, setRolarOculto] = usePreferenciaLocal(CHAVE_ROLAR_OCULTO, true);
+  const dadosNoTabuleiro = useDadosNoTabuleiro();
+  // O rolador vive aqui, e não na aba, para a montagem e o histórico sobreviverem à troca de aba e ao recolher o painel.
+  // O sorteio é do servidor (item 3); com a animação ligada, o total só aparece quando os dados param.
+  // Rolar pela ficha (item 8): o servidor soma Atributo e Perícia da ficha escolhida.
+  const nomesDosPersonagens = useRef(new Map<string, string>());
+  const sortear = useCallback(async (montagem: Montagem, ficha: EscolhaDaFicha | undefined) => {
+    const rolagem = await rolarNoServidor(api, mesaId, montagem, narrator && rolarOculto, ficha ?? undefined);
+    return deServidor(rolagem, undefined, rolagem.personagem_id ? nomesDosPersonagens.current.get(rolagem.personagem_id) : undefined);
+  }, [api, mesaId, narrator, rolarOculto]);
+  const rolador = useRolador({
+    sortear,
+    aoRolar: (rolagem: Rolagem) => (animacaoDosDados ? dadosNoTabuleiro.animar(rolagem) : undefined),
+  });
+  const opcoesDaFicha = useOpcoesDaFicha(api, mesaId, rolador.ficha);
+  const participantes = useParticipantes(api, mesaId);
+  const nomes = useMemo(() => new Map((participantes.data ?? []).map((p) => [p.usuario_id, p.nome || "Alguém da mesa"])),
+    [participantes.data]);
+  // Rolagem nova de outra pessoa: entra no histórico com o nome e rola no tabuleiro, se a pessoa quiser ver.
+  const receberRolagem = useCallback((recebida: Parameters<typeof deServidor>[0]) => {
+    if (mostrarRolagens !== "todas") return;
+    const rolagem = deServidor(recebida, nomes.get(recebida.autor_id) ?? "Alguém da mesa",
+      recebida.personagem_id ? nomesDosPersonagens.current.get(recebida.personagem_id) : undefined);
+    rolador.receber(rolagem);
+    if (animacaoDosDados) void dadosNoTabuleiro.animar(rolagem);
+  }, [mostrarRolagens, animacaoDosDados, rolador, dadosNoTabuleiro, nomes]);
   const conectividade = useConnectivityStatus();
   const ephemera = useRoomEphemera(mesaId, userId, realtime);
   const movimentos = useMovimentoDeTokens(api, mesaId, conectividade === "online");
   const personagens = usePersonagens(api, mesaId, false);
+  useEffect(() => { nomesDosPersonagens.current = new Map((personagens.data ?? []).map((p) => [p.id, p.nome])); }, [personagens.data]);
   // O canvas informa a casa do centro da vista, para "Colocar" um personagem ali.
   const centroDaVista = useRef<(() => { x: number; y: number }) | null>(null);
   const sala = useQuery({
@@ -105,15 +147,22 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
       return data;
     },
   });
+  useRolagensDaMesa({ api, mesaId, userId, comTempoReal: Boolean(realtime), ativo: Boolean(sala.data),
+    aoChegar: receberRolagem });
+  // Escolha inicial da ficha (item 8): o jogador começa na primeira ficha dele; o Narrador, sem ficha. Se a ficha
+  // escolhida pelo Narrador sai da cena, a escolha volta a "Sem ficha".
+  const escolherFicha = rolador.escolherFicha;
+  const fichaEscolhida = rolador.ficha;
+  const tokensDaCena = sala.data?.cena?.tokens;
+  useEffect(() => {
+    if (!narrator && fichaEscolhida === undefined) {
+      const propria = personagens.data?.find((p) => p.proprietario_id === userId);
+      if (propria) escolherFicha({ ...SEM_FICHA, personagemId: propria.id });
+    }
+    if (narrator && fichaEscolhida?.personagemId && tokensDaCena
+        && !tokensDaCena.some((t) => t.personagem_id === fichaEscolhida.personagemId)) escolherFicha(SEM_FICHA);
+  }, [narrator, fichaEscolhida, personagens.data, userId, tokensDaCena, escolherFicha]);
   const atualizar = () => queryClient.invalidateQueries({ queryKey: ["sala", mesaId] });
-  const ativarModulo = useMutation({
-    mutationFn: async () => {
-      const { error } = await api.PUT("/mesas/{mesa_id}/modulos", {
-        params: { path: { mesa_id: mesaId } }, body: { sala: true },
-      });
-      if (error) throw new Error(extractErrorMessage(error, "Não foi possível ativar a sala."));
-    }, onSuccess: atualizar,
-  });
   const criarCena = useMutation({
     mutationFn: async () => {
       const { data, error } = await api.POST("/mesas/{mesa_id}/sala/cenas", {
@@ -157,8 +206,21 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
     },
     onSuccess: () => { void atualizar(); },
   });
+  // Tamanho do token (melhorias-da-sala, item 6): só o Narrador; sempre quadrado, de 1×1 a 10×10. Pelo menu do
+  // botão direito sobre o token no grid e, pelo teclado, no painel com o token escolhido.
+  const [menuDoToken, setMenuDoToken] = useState<{ id: string; x: number; y: number } | null>(null);
+  const fecharMenuDoToken = useCallback(() => setMenuDoToken(null), []);
+  const redimensionarToken = useMutation({
+    mutationFn: async ({ alvo, tamanho }: { alvo: Token; tamanho: number }) => {
+      const { error } = await api.POST("/mesas/{mesa_id}/sala/tokens/{token_id}/tamanho", {
+        params: { path: { mesa_id: mesaId, token_id: alvo.id } },
+        body: { tamanho, versao_esperada: alvo.versao },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível mudar o tamanho do token."));
+    },
+    onSuccess: () => { void atualizar(); },
+  });
   // Permissão de movimento (item 13): só o Narrador. Token sem dono só é liberado para jogadores escolhidos.
-  const participantes = useParticipantes(api, mesaId, { enabled: narrator });
   const [liberandoPara, setLiberandoPara] = useState<Token | null>(null);
   const permitirMovimento = useMutation({
     mutationFn: async ({ alvo, liberado, controladores }: { alvo: Token; liberado: boolean; controladores?: string[] }) => {
@@ -201,14 +263,16 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
   });
   // Personagem posto na cena pelo Narrador (itens 9 e 10): ligado ao personagem, na camada da mesa.
   const colocarPersonagem = useMutation({
-    mutationFn: async ({ personagem, x: px, y: py }: { personagem: { id: string; nome: string }; x: number; y: number }) => {
+    mutationFn: async ({ personagem, x: px, y: py, oculto }: {
+      personagem: { id: string; nome: string }; x: number; y: number; oculto?: boolean;
+    }) => {
       const alvo = sala.data?.cena;
       if (!alvo) throw new Error("Selecione uma cena.");
       const daMesa = alvo.camadas.find((c) => c.visibilidade === "mesa") ?? alvo.camadas[0];
       const { error } = await api.POST("/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens", {
         params: { path: { mesa_id: mesaId, cena_id: alvo.id } },
         body: { camada_id: daMesa?.id ?? "", rotulo: personagem.nome.slice(0, 100), x: px, y: py, tamanho: 1,
-          personagem_id: personagem.id, oculto: colocarOculto },
+          personagem_id: personagem.id, oculto: oculto ?? false },
       });
       if (error) throw new Error(extractErrorMessage(error, "Não foi possível pôr o personagem na cena."));
     },
@@ -226,18 +290,6 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
     <h1 className="sr-only">Sala</h1><p role="status">Carregando sala…</p></section>;
   if (sala.isError) return <section className="room-view room-view--aviso" aria-label="Sala compartilhada">
     <h1 className="sr-only">Sala</h1><p role="alert">{sala.error.message}</p></section>;
-  if (!sala.data?.modulo_ativo) return <section className="room-view room-view--aviso" aria-label="Sala compartilhada">
-    <div className="panel room-view__desativada">
-      <h1>Sala desativada</h1>
-      {narrator
-        ? <p>Ative o módulo desta mesa quando quiser usar o grid.</p>
-        : <p>O Narrador ainda não ativou a Sala desta mesa.</p>}
-      {narrator && <button type="button" className="button" disabled={ativarModulo.isPending}
-        onClick={() => ativarModulo.mutate()}>Ativar sala</button>}
-      {!narrator && onAbrirFicha && <button type="button" className="button" onClick={onAbrirFicha}>Abrir minha ficha</button>}
-      {ativarModulo.isError && <p role="alert">{ativarModulo.error.message}</p>}
-    </div>
-  </section>;
 
   // Os tokens em movimento aparecem já no destino enquanto o servidor valida. Sem prévias, é a própria cena
   // (o mesmo objeto), para o canvas não redesenhar à toa.
@@ -251,6 +303,10 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
     if (alvo && (alvo.x !== coluna || alvo.y !== linha)) void movimentos.mover(alvo, coluna, linha);
   }
   const naCena = new Set((cena?.tokens ?? []).map((item) => item.personagem_id).filter((id): id is string => Boolean(id)));
+  // Fichas para rolar (item 8): o jogador, as próprias; o Narrador, as dos personagens com token na cena.
+  const fichasDaRolagem = narrator
+    ? [...naCena].flatMap((id) => { const p = porPersonagem.get(id); return p ? [p] : []; })
+    : (personagens.data ?? []).filter((p) => p.proprietario_id === userId);
   const larguraPainel = limitarLargura(larguraGuardada);
   const larguraVisivel = previaLargura ?? larguraPainel;
   const larguraSala = () => salaRef.current?.clientWidth ?? 0;
@@ -318,10 +374,19 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
           onCursor={ephemera.cursor} onPing={ephemera.ping}
           onDragPreview={ephemera.arraste}
           onDragEnd={soltarToken}
-          onDragCancel={ephemera.cancelarArraste} reservaDireita={reservaDoPainel(painelAberto, larguraPainel)} />
+          onDragCancel={ephemera.cancelarArraste} reservaDireita={reservaDoPainel(painelAberto, larguraPainel)}
+          onMenuDoToken={narrator ? (id, posicao) => { setTokenEscolhido(id); redimensionarToken.reset(); setMenuDoToken({ id, ...posicao }); } : undefined} />
         : <p className="room-view__vazio">{narrator
           ? "Ainda não há cena. Crie a primeira na aba Cena do painel."
           : "Ainda não há cena ativa para mostrar."}</p>}
+
+      {dadosNoTabuleiro.camada}
+      {narrator && menuDoToken && (() => {
+        const alvo = cena?.tokens.find((item: Token) => item.id === menuDoToken.id);
+        return alvo ? <MenuDoToken token={alvo} posicao={menuDoToken} pendente={redimensionarToken.isPending}
+          erro={redimensionarToken.isError ? redimensionarToken.error.message : null}
+          onTamanho={(tamanho) => redimensionarToken.mutate({ alvo, tamanho })} onFechar={fecharMenuDoToken} /> : null;
+      })()}
 
       <div className="room-view__topo">
         {cena ? <span className="room-view__cena">{cena.nome}</span> : <span />}
@@ -381,7 +446,17 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
       onPointerUp={soltarAlca} onPointerCancel={soltarAlca} />}
     <aside id="painel-da-cena" className="room-view__painel" aria-label="Painel da Sala" hidden={!painelAberto}>
       {painelAberto && <PainelDaSala aba={aba} onTrocarAba={setAba} onRecolher={() => setPainelAberto(false)}
-        conteudo={aba === "chat" ? <ChatReservado />
+        conteudo={aba === "dados" ? <RoladorDeDados rolador={rolador} ficha={{
+          faixa: <FaixaDeRetratos api={api} mesaId={mesaId} compacta personagens={fichasDaRolagem}
+            escolhidoId={rolador.ficha?.personagemId ?? undefined}
+            onEscolher={(id) => rolador.escolherFicha({ ...(rolador.ficha ?? SEM_FICHA), personagemId: id })}
+            semFicha={{ escolhido: !rolador.ficha?.personagemId, onEscolher: () => rolador.escolherFicha(SEM_FICHA) }} />,
+          ...opcoesDaFicha,
+        }} opcoes={{
+          mostrar: mostrarRolagens, aoMostrar: setMostrarRolagens, animacao: animacaoDosDados, aoAnimar: setAnimacaoDosDados,
+          ...(narrator ? { rolarOculto: { ligado: rolarOculto, aoMudar: setRolarOculto } } : {}),
+        }} />
+          : aba === "chat" ? <ChatReservado />
           : aba === "fichas" ? <FichasDoPainel api={api} mesaId={mesaId} userId={userId} />
           : aba === "bolsa" ? <BolsaDoPainel api={api} mesaId={mesaId} userId={userId} narrator={narrator} />
           : aba === "musica" ? <MusicaReservada />
@@ -390,9 +465,8 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
             {/* Item 15: barra de colocar, personagens dos jogadores, NPCs e monstros e tokens em cena numa seção só. */}
             <SecaoComTokens narrator={narrator}>
             {narrator && <PersonagensDosJogadores api={api} mesaId={mesaId} personagens={personagens.data ?? []} naCena={naCena}
-              colocarOculto={colocarOculto} onColocarOculto={setColocarOculto}
-              onColocar={(personagem) => colocarPersonagem.mutate({
-                personagem, ...casaLivre(centroDaVista.current?.() ?? { x: 0, y: 0 }, cena.tokens) })} />}
+              onColocar={(personagem, oculto) => colocarPersonagem.mutate({
+                personagem, oculto, ...casaLivre(centroDaVista.current?.() ?? { x: 0, y: 0 }, cena.tokens) })} />}
             <SecaoRetratil id="tokens" titulo="Tokens da cena" contagem={cena.tokens.length} interna={narrator}><div className="room-view__details">
               <p className="room-view__hint">Arraste um token que você controla e solte onde quiser: ele já vai.
                 Dê dois cliques no mapa para enviar um ping.</p>
@@ -410,7 +484,8 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
                         {item.rotulo.slice(0, 2).toLocaleUpperCase("pt-BR")}</span>}
                     <span className="tokens-cena__nome">{item.rotulo}</span>{" "}
                     <small className="tokens-cena__posicao">({posicao.x}, {posicao.y})</small>
-                    {narrator && (item.oculto || !item.movimento_liberado) && <span className="tokens-cena__marcas">
+                    {narrator && (item.oculto || !item.movimento_liberado || item.tamanho > 1) && <span className="tokens-cena__marcas">
+                      {item.tamanho > 1 && <span className="tokens-cena__oculto">{item.tamanho}×{item.tamanho}</span>}
                       {item.oculto && <span className="tokens-cena__oculto">oculto</span>}
                       {!item.movimento_liberado && <span className="tokens-cena__oculto">bloqueado</span>}
                     </span>}
@@ -439,6 +514,10 @@ export function RoomView({ api, mesaId, userId, narrator, realtime, onAbrirFicha
                 onConfirmar={(controladores) => permitirMovimento.mutate({ alvo: liberandoPara, liberado: true, controladores })} />}
               {token && <p role="status" className="tokens-cena__estado">{token.rotulo}: coluna {posicaoDe(token).x}, linha {posicaoDe(token).y}.
                 {token.controlavel ? " Você controla este token." : " Somente leitura."}</p>}
+              {/* Tamanho do token escolhido (item 6), o caminho pelo teclado; no grid, o botão direito abre o menu. */}
+              {narrator && token && !menuDoToken && <ControleDeTamanho token={token} pendente={redimensionarToken.isPending}
+                onMudar={(tamanho) => redimensionarToken.mutate({ alvo: token, tamanho })} />}
+              {redimensionarToken.isError && !menuDoToken && <p role="alert">{redimensionarToken.error.message}</p>}
             </div></SecaoRetratil>
             </SecaoComTokens>
           </>}</div>} />}

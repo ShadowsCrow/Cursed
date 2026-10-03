@@ -34,10 +34,6 @@ def _decidir(session: Session, acao: Acao, mesa_id: str, ator: Ator, personagem_
         )
 
 
-def _exigir_modulo(session: Session, mesa_id: str) -> None:
-    if not sala.modulo_ativo(session, mesa_id):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="O módulo Sala está desativado nesta mesa.")
-
 
 def _editor(session: Session, mesa_id: str, personagem_id: str, ator: Ator) -> PersonagemRegistro:
     """Quem pega ou larga precisa poder arrumar o inventário do personagem (política da mesa)."""
@@ -101,7 +97,6 @@ def listar_recipientes(
 ) -> list[RecipienteResumo]:
     """Chão e baús da cena ativa, visíveis a todos os participantes."""
     _decidir(session, Acao.LER_MESA, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     return [_resumo(session, r) for r in recipientes.recipientes_da_cena(session, mesa_id)]
 
 
@@ -111,7 +106,6 @@ def criar_bau(
     ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
 ) -> RecipienteResumo:
     _decidir(session, Acao.ADMINISTRAR_SALA, mesa_id, ator)
-    _exigir_modulo(session, mesa_id)
     try:
         bau = recipientes.criar_bau(session, mesa_id, pedido.nome, pedido.colunas, pedido.linhas)
         _avisar(session, bau)
@@ -148,7 +142,6 @@ def largar_item(
     correlacao: str = Depends(get_correlacao),
 ) -> RecipienteResumo:
     personagem = _editor(session, mesa_id, personagem_id, ator)
-    _exigir_modulo(session, mesa_id)
     item = session.get(ItemInventarioRegistro, item_id)
     if item is None or item.mesa_id != mesa_id or item.personagem_id != personagem_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item não encontrado.")
@@ -177,7 +170,6 @@ def pegar_item(
 ) -> ItemInventarioResumo:
     """O primeiro pedido confirmado leva o item; os seguintes recebem 409."""
     personagem = _editor(session, mesa_id, pedido.personagem_id, ator)
-    _exigir_modulo(session, mesa_id)
     recipiente = _recipiente(session, mesa_id, recipiente_id)
     try:
         _, item = recipientes.pegar(session, personagem, recipiente, retrato_id, pedido.versao_esperada,

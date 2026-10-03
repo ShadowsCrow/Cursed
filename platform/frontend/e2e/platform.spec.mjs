@@ -87,7 +87,6 @@ test("oferta de cartas exige escolha confirmada pelo jogador", async ({ browser 
 
 test("sala recupera snapshot após desconexão sem revelar token oculto", async ({ browser }) => {
   const { m } = await semear();
-  await chamar("narrador", "PUT", `/mesas/${m}/modulos`, { sala: true });
   const cena = (await chamar("narrador", "POST", `/mesas/${m}/sala/cenas`, {
     nome: "Ponte", colunas: 20, linhas: 15,
   })).cena;

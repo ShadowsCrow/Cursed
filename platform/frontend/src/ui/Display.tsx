@@ -5,7 +5,7 @@ import { Popover } from "./primitives/Popover";
 export type GlyphName =
   | "spark" | "grid" | "users" | "scroll" | "cards" | "map" | "shield"
   | "chevron" | "arrow" | "moon" | "heart" | "bolt" | "book" | "sword"
-  | "bag" | "eye" | "clock" | "settings" | "star" | "menu" | "close" | "music" | "eye-off" | "lock" | "unlock";
+  | "bag" | "eye" | "clock" | "settings" | "star" | "menu" | "close" | "music" | "eye-off" | "lock" | "unlock" | "dice" | "crosshair";
 
 const paths: Record<GlyphName, ReactNode> = {
   spark: <><path d="m12 2 1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2Z" /><path d="m19 17 .7 2.3L22 20l-2.3.7L19 23l-.7-2.3L16 20l2.3-.7L19 17Z" /></>,
@@ -33,6 +33,8 @@ const paths: Record<GlyphName, ReactNode> = {
   lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
   unlock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.8-1.2" /></>,
   music: <><path d="M9 18V5l11-2v13" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="16" r="2.5" /></>,
+  dice: <><path d="m12 2 8.7 5v10L12 22l-8.7-5V7L12 2Z" /><path d="M12 7.5 16.5 15h-9L12 7.5ZM3.3 7l4.2 8m9 0 4.2-8M12 2v5.5M7.5 15 12 22l4.5-7" /></>,
+  crosshair: <><circle cx="12" cy="12" r="7" /><path d="M12 2v5m0 10v5M2 12h5m10 0h5" /><circle cx="12" cy="12" r="1" /></>,
 };
 
 export function Glyph({ name, size = 20, className = "" }: { name: GlyphName; size?: number; className?: string }) {
