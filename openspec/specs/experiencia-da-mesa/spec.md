@@ -161,32 +161,6 @@ Em telas com mais de 760 px, o painel da cena SHALL ter uma alça na borda esque
 - **WHEN** o Narrador alarga o painel e recarrega a página
 - **THEN** o painel abre com a largura escolhida
 
-### Requirement: Abas do painel da Sala
-O painel direito da Sala SHALL ter abas fixas no topo, nesta ordem: **Cena**, **Dados**, **Chat**, **Fichas**, **Bolsa**, **Cartas** e **Música** (Bolsa e Música no item 8; Dados na mudança `rolador-de-dados`). Cada aba SHALL ter ícone e nome; com o painel estreito, SHALL mostrar só o ícone, mantendo o nome como nome acessível e dica. As abas SHALL seguir o padrão de abas acessível: lista de abas, a aba atual anunciada como selecionada, troca pelas setas e conteúdo associado à aba.
-
-Um botão "Recolher painel" SHALL fechar o painel. Com o painel fechado, um botão "Abrir painel" no canto superior direito do grid SHALL reabri-lo na última aba usada. A aba escolhida e o estado aberto ou fechado SHALL ser lembrados neste navegador, sem ir ao servidor. A aba padrão é Cena.
-
-O que cada aba mostra:
-- **Cena:** para o Narrador, no topo, o grupo **Cenas** (cena aberta, troca, ativação, criação e envio do mapa); para todos, os tokens da cena; e, só para o Narrador, "Retirar" em cada token e as listas de personagens dos jogadores e de NPCs e monstros;
-- **Dados:** o rolador de dados, descrito na capacidade `rolador-de-dados`;
-- **Chat:** nesta etapa, só um espaço reservado. Ele avisa que o chat da mesa ainda vai chegar e que o registro da mesa vai aparecer nele, e o campo de mensagem e o botão de enviar ficam desativados.
-
-#### Scenario: Trocar de aba
-- **WHEN** o jogador escolhe a aba "Fichas"
-- **THEN** o painel mostra as fichas, a aba "Fichas" é anunciada como selecionada, e ao recarregar o painel volta em "Fichas"
-
-#### Scenario: Recolher e reabrir
-- **WHEN** o Narrador escolhe "Recolher painel" e depois "Abrir painel"
-- **THEN** o painel some, o grid fica livre, e depois o painel volta na mesma aba
-
-#### Scenario: Chat reservado
-- **WHEN** alguém abre a aba "Chat"
-- **THEN** vê o aviso de que o chat vem depois, com o campo de mensagem desativado, e nenhuma mensagem é enviada
-
-#### Scenario: Dados logo depois de Cena
-- **WHEN** alguém abre a Sala
-- **THEN** a segunda aba do painel é "Dados", entre "Cena" e "Chat", e a seta para a direita a partir de Cena leva a Dados
-
 ### Requirement: Fichas no painel da Sala
 A aba Fichas SHALL ter, no alto, uma faixa de retratos circulares dos personagens que a pessoa pode ver. O Narrador vê todos os personagens da mesa. O jogador vê os que o servidor lhe mostra: os próprios e os que a mesa deixa visíveis, com os próprios primeiro.
 
@@ -275,27 +249,6 @@ Uma cena SHALL ser um espaço próprio da mesa, sem limite de casas: tokens SHAL
 #### Scenario: Pôr um personagem em qualquer lugar
 - **WHEN** o Narrador arrasta um personagem para a casa da coluna −10, linha 40
 - **THEN** o token é criado nessa casa
-
-### Requirement: Bolsa e Música no painel da Sala
-A aba **Bolsa** SHALL ter, no alto, a mesma faixa de retratos da aba Fichas:
-- o Narrador vê todos os personagens da mesa e escolhe de quem é a bolsa;
-- o jogador vê só os próprios personagens.
-
-Abaixo da faixa, a aba SHALL mostrar o inventário em grade do personagem escolhido, o mesmo da ficha. As regras de ver, arrumar e editar itens SHALL ser as da ficha, com a autorização do servidor.
-
-A aba **Música** SHALL ser, nesta etapa, só um espaço reservado, que avisa que a música da mesa ainda vai chegar, sem tocar nada.
-
-#### Scenario: Narrador olha a bolsa de um jogador
-- **WHEN** o Narrador abre a aba Bolsa e escolhe o retrato de Lion
-- **THEN** o inventário em grade de Lion aparece abaixo da faixa
-
-#### Scenario: Jogador só vê a própria bolsa
-- **WHEN** o jogador abre a aba Bolsa numa mesa com o personagem dele e o de outro jogador
-- **THEN** a faixa mostra só o retrato do próprio personagem, com a bolsa dele
-
-#### Scenario: Música reservada
-- **WHEN** alguém abre a aba Música
-- **THEN** vê o aviso de que a música da mesa ainda vai chegar, e nada toca
 
 ### Requirement: Movimento direto do token
 Soltar no grid um token que a pessoa controla SHALL movê-lo na hora, sem passo de confirmação, mostrando-o já no destino enquanto o servidor valida. O servidor SHALL continuar validando controle, limite da cena e versão. Se o servidor recusar ou a conexão falhar, o token SHALL voltar à última posição confirmada e o motivo SHALL ser anunciado. Por decisão do usuário (item 11), o movimento é só por arraste no grid; o painel não tem mais campos de coordenada.
@@ -431,20 +384,6 @@ Na lista "Tokens da cena", o Narrador SHALL ter um cadeado por token ("Liberar m
 - **WHEN** o Narrador escolhe "Só personagens principais"
 - **THEN** os tokens de personagens de jogador ficam liberados e os de NPCs e monstros, bloqueados
 
-### Requirement: Seções retráteis na aba Cena
-As seções "Cenas", "Personagens dos jogadores", "NPCs e monstros" e "Tokens da cena" SHALL abrir e fechar pelo título, um botão com estado anunciado (expandido ou não), com a quantidade de itens ao lado. O estado de cada seção SHALL ficar lembrado neste navegador; o padrão é aberta.
-
-#### Scenario: Fechar a lista de tokens
-- **WHEN** o Narrador fecha "Tokens da cena" e recarrega a página
-- **THEN** a seção continua fechada, e as outras como estavam
-
-### Requirement: Seção "Tokens" na aba Cena
-Para o Narrador, a aba Cena SHALL ter uma seção retrátil única "Tokens" com, nesta ordem: a dica de arrastar, "Colocar" ou o olho cortado (que põe já oculto) e as seções retráteis internas "Personagens dos jogadores", "NPCs e monstros" (separadas) e "Tokens da cena". Fechar "Tokens" SHALL recolher tudo isso de uma vez, e cada seção interna SHALL continuar abrindo e fechando por si e lembrada neste navegador. O jogador SHALL ver só "Tokens da cena", sem a seção em volta.
-
-#### Scenario: Recolher todos os tokens
-- **WHEN** o Narrador fecha "Tokens"
-- **THEN** a dica, as listas de personagens e os tokens da cena somem, e "Cenas" continua como estava
-
 ### Requirement: Controle de zoom compacto
 O controle de zoom da Sala SHALL ocupar pouco espaço do grid e seguir o visual do sistema: a mesma moldura escura, translúcida e com borda ornamentada do nome da cena, e botões sem o fundo cinza padrão do navegador. Ele SHALL ter, nesta ordem: **Reduzir mapa** (−), a porcentagem atual em texto pequeno, **Ampliar mapa** (+) e **Centralizar** como ícone. Cada botão SHALL ter pelo menos 24 px de lado, nome acessível e dica com o nome; a porcentagem SHALL continuar anunciada a leitores de tela. O controle SHALL ter no máximo 2,25 rem de altura em telas com mais de 760 px.
 
@@ -474,3 +413,85 @@ O Narrador SHALL poder mudar quantas casas um token ocupa, sempre quadrado: de 1
 #### Scenario: Jogador não muda o tamanho
 - **WHEN** o jogador escolhe um token que controla
 - **THEN** não aparece o controle Tamanho, o botão direito no token não abre o menu, e o servidor recusa um pedido de tamanho vindo dele
+
+### Requirement: Bolsa no painel da Sala
+A aba **Bolsa** SHALL ter, no alto, a mesma faixa de retratos da aba Fichas:
+- o Narrador vê todos os personagens da mesa e escolhe de quem é a bolsa;
+- o jogador vê só os próprios personagens.
+
+Abaixo da faixa, a aba SHALL mostrar o inventário em grade do personagem escolhido, o mesmo da ficha. As regras de ver, arrumar e editar itens SHALL ser as da ficha, com a autorização do servidor.
+
+#### Scenario: Narrador olha a bolsa de um jogador
+- **WHEN** o Narrador abre a aba Bolsa e escolhe o retrato de Lion
+- **THEN** o inventário em grade de Lion aparece abaixo da faixa
+
+#### Scenario: Jogador só vê a própria bolsa
+- **WHEN** o jogador abre a aba Bolsa numa mesa com o personagem dele e o de outro jogador
+- **THEN** a faixa mostra só o retrato do próprio personagem, com a bolsa dele
+
+### Requirement: Música no painel da Sala
+A aba **Música** SHALL ser o som da mesa, descrito na capacidade `musica-da-sala`: o Narrador escolhe na biblioteca um ambiente e uma música, que tocam juntos, e todos ouvem o mesmo som ao mesmo tempo.
+
+#### Scenario: Música da mesa
+- **WHEN** o Narrador abre a aba Música
+- **THEN** vê o bloco "Tocando agora", com os quadros Ambiente e Música, e a biblioteca separada em Ambientes e Músicas
+
+### Requirement: Abas do painel da Sala por papel
+O painel direito da Sala SHALL ter abas fixas no topo, nesta ordem: **Cena**, **Dados**, a aba do papel, **Fichas**, **Bolsa**, **Cartas** e **Música** (Bolsa e Música no item 8; Dados na mudança `rolador-de-dados`). A aba do papel SHALL ser **Mestre** para o Narrador da mesa e **Jogador** para os demais participantes; cada pessoa SHALL ver só a do seu papel. Cada aba SHALL ter ícone e nome; com o painel estreito, SHALL mostrar só o ícone, mantendo o nome como nome acessível e dica. As abas SHALL seguir o padrão de abas acessível: lista de abas, a aba atual anunciada como selecionada, troca pelas setas e conteúdo associado à aba.
+
+Um botão "Recolher painel" SHALL fechar o painel. Com o painel fechado, um botão "Abrir painel" no canto superior direito do grid SHALL reabri-lo na última aba usada. A aba escolhida e o estado aberto ou fechado SHALL ser lembrados neste navegador, sem ir ao servidor. A aba padrão é Cena. Uma aba lembrada que não existe mais, como o antigo "Chat", SHALL abrir a aba do papel.
+
+O que cada aba mostra:
+- **Cena:** para o Narrador, no topo, o grupo **Cenas** (cena aberta, troca, ativação, criação e envio do mapa); para todos, os tokens da cena; e, só para o Narrador, "Retirar" em cada token e as listas de personagens dos jogadores e de NPCs e monstros;
+- **Dados:** o rolador de dados, descrito na capacidade `rolador-de-dados`;
+- **Mestre** (só o Narrador) e **Jogador** (só os jogadores): sessões, estatísticas, preferências da Sala e votação de MVP, descritas na capacidade `estatisticas-e-mvp-da-mesa`.
+
+#### Scenario: Trocar de aba
+- **WHEN** o jogador escolhe a aba "Fichas"
+- **THEN** o painel mostra as fichas, a aba "Fichas" é anunciada como selecionada, e ao recarregar o painel volta em "Fichas"
+
+#### Scenario: Recolher e reabrir
+- **WHEN** o Narrador escolhe "Recolher painel" e depois "Abrir painel"
+- **THEN** o painel some, o grid fica livre, e depois o painel volta na mesma aba
+
+#### Scenario: Narrador vê a aba Mestre
+- **WHEN** o Narrador abre a Sala
+- **THEN** a terceira aba do painel é "Mestre", entre "Dados" e "Fichas", e não há aba "Jogador" nem "Chat"
+
+#### Scenario: Jogador vê a aba Jogador
+- **WHEN** um jogador abre a Sala
+- **THEN** a terceira aba do painel é "Jogador", e não há aba "Mestre" nem "Chat"
+
+#### Scenario: Aba Chat lembrada de antes
+- **WHEN** alguém que tinha deixado a aba "Chat" aberta volta à Sala
+- **THEN** o painel abre na aba do seu papel (Mestre ou Jogador)
+
+#### Scenario: Dados logo depois de Cena
+- **WHEN** alguém abre a Sala
+- **THEN** a segunda aba do painel é "Dados", entre "Cena" e a aba do papel, e a seta para a direita a partir de Cena leva a Dados
+
+### Requirement: Sub-abas na aba Cena
+Para o Narrador, a aba Cena SHALL ser dividida em sub-abas (pedido do usuário, 2026-10-04, no lugar das seções retráteis), nesta ordem:
+- **Cenas:** as cenas da mesa (abrir, chave de cena ativa, criar cena), o envio do mapa e o tamanho do mapa;
+- **Personagens:** a dica de arrastar e as listas "Personagens dos jogadores" e "NPCs e monstros", cada uma com título e quantidade, com "Colocar" e o olho cortado em cada personagem;
+- **Tokens:** os tokens da cena, com a dica, as ações em lote de movimento, ocultar, cadeado, retirar e o tamanho do token escolhido.
+
+Cada sub-aba SHALL mostrar a quantidade de itens ao lado do nome e seguir o padrão de abas acessível (lista de abas, a atual anunciada como selecionada, setas, Home e End). A sub-aba escolhida SHALL ficar lembrada neste navegador; a padrão é Cenas. Sem cena aberta, Personagens e Tokens SHALL avisar que é preciso criar ou abrir uma cena na sub-aba Cenas. Arrastar um retrato da sub-aba Personagens para o grid SHALL continuar pondo o personagem na cena.
+
+O jogador SHALL ver na aba Cena só "Tokens da cena", com título e quantidade, sem sub-abas e sem abrir e fechar.
+
+#### Scenario: Trocar de sub-aba
+- **WHEN** o Narrador está na sub-aba Cenas e aperta a seta para a direita
+- **THEN** a sub-aba Personagens fica selecionada, com o foco nela, e mostra as listas de personagens dos jogadores e de NPCs e monstros
+
+#### Scenario: Sub-aba lembrada
+- **WHEN** o Narrador escolhe a sub-aba Tokens e recarrega a página
+- **THEN** a aba Cena volta na sub-aba Tokens
+
+#### Scenario: Sem cena aberta
+- **WHEN** a mesa não tem cena e o Narrador abre a sub-aba Tokens
+- **THEN** ela avisa para criar ou abrir uma cena na sub-aba Cenas
+
+#### Scenario: Jogador sem sub-abas
+- **WHEN** um jogador abre a aba Cena
+- **THEN** vê o título "Tokens da cena" e a lista, sem sub-abas
