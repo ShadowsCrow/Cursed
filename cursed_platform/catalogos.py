@@ -61,6 +61,12 @@ class Habilidade:
     # Custo de Aprendizado, Descansos Mínimos, Potência de Uso e Custo de Uso, com os nomes da carta; ausentes
     # ficam indefinidos (cartas-do-catalogo-somente-leitura, D2).
     custos: tuple[tuple[str, int], ...] = ()
+    # Ampliação das faixas de crítico e de falha crítica (gamificacao-da-sala, D1): quantos valores a faixa
+    # desce a partir de 20 ou sobe a partir de 1. Só o servidor lê; nunca vai para a carta.
+    amplia_critico: int = 0
+    amplia_falha_critica: int = 0
+    # Bônus de Deslocamento em metros (modo-de-turno, D7): soma no Deslocamento calculado de quem tem a habilidade.
+    deslocamento: int = 0
 
 
 @dataclass(frozen=True)
@@ -410,6 +416,27 @@ def _custos(bruta: Mapping[str, Any], *, arquivo: str, onde: str) -> tuple[tuple
     return tuple(custos)
 
 
+AMPLIACOES_DE_FAIXA = ("amplia_critico", "amplia_falha_critica")
+
+
+def _ampliacao(bruta: Mapping[str, Any], campo: str, *, arquivo: str, onde: str) -> int:
+    valor = bruta.get(campo)
+    if valor is None:
+        return 0
+    if not isinstance(valor, int) or isinstance(valor, bool) or valor < 1:
+        raise CatalogoInvalido(arquivo, f"{onde}: o campo '{campo}' precisa ser um número inteiro de 1 para cima.")
+    return valor
+
+
+def _deslocamento(bruta: Mapping[str, Any], *, arquivo: str, onde: str) -> int:
+    valor = bruta.get("deslocamento")
+    if valor is None:
+        return 0
+    if not isinstance(valor, int) or isinstance(valor, bool) or valor == 0:
+        raise CatalogoInvalido(arquivo, f"{onde}: o campo 'deslocamento' precisa ser um número inteiro de metros, diferente de zero.")
+    return valor
+
+
 def _habilidades(brutas: list[Any], *, arquivo: str, onde: str) -> tuple[Habilidade, ...]:
     habilidades: list[Habilidade] = []
     vistas: set[str] = set()
@@ -426,6 +453,8 @@ def _habilidades(brutas: list[Any], *, arquivo: str, onde: str) -> tuple[Habilid
             _texto(bruta, "tipo", arquivo=arquivo, onde=local, obrigatorio=False),
             str(custo).strip() if custo not in (None, "") else None,
             _custos(bruta, arquivo=arquivo, onde=local),
+            *(_ampliacao(bruta, campo, arquivo=arquivo, onde=local) for campo in AMPLIACOES_DE_FAIXA),
+            _deslocamento(bruta, arquivo=arquivo, onde=local),
         )
         if chave(habilidade.nome) in vistas:
             raise CatalogoInvalido(arquivo, f"{onde}: habilidade '{habilidade.nome}' repetida.")

@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState, type DragEvent, type MutableR
 import { Application, Container, Graphics, Rectangle, Sprite, Text, Texture, TilingSprite } from "pixi.js";
 import type { components } from "../../api/generated/schema";
 import { ARRASTE_DE_PERSONAGEM } from "./arrastes";
+import type { Casa, MedidaDoArraste } from "./medidaDoArraste";
+import { CELULA, desenharRastro } from "./rastroDoArraste";
+import { aplicarPulso, criarBrilhoDaVez } from "./brilhoDaVez";
+import { criarAroDeSelecao } from "./selecaoDoToken";
 import { areaDeInteresse, dentroDoLimite, enquadrar, LIMITE_DA_CENA, pontoFixoNoZoom, proximoZoom } from "./viewport";
 import { Glyph } from "../../ui/Display";
 
 type Cena = components["schemas"]["CenaSala"];
 type Sinal = { x: number; y: number };
 type ArrasteRemoto = Sinal & { tokenId: string };
-const CELULA = 48;
 /** Folga do enquadramento: em cima ficam a faixa de cenas e o botão do painel; embaixo, o zoom. */
 const MARGEM_ENQUADRAMENTO = { x: 24, y: 72 };
 
@@ -36,8 +39,10 @@ function casaDaGrade(): Texture {
  * a grade por cima.
  */
 function desenharCena(mundo: Container, cena: Cena, mapa: Texture | null,
-  retratoDe: (tokenId: string) => Texture | undefined) {
+  retratoDe: (tokenId: string) => Texture | undefined, daVez: ReadonlySet<string> = new Set(),
+  selecionado: string | null = null) {
   const pecas = new Map<string, Container>();
+  const brilhos: Graphics[] = [];
   for (const filho of mundo.removeChildren()) filho.destroy({ children: true });
   if (mapa) {
     const fundo = new Sprite(mapa);
@@ -65,6 +70,13 @@ function desenharCena(mundo: Container, cena: Cena, mapa: Texture | null,
     const centro = lado / 2;
     const raio = lado / 2 - 3;
     const aro = token.controlavel ? 0xe6bd81 : 0xa9a0b7;
+    // Token de quem está na vez no modo turno: halo dourado que pulsa, por trás do retrato (D8e).
+    if (daVez.has(token.id)) {
+      const brilho = criarBrilhoDaVez(lado);
+      brilho.eventMode = "none";
+      peca.addChild(brilho);
+      brilhos.push(brilho);
+    }
     const retrato = retratoDe(token.id);
     if (retrato) {
       const foto = new Sprite(retrato);
@@ -84,13 +96,24 @@ function desenharCena(mundo: Container, cena: Cena, mapa: Texture | null,
       peca.addChild(new Graphics().circle(centro, centro, raio).fill(token.controlavel ? 0x816247 : 0x555265), inicial);
     }
     peca.addChild(new Graphics().circle(centro, centro, raio).stroke({ color: aro, width: 3 }));
+    // Token escolhido na aba Tokens ou no grid: aro azul-gelo por cima de tudo da peça.
+    if (token.id === selecionado) peca.addChild(criarAroDeSelecao(lado));
     mundo.addChild(peca);
     pecas.set(token.id, peca);
   }
   const sinais = new Container();
   sinais.eventMode = "none";
   mundo.addChild(sinais);
-  return { pecas, sinais };
+  // Prévia do movimento no modo turno (modo-de-turno, D8b), acima de tudo e sem receber eventos.
+  const rastro = new Container();
+  rastro.eventMode = "none";
+  mundo.addChild(rastro);
+  return { pecas, sinais, rastro, brilhos };
+}
+
+function movimentoReduzido(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function"
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function desenharSinais(marcadores: Container, cursores: Sinal[], pings: Sinal[], arrastes: ArrasteRemoto[]) {
@@ -110,10 +133,14 @@ function desenharSinais(marcadores: Container, cursores: Sinal[], pings: Sinal[]
 }
 
 /** Canvas visual da cena. A lista de tokens no DOM oferece seleção por teclado e toque. */
-export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel,
+export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, medirArraste,
   cursores = [], pings = [], arrastes = [], mapaUrl, reservaDireita = 0, retratos = {}, centroDaVistaRef, onSoltarPersonagem,
-  onMenuDoToken }: {
+  onMenuDoToken, tokensDaVez = [], tokenSelecionado = null }: {
   cena: Cena;
+  /** Token escolhido na aba Tokens ou no grid: ganha o aro de seleção. */
+  tokenSelecionado?: string | null;
+  /** Tokens de quem está na vez no modo turno (modo-de-turno, D8e): brilham, pulsando devagar. */
+  tokensDaVez?: string[];
   /** URL do retrato de cada token ligado a personagem (por id do token); sem ele, o token mostra as iniciais. */
   retratos?: Record<string, string>;
   /** Recebe uma função que devolve a casa do centro da parte livre da vista (para "Colocar" um personagem). */
@@ -130,6 +157,8 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   onCursor?: (x: number, y: number) => void;
   onPing?: (x: number, y: number) => void;
   onDragPreview?: (tokenId: string, x: number, y: number) => void;
+  /** Prévia do movimento no modo turno (modo-de-turno, D8b): metros e se cabem no saldo; nada fora da disputa. */
+  medirArraste?: (tokenId: string, origem: Casa, destino: Casa) => MedidaDoArraste | null;
   onDragEnd?: (tokenId: string, x: number, y: number) => void;
   onDragCancel?: (tokenId: string) => void;
   cursores?: Sinal[];
@@ -150,6 +179,8 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   const cenaAtual = useRef(cena);
   // Arraste de token em curso: fica numa referência para sobreviver aos redesenhos da cena.
   const arrasteRef = useRef<{ id: string; x: number; y: number; originalX: number; originalY: number } | null>(null);
+  const rastro = useRef<Container | null>(null);
+  const brilhos = useRef<Graphics[]>([]);
   const reserva = useRef(reservaDireita);
   // Textura do mapa guardada junto da URL de origem: trocar ou remover o mapa invalida a anterior.
   const [carregado, setCarregado] = useState<{ url: string; textura: Texture } | null>(null);
@@ -248,6 +279,7 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   }, [retratos, texturas]);
 
   // Os retratos chegam como objeto novo a cada redesenho da Sala; o canvas só redesenha quando o conteúdo muda.
+  const chaveDaVez = tokensDaVez.join("|");
   const chaveDosRetratos = Object.entries(retratos).map(([id, url]) => `${id}=${url.length}:${url.slice(-24)}`).sort().join("|");
   const retratosAtuais = useRef(retratos);
   useEffect(() => {
@@ -259,14 +291,40 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
       const desenhada = desenharCena(mundo.current, cena, mapa, (tokenId) => {
         const url = retratosAtuais.current[tokenId];
         return url ? texturas[url] : undefined;
-      });
+      }, new Set(chaveDaVez ? chaveDaVez.split("|") : []), tokenSelecionado);
+      brilhos.current = desenhada.brilhos;
+      aplicarPulso(brilhos.current, performance.now(), movimentoReduzido());
       pecas.current = desenhada.pecas;
       sinais.current = desenhada.sinais;
+      rastro.current = desenhada.rastro;
       // Se a cena redesenhar no meio de um arraste, a peça arrastada continua sob o ponteiro.
       const emCurso = arrasteRef.current;
       if (emCurso) pecas.current.get(emCurso.id)?.position.set(emCurso.x * CELULA, emCurso.y * CELULA);
+      redesenharRastro();
     }
-  }, [pronto, cena, mapa, chaveDosRetratos, texturas]);
+  }, [pronto, cena, mapa, chaveDosRetratos, texturas, chaveDaVez, tokenSelecionado]);
+
+  // O pulso do brilho da vez acompanha o relógio do PixiJS; com menos movimento pedido, fica parado.
+  useEffect(() => {
+    const aplicacao = app.current;
+    if (!pronto || !aplicacao || movimentoReduzido()) return undefined;
+    const pulsar = () => { if (brilhos.current.length) aplicarPulso(brilhos.current, performance.now(), false); };
+    aplicacao.ticker.add(pulsar);
+    return () => { aplicacao.ticker?.remove(pulsar); };
+  }, [pronto]);
+
+  // Prévia do arraste (D8b): redesenhada a cada casa nova, depois de um redesenho da cena e limpa ao soltar.
+  function redesenharRastro() {
+    const camada = rastro.current;
+    if (!camada) return;
+    const arraste = arrasteRef.current;
+    const token = arraste ? cenaAtual.current.tokens.find((item) => item.id === arraste.id) : undefined;
+    const origem = arraste ? { x: arraste.originalX, y: arraste.originalY } : { x: 0, y: 0 };
+    const destino = arraste ? { x: arraste.x, y: arraste.y } : origem;
+    const medida = arraste && token && (arraste.x !== arraste.originalX || arraste.y !== arraste.originalY)
+      ? acoes.current.medirArraste?.(arraste.id, origem, destino) ?? null : null;
+    desenharRastro(camada, origem, destino, token?.tamanho ?? 1, medida, mundo.current?.scale.x ?? 1);
+  }
 
   // A casa do centro da parte livre da vista, para "Colocar" um personagem onde o Narrador está olhando.
   useEffect(() => {
@@ -290,9 +348,9 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
   }, [pronto, cena, cursores, pings, arrastes]);
 
   // As funções recebidas, sempre as mais recentes, sem recriar os ouvintes do ponteiro.
-  const acoes = useRef({ onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, onMenuDoToken });
+  const acoes = useRef({ onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, onMenuDoToken, medirArraste });
   useEffect(() => {
-    acoes.current = { onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, onMenuDoToken };
+    acoes.current = { onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, onMenuDoToken, medirArraste };
   });
 
   // Ouvintes do ponteiro, criados uma vez: leem a cena e as funções por referência. Antes dependiam da cena
@@ -339,6 +397,7 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
           arraste.y = ponto.y;
           pecas.current.get(arraste.id)?.position.set(ponto.x * CELULA, ponto.y * CELULA);
           acoes.current.onDragPreview?.(arraste.id, ponto.x, ponto.y);
+          redesenharRastro();
         }
         return;
       }
@@ -354,6 +413,7 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
       const arraste = arrasteRef.current;
       if (arraste) {
         arrasteRef.current = null;
+        redesenharRastro();
         const moveu = arraste.x !== arraste.originalX || arraste.y !== arraste.originalY;
         acoes.current.onDragCancel?.(arraste.id);
         if (moveu) {
@@ -372,6 +432,7 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
       const arraste = arrasteRef.current;
       if (arraste) {
         arrasteRef.current = null;
+        redesenharRastro();
         acoes.current.onDragCancel?.(arraste.id);
         pecas.current.get(arraste.id)?.position.set(arraste.originalX * CELULA, arraste.originalY * CELULA);
       }

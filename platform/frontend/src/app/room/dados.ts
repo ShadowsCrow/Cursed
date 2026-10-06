@@ -20,6 +20,9 @@ export interface EscolhaDaFicha { personagemId: string | null; atributo: string 
 
 export const SEM_FICHA: EscolhaDaFicha = { personagemId: null, atributo: null, pericia: null };
 
+/** Crítico ou falha crítica num d20 (gamificacao-da-sala); `indice` é a posição no grupo de d20. */
+export interface MarcaDoDado { faces: Faces; indice: number; tipo: "critico" | "falha_critica" }
+
 export interface Rolagem {
   id: number;
   expressao: string;
@@ -37,7 +40,44 @@ export interface Rolagem {
   ficha?: EscolhaDaFicha;
   /** Nome do personagem da ficha, quando quem vê o conhece. */
   personagem?: string;
+  /** Marcas de crítico do servidor; só vêm com o destaque de críticos ligado pelo Narrador. */
+  marcas?: MarcaDoDado[];
+  /** Rolagem de iniciativa do modo turno (modo-de-turno), marcada no histórico. */
+  finalidade?: "iniciativa";
 }
+
+/** Junta várias rolagens de d20 numa só para animar de uma vez (iniciativa de vários NPCs), com as marcas no lugar. */
+export function juntarParaAnimar(rolagens: readonly Pick<Rolagem, "grupos" | "marcas">[]): Pick<Rolagem, "grupos" | "marcas"> {
+  const grupos: Rolagem["grupos"] = [];
+  const marcas: MarcaDoDado[] = [];
+  for (const rolagem of rolagens) {
+    for (const grupo of rolagem.grupos) {
+      let destino = grupos.find((g) => g.faces === grupo.faces);
+      if (!destino) {
+        destino = { faces: grupo.faces, valores: [] };
+        grupos.push(destino);
+      }
+      const inicio = destino.valores.length;
+      destino.valores.push(...grupo.valores);
+      for (const marca of rolagem.marcas ?? []) {
+        if (marca.faces === grupo.faces) marcas.push({ ...marca, indice: marca.indice + inicio });
+      }
+    }
+  }
+  return { grupos, ...(marcas.length > 0 ? { marcas } : {}) };
+}
+
+export function marcaDoDado(rolagem: Pick<Rolagem, "marcas">, faces: Faces, indice: number): MarcaDoDado["tipo"] | null {
+  return rolagem.marcas?.find((marca) => marca.faces === faces && marca.indice === indice)?.tipo ?? null;
+}
+
+/** A marca mais forte da rolagem, para a faixa e o anúncio: crítico vence falha crítica. */
+export function destaqueDaRolagem(rolagem: Pick<Rolagem, "marcas">): MarcaDoDado["tipo"] | null {
+  const tipos = (rolagem.marcas ?? []).map((marca) => marca.tipo);
+  return tipos.includes("critico") ? "critico" : tipos.includes("falha_critica") ? "falha_critica" : null;
+}
+
+export const NOME_DA_MARCA: Record<MarcaDoDado["tipo"], string> = { critico: "Crítico", falha_critica: "Falha crítica" };
 
 /** Fonte de inteiros sem sinal de 32 bits; injetável para os testes. */
 export type FonteAleatoria = () => number;

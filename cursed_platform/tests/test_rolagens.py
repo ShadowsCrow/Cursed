@@ -110,6 +110,19 @@ class RolagensDominioTest(unittest.TestCase):
         self.assertEqual([r.id for r in rolagens.listar(self.session, "mesa", narrador=True)], [oculta.id, visivel.id])
 
 
+class FinalidadeTest(unittest.TestCase):
+    """modo-de-turno, tarefa 3.1: a rolagem de iniciativa é marcada; as demais não."""
+
+    def test_finalidade_gravada_e_enviada(self):
+        engine = _banco()
+        with Session(engine) as session:
+            livre = rolagens.rolar(session, "mesa", "ana", {20: 1}, 0)
+            iniciativa = rolagens.rolar(session, "mesa", "ana", {20: 1}, 0, finalidade="iniciativa")
+            self.assertIsNone(rolagens.para_resposta(livre)["finalidade"])
+            self.assertEqual(rolagens.para_resposta(iniciativa)["finalidade"], "iniciativa")
+        engine.dispose()
+
+
 class RolagensApiTest(unittest.TestCase):
     def setUp(self):
         self.engine = _banco()

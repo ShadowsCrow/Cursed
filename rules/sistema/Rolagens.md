@@ -167,6 +167,15 @@ A contagem é reiniciada no início do turno do personagem que realizou as Defes
 
 O valor natural é o resultado mostrado diretamente no `1d20`, antes da aplicação de qualquer bônus ou penalidade.
 
+## Faixas ampliadas
+
+Normalmente, só o `20 natural` é crítico e só o `1 natural` é falha automática. Uma habilidade de classe, de arquétipo ou de raça pode ampliar essas faixas quando o próprio texto disser isso:
+
+- a faixa de crítico desce a partir de `20`: com uma ampliação de `1`, um `19` ou um `20` naturais são críticos;
+- a faixa de falha sobe a partir de `1`: com uma ampliação de `1`, um `1` ou um `2` naturais são falha automática.
+
+Ampliações de fontes diferentes se somam. Duas ampliações de crítico de `1` levam a faixa a `18–20`. Um valor que caia nas duas faixas ao mesmo tempo conta como crítico. A faixa de crítico nunca começa abaixo de `2`, e a de falha nunca passa de `19`.
+
 ## 1 natural no ataque
 
 Um `1 natural` no ataque é uma falha automática.

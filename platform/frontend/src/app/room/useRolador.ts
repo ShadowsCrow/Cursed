@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   acrescentarDado, ajustarModificador, MONTAGEM_VAZIA, quantidadeDeDados, removerDado, rolar,
-  type EscolhaDaFicha, type FonteAleatoria, type Faces, type Montagem, type Rolagem,
+  type EscolhaDaFicha, type FonteAleatoria, type Faces, type MarcaDoDado, type Montagem, type Rolagem,
 } from "./dados";
 
 export const LIMITE_DO_HISTORICO = 20;
@@ -29,6 +29,11 @@ export interface EstadoDoRolador {
   limparHistorico: () => void;
   /** Rolagem de outra pessoa da mesa: entra no histórico com o nome dela, sem mudar o visor. */
   receber: (rolagem: Rolagem) => void;
+  /**
+   * Marcas de crítico vindas de novo do servidor (gamificacao-da-sala): ao ligar o destaque, as rolagens já no
+   * histórico e no visor ganham as marcas que foram guardadas no sorteio.
+   */
+  atualizarMarcas: (porId: ReadonlyMap<number, MarcaDoDado[]>) => void;
 }
 
 export interface OpcoesDoRolador {
@@ -121,5 +126,13 @@ export function useRolador({ fonte, sortear, aoRolar }: OpcoesDoRolador = {}): E
     rolarDeNovo: (rolagem) => registrar(rolagem.montagem, rolagem.ficha ?? fichaAtual.current),
     limparHistorico: () => setHistorico([]),
     receber: guardar,
+    atualizarMarcas: useCallback((porId: ReadonlyMap<number, MarcaDoDado[]>) => {
+      const marcar = (rolagem: Rolagem): Rolagem => {
+        const marcas = porId.get(rolagem.id);
+        return marcas === undefined ? rolagem : { ...rolagem, marcas };
+      };
+      setHistorico((anteriores) => anteriores.map(marcar));
+      setUltima((anterior) => (anterior ? marcar(anterior) : anterior));
+    }, []),
   };
 }

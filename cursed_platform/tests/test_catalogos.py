@@ -121,6 +121,36 @@ class ConteudoTest(unittest.TestCase):
                 catalogos._habilidades([{**bruta, "potencia_uso": valor}], arquivo="classes.json", onde="Druida")
             self.assertIn("potencia_uso", str(erro.exception))
 
+    def test_ampliacao_das_faixas_de_critico(self):
+        """gamificacao-da-sala 2.1."""
+        bruta = {"nome": "Olho", "descricao": "Texto.", "amplia_critico": 1, "amplia_falha_critica": 2}
+        habilidade, = catalogos._habilidades([bruta], arquivo="classes.json", onde="Gatuno")
+        self.assertEqual((habilidade.amplia_critico, habilidade.amplia_falha_critica), (1, 2))
+        sem, = catalogos._habilidades([{"nome": "Outra", "descricao": "Texto."}], arquivo="classes.json", onde="Gatuno")
+        self.assertEqual((sem.amplia_critico, sem.amplia_falha_critica), (0, 0))
+        for campo in ("amplia_critico", "amplia_falha_critica"):
+            for valor in (0, -1, "duas", 1.5, True):
+                with self.subTest(campo=campo, valor=valor), self.assertRaises(CatalogoInvalido) as erro:
+                    catalogos._habilidades([{"nome": "Olho", "descricao": "Texto.", campo: valor}],
+                                           arquivo="racas.json", onde="Elfo")
+                self.assertIn(campo, str(erro.exception))
+
+    def test_bonus_de_deslocamento(self):
+        """modo-de-turno 6.2."""
+        habilidade, = catalogos._habilidades([{"nome": "Passos", "descricao": "Texto.", "deslocamento": 3}],
+                                             arquivo="classes.json", onde="Gatuno")
+        self.assertEqual(habilidade.deslocamento, 3)
+        lenta, = catalogos._habilidades([{"nome": "Peso", "descricao": "Texto.", "deslocamento": -2}],
+                                        arquivo="racas.json", onde="Anão")
+        self.assertEqual(lenta.deslocamento, -2)
+        sem, = catalogos._habilidades([{"nome": "Outra", "descricao": "Texto."}], arquivo="classes.json", onde="Gatuno")
+        self.assertEqual(sem.deslocamento, 0)
+        for valor in (0, "rápido", 1.5, True):
+            with self.subTest(valor=valor), self.assertRaises(CatalogoInvalido) as erro:
+                catalogos._habilidades([{"nome": "Passos", "descricao": "Texto.", "deslocamento": valor}],
+                                       arquivo="classes.json", onde="Gatuno")
+            self.assertIn("deslocamento", str(erro.exception))
+
     def test_arquetipos_da_classe(self):
         self.assertEqual([a.nome for a in self.catalogo.classe("Gatuno").arquetipos], ["Ladrão", "Assassino", "Psionico"])
         self.assertTrue(self.catalogo.classe("mago").arquetipo("mutante  arcano"))

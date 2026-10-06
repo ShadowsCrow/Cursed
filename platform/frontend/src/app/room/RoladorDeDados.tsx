@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
 import {
-  descreverMontagem, LIMITE_DO_MODIFICADOR, MAXIMO_POR_DADO, quantidadeDeDados, TIPOS_DE_DADO, type Faces, type Rolagem,
+  descreverMontagem, destaqueDaRolagem, LIMITE_DO_MODIFICADOR, marcaDoDado, MAXIMO_POR_DADO, NOME_DA_MARCA, quantidadeDeDados,
+  TIPOS_DE_DADO, type Faces, type MarcaDoDado, type Rolagem,
 } from "./dados";
 import type { EstadoDoRolador } from "./useRolador";
 import type { MostrarRolagens } from "./rolagensDaMesa";
@@ -36,14 +37,25 @@ function ImagemDoDado({ faces }: { faces: Faces }) {
     : <Silhueta faces={faces} />;
 }
 
-function ValoresDaRolagem({ rolagem }: { rolagem: Rolagem }) {
+/** Selo de crítico ou de falha crítica (gamificacao-da-sala): com texto, não só cor. */
+function SeloDaMarca({ tipo }: { tipo: MarcaDoDado["tipo"] }) {
+  return <span className={`rolador__selo rolador__selo--${tipo}`}>{NOME_DA_MARCA[tipo]}</span>;
+}
+
+function ValoresDaRolagem({ rolagem, destaque = true }: { rolagem: Rolagem; destaque?: boolean }) {
   return (
     <ul className="rolador__grupos">
       {rolagem.grupos.map((grupo) => (
         <li key={grupo.faces}>
           <span className="rolador__grupo-tipo">d{grupo.faces}</span>
           <span className="rolador__valores">
-            {grupo.valores.map((valor, indice) => <span key={indice} className="rolador__valor">{valor}</span>)}
+            {grupo.valores.map((valor, indice) => {
+              const marca = destaque ? marcaDoDado(rolagem, grupo.faces, indice) : null;
+              return <span key={indice} className={`rolador__valor${marca ? ` rolador__valor--${marca}` : ""}`}
+                title={marca ? NOME_DA_MARCA[marca] : undefined}>
+                {valor}{marca && <span className="sr-only"> ({NOME_DA_MARCA[marca].toLocaleLowerCase("pt-BR")})</span>}
+              </span>;
+            })}
           </span>
         </li>
       ))}
@@ -69,7 +81,8 @@ export interface OpcoesDaAbaDados {
 
 /**
  * Aba Dados do painel da Sala (melhorias-da-sala, itens 1 e 3): rolador parecido com o do Google.
- * Cada toque num dado o acrescenta à rolagem; o resultado não traz leitura mecânica (sucesso, crítico, CD).
+ * Cada toque num dado o acrescenta à rolagem. A única leitura do resultado é o selo de crítico ou de falha crítica
+ * no d20, quando o Narrador liga o destaque (gamificacao-da-sala); nada de sucesso, CD ou vantagem.
  */
 /** Rolar pela ficha (item 8): a faixa de retratos e os Atributos e Perícias da ficha escolhida. */
 export interface FichaDaAbaDados {
@@ -100,10 +113,14 @@ function SeletorDaFicha({ rotulo, nenhum, valor, opcoesDaFicha, onMudar }: {
   );
 }
 
-export function RoladorDeDados({ rolador, opcoes, ficha }: {
+export function RoladorDeDados({ rolador, opcoes, ficha, destaque = true }: {
   rolador: EstadoDoRolador; opcoes?: OpcoesDaAbaDados; ficha?: FichaDaAbaDados;
+  /** Destaque de críticos ligado pelo Narrador (gamificacao-da-sala): mostra as marcas que o servidor enviou. */
+  destaque?: boolean;
 }) {
   const { montagem, ultima, historico, rolando } = rolador;
+  const marcaDa = (rolagem: Rolagem) => (destaque ? destaqueDaRolagem(rolagem) : null);
+  const marcaDaUltima = ultima ? marcaDa(ultima) : null;
   const escolha = rolador.ficha;
   const expressao = descreverMontagem(montagem, escolha?.personagemId ? ficha?.termos ?? [] : []);
   const semDados = quantidadeDeDados(montagem) === 0;
@@ -133,14 +150,15 @@ export function RoladorDeDados({ rolador, opcoes, ficha }: {
           {rolando ? <span className="rolador__total rolador__total--rolando">Rolando…</span> : ultima ? (
             <>
               <span className="sr-only">Resultado de {ultima.expressao}: </span>
-              <span key={ultima.id} className="rolador__total">{ultima.total}</span>
+              <span key={ultima.id} className={`rolador__total${marcaDaUltima ? ` rolador__total--${marcaDaUltima}` : ""}`}>{ultima.total}</span>
+              {marcaDaUltima && <><span className="sr-only">, </span><SeloDaMarca tipo={marcaDaUltima} /></>}
               {/* A expressão rolada só aparece quando a montagem já mudou desde a rolagem. */}
               {ultima.expressao !== expressao && <span className="rolador__rolada" aria-hidden="true">{ultima.expressao}</span>}
               {ultima.oculta && <span className="rolador__oculta">oculta dos jogadores</span>}
             </>
           ) : <span className="rolador__total rolador__total--vazio" aria-hidden="true">—</span>}
         </div>
-        {ultima && !rolando && <ValoresDaRolagem rolagem={ultima} />}
+        {ultima && !rolando && <ValoresDaRolagem rolagem={ultima} destaque={destaque} />}
         {rolador.erro && <p className="rolador__erro" role="alert">{rolador.erro}</p>}
       </div>
 
@@ -232,13 +250,15 @@ export function RoladorDeDados({ rolador, opcoes, ficha }: {
           <ol className="rolador__lista" tabIndex={0} aria-labelledby="rolador-historico-titulo">
             {historico.map((rolagem) => (
               <li key={rolagem.id} className="rolador__item">
-                {(rolagem.autor || rolagem.oculta || rolagem.personagem) && <span className="rolador__item-autor">
-                  {[rolagem.autor, rolagem.personagem, rolagem.oculta ? "oculta" : null].filter(Boolean).join(" · ")}</span>}
+                {(rolagem.autor || rolagem.oculta || rolagem.personagem || rolagem.finalidade) && <span className="rolador__item-autor">
+                  {[rolagem.finalidade === "iniciativa" ? "Iniciativa" : null, rolagem.autor, rolagem.personagem,
+                    rolagem.oculta ? "oculta" : null].filter(Boolean).join(" · ")}</span>}
                 <div className="rolador__item-cabeca">
                   <span className="rolador__item-expressao">{rolagem.expressao}</span>
+                  {marcaDa(rolagem) && <SeloDaMarca tipo={marcaDa(rolagem)!} />}
                   <strong className="rolador__item-total">{rolagem.total}</strong>
                 </div>
-                <ValoresDaRolagem rolagem={rolagem} />
+                <ValoresDaRolagem rolagem={rolagem} destaque={destaque} />
                 <button type="button" className="rolador__texto" aria-label={`Rolar de novo ${rolagem.expressao}`}
                   onClick={() => rolador.rolarDeNovo(rolagem)}>Rolar de novo</button>
               </li>

@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { components } from "../../api/generated/schema";
 import { extractErrorMessage, type ApiClient } from "../characters/types";
-import { TIPOS_DE_DADO, type EscolhaDaFicha, type Faces, type Montagem, type Rolagem } from "./dados";
+import { TIPOS_DE_DADO, type EscolhaDaFicha, type Faces, type MarcaDoDado, type Montagem, type Rolagem } from "./dados";
 import { intervaloDaSala } from "./atualizacao";
 
 type RolagemDoServidor = components["schemas"]["RolagemDeDados"];
@@ -21,6 +21,13 @@ export const CHAVE_ANIMACAO_DOS_DADOS = "cursed:mesa:animacao-dos-dados";
 export const CHAVE_ROLAR_OCULTO = "cursed:mesa:rolar-oculto";
 
 export const chaveDasRolagens = (mesaId: string) => ["rolagens", mesaId] as const;
+
+/** Marcas de crítico da rolagem do servidor (gamificacao-da-sala); vazias com o destaque desligado. */
+export function marcasDoServidor(rolagem: Pick<RolagemDoServidor, "marcas">): MarcaDoDado[] {
+  return (rolagem.marcas ?? [])
+    .filter((marca) => TIPOS_DE_DADO.includes(marca.faces as Faces))
+    .map((marca) => ({ faces: marca.faces as Faces, indice: marca.indice, tipo: marca.tipo }));
+}
 
 /** Rolagem do servidor no formato da aba Dados; `autor` só nas rolagens de outras pessoas. */
 export function deServidor(rolagem: RolagemDoServidor, autor?: string, personagem?: string): Rolagem {
@@ -37,9 +44,11 @@ export function deServidor(rolagem: RolagemDoServidor, autor?: string, personage
     atributo: termos.find((t) => t.chave.startsWith("atributo:"))?.chave ?? null,
     pericia: termos.find((t) => t.chave.startsWith("pericia:"))?.chave ?? null,
   } : undefined;
+  const marcas = marcasDoServidor(rolagem);
   return { id: rolagem.id, expressao: rolagem.expressao, grupos, modificador: rolagem.modificador, total: rolagem.total,
     montagem, ...(autor ? { autor } : {}), ...(rolagem.oculta ? { oculta: true } : {}),
-    ...(termos.length > 0 ? { termos } : {}), ...(ficha ? { ficha } : {}), ...(personagem ? { personagem } : {}) };
+    ...(termos.length > 0 ? { termos } : {}), ...(ficha ? { ficha } : {}), ...(personagem ? { personagem } : {}),
+    ...(marcas.length > 0 ? { marcas } : {}), ...(rolagem.finalidade === "iniciativa" ? { finalidade: "iniciativa" as const } : {}) };
 }
 
 /** Pede ao servidor o sorteio da montagem; `oculta` só vale para o Narrador. */

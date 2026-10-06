@@ -28,6 +28,8 @@ from .wear import router as wear_router
 from .cards import router as cards_router
 from .card_lifecycle import router as card_lifecycle_router
 from .room import router as room_router
+from .gamificacao import router as gamificacao_router
+from .turno import router as turno_router
 from .stashes import router as stashes_router
 from .assets import router as assets_router
 from .catalogs import router as catalogs_router
@@ -112,6 +114,8 @@ def create_app(settings: PlatformSettings | None = None, *, engine: Engine | Non
     api.include_router(cards_router)
     api.include_router(card_lifecycle_router)
     api.include_router(room_router)
+    api.include_router(gamificacao_router)
+    api.include_router(turno_router)
     api.include_router(stashes_router)
     api.include_router(assets_router)
     api.include_router(catalogs_router)

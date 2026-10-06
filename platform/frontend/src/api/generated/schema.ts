@@ -1581,6 +1581,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/sala/estatisticas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ler Estatisticas
+         * @description O Narrador vê todos os jogadores; o jogador vê a si, ou todos com o placar ligado.
+         */
+        get: operations["ler_estatisticas_mesas__mesa_id__sala_estatisticas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/musica": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ler Musica
+         * @description O que a mesa está ouvindo nas duas camadas, com o relógio do servidor para cada navegador calcular a
+         *     posição esperada.
+         */
+        get: operations["ler_musica_mesas__mesa_id__sala_musica_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/musica/{camada}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Alterar Musica
+         * @description Só o Narrador muda o que a mesa ouve numa camada: tocar, pausar, continuar, parar ou "Repetir".
+         */
+        put: operations["alterar_musica_mesas__mesa_id__sala_musica__camada__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/mvp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Mvp */
+        get: operations["ler_mvp_mesas__mesa_id__sala_mvp_get"];
+        put?: never;
+        /** Abrir Mvp */
+        post: operations["abrir_mvp_mesas__mesa_id__sala_mvp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/mvp/desempate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Desempatar Mvp */
+        post: operations["desempatar_mvp_mesas__mesa_id__sala_mvp_desempate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/mvp/encerramento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Encerrar Mvp */
+        post: operations["encerrar_mvp_mesas__mesa_id__sala_mvp_encerramento_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/mvp/voto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Votar Mvp
+         * @description O voto é secreto e não entra no registro da mesa.
+         */
+        put: operations["votar_mvp_mesas__mesa_id__sala_mvp_voto_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/preferencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Preferencias */
+        get: operations["ler_preferencias_mesas__mesa_id__sala_preferencias_get"];
+        /**
+         * Alterar Preferencias
+         * @description Só o Narrador liga o destaque de críticos e o placar da mesa.
+         */
+        put: operations["alterar_preferencias_mesas__mesa_id__sala_preferencias_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/sala/recipientes": {
         parameters: {
             query?: never;
@@ -1658,6 +1812,44 @@ export interface paths {
          * @description Sorteia a rolagem da aba Dados no servidor, guarda e avisa a mesa (melhorias-da-sala, item 3).
          */
         post: operations["rolar_dados_mesas__mesa_id__sala_rolagens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/sessoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Sessoes */
+        get: operations["ler_sessoes_mesas__mesa_id__sala_sessoes_get"];
+        put?: never;
+        /**
+         * Iniciar Sessao
+         * @description Só o Narrador inicia uma sessão; com uma em andamento, 409.
+         */
+        post: operations["iniciar_sessao_mesas__mesa_id__sala_sessoes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/sessoes/atual/encerramento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Encerrar Sessao */
+        post: operations["encerrar_sessao_mesas__mesa_id__sala_sessoes_atual_encerramento_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1781,6 +1973,139 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/sala/turno": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ler Turno */
+        get: operations["ler_turno_mesas__mesa_id__sala_turno_get"];
+        put?: never;
+        /**
+         * Entrar Em Modo Turno
+         * @description Só o Narrador, com sessão em andamento e cena ativa com personagens.
+         */
+        post: operations["entrar_em_modo_turno_mesas__mesa_id__sala_turno_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/turno/correr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correr
+         * @description Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento.
+         */
+        post: operations["correr_mesas__mesa_id__sala_turno_correr_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/turno/encerramento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sair Do Modo Turno */
+        post: operations["sair_do_modo_turno_mesas__mesa_id__sala_turno_encerramento_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/turno/iniciativa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rolar Iniciativa
+         * @description O jogador rola pelos próprios personagens; o Narrador, por qualquer participante.
+         */
+        post: operations["rolar_iniciativa_mesas__mesa_id__sala_turno_iniciativa_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/turno/iniciativa/npcs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rolar Iniciativa Dos Npcs
+         * @description Só o Narrador: rola de uma vez os NPCs e monstros que faltam, ocultos dos jogadores. Um que não tenha os valores
+         *     na ficha interrompe tudo, com o nome dele.
+         */
+        post: operations["rolar_iniciativa_dos_npcs_mesas__mesa_id__sala_turno_iniciativa_npcs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/turno/inicio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Comecar Disputa */
+        post: operations["comecar_disputa_mesas__mesa_id__sala_turno_inicio_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/turno/proximo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Proximo Turno */
+        post: operations["proximo_turno_mesas__mesa_id__sala_turno_proximo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/solicitacoes": {
         parameters: {
             query?: never;
@@ -1809,6 +2134,26 @@ export interface paths {
         put?: never;
         /** Decidir Solicitacao */
         post: operations["decidir_solicitacao_mesas__mesa_id__solicitacoes__pedido_id__decisao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/musicas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Biblioteca De Musicas
+         * @description Biblioteca de sons da Sala (musica-da-sala), igual para todas as mesas: ambientes e músicas, só CC BY ou CC0.
+         */
+        get: operations["biblioteca_de_musicas_musicas_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2001,6 +2346,26 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /**
+         * AlterarMusicaRequest
+         * @description Estado da camada pedido pelo Narrador: tocar, pausar, continuar, parar ou mudar "Repetir".
+         */
+        AlterarMusicaRequest: {
+            /** Faixa Id */
+            faixa_id?: string | null;
+            /**
+             * Posicao Ms
+             * @default 0
+             */
+            posicao_ms: number;
+            /**
+             * Repetir
+             * @default true
+             */
+            repetir: boolean;
+            /** Tocando */
+            tocando: boolean;
+        };
         /** AlterarVisibilidadeRequest */
         AlterarVisibilidadeRequest: {
             revelacao?: components["schemas"]["RevelacaoContrato"];
@@ -2189,6 +2554,17 @@ export interface components {
             texto: string;
             /** Valor */
             valor: number;
+        };
+        /** BibliotecaDeMusicas */
+        BibliotecaDeMusicas: {
+            /** Cenarios */
+            cenarios: string[];
+            /** Estilos */
+            estilos: string[];
+            /** Faixas */
+            faixas: components["schemas"]["FaixaDeMusica"][];
+            /** Momentos */
+            momentos: string[];
         };
         /** Body_enviar_foto_perfil_foto_put */
         Body_enviar_foto_perfil_foto_put: {
@@ -2591,6 +2967,25 @@ export interface components {
             /** Versao Id */
             versao_id: string;
         };
+        /** CombateDoTurno */
+        CombateDoTurno: {
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "iniciativa" | "combate";
+            /** Id */
+            id: string;
+            /**
+             * Participantes
+             * @description Na ordem de iniciativa; quem falta rolar no fim.
+             */
+            participantes: components["schemas"]["ParticipanteDoTurno"][];
+            /** Rodada */
+            rodada: number;
+            /** Vez Participante Id */
+            vez_participante_id?: string | null;
+        };
         /** ConcederCartaRequest */
         ConcederCartaRequest: {
             /**
@@ -2867,6 +3262,11 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** DesempatarMvpRequest */
+        DesempatarMvpRequest: {
+            /** Vencedor Id */
+            vencedor_id: string;
+        };
         /** DesgasteComandoResposta */
         DesgasteComandoResposta: {
             /** Consequencias */
@@ -3079,6 +3479,113 @@ export interface components {
             /** Versao */
             versao: string;
         };
+        /**
+         * EstadoDaCamada
+         * @description O que toca numa camada. A posição esperada é ``posicao_ms`` mais o tempo desde ``alterada_em`` enquanto toca.
+         */
+        EstadoDaCamada: {
+            /** Alterada Em */
+            alterada_em?: string | null;
+            /** Faixa Id */
+            faixa_id?: string | null;
+            /**
+             * Posicao Ms
+             * @default 0
+             */
+            posicao_ms: number;
+            /**
+             * Repetir
+             * @default true
+             */
+            repetir: boolean;
+            /**
+             * Tocando
+             * @default false
+             */
+            tocando: boolean;
+        };
+        /**
+         * EstadoDaMusica
+         * @description O que a mesa está ouvindo nas duas camadas, que tocam juntas; ``agora`` é o relógio do servidor no momento
+         *     da resposta.
+         */
+        EstadoDaMusica: {
+            /**
+             * Agora
+             * Format: date-time
+             */
+            agora: string;
+            ambiente: components["schemas"]["EstadoDaCamada"];
+            musica: components["schemas"]["EstadoDaCamada"];
+        };
+        /** EstadoDoMvp */
+        EstadoDoMvp: {
+            /**
+             * Apelidos
+             * @description Apelido de cada jogador citado.
+             */
+            apelidos?: {
+                [key: string]: string;
+            };
+            /** Historico */
+            historico?: components["schemas"]["MvpAnterior"][];
+            votacao?: components["schemas"]["VotacaoMvp"] | null;
+        };
+        /** EstadoDoTurno */
+        EstadoDoTurno: {
+            combate?: components["schemas"]["CombateDoTurno"] | null;
+        };
+        /**
+         * EstatisticasDaMesa
+         * @description Estatísticas dos jogadores que o leitor pode ver; ``sessao`` é a de referência de "Esta sessão".
+         */
+        EstatisticasDaMesa: {
+            /** Jogadores */
+            jogadores: components["schemas"]["EstatisticasDoJogador"][];
+            /**
+             * Placar Visivel
+             * @default false
+             */
+            placar_visivel: boolean;
+            sessao?: components["schemas"]["SessaoDeJogo"] | null;
+        };
+        /** EstatisticasDoJogador */
+        EstatisticasDoJogador: {
+            /** Apelido */
+            apelido: string;
+            campanha: components["schemas"]["EstatisticasDoPeriodo"];
+            sessao?: components["schemas"]["EstatisticasDoPeriodo"] | null;
+            /** Usuario Id */
+            usuario_id: string;
+        };
+        /** EstatisticasDoPeriodo */
+        EstatisticasDoPeriodo: {
+            /**
+             * Criticos
+             * @description Só com o destaque de críticos ligado.
+             */
+            criticos?: number | null;
+            /** Dados */
+            dados: number;
+            /** Falhas Criticas */
+            falhas_criticas?: number | null;
+            /** Rolagens */
+            rolagens: number;
+            /**
+             * Rotulo Sorte
+             * @enum {string}
+             */
+            rotulo_sorte: "quentes" | "na_media" | "frios" | "poucos_dados";
+            /**
+             * Sorte
+             * @description Pontos percentuais acima (+) ou abaixo (−) da média esperada; nulo com poucos dados.
+             */
+            sorte?: number | null;
+            /** Vida Perdida */
+            vida_perdida: number;
+            /** Vida Recuperada */
+            vida_recuperada: number;
+        };
         /** EventoAuditoriaResumo */
         EventoAuditoriaResumo: {
             /** Acao */
@@ -3143,6 +3650,57 @@ export interface components {
             minima: number;
             /** Tamanho */
             tamanho: string;
+        };
+        /**
+         * FaixaDeMusica
+         * @description Faixa da biblioteca de sons da Sala (só CC BY ou CC0), com o crédito exigido pela licença.
+         */
+        FaixaDeMusica: {
+            /**
+             * Arquivo
+             * @description Caminho público do áudio, servido pela interface.
+             */
+            arquivo: string;
+            /** Autor */
+            autor: string;
+            /**
+             * Cenario
+             * @description O lugar; sem ele, a faixa serve em qualquer lugar.
+             */
+            cenario?: string | null;
+            /** Duracao S */
+            duracao_s: number;
+            /**
+             * Estilos
+             * @description Estilos de jogo em que a faixa serve (Medieval, Moderno...).
+             */
+            estilos: string[];
+            /** Id */
+            id: string;
+            /** Licenca */
+            licenca: string;
+            /** Licenca Url */
+            licenca_url: string;
+            /**
+             * Momento
+             * @description Só nas músicas.
+             */
+            momento?: string | null;
+            /** Origem Url */
+            origem_url: string;
+            /**
+             * Sem Emenda
+             * @description Feita para repetir sem emenda.
+             */
+            sem_emenda: boolean;
+            /**
+             * Tipo
+             * @description Camada em que a faixa toca.
+             * @enum {string}
+             */
+            tipo: "ambiente" | "musica";
+            /** Titulo */
+            titulo: string;
         };
         /** FaixaDesgaste */
         FaixaDesgaste: {
@@ -3253,7 +3811,7 @@ export interface components {
              * Tipo
              * @enum {string}
              */
-            tipo: "base" | "ajuste" | "atributo" | "pericia" | "equipamento" | "efeito" | "classe" | "nivel" | "ajuste_narrador";
+            tipo: "base" | "ajuste" | "atributo" | "pericia" | "equipamento" | "efeito" | "classe" | "nivel" | "ajuste_narrador" | "habilidade";
             /** Valor */
             valor: number;
         };
@@ -3463,6 +4021,12 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /** IniciativaRolada */
+        IniciativaRolada: {
+            estado: components["schemas"]["EstadoDoTurno"];
+            /** Rolagens */
+            rolagens: components["schemas"]["RolagemDeDados"][];
+        };
         /**
          * IntervaloAlturaResumo
          * @description Altura em metros; `maxima` vazia é sem limite superior.
@@ -3640,6 +4204,24 @@ export interface components {
             /** Sexos */
             sexos: string[];
         };
+        /**
+         * MarcaDeDado
+         * @description Crítico ou falha crítica num d20 da rolagem (gamificacao-da-sala); só vem com o destaque ligado.
+         */
+        MarcaDeDado: {
+            /** Faces */
+            faces: number;
+            /**
+             * Indice
+             * @description Posição do dado dentro do grupo de mesmas faces.
+             */
+            indice: number;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "critico" | "falha_critica";
+        };
         /** MesaDetalhe */
         MesaDetalhe: {
             /**
@@ -3748,12 +4330,33 @@ export interface components {
         };
         /** MoverTokenRequest */
         MoverTokenRequest: {
+            /**
+             * Livre
+             * @description Movimento livre do Narrador no modo turno: não gasta Deslocamento.
+             * @default false
+             */
+            livre: boolean;
             /** Versao Esperada */
             versao_esperada: number;
             /** X */
             x: number;
             /** Y */
             y: number;
+        };
+        /**
+         * MovimentoDoTurno
+         * @description Saldo de movimento da vez: metros andados, o limite (Deslocamento, dobrado ao Correr) e se está correndo.
+         */
+        MovimentoDoTurno: {
+            /**
+             * Correndo
+             * @default false
+             */
+            correndo: boolean;
+            /** Gasto */
+            gasto: number;
+            /** Limite */
+            limite: number;
         };
         /** MudancaAuditoria */
         MudancaAuditoria: {
@@ -3770,6 +4373,19 @@ export interface components {
             depois?: unknown;
             /** Rotulo */
             rotulo?: string | null;
+        };
+        /** MvpAnterior */
+        MvpAnterior: {
+            /** Encerrada Em */
+            encerrada_em?: string | null;
+            /** Sessao Numero */
+            sessao_numero?: number | null;
+            /** Vencedor Id */
+            vencedor_id: string;
+            /** Votacao Id */
+            votacao_id: string;
+            /** Votos */
+            votos: number;
         };
         /** NaturezaCriacaoResumo */
         NaturezaCriacaoResumo: {
@@ -3889,6 +4505,55 @@ export interface components {
             eventos: components["schemas"]["EventoAuditoriaResumo"][];
             /** Proximo Cursor */
             proximo_cursor?: number | null;
+        };
+        /**
+         * ParticipanteDoTurno
+         * @description Participante do modo turno como o leitor pode vê-lo: o jogador não recebe o total de NPCs e monstros nem o
+         *     vínculo com uma ficha oculta.
+         */
+        ParticipanteDoTurno: {
+            /**
+             * Do Jogador
+             * @default false
+             */
+            do_jogador: boolean;
+            /**
+             * Fora Da Cena
+             * @default false
+             */
+            fora_da_cena: boolean;
+            /** Id */
+            id: string;
+            /**
+             * Meu
+             * @default false
+             */
+            meu: boolean;
+            /** @description Só na vez, para o Narrador e o dono. */
+            movimento?: components["schemas"]["MovimentoDoTurno"] | null;
+            /** Nome */
+            nome: string;
+            /** Personagem Id */
+            personagem_id?: string | null;
+            /** Rolou */
+            rolou: boolean;
+            /**
+             * Token Id
+             * @description Primeiro token visível, para o retrato.
+             */
+            token_id?: string | null;
+            /**
+             * Token Ids
+             * @description Tokens visíveis do participante, para ligar o token arrastado ao participante certo (o grupo da ficha ou o token próprio).
+             */
+            token_ids?: string[];
+            /**
+             * Tokens
+             * @default 0
+             */
+            tokens: number;
+            /** Total */
+            total?: number | null;
         };
         /** ParticipanteResumo */
         ParticipanteResumo: {
@@ -4109,6 +4774,22 @@ export interface components {
              * @description Só armas versáteis: empunhadura com uma ou duas mãos.
              */
             maos?: number | null;
+        };
+        /**
+         * PreferenciasDaSala
+         * @description Preferências da Sala escolhidas pelo Narrador (gamificacao-da-sala); começam desligadas.
+         */
+        PreferenciasDaSala: {
+            /**
+             * Destaque Criticos
+             * @default false
+             */
+            destaque_criticos: boolean;
+            /**
+             * Estatisticas Visiveis
+             * @default false
+             */
+            estatisticas_visiveis: boolean;
         };
         /**
          * PreviaCriacaoResposta
@@ -4435,10 +5116,17 @@ export interface components {
             criado_em?: string | null;
             /** Expressao */
             expressao: string;
+            /**
+             * Finalidade
+             * @description Rolagem de iniciativa do modo turno.
+             */
+            finalidade?: "iniciativa" | null;
             /** Grupos */
             grupos: components["schemas"]["GrupoDeDados"][];
             /** Id */
             id: number;
+            /** Marcas */
+            marcas?: components["schemas"]["MarcaDeDado"][];
             /** Modificador */
             modificador: number;
             /**
@@ -4487,6 +5175,11 @@ export interface components {
              */
             personagem_id?: string | null;
         };
+        /** RolarIniciativaRequest */
+        RolarIniciativaRequest: {
+            /** Participante Id */
+            participante_id: string;
+        };
         /** SalaSnapshot */
         SalaSnapshot: {
             cena?: components["schemas"]["CenaSala"] | null;
@@ -4509,6 +5202,28 @@ export interface components {
             tipo?: ("habilidade" | "magia" | "item" | "efeito") | null;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /** SessaoDeJogo */
+        SessaoDeJogo: {
+            /** Encerrada Em */
+            encerrada_em?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Iniciada Em
+             * Format: date-time
+             */
+            iniciada_em: string;
+            /** Numero */
+            numero: number;
+        };
+        /**
+         * SessoesDaMesa
+         * @description A sessão em andamento (se houver) e a última encerrada.
+         */
+        SessoesDaMesa: {
+            atual?: components["schemas"]["SessaoDeJogo"] | null;
+            ultima_encerrada?: components["schemas"]["SessaoDeJogo"] | null;
         };
         /** SituacionalResumo */
         SituacionalResumo: {
@@ -4745,6 +5460,50 @@ export interface components {
             oculto?: boolean | null;
             /** Versao Esperada */
             versao_esperada: number;
+        };
+        /**
+         * VotacaoMvp
+         * @description Votação de MVP sem contagem por candidato: só quantos votaram, o próprio voto e, no fim, o vencedor.
+         */
+        VotacaoMvp: {
+            /**
+             * Aberta Em
+             * Format: date-time
+             */
+            aberta_em: string;
+            /** Candidatos */
+            candidatos: string[];
+            /**
+             * Empatados
+             * @description Só para o Narrador, no desempate.
+             */
+            empatados?: string[];
+            /** Encerrada Em */
+            encerrada_em?: string | null;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "aberta" | "desempate" | "encerrada";
+            /** Id */
+            id: string;
+            /** Meu Voto */
+            meu_voto?: string | null;
+            /** Sessao Numero */
+            sessao_numero?: number | null;
+            /** Total */
+            total: number;
+            /** Vencedor Id */
+            vencedor_id?: string | null;
+            /** Votaram */
+            votaram: number;
+            /** Votos Do Vencedor */
+            votos_do_vencedor?: number | null;
+        };
+        /** VotarMvpRequest */
+        VotarMvpRequest: {
+            /** Candidato Id */
+            candidato_id: string;
         };
     };
     responses: never;
@@ -8079,6 +8838,333 @@ export interface operations {
             };
         };
     };
+    ler_estatisticas_mesas__mesa_id__sala_estatisticas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstatisticasDaMesa"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_musica_mesas__mesa_id__sala_musica_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDaMusica"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alterar_musica_mesas__mesa_id__sala_musica__camada__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                camada: "ambiente" | "musica";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlterarMusicaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDaMusica"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_mvp_mesas__mesa_id__sala_mvp_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoMvp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abrir_mvp_mesas__mesa_id__sala_mvp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoMvp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    desempatar_mvp_mesas__mesa_id__sala_mvp_desempate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesempatarMvpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoMvp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    encerrar_mvp_mesas__mesa_id__sala_mvp_encerramento_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoMvp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    votar_mvp_mesas__mesa_id__sala_mvp_voto_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VotarMvpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoMvp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_preferencias_mesas__mesa_id__sala_preferencias_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferenciasDaSala"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alterar_preferencias_mesas__mesa_id__sala_preferencias_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferenciasDaSala"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreferenciasDaSala"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_recipientes_mesas__mesa_id__sala_recipientes_get: {
         parameters: {
             query?: never;
@@ -8273,6 +9359,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RolagemDeDados"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_sessoes_mesas__mesa_id__sala_sessoes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessoesDaMesa"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    iniciar_sessao_mesas__mesa_id__sala_sessoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessoesDaMesa"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    encerrar_sessao_mesas__mesa_id__sala_sessoes_atual_encerramento_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessoesDaMesa"];
                 };
             };
             /** @description Validation Error */
@@ -8494,6 +9673,258 @@ export interface operations {
             };
         };
     };
+    ler_turno_mesas__mesa_id__sala_turno_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    entrar_em_modo_turno_mesas__mesa_id__sala_turno_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correr_mesas__mesa_id__sala_turno_correr_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sair_do_modo_turno_mesas__mesa_id__sala_turno_encerramento_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rolar_iniciativa_mesas__mesa_id__sala_turno_iniciativa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolarIniciativaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IniciativaRolada"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rolar_iniciativa_dos_npcs_mesas__mesa_id__sala_turno_iniciativa_npcs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IniciativaRolada"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    comecar_disputa_mesas__mesa_id__sala_turno_inicio_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    proximo_turno_mesas__mesa_id__sala_turno_proximo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_solicitacoes_mesas__mesa_id__solicitacoes_get: {
         parameters: {
             query?: never;
@@ -8557,6 +9988,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    biblioteca_de_musicas_musicas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibliotecaDeMusicas"];
                 };
             };
         };

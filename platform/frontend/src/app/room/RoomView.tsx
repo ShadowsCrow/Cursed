@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { components } from "../../api/generated/schema";
 import { extractErrorMessage, type ApiClient } from "../characters/types";
@@ -12,24 +12,35 @@ import { CartasDoPainel } from "./CartasDoPainel";
 import { FichasDoPainel } from "./FichasDoPainel";
 import { abaValida, CHAVE_ABA_DO_PAINEL } from "./abasDoPainel";
 import { BolsaDoPainel } from "./BolsaDoPainel";
-import { ChatReservado, MusicaReservada, PainelDaSala } from "./PainelDaSala";
+import { PainelDaSala } from "./PainelDaSala";
+import { MestreDoPainel } from "./MestreDoPainel";
+import { JogadorDoPainel } from "./JogadorDoPainel";
+import { AnuncioDoMvp, BaloesDeReacao, BotaoDeReacao } from "./ReacoesDaSala";
+import { useGamificacaoDaSala } from "./useGamificacaoDaSala";
+import { chaveDoTurno, useModoDeTurno } from "./useModoDeTurno";
+import { medirArraste } from "./medidaDoArraste";
+import { tokensDaVez } from "./brilhoDaVez";
+import { AvisoDeIniciativa, BarraDeTurno } from "./BarraDeTurno";
+import { useRetrato } from "../plataforma/imagens";
+import { MusicaDoPainel } from "./MusicaDoPainel";
+import { useMusicaDaSala } from "./useMusicaDaSala";
 import { RoladorDeDados } from "./RoladorDeDados";
 import { FaixaDeRetratos } from "./FaixaDeRetratos";
 import { useOpcoesDaFicha } from "./useOpcoesDaFicha";
 import { useRolador } from "./useRolador";
 import { useDadosNoTabuleiro } from "./useDadosNoTabuleiro";
 import {
-  CHAVE_ANIMACAO_DOS_DADOS, CHAVE_MOSTRAR_ROLAGENS, CHAVE_ROLAR_OCULTO, deServidor, rolarNoServidor, useRolagensDaMesa,
-  type MostrarRolagens,
+  CHAVE_ANIMACAO_DOS_DADOS, CHAVE_MOSTRAR_ROLAGENS, CHAVE_ROLAR_OCULTO, deServidor, marcasDoServidor, rolarNoServidor,
+  useRolagensDaMesa, type MostrarRolagens,
 } from "./rolagensDaMesa";
-import { SEM_FICHA, type EscolhaDaFicha, type Montagem, type Rolagem } from "./dados";
+import { juntarParaAnimar, SEM_FICHA, type EscolhaDaFicha, type Montagem, type Rolagem } from "./dados";
 import { useRoomEphemera } from "./useRoomEphemera";
 import { casaLivre } from "./viewport";
 import { useMovimentoDeTokens } from "./useMovimentoDeTokens";
 import { PersonagensDosJogadores } from "./PersonagensDosJogadores";
 import { ControleDeTamanho, MenuDoToken } from "./MenuDoToken";
 import { TamanhoDoMapa } from "./TamanhoDoMapa";
-import { SecaoRetratil } from "./SecaoRetratil";
+import { SubAbas } from "./SubAbas";
 import { useParticipantes, usePersonagens } from "../characters/api";
 import { EscolherJogadores, PermissoesEmLote, type ModoDePermissao } from "./PermissaoDeMovimento";
 import { useRetratosDosTokens } from "./useRetratosDosTokens";
@@ -66,6 +77,13 @@ function reservaDoPainel(aberto: boolean, largura: number): number {
 }
 
 type Token = components["schemas"]["TokenSala"];
+type PersonagemResumo = components["schemas"]["PersonagemResumo"];
+
+/** Retrato pequeno do personagem de um jogador, para a votação de MVP. */
+function RetratoDoJogador({ api, mesaId, personagem }: { api: ApiClient; mesaId: string; personagem: PersonagemResumo }) {
+  const imagem = useRetrato(api, mesaId, personagem.retrato_objeto, personagem.tipo, true);
+  return <img src={imagem} alt="" width={32} height={32} />;
+}
 
 /** Preferência do sistema por menos movimento: a animação dos dados começa desligada (item 3). */
 function movimentoReduzido(): boolean {
@@ -73,13 +91,14 @@ function movimentoReduzido(): boolean {
 }
 
 /**
- * Sala de página única: o grid ocupa a área toda; o painel da Sala (abas Cena, Dados, Chat, Fichas, Bolsa, Cartas e Música)
+ * Sala de página única: o grid ocupa a área toda; o painel da Sala (abas Cena, Dados, Mestre ou Jogador, Fichas, Bolsa,
+ * Cartas e Música)
  * e o menu de chão e baús ficam por cima dele, nunca empilhados abaixo.
  */
-/** Para o Narrador, tudo sobre tokens fica numa seção retrátil "Tokens" (item 15); o jogador só tem a lista da cena. */
-function SecaoComTokens({ narrator, children }: { narrator: boolean; children: ReactNode }) {
-  return narrator ? <SecaoRetratil id="tokens-grupo" titulo="Tokens">{children}</SecaoRetratil> : <>{children}</>;
-}
+/** Sub-aba da aba Cena do Narrador (pedido do usuário, 2026-10-04), lembrada neste navegador. */
+export const CHAVE_SUBABA_DA_CENA = "cursed:mesa:subaba-da-cena";
+type TemaDaCena = "cenas" | "personagens" | "tokens";
+const temaDaCena = (valor: string): TemaDaCena => (valor === "personagens" || valor === "tokens" ? valor : "cenas");
 
 export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   api: ApiClient; mesaId: string; userId: string; narrator: boolean; realtime?: RealtimeSession;
@@ -89,6 +108,8 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   const [abaGuardada, setAba] = usePreferenciaTexto(CHAVE_ABA_DO_PAINEL, "cena");
   const aba = abaValida(abaGuardada);
   const [chaoAberto, setChaoAberto] = usePreferenciaLocal(CHAVE_CHAO_ABERTO, false);
+  const [subAbaGuardada, setSubAbaDaCena] = usePreferenciaTexto(CHAVE_SUBABA_DA_CENA, "cenas");
+  const subAbaDaCena = temaDaCena(subAbaGuardada);
   const [larguraGuardada, setLarguraGuardada] = usePreferenciaNumerica(CHAVE_LARGURA_PAINEL, LARGURA_PAINEL_PADRAO);
   // Durante o arraste a largura é só prévia visual; ao soltar, é confirmada e o mapa se reenquadra uma vez.
   const [previaLargura, setPreviaLargura] = useState<number | null>(null);
@@ -149,6 +170,62 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   });
   useRolagensDaMesa({ api, mesaId, userId, comTempoReal: Boolean(realtime), ativo: Boolean(sala.data),
     aoChegar: receberRolagem });
+  // Música da mesa (musica-da-sala): toca aqui, e não na aba, para seguir com qualquer aba e com o painel recolhido.
+  const musica = useMusicaDaSala({ api, mesaId, comTempoReal: Boolean(realtime), ativo: Boolean(sala.data) });
+  // Gamificação (gamificacao-da-sala): sessões, preferências, estatísticas e MVP, para as abas Mestre e Jogador
+  // e para o destaque de críticos e o anúncio do MVP no tabuleiro.
+  const gamificacao = useGamificacaoDaSala({ api, mesaId, comTempoReal: Boolean(realtime), ativo: Boolean(sala.data) });
+  const destaque = gamificacao.preferencias.destaque_criticos;
+  // Modo turno (modo-de-turno): a iniciativa de quem rola aqui anima no tabuleiro e entra no histórico; as dos outros
+  // chegam pelo caminho das rolagens da mesa.
+  const modoTurno = useModoDeTurno({ api, mesaId, comTempoReal: Boolean(realtime), ativo: Boolean(sala.data) });
+  const mostrarIniciativa = useCallback((rolagens: components["schemas"]["RolagemDeDados"][]) => {
+    if (rolagens.length === 0) return;
+    const minhas = rolagens.map((r) => deServidor(r, undefined,
+      r.personagem_id ? nomesDosPersonagens.current.get(r.personagem_id) : undefined));
+    minhas.forEach((r) => rolador.receber(r));
+    if (animacaoDosDados) void dadosNoTabuleiro.animar(juntarParaAnimar(minhas));
+  }, [rolador, animacaoDosDados, dadosNoTabuleiro]);
+  // Movimento livre do Narrador (não gasta Deslocamento): ligado pela barra, ou Alt segurado ao soltar o token.
+  const [movimentoLivre, setMovimentoLivre] = useState(false);
+  const altPressionado = useRef(false);
+  useEffect(() => {
+    if (!narrator) return undefined;
+    const tecla = (evento: globalThis.KeyboardEvent) => { altPressionado.current = evento.altKey; };
+    const sair = () => { altPressionado.current = false; };
+    window.addEventListener("keydown", tecla);
+    window.addEventListener("keyup", tecla);
+    window.addEventListener("blur", sair);
+    return () => {
+      window.removeEventListener("keydown", tecla);
+      window.removeEventListener("keyup", tecla);
+      window.removeEventListener("blur", sair);
+    };
+  }, [narrator]);
+  const rolarIniciativa = (participanteId: string) => { void modoTurno.rolar(participanteId).then(mostrarIniciativa); };
+  const rolarIniciativaDosNpcs = () => { void modoTurno.rolarNpcs().then(mostrarIniciativa); };
+  // Ao ligar o destaque, as rolagens que já estão no histórico ganham as marcas guardadas no sorteio.
+  const atualizarMarcas = rolador.atualizarMarcas;
+  useEffect(() => {
+    if (!destaque) return undefined;
+    let ativo = true;
+    void api.GET("/mesas/{mesa_id}/sala/rolagens", { params: { path: { mesa_id: mesaId }, query: {} } }).then(({ data }) => {
+      if (ativo && Array.isArray(data)) atualizarMarcas(new Map(data.map((r) => [r.id, marcasDoServidor(r)])));
+    }).catch(() => { /* Sem as marcas antigas, só as novas rolagens aparecem destacadas. */ });
+    return () => { ativo = false; };
+  }, [destaque, api, mesaId, atualizarMarcas]);
+  // Anúncio do MVP: só de uma votação encerrada depois de a Sala abrir, nunca da anterior.
+  const [mvpAnunciado, setMvpAnunciado] = useState<string | null>(null);
+  const votacaoVista = useRef<{ id: string; estado: string } | null | undefined>(undefined);
+  const votacao = gamificacao.mvp?.votacao;
+  useEffect(() => {
+    if (gamificacao.mvp === null) return;
+    const anterior = votacaoVista.current;
+    votacaoVista.current = votacao ? { id: votacao.id, estado: votacao.estado } : null;
+    if (anterior === undefined || !votacao || votacao.estado !== "encerrada" || !votacao.vencedor_id) return;
+    if (anterior?.id === votacao.id && anterior.estado === "encerrada") return;
+    setMvpAnunciado(gamificacao.mvp.apelidos?.[votacao.vencedor_id] ?? "Alguém da mesa");
+  }, [gamificacao.mvp, votacao]);
   // Escolha inicial da ficha (item 8): o jogador começa na primeira ficha dele; o Narrador, sem ficha. Se a ficha
   // escolhida pelo Narrador sai da cena, a escolha volta a "Sem ficha".
   const escolherFicha = rolador.escolherFicha;
@@ -276,7 +353,8 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
       });
       if (error) throw new Error(extractErrorMessage(error, "Não foi possível pôr o personagem na cena."));
     },
-    onSuccess: () => { void atualizar(); },
+    // Com o modo turno aberto, quem chega entra na disputa sem iniciativa (modo-de-turno, D8c).
+    onSuccess: () => { void atualizar(); void queryClient.invalidateQueries({ queryKey: chaveDoTurno(mesaId) }); },
   });
 
   const cena = sala.data?.cena;
@@ -300,7 +378,9 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   const posicaoDe = (item: Token) => movimentos.previas[item.id] ?? { x: item.x, y: item.y };
   function soltarToken(id: string, coluna: number, linha: number) {
     const alvo = cena?.tokens.find((item) => item.id === id);
-    if (alvo && (alvo.x !== coluna || alvo.y !== linha)) void movimentos.mover(alvo, coluna, linha);
+    // Movimento livre do Narrador: pelo botão da barra ou segurando Alt ao soltar (modo-de-turno, D8).
+    const livre = narrator && (movimentoLivre || altPressionado.current);
+    if (alvo && (alvo.x !== coluna || alvo.y !== linha)) void movimentos.mover(alvo, coluna, linha, livre);
   }
   const naCena = new Set((cena?.tokens ?? []).map((item) => item.personagem_id).filter((id): id is string => Boolean(id)));
   // Fichas para rolar (item 8): o jogador, as próprias; o Narrador, as dos personagens com token na cena.
@@ -328,7 +408,7 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
     setPreviaLargura(null);
   }
   function enviarCena(evento: FormEvent) { evento.preventDefault(); criarCena.mutate(); }
-  const gestaoDeCenas = narrator && <SecaoRetratil id="cenas" titulo="Cenas" contagem={sala.data.cenas?.length ?? 0} papel="group">
+  const gestaoDeCenas = <div className="painel-sala__cenas" role="group" aria-label="Cenas">
     {/* Cada cena: o nome abre a cena no grid do Narrador; a chave diz qual é a ativa, a que os jogadores veem.
         Só existe ativar (ativar outra desliga a anterior), então a chave da cena ativa fica ligada e travada. */}
     <ul className="painel-sala__lista-cenas">{sala.data.cenas?.map((item) => <li key={item.id} className="painel-sala__cena-item">
@@ -356,7 +436,61 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
       pendente={redimensionarMapa.isPending} onAplicar={(colunas, linhas) => redimensionarMapa.mutate({ colunas, linhas })} />}
     {redimensionarMapa.isError && <p role="alert">{redimensionarMapa.error.message}</p>}
     {(criarCena.isError || ativarCena.isError) && <p role="alert">{criarCena.error?.message ?? ativarCena.error?.message}</p>}
-  </SecaoRetratil>;
+  </div>;
+  // Tokens da cena (aba Cena): a lista, as permissões e o token escolhido; na sub-aba Tokens do Narrador ou direto
+  // para o jogador.
+  const listaDeTokens = cena && <div className="room-view__details">
+              <p className="room-view__hint">Arraste um token que você controla e solte onde quiser: ele já vai.
+                Dê dois cliques no mapa para enviar um ping.</p>
+              {narrator && cena.tokens.length > 0 && <PermissoesEmLote pendente={permissoesEmLote.isPending}
+                onEscolher={(modo) => permissoesEmLote.mutate(modo)} />}
+              {cena.tokens.length === 0 && <p>Nenhum token nesta cena.</p>}
+              <ul className="tokens-cena">{cena.tokens.map((item: Token) => {
+                const posicao = posicaoDe(item);
+                return <li key={item.id} className="tokens-cena__item">
+                  <button type="button" className="tokens-cena__escolher" aria-pressed={tokenEscolhido === item.id}
+                    onClick={() => setTokenEscolhido((atual) => (atual === item.id ? null : item.id))}>
+                    {retratos[item.id]
+                      ? <img className="tokens-cena__retrato" src={retratos[item.id]} alt="" width={36} height={36} />
+                      : <span className="tokens-cena__retrato tokens-cena__retrato--iniciais" aria-hidden="true">
+                        {item.rotulo.slice(0, 2).toLocaleUpperCase("pt-BR")}</span>}
+                    <span className="tokens-cena__nome">{item.rotulo}</span>{" "}
+                    <small className="tokens-cena__posicao">({posicao.x}, {posicao.y})</small>
+                    {narrator && (item.oculto || !item.movimento_liberado || item.tamanho > 1) && <span className="tokens-cena__marcas">
+                      {item.tamanho > 1 && <span className="tokens-cena__oculto">{item.tamanho}×{item.tamanho}</span>}
+                      {item.oculto && <span className="tokens-cena__oculto">oculto</span>}
+                      {!item.movimento_liberado && <span className="tokens-cena__oculto">bloqueado</span>}
+                    </span>}
+                  </button>
+                  {narrator && <button type="button" className="tokens-cena__acao" aria-pressed={Boolean(item.oculto)}
+                    aria-label={`${item.oculto ? "Mostrar" : "Ocultar"} ${item.rotulo}`}
+                    title={item.oculto ? "Mostrar aos jogadores" : "Ocultar dos jogadores"} disabled={alternarOculto.isPending}
+                    onClick={() => alternarOculto.mutate(item)}><Glyph name={item.oculto ? "eye-off" : "eye"} size={15} /></button>}
+                  {narrator && <button type="button" className="tokens-cena__acao" aria-pressed={!item.movimento_liberado}
+                    aria-label={`${item.movimento_liberado ? "Bloquear" : "Liberar"} movimento de ${item.rotulo}`}
+                    title={item.movimento_liberado ? "Jogadores podem mover; clique para bloquear" : "Só o Narrador move; clique para liberar"}
+                    disabled={permitirMovimento.isPending} onClick={() => alternarMovimento(item)}>
+                    <Glyph name={item.movimento_liberado ? "unlock" : "lock"} size={15} /></button>}
+                  {narrator && <button type="button" className="tokens-cena__retirar" aria-label={`Retirar ${item.rotulo}`}
+                    title="Tirar este token da mesa" disabled={retirarToken.isPending}
+                    onClick={() => retirarToken.mutate(item)}><Glyph name="close" size={14} /></button>}
+                </li>;
+              })}</ul>
+              {retirarToken.isError && <p role="alert">{retirarToken.error.message}</p>}
+              {alternarOculto.isError && <p role="alert">{alternarOculto.error.message}</p>}
+              {(permitirMovimento.isError || permissoesEmLote.isError) && <p role="alert">
+                {permitirMovimento.error?.message ?? permissoesEmLote.error?.message}</p>}
+              {liberandoPara && <EscolherJogadores rotulo={liberandoPara.rotulo} iniciais={liberandoPara.controladores ?? []}
+                jogadores={(participantes.data ?? []).filter((p) => p.papel === "jogador")} pendente={permitirMovimento.isPending}
+                onFechar={() => setLiberandoPara(null)}
+                onConfirmar={(controladores) => permitirMovimento.mutate({ alvo: liberandoPara, liberado: true, controladores })} />}
+              {token && <p role="status" className="tokens-cena__estado">{token.rotulo}: coluna {posicaoDe(token).x}, linha {posicaoDe(token).y}.
+                {token.controlavel ? " Você controla este token." : " Somente leitura."}</p>}
+              {/* Tamanho do token escolhido (item 6), o caminho pelo teclado; no grid, o botão direito abre o menu. */}
+              {narrator && token && !menuDoToken && <ControleDeTamanho token={token} pendente={redimensionarToken.isPending}
+                onMudar={(tamanho) => redimensionarToken.mutate({ alvo: token, tamanho })} />}
+              {redimensionarToken.isError && !menuDoToken && <p role="alert">{redimensionarToken.error.message}</p>}
+</div>;
   const classesSala = ["room-view", painelAberto && "room-view--painel-aberto", cena && chaoAberto && "room-view--chao-aberto"]
     .filter(Boolean).join(" ");
   return <section ref={salaRef} className={classesSala}
@@ -375,12 +509,26 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
           onDragPreview={ephemera.arraste}
           onDragEnd={soltarToken}
           onDragCancel={ephemera.cancelarArraste} reservaDireita={reservaDoPainel(painelAberto, larguraPainel)}
+          medirArraste={(tokenId, origem, destino) => medirArraste({ combate: modoTurno.combate, narrador: narrator,
+            tokenId,
+            livre: narrator && (movimentoLivre || altPressionado.current), origem, destino })}
+          tokensDaVez={tokensDaVez(modoTurno.combate)} tokenSelecionado={tokenEscolhido}
           onMenuDoToken={narrator ? (id, posicao) => { setTokenEscolhido(id); redimensionarToken.reset(); setMenuDoToken({ id, ...posicao }); } : undefined} />
         : <p className="room-view__vazio">{narrator
           ? "Ainda não há cena. Crie a primeira na aba Cena do painel."
           : "Ainda não há cena ativa para mostrar."}</p>}
 
       {dadosNoTabuleiro.camada}
+      {modoTurno.combate && <BarraDeTurno combate={modoTurno.combate} narrador={narrator} retratos={retratos}
+        pendente={modoTurno.pendente} onProximo={modoTurno.proximo} onSair={modoTurno.sair} onComecar={modoTurno.comecar}
+        onRolarPor={rolarIniciativa} onRolarNpcs={rolarIniciativaDosNpcs} onCorrer={modoTurno.correr}
+        movimentoLivre={narrator ? { ligado: movimentoLivre, aoMudar: setMovimentoLivre } : undefined} />}
+      {!narrator && modoTurno.combate && <AvisoDeIniciativa combate={modoTurno.combate} pendente={modoTurno.pendente}
+        onRolar={rolarIniciativa} />}
+      {mvpAnunciado && <AnuncioDoMvp apelido={mvpAnunciado} onFim={() => setMvpAnunciado(null)} />}
+      <BaloesDeReacao baloes={ephemera.baloes}
+        nomeDe={(id) => (id === userId ? "Você" : nomes.get(id) ?? "Alguém da mesa")} />
+      {cena && <BotaoDeReacao onReagir={ephemera.reagir} />}
       {narrator && menuDoToken && (() => {
         const alvo = cena?.tokens.find((item: Token) => item.id === menuDoToken.id);
         return alvo ? <MenuDoToken token={alvo} posicao={menuDoToken} pendente={redimensionarToken.isPending}
@@ -445,8 +593,8 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
       }}
       onPointerUp={soltarAlca} onPointerCancel={soltarAlca} />}
     <aside id="painel-da-cena" className="room-view__painel" aria-label="Painel da Sala" hidden={!painelAberto}>
-      {painelAberto && <PainelDaSala aba={aba} onTrocarAba={setAba} onRecolher={() => setPainelAberto(false)}
-        conteudo={aba === "dados" ? <RoladorDeDados rolador={rolador} ficha={{
+      {painelAberto && <PainelDaSala aba={aba} narrador={narrator} onTrocarAba={setAba} onRecolher={() => setPainelAberto(false)}
+        conteudo={aba === "dados" ? <RoladorDeDados rolador={rolador} destaque={destaque} ficha={{
           faixa: <FaixaDeRetratos api={api} mesaId={mesaId} compacta personagens={fichasDaRolagem}
             escolhidoId={rolador.ficha?.personagemId ?? undefined}
             onEscolher={(id) => rolador.escolherFicha({ ...(rolador.ficha ?? SEM_FICHA), personagemId: id })}
@@ -456,71 +604,41 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
           mostrar: mostrarRolagens, aoMostrar: setMostrarRolagens, animacao: animacaoDosDados, aoAnimar: setAnimacaoDosDados,
           ...(narrator ? { rolarOculto: { ligado: rolarOculto, aoMudar: setRolarOculto } } : {}),
         }} />
-          : aba === "chat" ? <ChatReservado />
+          : aba === "papel" ? (narrator ? <MestreDoPainel gamificacao={gamificacao} modoTurno={{
+            aberto: Boolean(modoTurno.combate), entrar: modoTurno.entrar, sair: modoTurno.sair, pendente: modoTurno.pendente,
+            erro: modoTurno.erro, motivo: !gamificacao.sessoes?.atual ? "Inicie uma sessão para entrar em modo turno."
+              : !(sala.data.cenas ?? []).some((c) => c.ativa) ? "Ative uma cena antes de entrar em modo turno."
+                : cena?.ativa && !cena.tokens.some((t) => t.personagem_id) ? "A cena ativa não tem personagens com token."
+                  : null,
+          }} />
+            : <JogadorDoPainel gamificacao={gamificacao} userId={userId} retrato={(id) => {
+              const personagem = (personagens.data ?? []).find((p) => p.proprietario_id === id && p.tipo === "personagem");
+              return personagem ? <RetratoDoJogador api={api} mesaId={mesaId} personagem={personagem} /> : null;
+            }} />)
           : aba === "fichas" ? <FichasDoPainel api={api} mesaId={mesaId} userId={userId} />
           : aba === "bolsa" ? <BolsaDoPainel api={api} mesaId={mesaId} userId={userId} narrator={narrator} />
-          : aba === "musica" ? <MusicaReservada />
+          : aba === "musica" ? <MusicaDoPainel musica={musica} narrator={narrator} />
             : aba === "cartas" ? <CartasDoPainel api={api} mesaId={mesaId} userId={userId} narrator={narrator} />
-              : <div className="painel-sala__cena">{gestaoDeCenas}{!cena ? <p>Sem cena aberta.</p> : <>
-            {/* Item 15: barra de colocar, personagens dos jogadores, NPCs e monstros e tokens em cena numa seção só. */}
-            <SecaoComTokens narrator={narrator}>
-            {narrator && <PersonagensDosJogadores api={api} mesaId={mesaId} personagens={personagens.data ?? []} naCena={naCena}
-              onColocar={(personagem, oculto) => colocarPersonagem.mutate({
-                personagem, oculto, ...casaLivre(centroDaVista.current?.() ?? { x: 0, y: 0 }, cena.tokens) })} />}
-            <SecaoRetratil id="tokens" titulo="Tokens da cena" contagem={cena.tokens.length} interna={narrator}><div className="room-view__details">
-              <p className="room-view__hint">Arraste um token que você controla e solte onde quiser: ele já vai.
-                Dê dois cliques no mapa para enviar um ping.</p>
-              {narrator && cena.tokens.length > 0 && <PermissoesEmLote pendente={permissoesEmLote.isPending}
-                onEscolher={(modo) => permissoesEmLote.mutate(modo)} />}
-              {cena.tokens.length === 0 && <p>Nenhum token nesta cena.</p>}
-              <ul className="tokens-cena">{cena.tokens.map((item: Token) => {
-                const posicao = posicaoDe(item);
-                return <li key={item.id} className="tokens-cena__item">
-                  <button type="button" className="tokens-cena__escolher" aria-pressed={tokenEscolhido === item.id}
-                    onClick={() => setTokenEscolhido(item.id)}>
-                    {retratos[item.id]
-                      ? <img className="tokens-cena__retrato" src={retratos[item.id]} alt="" width={36} height={36} />
-                      : <span className="tokens-cena__retrato tokens-cena__retrato--iniciais" aria-hidden="true">
-                        {item.rotulo.slice(0, 2).toLocaleUpperCase("pt-BR")}</span>}
-                    <span className="tokens-cena__nome">{item.rotulo}</span>{" "}
-                    <small className="tokens-cena__posicao">({posicao.x}, {posicao.y})</small>
-                    {narrator && (item.oculto || !item.movimento_liberado || item.tamanho > 1) && <span className="tokens-cena__marcas">
-                      {item.tamanho > 1 && <span className="tokens-cena__oculto">{item.tamanho}×{item.tamanho}</span>}
-                      {item.oculto && <span className="tokens-cena__oculto">oculto</span>}
-                      {!item.movimento_liberado && <span className="tokens-cena__oculto">bloqueado</span>}
-                    </span>}
-                  </button>
-                  {narrator && <button type="button" className="tokens-cena__acao" aria-pressed={Boolean(item.oculto)}
-                    aria-label={`${item.oculto ? "Mostrar" : "Ocultar"} ${item.rotulo}`}
-                    title={item.oculto ? "Mostrar aos jogadores" : "Ocultar dos jogadores"} disabled={alternarOculto.isPending}
-                    onClick={() => alternarOculto.mutate(item)}><Glyph name={item.oculto ? "eye-off" : "eye"} size={15} /></button>}
-                  {narrator && <button type="button" className="tokens-cena__acao" aria-pressed={!item.movimento_liberado}
-                    aria-label={`${item.movimento_liberado ? "Bloquear" : "Liberar"} movimento de ${item.rotulo}`}
-                    title={item.movimento_liberado ? "Jogadores podem mover; clique para bloquear" : "Só o Narrador move; clique para liberar"}
-                    disabled={permitirMovimento.isPending} onClick={() => alternarMovimento(item)}>
-                    <Glyph name={item.movimento_liberado ? "unlock" : "lock"} size={15} /></button>}
-                  {narrator && <button type="button" className="tokens-cena__retirar" aria-label={`Retirar ${item.rotulo}`}
-                    title="Tirar este token da mesa" disabled={retirarToken.isPending}
-                    onClick={() => retirarToken.mutate(item)}><Glyph name="close" size={14} /></button>}
-                </li>;
-              })}</ul>
-              {retirarToken.isError && <p role="alert">{retirarToken.error.message}</p>}
-              {alternarOculto.isError && <p role="alert">{alternarOculto.error.message}</p>}
-              {(permitirMovimento.isError || permissoesEmLote.isError) && <p role="alert">
-                {permitirMovimento.error?.message ?? permissoesEmLote.error?.message}</p>}
-              {liberandoPara && <EscolherJogadores rotulo={liberandoPara.rotulo} iniciais={liberandoPara.controladores ?? []}
-                jogadores={(participantes.data ?? []).filter((p) => p.papel === "jogador")} pendente={permitirMovimento.isPending}
-                onFechar={() => setLiberandoPara(null)}
-                onConfirmar={(controladores) => permitirMovimento.mutate({ alvo: liberandoPara, liberado: true, controladores })} />}
-              {token && <p role="status" className="tokens-cena__estado">{token.rotulo}: coluna {posicaoDe(token).x}, linha {posicaoDe(token).y}.
-                {token.controlavel ? " Você controla este token." : " Somente leitura."}</p>}
-              {/* Tamanho do token escolhido (item 6), o caminho pelo teclado; no grid, o botão direito abre o menu. */}
-              {narrator && token && !menuDoToken && <ControleDeTamanho token={token} pendente={redimensionarToken.isPending}
-                onMudar={(tamanho) => redimensionarToken.mutate({ alvo: token, tamanho })} />}
-              {redimensionarToken.isError && !menuDoToken && <p role="alert">{redimensionarToken.error.message}</p>}
-            </div></SecaoRetratil>
-            </SecaoComTokens>
-          </>}</div>} />}
+              : <div className="painel-sala__cena">{narrator
+                ? <SubAbas rotulo="Temas da Cena" prefixo="cena" aba={subAbaDaCena} onTrocar={setSubAbaDaCena} itens={[
+                  { id: "cenas", rotulo: "Cenas", contagem: sala.data.cenas?.length ?? 0 },
+                  { id: "personagens", rotulo: "Personagens", contagem: personagens.data?.length ?? 0 },
+                  { id: "tokens", rotulo: "Tokens", contagem: cena?.tokens.length ?? 0 },
+                ]}>
+                  {subAbaDaCena === "cenas" ? gestaoDeCenas
+                    : !cena ? <p>Sem cena aberta. Crie ou abra uma na sub-aba Cenas.</p>
+                      : subAbaDaCena === "personagens"
+                        ? <PersonagensDosJogadores api={api} mesaId={mesaId} personagens={personagens.data ?? []} naCena={naCena}
+                          onColocar={(personagem, oculto) => colocarPersonagem.mutate({
+                            personagem, oculto, ...casaLivre(centroDaVista.current?.() ?? { x: 0, y: 0 }, cena.tokens) })} />
+                        : listaDeTokens}
+                </SubAbas>
+                // O jogador só tem os tokens da cena: a lista aparece direto, sem sub-abas.
+                : !cena ? <p>Sem cena aberta.</p> : <section className="painel-sala__tokens" aria-labelledby="tokens-da-cena-titulo">
+                  <h2 id="tokens-da-cena-titulo" className="painel-sala__titulo">Tokens da cena
+                    <span className="sub-abas__contagem" aria-hidden="true">{cena.tokens.length}</span></h2>
+                  {listaDeTokens}
+                </section>}</div>} />}
     </aside>
   </section>;
 }

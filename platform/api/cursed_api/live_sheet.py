@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Callable
+
 from copy import deepcopy
 from datetime import UTC, datetime
 
@@ -233,6 +235,17 @@ def resumo_recursos(calculado: recursos.Recursos) -> list[ValorDerivadoResumo]:
         )
         for v in calculado.valores.values()
     ]
+
+
+def deslocamento_da_ficha(session: Session, mesa_id: str) -> Callable[[str], int]:
+    """Deslocamento calculado da ficha (modo-de-turno, D7), em metros inteiros, pelo mesmo caminho dos valores da ficha."""
+    def calcular(personagem_id: str) -> int:
+        personagem = session.get(PersonagemRegistro, personagem_id)
+        if personagem is None:
+            return 0
+        valor = next((v for v in valores_da_ficha(session, mesa_id, personagem) if v.chave == "deslocamento"), None)
+        return int(valor.total or 0) if valor is not None else 0
+    return calcular
 
 
 @router.post("/recursos/ajustes", response_model=AjusteRecursoResposta, status_code=status.HTTP_201_CREATED)

@@ -1,58 +1,33 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
 import { Glyph } from "../../ui/Display";
-import { ABAS_DO_PAINEL, type AbaDoPainel } from "./abasDoPainel";
-
-/** Chat da mesa: só um espaço reservado nesta etapa (decisão do usuário, 2026-10-02). */
-export function ChatReservado() {
-  return (
-    <div className="chat-painel">
-      <p className="chat-painel__aviso">
-        O chat da mesa ainda vai chegar. Quando chegar, o registro da mesa também vai aparecer aqui.
-      </p>
-      <div className="chat-painel__mensagens" aria-hidden="true" />
-      <form className="chat-painel__envio" onSubmit={(evento) => evento.preventDefault()}>
-        <label className="sr-only" htmlFor="chat-painel-mensagem">Mensagem</label>
-        <textarea id="chat-painel-mensagem" disabled rows={2} placeholder="Mensagem (em breve)" />
-        <button type="submit" className="button" disabled>Enviar</button>
-      </form>
-    </div>
-  );
-}
-
-/** Música da mesa: só um espaço reservado nesta etapa (decisão do usuário, 2026-10-02). */
-export function MusicaReservada() {
-  return (
-    <div className="chat-painel">
-      <p className="chat-painel__aviso">
-        A música da mesa ainda vai chegar. Por enquanto, nada toca por aqui.
-      </p>
-    </div>
-  );
-}
+import { abasDoPainel, type AbaDoPainel } from "./abasDoPainel";
 
 /**
- * Painel direito da Sala com abas fixas no topo (Cena, Dados, Chat, Fichas, Bolsa, Cartas, Música) e o botão de recolher.
+ * Painel direito da Sala com abas fixas no topo (Cena, Dados, Mestre ou Jogador, Fichas, Bolsa, Cartas, Música) e o botão
+ * de recolher. A aba do papel é Mestre para o Narrador e Jogador para os demais (gamificacao-da-sala).
  * Com o painel estreito, as abas mostram só o ícone; o nome continua para leitores de tela e como dica.
  * Segue o padrão de abas: setas, Home e End trocam de aba e levam o foco junto.
  */
-export function PainelDaSala({ aba, onTrocarAba, onRecolher, conteudo }: {
+export function PainelDaSala({ aba, narrador = false, onTrocarAba, onRecolher, conteudo }: {
   aba: AbaDoPainel;
+  narrador?: boolean;
   onTrocarAba: (aba: AbaDoPainel) => void;
   onRecolher: () => void;
   conteudo: ReactNode;
 }) {
   const botoes = useRef(new Map<AbaDoPainel, HTMLButtonElement>());
+  const abas = abasDoPainel(narrador);
   function tecla(evento: KeyboardEvent<HTMLDivElement>) {
-    const indice = ABAS_DO_PAINEL.findIndex((item) => item.id === aba);
-    const total = ABAS_DO_PAINEL.length;
+    const indice = abas.findIndex((item) => item.id === aba);
+    const total = abas.length;
     const destino = evento.key === "ArrowRight" ? (indice + 1) % total
       : evento.key === "ArrowLeft" ? (indice - 1 + total) % total
         : evento.key === "Home" ? 0
           : evento.key === "End" ? total - 1 : null;
     if (destino === null) return;
     evento.preventDefault();
-    const proxima = ABAS_DO_PAINEL[destino]!.id;
+    const proxima = abas[destino]!.id;
     onTrocarAba(proxima);
     botoes.current.get(proxima)?.focus();
   }
@@ -60,7 +35,7 @@ export function PainelDaSala({ aba, onTrocarAba, onRecolher, conteudo }: {
     <>
       <div className="painel-sala__topo">
         <div className="painel-sala__abas" role="tablist" aria-label="Painel da Sala" onKeyDown={tecla}>
-          {ABAS_DO_PAINEL.map((item) => (
+          {abas.map((item) => (
             <button key={item.id} type="button" role="tab" id={`aba-painel-${item.id}`}
               ref={(elemento) => { if (elemento) botoes.current.set(item.id, elemento); else botoes.current.delete(item.id); }}
               aria-selected={aba === item.id} aria-controls="painel-sala-conteudo" tabIndex={aba === item.id ? 0 : -1}

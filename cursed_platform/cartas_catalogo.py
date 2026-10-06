@@ -41,6 +41,15 @@ class HabilidadeCatalogo:
     concedida_por: str  # classe:Druida | arquetipo:Druida/Animalista | raca:Elfo
     rotulo_origem: str  # "Classe: Druida"
     conteudo: dict[str, Any]
+    # Ampliação das faixas de crítico e de falha crítica (gamificacao-da-sala, D1). Fica fora do conteúdo da
+    # carta: só o servidor a lê, pela origem_sistema.
+    ampliacao: tuple[int, int] = (0, 0)
+    # Bônus de Deslocamento em metros (modo-de-turno, D7), também fora do conteúdo da carta.
+    deslocamento: int = 0
+
+
+def _ampliacao(habilidade: Habilidade) -> tuple[int, int]:
+    return (habilidade.amplia_critico, habilidade.amplia_falha_critica)
 
 
 def _conteudo(habilidade: Habilidade, tag: str) -> dict[str, Any]:
@@ -63,7 +72,7 @@ def _da_classe(catalogo: Catalogos, nome: Any) -> list[HabilidadeCatalogo]:
         return []
     return [
         HabilidadeCatalogo(f"classes/{classe.nome}/habilidades/{h.nome}", f"classe:{classe.nome}",
-                           f"Classe: {classe.nome}", _conteudo(h, f"classe:{classe.nome}"))
+                           f"Classe: {classe.nome}", _conteudo(h, f"classe:{classe.nome}"), _ampliacao(h), h.deslocamento)
         for h in classe.habilidades
     ]
 
@@ -77,7 +86,7 @@ def _do_arquetipo(catalogo: Catalogos, classe_nome: Any, nome: Any) -> list[Habi
     return [
         HabilidadeCatalogo(f"classes/{classe.nome}/arquetipos/{arquetipo.nome}/habilidades/{h.nome}",
                            f"arquetipo:{chave}", f"Arquétipo: {arquetipo.nome}",
-                           _conteudo(h, f"arquetipo:{arquetipo.nome}"))
+                           _conteudo(h, f"arquetipo:{arquetipo.nome}"), _ampliacao(h), h.deslocamento)
         for h in arquetipo.habilidades
     ]
 
@@ -88,7 +97,7 @@ def _da_raca(catalogo: Catalogos, nome: Any) -> list[HabilidadeCatalogo]:
         return []
     return [
         HabilidadeCatalogo(f"racas/{raca.nome}/habilidades/{h.nome}", f"raca:{raca.nome}",
-                           f"Raça: {raca.nome}", _conteudo(h, f"raca:{raca.nome}"))
+                           f"Raça: {raca.nome}", _conteudo(h, f"raca:{raca.nome}"), _ampliacao(h), h.deslocamento)
         for h in raca.habilidades
     ]
 

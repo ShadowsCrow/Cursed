@@ -14,6 +14,8 @@ export interface DadoParaAnimar {
   conjunto: Conjunto;
   /** O que deve aparecer em cima quando o dado parar. */
   rotulo: string;
+  /** Brilho ao parar (gamificacao-da-sala): dourado no crítico, rubro na falha crítica. */
+  destaque?: "critico" | "falha_critica";
 }
 
 /** Quatérnio [x, y, z, w]. */

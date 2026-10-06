@@ -1,11 +1,10 @@
-import type { DragEvent } from "react";
+import { useId, type DragEvent } from "react";
 
 import type { components } from "../../api/generated/schema";
 import type { ApiClient } from "../characters/types";
 import { Glyph } from "../../ui/Display";
 import { useRetrato } from "../plataforma/imagens";
 import { ARRASTE_DE_PERSONAGEM } from "./arrastes";
-import { SecaoRetratil } from "./SecaoRetratil";
 
 type Personagem = components["schemas"]["PersonagemResumo"];
 
@@ -45,23 +44,27 @@ function ListaDePersonagens({ api, mesaId, id, titulo, vazio, personagens, naCen
   api: ApiClient; mesaId: string; id: string; titulo: string; vazio: string; personagens: readonly Personagem[];
   naCena: ReadonlySet<string>; comTipo: boolean; onColocar: (personagem: Personagem, oculto?: boolean) => void;
 }) {
+  const idTitulo = `${useId()}-${id}`;
   return (
-    <SecaoRetratil id={id} titulo={titulo} contagem={personagens.length} interna>
+    <section className="personagens-cena__secao" aria-labelledby={idTitulo}>
+      <h3 id={idTitulo} className="personagens-cena__titulo">
+        {titulo}<span className="sub-abas__contagem" aria-hidden="true">{personagens.length}</span>
+      </h3>
       {personagens.length === 0
-        ? <p>{vazio}</p>
+        ? <p className="room-view__hint">{vazio}</p>
         : <ul className="personagens-cena__lista">
           {personagens.map((p) => (
             <Linha key={p.id} api={api} mesaId={mesaId} personagem={p} naCena={naCena.has(p.id)} comTipo={comTipo}
               onColocar={(oculto) => onColocar(p, oculto)} />
           ))}
         </ul>}
-    </SecaoRetratil>
+    </section>
   );
 }
 
 /**
- * As listas do Narrador na seção "Tokens" da aba Cena (experiencia-da-mesa, itens 9, 10 e 15): personagens dos
- * jogadores e, separados, NPCs e monstros (os sem dono). "Colocar" usa a casa livre mais próxima do centro da vista.
+ * As listas do Narrador na sub-aba "Personagens" da aba Cena (experiencia-da-mesa, itens 9 e 10; sub-abas pedidas pelo
+ * usuário em 2026-10-04): personagens dos jogadores e, separados, NPCs e monstros (os sem dono). "Colocar" usa a casa livre mais próxima do centro da vista.
  */
 export function PersonagensDosJogadores({ api, mesaId, personagens, naCena, onColocar }: {
   api: ApiClient; mesaId: string; personagens: readonly Personagem[]; naCena: ReadonlySet<string>;

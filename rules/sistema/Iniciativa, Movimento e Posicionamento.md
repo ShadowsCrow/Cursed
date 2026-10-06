@@ -38,7 +38,7 @@ Converter a Ação Padrão em uma segunda Ação de Movimento permite percorrer 
 
 ## Espaço e alcance
 
-Em mapas quadriculados, cada espaço padrão representa `1 metro`.
+Em mapas quadriculados, cada espaço padrão representa `1 metro`. Um passo para qualquer espaço vizinho, inclusive na diagonal, custa `1 metro` de Deslocamento.
 
 Duas criaturas estão **adjacentes** quando ocupam espaços vizinhos, a até `1 metro` de distância. Uma criatura comum ocupa um espaço, mas o Mestre pode definir áreas maiores para criaturas de grande porte.
 

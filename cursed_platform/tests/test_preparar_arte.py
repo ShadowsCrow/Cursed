@@ -53,6 +53,9 @@ ESPERADO = {
     **{f"dados-{dado}": (preparar_arte.LADO_DO_DADO,) * 2 for dado in preparar_arte.DADOS_DA_SALA
        if (preparar_arte.ORIGEM / f"dados-{dado}.png").exists()},
     **({"dados-pedra": (preparar_arte.LADO_DA_PEDRA,) * 2} if (preparar_arte.ORIGEM / "dados-pedra.png").exists() else {}),
+    # Reações e selo de MVP da Sala (gamificacao-da-sala): opcionais por matriz.
+    **{nome: (lado, lado) for nome, lado in preparar_arte.ARTES_DA_GAMIFICACAO.items()
+       if (preparar_arte.ORIGEM / f"{nome}.png").exists()},
     # Couro e peças da bolsa do Inventário (reformular-visual-da-ficha): opcionais por matriz.
     **({"inventario-couro": (preparar_arte.LADO_TEXTURA, preparar_arte.LADO_TEXTURA)}
        if (preparar_arte.ORIGEM / "inventario-couro.png").exists() else {}),
@@ -299,6 +302,23 @@ class ArteDasCartasTest(unittest.TestCase):
                 caixa = imagem.getchannel("A").point(lambda v: 255 if v >= 128 else 0).getbbox()
                 self.assertTrue(caixa[2] - caixa[0] >= lado - 4 or caixa[3] - caixa[1] >= lado - 4)
                 self.assertAlmostEqual((caixa[1] + caixa[3]) / 2, lado / 2, delta=3)
+
+    def test_reacoes_e_selo_sem_fundo_e_centralizados(self):
+        """gamificacao-da-sala, D10: cada reação e o selo de MVP ficam centrados num quadrado transparente."""
+        chama = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
+        ImageDraw.Draw(chama).ellipse((300, 200, 724, 860), fill=(240, 160, 40, 255))
+        chama.save(self.pasta / "reacao-chama.png")
+        selo = Image.new("RGB", (1024, 1024), (233, 220, 192))
+        ImageDraw.Draw(selo).ellipse((200, 200, 824, 824), fill=(200, 160, 60))
+        selo.save(self.pasta / "mvp-selo.png")
+        saidas = preparar_arte.preparar_arte_da_gamificacao(self.pasta, self.pasta / "arte")
+        self.assertEqual({s.stem for s in saidas}, {"reacao-chama", "mvp-selo"})
+        for caminho in saidas:
+            lado = preparar_arte.ARTES_DA_GAMIFICACAO[caminho.stem]
+            with Image.open(caminho) as imagem:
+                self.assertEqual((imagem.mode, imagem.size), ("RGBA", (lado, lado)))
+                self.assertGreater(imagem.getpixel((lado // 2, lado // 2))[3], 250)
+                self.assertLess(imagem.getpixel((0, 0))[3], 10)
 
     def test_pedra_dos_dados_quadrada_e_opaca(self):
         """melhorias-da-sala, item 3: a pedra das faces vira uma textura quadrada de 512 px, sem transparência."""

@@ -3,19 +3,22 @@ em toda mesa (melhorias-da-sala, item 9): não há módulo a ativar."""
 
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, rolagens, sala
+from cursed_platform import auditoria, criticos, musica, preferencias_sala, rolagens, sala, turno
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CriarCenaRequest, AreaDoMapaRequest, CriarTokenRequest, PermissoesEmLoteRequest, PermitirMovimentoRequest, MoverTokenRequest, SalaSnapshot, TokenSala,
     RolagemDeDados, RolarDadosRequest, TamanhoTokenRequest, VisibilidadeTokenRequest,
+    AlterarMusicaRequest, BibliotecaDeMusicas, EstadoDaMusica,
 )
 from cursed_platform.persistence import CenaRegistro, PersonagemRegistro, TokenRegistro
 
 from .assets import AtivoResposta, ler_imagem
-from .live_sheet import _personagem as personagem_legivel, valores_da_ficha
+from .live_sheet import _personagem as personagem_legivel, deslocamento_da_ficha, valores_da_ficha
 from .auth import Ator, get_actor
 from .dependencies import get_correlacao, get_session
 
@@ -173,6 +176,13 @@ def criar_token(
         relevancia="narrativa", alvo_tipo="token", alvo_id=token.id, visibilidade="mesa" if visivel else "narrador",
         resumo=f"Token colocado na cena {cena.nome}: {token.rotulo}"[:500], correlacao_id=correlacao,
     )
+    # Com o modo turno aberto, quem chega entra na disputa sem iniciativa e trava o Próximo turno (modo-de-turno, D8c).
+    if turno.incluir(session, mesa_id, token) is not None:
+        auditoria.registrar(
+            session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="turno.entrou",
+            relevancia="narrativa", alvo_tipo="token", alvo_id=token.id, visibilidade="mesa" if visivel else "narrador",
+            resumo=f"{token.rotulo} entrou na disputa: falta rolar a iniciativa"[:500], correlacao_id=correlacao,
+        )
     session.commit()
     return _token_resposta(session, token, sala.Leitor(ator.usuario_id, True))
 
@@ -204,10 +214,21 @@ def mover_token(
     """Movimentos não geram evento de auditoria: são estado tático frequente, não decisões a revisar."""
     leitor = _leitor(session, mesa_id, ator)
     token = _token(session, mesa_id, token_id, leitor)
+    # No modo turno, quem está na vez anda até o Deslocamento, também quando o Narrador o move, salvo em movimento
+    # livre (modo-de-turno, D8).
+    try:
+        cobranca = turno.checar_movimento(session, mesa_id, token, leitor, pedido.x, pedido.y,
+                                          deslocamento_da_ficha(session, mesa_id), livre=pedido.livre)
+    except turno.ForaDaVez as erro:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(erro)) from None
+    except turno.SemDeslocamento as erro:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(erro)) from None
     try:
         sala.mover_token(session, token, leitor, pedido.x, pedido.y, pedido.versao_esperada)
     except ERROS as erro:
         raise _erro(erro, session) from None
+    if cobranca is not None:
+        turno.cobrar(session, mesa_id, *cobranca)
     session.commit()
     return _token_resposta(session, token, leitor)
 
@@ -340,10 +361,13 @@ def rolar_dados(
     for item in comando.dados:
         dados[item.faces] = dados.get(item.faces, 0) + item.quantidade
     termos = _termos_da_ficha(session, mesa_id, ator, comando)
+    # Faixa de crítico do personagem só numa rolagem pela ficha; sem ficha, a padrão (gamificacao-da-sala, D2).
+    faixa = (criticos.faixa_do_personagem(session, mesa_id, comando.personagem_id)
+             if comando.personagem_id else criticos.PADRAO)
     try:
         rolagem = rolagens.rolar(session, mesa_id, ator.usuario_id, dados, comando.modificador,
                                  oculta=comando.oculta, narrador=leitor.narrador,
-                                 personagem_id=comando.personagem_id, termos=termos)
+                                 personagem_id=comando.personagem_id, termos=termos, faixa=faixa)
     except rolagens.OcultarSoNarrador as erro:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(erro)) from erro
@@ -351,7 +375,7 @@ def rolar_dados(
         raise _erro(erro, session) from erro
     session.commit()
     session.refresh(rolagem)
-    return RolagemDeDados(**rolagens.para_resposta(rolagem))
+    return RolagemDeDados(**rolagens.para_resposta(rolagem, preferencias_sala.destaque_ligado(session, mesa_id)))
 
 
 def _termos_da_ficha(session: Session, mesa_id: str, ator: Ator, comando: RolarDadosRequest) -> list[dict]:
@@ -386,5 +410,48 @@ def listar_rolagens(
     """Rolagens da mesa depois do id dado, em ordem (até 50, as mais recentes). Só para quem é da mesa;
     as rolagens ocultas do Narrador só ele vê."""
     leitor = _leitor(session, mesa_id, ator)
-    return [RolagemDeDados(**rolagens.para_resposta(r))
+    destaque = preferencias_sala.destaque_ligado(session, mesa_id)
+    return [RolagemDeDados(**rolagens.para_resposta(r, destaque))
             for r in rolagens.listar(session, mesa_id, depois, narrador=leitor.narrador)]
+
+
+# --------------------------------------------------------------- música e ambiente da mesa
+
+@router.get("/musicas", response_model=BibliotecaDeMusicas)
+def biblioteca_de_musicas(ator: Ator = Depends(get_actor)) -> BibliotecaDeMusicas:
+    """Biblioteca de sons da Sala (musica-da-sala), igual para todas as mesas: ambientes e músicas, só CC BY ou CC0."""
+    atual = musica.catalogo()
+    return BibliotecaDeMusicas(estilos=list(atual.estilos), momentos=list(atual.momentos), cenarios=list(atual.cenarios),
+                               faixas=[f.para_resposta() for f in atual.faixas])
+
+
+@router.get("/mesas/{mesa_id}/sala/musica", response_model=EstadoDaMusica)
+def ler_musica(
+    mesa_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+) -> EstadoDaMusica:
+    """O que a mesa está ouvindo nas duas camadas, com o relógio do servidor para cada navegador calcular a
+    posição esperada."""
+    _leitor(session, mesa_id, ator)
+    return EstadoDaMusica(**musica.estado(session, mesa_id), agora=musica.relogio())
+
+
+@router.put("/mesas/{mesa_id}/sala/musica/{camada}", response_model=EstadoDaMusica)
+def alterar_musica(
+    mesa_id: str, camada: Literal["ambiente", "musica"], pedido: AlterarMusicaRequest,
+    ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
+) -> EstadoDaMusica:
+    """Só o Narrador muda o que a mesa ouve numa camada: tocar, pausar, continuar, parar ou "Repetir"."""
+    _exigir_narrador(session, mesa_id, ator)
+    antes = musica.estado(session, mesa_id)[camada]
+    try:
+        depois = musica.alterar(session, mesa_id, ator.usuario_id, camada, **pedido.model_dump())
+    except musica.MusicaInvalida as erro:
+        raise _erro(erro, session) from None
+    auditoria.registrar(
+        session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="mesa", acao="musica.alterada",
+        relevancia="narrativa", alvo_tipo="musica", alvo_id=depois["faixa_id"],
+        resumo=musica.descrever(camada, antes, depois), correlacao_id=correlacao, detalhes={"camada": camada},
+    )
+    session.commit()
+    return EstadoDaMusica(**musica.estado(session, mesa_id), agora=musica.relogio())

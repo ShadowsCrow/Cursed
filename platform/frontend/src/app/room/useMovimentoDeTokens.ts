@@ -20,7 +20,8 @@ export function useMovimentoDeTokens(api: ApiClient, mesaId: string, online: boo
   const [previas, setPrevias] = useState<Record<string, Posicao>>({});
   const [erro, setErro] = useState<string | null>(null);
 
-  const mover = useCallback(async (token: Token, x: number, y: number) => {
+  /** `livre`: movimento livre do Narrador no modo turno (empurrão, queda, teleporte, correção), sem gastar Deslocamento. */
+  const mover = useCallback(async (token: Token, x: number, y: number, livre = false) => {
     if (!online) {
       setErro(SEM_CONEXAO);
       return;
@@ -30,9 +31,11 @@ export function useMovimentoDeTokens(api: ApiClient, mesaId: string, online: boo
     try {
       const { data, error } = await api.POST("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento", {
         params: { path: { mesa_id: mesaId, token_id: token.id } },
-        body: { x, y, versao_esperada: token.versao },
+        body: { x, y, versao_esperada: token.versao, livre },
       });
       if (error || !data) throw new Error(extractErrorMessage(error, "O movimento não foi confirmado."));
+      // O saldo de Deslocamento do modo turno mudou (modo-de-turno, D8).
+      void queryClient.invalidateQueries({ queryKey: ["sala-turno", mesaId] });
       queryClient.setQueriesData<Snapshot>({ queryKey: ["sala", mesaId] }, (anterior) => {
         if (!anterior?.cena || !anterior.cena.tokens.some((item) => item.id === data.id)) return anterior;
         return { ...anterior, cena: { ...anterior.cena,

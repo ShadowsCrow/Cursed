@@ -9,6 +9,10 @@ Rolagem pela ficha (item 8): Atributo e Perícia da ficha entram como parcelas c
 
 Rolagem oculta (item 5): só o Narrador pode ocultar as próprias rolagens. Os jogadores não as recebem, nem na
 lista nem no aviso, que vai só para o tópico do Narrador.
+
+Críticos (gamificacao-da-sala, D2): a única leitura do resultado é a marca de crítico e de falha crítica em cada d20,
+pela faixa do personagem no sorteio (`criticos`), gravada sempre e enviada só com o destaque da mesa ligado. A rolagem
+também guarda a sessão em andamento, para as estatísticas.
 """
 
 from __future__ import annotations
@@ -19,6 +23,8 @@ from typing import Any, Callable
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cursed_platform import sessoes
+from cursed_platform.criticos import PADRAO, Faixa
 from cursed_platform.persistence import RolagemRegistro
 from cursed_platform.sala import emitir
 
@@ -72,9 +78,19 @@ def _sortear(faces: int) -> int:
     return secrets.randbelow(faces) + 1
 
 
+def marcar(grupos: list[dict[str, Any]], faixa: Faixa = PADRAO) -> list[dict[str, Any]] | None:
+    """Marca cada d20 natural na faixa de crítico ou de falha crítica; outros dados não são marcados."""
+    marcas = [{"faces": 20, "indice": indice, "tipo": tipo}
+              for grupo in grupos if grupo["faces"] == 20
+              for indice, valor in enumerate(grupo["valores"])
+              if (tipo := faixa.marca(valor)) is not None]
+    return marcas or None
+
+
 def rolar(session: Session, mesa_id: str, autor_id: str, dados: dict[int, int], modificador: int,
           sortear: Callable[[int], int] = _sortear, *, oculta: bool = False, narrador: bool = False,
-          personagem_id: str | None = None, termos: list[dict[str, Any]] | None = None) -> RolagemRegistro:
+          personagem_id: str | None = None, termos: list[dict[str, Any]] | None = None,
+          faixa: Faixa = PADRAO, finalidade: str | None = None) -> RolagemRegistro:
     if oculta and not narrador:
         raise OcultarSoNarrador("Só o Narrador pode rolar oculto dos jogadores.")
     limpos = validar(dados, modificador)
@@ -83,7 +99,9 @@ def rolar(session: Session, mesa_id: str, autor_id: str, dados: dict[int, int], 
     total = sum(sum(grupo["valores"]) for grupo in grupos) + sum(t["valor"] for t in termos) + modificador
     rolagem = RolagemRegistro(mesa_id=mesa_id, autor_id=autor_id, expressao=descrever(limpos, modificador, termos),
                               grupos=grupos, modificador=modificador, total=total, oculta=oculta,
-                              personagem_id=personagem_id, termos=termos or None)
+                              personagem_id=personagem_id, termos=termos or None,
+                              marcas=marcar(grupos, faixa), sessao_id=sessoes.ativa(session, mesa_id),
+                              finalidade=finalidade)
     session.add(rolagem)
     session.flush()
     emitir(session, mesa_id, EVENTO, {"id": rolagem.id}, publico=not oculta)
@@ -103,10 +121,12 @@ def listar(session: Session, mesa_id: str, depois: int | None = None, limite: in
     return list(reversed(recentes))
 
 
-def para_resposta(rolagem: RolagemRegistro) -> dict[str, Any]:
+def para_resposta(rolagem: RolagemRegistro, destaque: bool = False) -> dict[str, Any]:
+    """Sem o destaque de críticos ligado, as marcas não saem do servidor."""
     return {
         "id": rolagem.id, "autor_id": rolagem.autor_id, "expressao": rolagem.expressao,
         "grupos": rolagem.grupos, "modificador": rolagem.modificador, "total": rolagem.total,
         "oculta": rolagem.oculta, "personagem_id": rolagem.personagem_id, "termos": rolagem.termos or [],
-        "criado_em": rolagem.criado_em,
+        "criado_em": rolagem.criado_em, "marcas": (rolagem.marcas or []) if destaque else [],
+        "finalidade": rolagem.finalidade,
     }

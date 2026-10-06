@@ -506,7 +506,8 @@ class EfeitoResumo(BaseModel):
 
 
 class FonteValorResumo(BaseModel):
-    tipo: Literal["base", "ajuste", "atributo", "pericia", "equipamento", "efeito", "classe", "nivel", "ajuste_narrador"]
+    tipo: Literal["base", "ajuste", "atributo", "pericia", "equipamento", "efeito", "classe", "nivel", "ajuste_narrador",
+                  "habilidade"]
     descricao: str
     valor: float
     efeito_id: str | None = None
@@ -1345,6 +1346,14 @@ class GrupoDeDados(BaseModel):
     valores: list[int]
 
 
+class MarcaDeDado(BaseModel):
+    """Crítico ou falha crítica num d20 da rolagem (gamificacao-da-sala); só vem com o destaque ligado."""
+
+    faces: int
+    indice: int = Field(description="Posição do dado dentro do grupo de mesmas faces.")
+    tipo: Literal["critico", "falha_critica"]
+
+
 class RolagemDeDados(BaseModel):
     id: int
     autor_id: str
@@ -1356,6 +1365,199 @@ class RolagemDeDados(BaseModel):
     personagem_id: str | None = None
     termos: list[TermoDaRolagem] = Field(default_factory=list)
     criado_em: datetime | None = None
+    marcas: list[MarcaDeDado] = Field(default_factory=list)
+    finalidade: Literal["iniciativa"] | None = Field(default=None, description="Rolagem de iniciativa do modo turno.")
+
+
+class FaixaDeMusica(BaseModel):
+    """Faixa da biblioteca de sons da Sala (só CC BY ou CC0), com o crédito exigido pela licença."""
+
+    id: str
+    tipo: Literal["ambiente", "musica"] = Field(description="Camada em que a faixa toca.")
+    titulo: str
+    autor: str
+    licenca: str
+    licenca_url: str
+    origem_url: str
+    arquivo: str = Field(description="Caminho público do áudio, servido pela interface.")
+    duracao_s: int
+    estilos: list[str] = Field(description="Estilos de jogo em que a faixa serve (Medieval, Moderno...).")
+    momento: str | None = Field(default=None, description="Só nas músicas.")
+    cenario: str | None = Field(default=None, description="O lugar; sem ele, a faixa serve em qualquer lugar.")
+    sem_emenda: bool = Field(description="Feita para repetir sem emenda.")
+
+
+class BibliotecaDeMusicas(BaseModel):
+    estilos: list[str]
+    momentos: list[str]
+    cenarios: list[str]
+    faixas: list[FaixaDeMusica]
+
+
+class EstadoDaCamada(BaseModel):
+    """O que toca numa camada. A posição esperada é ``posicao_ms`` mais o tempo desde ``alterada_em`` enquanto toca."""
+
+    faixa_id: str | None = None
+    tocando: bool = False
+    posicao_ms: int = 0
+    repetir: bool = True
+    alterada_em: datetime | None = None
+
+
+class EstadoDaMusica(BaseModel):
+    """O que a mesa está ouvindo nas duas camadas, que tocam juntas; ``agora`` é o relógio do servidor no momento
+    da resposta."""
+
+    ambiente: EstadoDaCamada
+    musica: EstadoDaCamada
+    agora: datetime
+
+
+class AlterarMusicaRequest(BaseModel):
+    """Estado da camada pedido pelo Narrador: tocar, pausar, continuar, parar ou mudar "Repetir"."""
+
+    faixa_id: str | None = Field(default=None, max_length=100)
+    tocando: bool
+    posicao_ms: int = Field(default=0, ge=0, le=86_400_000)
+    repetir: bool = True
+
+
+# --------------------------------------------------------------- gamificação da Sala
+
+class PreferenciasDaSala(BaseModel):
+    """Preferências da Sala escolhidas pelo Narrador (gamificacao-da-sala); começam desligadas."""
+
+    destaque_criticos: bool = False
+    estatisticas_visiveis: bool = False
+
+
+class SessaoDeJogo(BaseModel):
+    id: str
+    numero: int
+    iniciada_em: datetime
+    encerrada_em: datetime | None = None
+
+
+class SessoesDaMesa(BaseModel):
+    """A sessão em andamento (se houver) e a última encerrada."""
+
+    atual: SessaoDeJogo | None = None
+    ultima_encerrada: SessaoDeJogo | None = None
+
+
+class EstatisticasDoPeriodo(BaseModel):
+    vida_perdida: int
+    vida_recuperada: int
+    rolagens: int
+    dados: int
+    sorte: float | None = Field(default=None, description="Pontos percentuais acima (+) ou abaixo (−) da média esperada; nulo com poucos dados.")
+    rotulo_sorte: Literal["quentes", "na_media", "frios", "poucos_dados"]
+    criticos: int | None = Field(default=None, description="Só com o destaque de críticos ligado.")
+    falhas_criticas: int | None = None
+
+
+class EstatisticasDoJogador(BaseModel):
+    usuario_id: str
+    apelido: str
+    sessao: EstatisticasDoPeriodo | None = None
+    campanha: EstatisticasDoPeriodo
+
+
+class EstatisticasDaMesa(BaseModel):
+    """Estatísticas dos jogadores que o leitor pode ver; ``sessao`` é a de referência de "Esta sessão"."""
+
+    sessao: SessaoDeJogo | None = None
+    placar_visivel: bool = False
+    jogadores: list[EstatisticasDoJogador]
+
+
+class VotacaoMvp(BaseModel):
+    """Votação de MVP sem contagem por candidato: só quantos votaram, o próprio voto e, no fim, o vencedor."""
+
+    id: str
+    estado: Literal["aberta", "desempate", "encerrada"]
+    aberta_em: datetime
+    encerrada_em: datetime | None = None
+    votaram: int
+    total: int
+    candidatos: list[str]
+    meu_voto: str | None = None
+    empatados: list[str] = Field(default_factory=list, description="Só para o Narrador, no desempate.")
+    vencedor_id: str | None = None
+    votos_do_vencedor: int | None = None
+    sessao_numero: int | None = None
+
+
+class MvpAnterior(BaseModel):
+    votacao_id: str
+    vencedor_id: str
+    votos: int
+    sessao_numero: int | None = None
+    encerrada_em: datetime | None = None
+
+
+class EstadoDoMvp(BaseModel):
+    votacao: VotacaoMvp | None = None
+    historico: list[MvpAnterior] = Field(default_factory=list)
+    apelidos: dict[str, str] = Field(default_factory=dict, description="Apelido de cada jogador citado.")
+
+
+class VotarMvpRequest(BaseModel):
+    candidato_id: str = Field(min_length=1, max_length=100)
+
+
+class DesempatarMvpRequest(BaseModel):
+    vencedor_id: str = Field(min_length=1, max_length=100)
+
+
+# --------------------------------------------------------------- modo turno
+
+class MovimentoDoTurno(BaseModel):
+    """Saldo de movimento da vez: metros andados, o limite (Deslocamento, dobrado ao Correr) e se está correndo."""
+
+    gasto: int
+    limite: int
+    correndo: bool = False
+
+
+class ParticipanteDoTurno(BaseModel):
+    """Participante do modo turno como o leitor pode vê-lo: o jogador não recebe o total de NPCs e monstros nem o
+    vínculo com uma ficha oculta."""
+
+    id: str
+    personagem_id: str | None = None
+    nome: str
+    token_id: str | None = Field(default=None, description="Primeiro token visível, para o retrato.")
+    tokens: int = 0
+    token_ids: list[str] = Field(default_factory=list, description="Tokens visíveis do participante, para ligar o "
+                                 "token arrastado ao participante certo (o grupo da ficha ou o token próprio).")
+    rolou: bool
+    total: int | None = None
+    meu: bool = False
+    do_jogador: bool = False
+    fora_da_cena: bool = False
+    movimento: MovimentoDoTurno | None = Field(default=None, description="Só na vez, para o Narrador e o dono.")
+
+
+class CombateDoTurno(BaseModel):
+    id: str
+    estado: Literal["iniciativa", "combate"]
+    rodada: int
+    vez_participante_id: str | None = None
+    participantes: list[ParticipanteDoTurno] = Field(description="Na ordem de iniciativa; quem falta rolar no fim.")
+
+
+class EstadoDoTurno(BaseModel):
+    combate: CombateDoTurno | None = None
+
+
+class RolarIniciativaRequest(BaseModel):
+    participante_id: str = Field(min_length=1, max_length=100)
+
+
+class IniciativaRolada(BaseModel):
+    estado: EstadoDoTurno
+    rolagens: list[RolagemDeDados]
 
 
 class CriarCenaRequest(BaseModel):
@@ -1399,6 +1601,7 @@ class MoverTokenRequest(BaseModel):
     x: int = Field(ge=-2000, le=2000)
     y: int = Field(ge=-2000, le=2000)
     versao_esperada: int = Field(ge=0)
+    livre: bool = Field(default=False, description="Movimento livre do Narrador no modo turno: não gasta Deslocamento.")
 
 
 class TamanhoTokenRequest(BaseModel):

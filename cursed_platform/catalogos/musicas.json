@@ -1,0 +1,826 @@
+{
+  "descricao": "Biblioteca de sons da Sala (musica-da-sala), em dois tipos: 'ambiente' (som de fundo em repetição) e 'musica' (com Momento). Cada faixa tem um ou mais Estilos de jogo e, se for de um lugar, o Cenário; sem Cenário, serve em qualquer lugar. Só faixas CC BY ou CC0, que permitem uso comercial (decisão do usuário, 2026-10-03). Os arquivos ficam em platform/frontend/public/musica/. As listas de Estilos, Momentos e Cenários ficam neste arquivo; toda faixa usa valores delas.",
+  "estilos": [
+    "Medieval",
+    "Moderno",
+    "Ficção científica"
+  ],
+  "momentos": [
+    "Exploração / Viagem",
+    "Combate",
+    "Chefe / Épico",
+    "Tensão / Suspense",
+    "Mistério",
+    "Terror",
+    "Taverna / Festa",
+    "Descanso / Calmo",
+    "Drama / Tristeza"
+  ],
+  "cenarios": [
+    "Cidade / Vila",
+    "Interior",
+    "Natureza",
+    "Masmorra / Caverna",
+    "Sobrenatural / Sombrio",
+    "Nave / Estação"
+  ],
+  "faixas": [
+    {
+      "id": "loopable-dungeon-ambience",
+      "tipo": "ambiente",
+      "titulo": "Loopable Dungeon Ambience",
+      "autor": "JaggedStone (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/node/29778",
+      "arquivo": "loopable-dungeon-ambience.ogg",
+      "duracao_s": 94,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Masmorra / Caverna",
+      "sem_emenda": true
+    },
+    {
+      "id": "dungeon-ambience",
+      "tipo": "ambiente",
+      "titulo": "Dungeon Ambience",
+      "autor": "yd (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/dungeon-ambience",
+      "arquivo": "dungeon-ambience.ogg",
+      "duracao_s": 206,
+      "momento": null,
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Masmorra / Caverna",
+      "sem_emenda": true
+    },
+    {
+      "id": "dripping-water-loop",
+      "tipo": "ambiente",
+      "titulo": "Dripping Water Loop",
+      "autor": "qubodup (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/dripping-water-loop",
+      "arquivo": "dripping-water-loop.ogg",
+      "duracao_s": 20,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Masmorra / Caverna",
+      "sem_emenda": true
+    },
+    {
+      "id": "forest-ambience",
+      "tipo": "ambiente",
+      "titulo": "Forest Ambience",
+      "autor": "TinyWorlds (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/forest-ambience",
+      "arquivo": "forest-ambience.ogg",
+      "duracao_s": 45,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": true
+    },
+    {
+      "id": "ambient-bird-sounds",
+      "tipo": "ambiente",
+      "titulo": "Ambient Bird Sounds",
+      "autor": "isaiah658 (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/ambient-bird-sounds",
+      "arquivo": "ambient-bird-sounds.ogg",
+      "duracao_s": 31,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": false
+    },
+    {
+      "id": "crickets-loop",
+      "tipo": "ambiente",
+      "titulo": "Crickets (noite)",
+      "autor": "Wolfgang_ (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/crickets-ambient-noise-loopable",
+      "arquivo": "crickets-loop.ogg",
+      "duracao_s": 11,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": true
+    },
+    {
+      "id": "amb-rain-loop-1",
+      "tipo": "ambiente",
+      "titulo": "Rain Loop",
+      "autor": "Kresiek The Furry (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/amb-rain-loop-1",
+      "arquivo": "amb-rain-loop-1.ogg",
+      "duracao_s": 89,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": true
+    },
+    {
+      "id": "rain-and-thunder-loop",
+      "tipo": "ambiente",
+      "titulo": "Rain and Thunder Loop",
+      "autor": "DoKashiteru (OpenGameArt)",
+      "licenca": "CC BY 3.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/3.0/",
+      "origem_url": "https://opengameart.org/content/rain-and-thunder-loop",
+      "arquivo": "rain-and-thunder-loop.ogg",
+      "duracao_s": 26,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": true
+    },
+    {
+      "id": "wind-loop",
+      "tipo": "ambiente",
+      "titulo": "Wind Loop",
+      "autor": "AntumDeluge, adaptado de InspectorJ (OpenGameArt)",
+      "licenca": "CC BY 3.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/3.0/",
+      "origem_url": "https://opengameart.org/content/wind-loop",
+      "arquivo": "wind-loop.ogg",
+      "duracao_s": 49,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": true
+    },
+    {
+      "id": "sea-and-river-waves",
+      "tipo": "ambiente",
+      "titulo": "Sea and River Waves",
+      "autor": "RandomMind (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/sea-and-river-wave-sounds",
+      "arquivo": "sea-and-river-waves.ogg",
+      "duracao_s": 300,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": true
+    },
+    {
+      "id": "fireplace-loop",
+      "tipo": "ambiente",
+      "titulo": "Fireplace Loop (fogueira)",
+      "autor": "PagDev (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/fireplace-sound-loop",
+      "arquivo": "fireplace-loop.ogg",
+      "duracao_s": 29,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Interior",
+      "sem_emenda": true
+    },
+    {
+      "id": "rain-on-window-loop",
+      "tipo": "ambiente",
+      "titulo": "Rain on Window Loop",
+      "autor": "alxl (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/rain-on-window-loop",
+      "arquivo": "rain-on-window-loop.ogg",
+      "duracao_s": 11,
+      "momento": null,
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Interior",
+      "sem_emenda": true
+    },
+    {
+      "id": "high-traffic-road",
+      "tipo": "ambiente",
+      "titulo": "High Traffic Road",
+      "autor": "IgnasD (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/high-traffic-road-sounds",
+      "arquivo": "high-traffic-road.ogg",
+      "duracao_s": 60,
+      "momento": null,
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": "Cidade / Vila",
+      "sem_emenda": false
+    },
+    {
+      "id": "background-rumble-train",
+      "tipo": "ambiente",
+      "titulo": "Background Rumble (trem)",
+      "autor": "gryc (OpenGameArt)",
+      "licenca": "CC BY 3.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/3.0/",
+      "origem_url": "https://opengameart.org/content/background-rumble-noise",
+      "arquivo": "background-rumble-train.ogg",
+      "duracao_s": 26,
+      "momento": null,
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": "Cidade / Vila",
+      "sem_emenda": false
+    },
+    {
+      "id": "sci-fi-computer-room",
+      "tipo": "ambiente",
+      "titulo": "Computer Room Ambience",
+      "autor": "Fun Gi Development (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/sci-fi-ambience-sfx",
+      "arquivo": "sci-fi-computer-room.ogg",
+      "duracao_s": 15,
+      "momento": null,
+      "estilos": [
+        "Ficção científica"
+      ],
+      "cenario": "Nave / Estação",
+      "sem_emenda": false
+    },
+    {
+      "id": "ambient-spaceship-hums",
+      "tipo": "ambiente",
+      "titulo": "Ambient Spaceship Hums",
+      "autor": "dklon (OpenGameArt)",
+      "licenca": "CC BY 3.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/3.0/",
+      "origem_url": "https://opengameart.org/content/ambient-spaceship-hums",
+      "arquivo": "ambient-spaceship-hums.ogg",
+      "duracao_s": 5,
+      "momento": null,
+      "estilos": [
+        "Ficção científica"
+      ],
+      "cenario": "Nave / Estação",
+      "sem_emenda": true
+    },
+    {
+      "id": "sci-fi-drone-loop",
+      "tipo": "ambiente",
+      "titulo": "Sci-Fi Drone Loop",
+      "autor": "jdagenet (OpenGameArt)",
+      "licenca": "CC BY 3.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/3.0/",
+      "origem_url": "https://opengameart.org/content/sci-fi-drone-loop",
+      "arquivo": "sci-fi-drone-loop.ogg",
+      "duracao_s": 8,
+      "momento": null,
+      "estilos": [
+        "Ficção científica"
+      ],
+      "cenario": "Nave / Estação",
+      "sem_emenda": true
+    },
+    {
+      "id": "cathedral-in-the-forest",
+      "tipo": "musica",
+      "titulo": "Cathedral in the Forest",
+      "autor": "congusbongus (OpenGameArt)",
+      "licenca": "CC0",
+      "licenca_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "origem_url": "https://opengameart.org/content/cathedral-in-the-forest-ambient-loop",
+      "arquivo": "cathedral-in-the-forest.ogg",
+      "duracao_s": 137,
+      "momento": "Mistério",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": true
+    },
+    {
+      "id": "clash-defiant",
+      "tipo": "musica",
+      "titulo": "Clash Defiant",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "clash-defiant.ogg",
+      "duracao_s": 376,
+      "momento": "Combate",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "five-armies",
+      "tipo": "musica",
+      "titulo": "Five Armies",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "five-armies.ogg",
+      "duracao_s": 156,
+      "momento": "Chefe / Épico",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "achaidh-cheide",
+      "tipo": "musica",
+      "titulo": "Achaidh Cheide",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "achaidh-cheide.ogg",
+      "duracao_s": 134,
+      "momento": "Taverna / Festa",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Interior",
+      "sem_emenda": false
+    },
+    {
+      "id": "darkest-child",
+      "tipo": "musica",
+      "titulo": "Darkest Child",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "darkest-child.ogg",
+      "duracao_s": 239,
+      "momento": "Terror",
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Sobrenatural / Sombrio",
+      "sem_emenda": false
+    },
+    {
+      "id": "the-britons",
+      "tipo": "musica",
+      "titulo": "The Britons",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "the-britons.ogg",
+      "duracao_s": 307,
+      "momento": "Taverna / Festa",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Cidade / Vila",
+      "sem_emenda": false
+    },
+    {
+      "id": "master-of-the-feast",
+      "tipo": "musica",
+      "titulo": "Master of the Feast",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "master-of-the-feast.ogg",
+      "duracao_s": 228,
+      "momento": "Taverna / Festa",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Interior",
+      "sem_emenda": false
+    },
+    {
+      "id": "teller-of-the-tales",
+      "tipo": "musica",
+      "titulo": "Teller of the Tales",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "teller-of-the-tales.ogg",
+      "duracao_s": 212,
+      "momento": "Exploração / Viagem",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "ascending-the-vale",
+      "tipo": "musica",
+      "titulo": "Ascending the Vale",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "ascending-the-vale.ogg",
+      "duracao_s": 248,
+      "momento": "Exploração / Viagem",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": false
+    },
+    {
+      "id": "suonatore-di-liuto",
+      "tipo": "musica",
+      "titulo": "Suonatore di Liuto",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "suonatore-di-liuto.ogg",
+      "duracao_s": 144,
+      "momento": "Descanso / Calmo",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "lord-of-the-land",
+      "tipo": "musica",
+      "titulo": "Lord of the Land",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "lord-of-the-land.ogg",
+      "duracao_s": 186,
+      "momento": "Tensão / Suspense",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "hidden-past",
+      "tipo": "musica",
+      "titulo": "Hidden Past",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "hidden-past.ogg",
+      "duracao_s": 192,
+      "momento": "Mistério",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "myst-on-the-moor",
+      "tipo": "musica",
+      "titulo": "Myst on the Moor",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "myst-on-the-moor.ogg",
+      "duracao_s": 229,
+      "momento": "Mistério",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Natureza",
+      "sem_emenda": false
+    },
+    {
+      "id": "rites",
+      "tipo": "musica",
+      "titulo": "Rites",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "rites.ogg",
+      "duracao_s": 127,
+      "momento": "Mistério",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Sobrenatural / Sombrio",
+      "sem_emenda": false
+    },
+    {
+      "id": "crypto",
+      "tipo": "musica",
+      "titulo": "Crypto",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "crypto.ogg",
+      "duracao_s": 204,
+      "momento": "Tensão / Suspense",
+      "estilos": [
+        "Medieval",
+        "Moderno"
+      ],
+      "cenario": "Masmorra / Caverna",
+      "sem_emenda": false
+    },
+    {
+      "id": "death-and-axes",
+      "tipo": "musica",
+      "titulo": "Death and Axes",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "death-and-axes.ogg",
+      "duracao_s": 168,
+      "momento": "Combate",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "final-battle-of-the-dark-wizards",
+      "tipo": "musica",
+      "titulo": "Final Battle of the Dark Wizards",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "final-battle-of-the-dark-wizards.ogg",
+      "duracao_s": 272,
+      "momento": "Chefe / Épico",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": "Sobrenatural / Sombrio",
+      "sem_emenda": false
+    },
+    {
+      "id": "night-vigil",
+      "tipo": "musica",
+      "titulo": "Night Vigil",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "night-vigil.ogg",
+      "duracao_s": 288,
+      "momento": "Drama / Tristeza",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "anguish",
+      "tipo": "musica",
+      "titulo": "Anguish",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "anguish.ogg",
+      "duracao_s": 239,
+      "momento": "Drama / Tristeza",
+      "estilos": [
+        "Medieval"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "cut-and-run",
+      "tipo": "musica",
+      "titulo": "Cut and Run",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "cut-and-run.ogg",
+      "duracao_s": 215,
+      "momento": "Combate",
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": "Cidade / Vila",
+      "sem_emenda": false
+    },
+    {
+      "id": "space-fighter-loop",
+      "tipo": "musica",
+      "titulo": "Space Fighter Loop",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "space-fighter-loop.ogg",
+      "duracao_s": 101,
+      "momento": "Chefe / Épico",
+      "estilos": [
+        "Ficção científica"
+      ],
+      "cenario": "Nave / Estação",
+      "sem_emenda": true
+    },
+    {
+      "id": "basement-floor",
+      "tipo": "musica",
+      "titulo": "Basement Floor",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "basement-floor.ogg",
+      "duracao_s": 106,
+      "momento": "Tensão / Suspense",
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "scp-x2x",
+      "tipo": "musica",
+      "titulo": "SCP-x2x (Unseen Presence)",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "scp-x2x.ogg",
+      "duracao_s": 293,
+      "momento": "Terror",
+      "estilos": [
+        "Moderno",
+        "Ficção científica"
+      ],
+      "cenario": "Sobrenatural / Sombrio",
+      "sem_emenda": false
+    },
+    {
+      "id": "mesmerizing-galaxy",
+      "tipo": "musica",
+      "titulo": "Mesmerizing Galaxy",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "mesmerizing-galaxy.ogg",
+      "duracao_s": 93,
+      "momento": "Mistério",
+      "estilos": [
+        "Ficção científica"
+      ],
+      "cenario": "Nave / Estação",
+      "sem_emenda": true
+    },
+    {
+      "id": "one-sly-move",
+      "tipo": "musica",
+      "titulo": "One Sly Move",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "one-sly-move.ogg",
+      "duracao_s": 162,
+      "momento": "Mistério",
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": "Cidade / Vila",
+      "sem_emenda": false
+    },
+    {
+      "id": "late-night-radio",
+      "tipo": "musica",
+      "titulo": "Late Night Radio",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "late-night-radio.ogg",
+      "duracao_s": 264,
+      "momento": "Descanso / Calmo",
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    },
+    {
+      "id": "ethernight-club",
+      "tipo": "musica",
+      "titulo": "Ethernight Club",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "ethernight-club.ogg",
+      "duracao_s": 306,
+      "momento": "Taverna / Festa",
+      "estilos": [
+        "Moderno",
+        "Ficção científica"
+      ],
+      "cenario": "Interior",
+      "sem_emenda": false
+    },
+    {
+      "id": "limit-70",
+      "tipo": "musica",
+      "titulo": "Limit 70",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "limit-70.ogg",
+      "duracao_s": 302,
+      "momento": "Exploração / Viagem",
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": "Cidade / Vila",
+      "sem_emenda": false
+    },
+    {
+      "id": "wounded",
+      "tipo": "musica",
+      "titulo": "Wounded",
+      "autor": "Kevin MacLeod (incompetech.com)",
+      "licenca": "CC BY 4.0",
+      "licenca_url": "https://creativecommons.org/licenses/by/4.0/",
+      "origem_url": "https://incompetech.com/music/royalty-free/music.html",
+      "arquivo": "wounded.ogg",
+      "duracao_s": 201,
+      "momento": "Drama / Tristeza",
+      "estilos": [
+        "Moderno"
+      ],
+      "cenario": null,
+      "sem_emenda": false
+    }
+  ]
+}

@@ -121,7 +121,26 @@ export function RoomPresence({
         });
         // Rolagem nova na mesa (melhorias-da-sala, item 3): busca na hora, sem esperar a consulta periódica.
         canal.on("broadcast", { event: "sala.rolagem" }, () => {
-          if (ativo) void queryClient.invalidateQueries({ queryKey: ["rolagens", mesaId] });
+          if (!ativo) return;
+          void queryClient.invalidateQueries({ queryKey: ["rolagens", mesaId] });
+          void queryClient.invalidateQueries({ queryKey: ["sala-estatisticas", mesaId] });
+        });
+        // Gamificação da Sala (gamificacao-da-sala): preferências, sessão e votação de MVP mudaram.
+        const daGamificacao: [string, string[]][] = [
+          ["sala.preferencias", ["sala-preferencias", "sala-estatisticas", "rolagens"]],
+          ["sala.sessao", ["sala-sessoes", "sala-estatisticas"]],
+          ["sala.votacao", ["sala-mvp"]],
+          // Modo turno (modo-de-turno): a ordem, a vez e as rolagens de iniciativa mudaram.
+          ["sala.turno", ["sala-turno", "rolagens"]],
+        ];
+        for (const [evento, chaves] of daGamificacao) {
+          canal.on("broadcast", { event: evento }, () => {
+            if (ativo) for (const chave of chaves) void queryClient.invalidateQueries({ queryKey: [chave, mesaId] });
+          });
+        }
+        // Música da mesa mudou (musica-da-sala): busca o estado na hora.
+        canal.on("broadcast", { event: "sala.musica" }, () => {
+          if (ativo) void queryClient.invalidateQueries({ queryKey: ["musica", mesaId] });
         });
         canal.subscribe((status) => {
           if (!ativo) return;

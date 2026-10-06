@@ -846,6 +846,8 @@ class RolagemRegistro(Base):
     __tablename__ = "dice_rolls"
     __table_args__ = (
         CheckConstraint("modificador BETWEEN -99 AND 99", name="ck_dice_rolls_modificador"),
+        CheckConstraint("finalidade IS NULL OR finalidade IN ('iniciativa')", name="ck_dice_rolls_finalidade"),
+        Index("ix_dice_rolls_mesa_sessao", "mesa_id", "sessao_id"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
@@ -861,3 +863,131 @@ class RolagemRegistro(Base):
     # Rolagem oculta do Narrador: só ele a vê (melhorias-da-sala, item 5).
     oculta: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    # Sessão em andamento quando a rolagem foi sorteada (gamificacao-da-sala, D4).
+    sessao_id: Mapped[str | None] = mapped_column(String(100), ForeignKey("table_sessions.id", ondelete="SET NULL"))
+    # Crítico e falha crítica de cada d20, pela faixa do personagem no sorteio (gamificacao-da-sala, D2):
+    # [{"faces": 20, "indice": i, "tipo": "critico" | "falha_critica"}], ou nulo sem marca.
+    marcas: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+    # Para que serve a rolagem, quando não é uma rolagem livre: "iniciativa" (modo-de-turno).
+    finalidade: Mapped[str | None] = mapped_column(String(20))
+
+
+class MusicaRegistro(Base):
+    """Música e som ambiente da mesa na Sala (musica-da-sala): o que a mesa está ouvindo, escolhido pelo Narrador.
+    Uma linha por camada (ambiente e música) de cada mesa. A posição esperada é ``posicao_ms`` mais o tempo desde ``alterada_em`` (relógio do servidor)
+    enquanto ``tocando``; quem calcula a volta (``repetir``) ou o fim da faixa é o navegador."""
+
+    __tablename__ = "room_music"
+    __table_args__ = (
+        CheckConstraint("posicao_ms >= 0", name="ck_room_music_posicao"),
+        CheckConstraint("camada IN ('ambiente', 'musica')", name="ck_room_music_camada"),
+    )
+
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="CASCADE"), primary_key=True)
+    camada: Mapped[str] = mapped_column(String(20), primary_key=True)
+    faixa_id: Mapped[str | None] = mapped_column(String(100))
+    tocando: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    posicao_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    repetir: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
+    alterada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    alterada_por: Mapped[str] = mapped_column(String(100), nullable=False)
+
+
+class PreferenciasSalaRegistro(Base):
+    """Preferências da Sala escolhidas pelo Narrador (gamificacao-da-sala, D3); sem linha, tudo desligado."""
+
+    __tablename__ = "room_preferences"
+
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="CASCADE"), primary_key=True)
+    destaque_criticos: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    estatisticas_visiveis: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    alterada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    alterada_por: Mapped[str] = mapped_column(String(100), nullable=False)
+
+
+class VotacaoMvpRegistro(Base):
+    """Votação de MVP da mesa (gamificacao-da-sala, D6). No máximo uma não encerrada por mesa."""
+
+    __tablename__ = "mvp_rounds"
+    __table_args__ = (
+        CheckConstraint("estado IN ('aberta', 'desempate', 'encerrada')", name="ck_mvp_rounds_estado"),
+        Index("ix_mvp_rounds_mesa", "mesa_id", "aberta_em"),
+        Index("uq_mvp_rounds_uma_aberta", "mesa_id", unique=True,
+              sqlite_where=text("estado <> 'encerrada'"), postgresql_where=text("estado <> 'encerrada'")),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="CASCADE"), nullable=False)
+    sessao_id: Mapped[str | None] = mapped_column(String(100), ForeignKey("table_sessions.id", ondelete="SET NULL"))
+    estado: Mapped[str] = mapped_column(String(20), nullable=False)
+    aberta_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    aberta_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    vencedor_id: Mapped[str | None] = mapped_column(String(100))
+    votos_do_vencedor: Mapped[int | None] = mapped_column(Integer)
+    # Ids dos empatados enquanto o Narrador desempata; sem contagem.
+    empatados: Mapped[list[str] | None] = mapped_column(JSON)
+
+
+class VotoMvpRegistro(Base):
+    """Voto secreto de um jogador; votar de novo substitui o voto."""
+
+    __tablename__ = "mvp_votes"
+    __table_args__ = (CheckConstraint("eleitor_id <> candidato_id", name="ck_mvp_votes_nao_em_si"),)
+
+    votacao_id: Mapped[str] = mapped_column(String(100), ForeignKey("mvp_rounds.id", ondelete="CASCADE"), primary_key=True)
+    eleitor_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    candidato_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    votado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CombateRegistro(Base):
+    """Modo turno da mesa (modo-de-turno): fase, rodada e vez. No máximo um não encerrado por mesa."""
+
+    __tablename__ = "turn_combats"
+    __table_args__ = (
+        CheckConstraint("estado IN ('iniciativa', 'combate', 'encerrado')", name="ck_turn_combats_estado"),
+        CheckConstraint("rodada >= 0", name="ck_turn_combats_rodada"),
+        Index("uq_turn_combats_um_aberto", "mesa_id", unique=True,
+              sqlite_where=text("estado <> 'encerrado'"), postgresql_where=text("estado <> 'encerrado'")),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="CASCADE"), nullable=False)
+    sessao_id: Mapped[str | None] = mapped_column(String(100), ForeignKey("table_sessions.id", ondelete="SET NULL"))
+    cena_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    estado: Mapped[str] = mapped_column(String(20), nullable=False)
+    rodada: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    vez_participante_id: Mapped[str | None] = mapped_column(String(100))
+    aberto_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    aberto_por: Mapped[str] = mapped_column(String(100), nullable=False)
+    encerrado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ParticipanteCombateRegistro(Base):
+    """Um personagem no modo turno, com a iniciativa e o desempate; a ordem é calculada a partir deles.
+
+    Sem `token_id`, é o grupo da ficha (os tokens dela na cena ao abrir o modo turno); com `token_id`, é um token posto
+    depois, que rola e joga sozinho (D8d). O grupo único por ficha é garantido pelo domínio (`turno.incluir`)."""
+
+    __tablename__ = "turn_participants"
+    __table_args__ = (
+        UniqueConstraint("combate_id", "token_id", name="uq_turn_participants_token"),
+        CheckConstraint("movimento_gasto >= 0", name="ck_turn_participants_movimento"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    combate_id: Mapped[str] = mapped_column(String(100), ForeignKey("turn_combats.id", ondelete="CASCADE"), nullable=False)
+    personagem_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    # Sem chave estrangeira: o token pode sair da cena e o participante fica, fora da cena, até o fim do modo turno.
+    token_id: Mapped[str | None] = mapped_column(String(100))
+    rolagem_id: Mapped[int | None] = mapped_column(BigInteger().with_variant(Integer, "sqlite"),
+                                                    ForeignKey("dice_rolls.id", ondelete="SET NULL"))
+    total: Mapped[int | None] = mapped_column(Integer)
+    raciocinio: Mapped[int | None] = mapped_column(Integer)
+    prontidao: Mapped[int | None] = mapped_column(Integer)
+    # d20 de desempate, na ordem dos níveis (D2); só ordenam, não mudam o total.
+    desempate: Mapped[list[int]] = mapped_column(JSON, nullable=False, default=list)
+    # Saldo de movimento da vez (D8): metros já andados e se o participante está correndo; zerados ao receber a vez.
+    movimento_gasto: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    correndo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())

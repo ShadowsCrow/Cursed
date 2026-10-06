@@ -387,6 +387,18 @@ def recortar_transparente(imagem: Image.Image) -> Image.Image | None:
     return rgba.crop(caixa)
 
 
+def _objeto_centrado(matriz: Path, caminho: Path, lado: int) -> Path:
+    """Recorta o objeto (sem fundo) e o centraliza num quadrado transparente de `lado` px."""
+    with Image.open(matriz) as imagem:
+        objeto = recortar_transparente(imagem) or recortar_objeto(imagem)[0]
+    escala = lado / max(objeto.size)
+    reduzido = objeto.resize((max(1, round(objeto.width * escala)), max(1, round(objeto.height * escala))), Image.LANCZOS)
+    quadro = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+    quadro.paste(reduzido, ((lado - reduzido.width) // 2, (lado - reduzido.height) // 2), reduzido)
+    quadro.save(caminho, "WEBP", quality=90, method=6)
+    return caminho
+
+
 def preparar_dados_da_sala(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
     saidas: list[Path] = []
     for dado in DADOS_DA_SALA:
@@ -394,15 +406,7 @@ def preparar_dados_da_sala(origem: Path = ORIGEM, destino: Path = DESTINO) -> li
         if not matriz.exists():
             continue
         (destino / "sala").mkdir(parents=True, exist_ok=True)
-        with Image.open(matriz) as imagem:
-            objeto = recortar_transparente(imagem) or recortar_objeto(imagem)[0]
-        escala = LADO_DO_DADO / max(objeto.size)
-        reduzido = objeto.resize((max(1, round(objeto.width * escala)), max(1, round(objeto.height * escala))), Image.LANCZOS)
-        quadro = Image.new("RGBA", (LADO_DO_DADO, LADO_DO_DADO), (0, 0, 0, 0))
-        quadro.paste(reduzido, ((LADO_DO_DADO - reduzido.width) // 2, (LADO_DO_DADO - reduzido.height) // 2), reduzido)
-        caminho = destino / "sala" / f"dados-{dado}.webp"
-        quadro.save(caminho, "WEBP", quality=90, method=6)
-        saidas.append(caminho)
+        saidas.append(_objeto_centrado(matriz, destino / "sala" / f"dados-{dado}.webp", LADO_DO_DADO))
     # Pedra das faces dos dados 3D (item 3): textura quadrada, desenhada recortada em cada face.
     pedra = origem / "dados-pedra.png"
     if pedra.exists():
@@ -410,6 +414,25 @@ def preparar_dados_da_sala(origem: Path = ORIGEM, destino: Path = DESTINO) -> li
         with Image.open(pedra) as imagem:
             textura = imagem.convert("RGB").resize((LADO_DA_PEDRA, LADO_DA_PEDRA), Image.LANCZOS)
         saidas.append(_salvar(textura, destino / "sala", "dados-pedra", qualidade=85))
+    return saidas
+
+
+# Reações e selo de MVP da Sala (gamificacao-da-sala, D10), pedidos com fundo transparente: recortados rente ao
+# objeto e centralizados num quadrado transparente, como os dados.
+ARTES_DA_GAMIFICACAO = {
+    **{f"reacao-{reacao}": 128 for reacao in ("aplausos", "risada", "susto", "caveira", "chama", "coracao")},
+    "mvp-selo": 264,
+}
+
+
+def preparar_arte_da_gamificacao(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
+    saidas: list[Path] = []
+    for nome, lado in ARTES_DA_GAMIFICACAO.items():
+        matriz = origem / f"{nome}.png"
+        if not matriz.exists():
+            continue
+        (destino / "sala").mkdir(parents=True, exist_ok=True)
+        saidas.append(_objeto_centrado(matriz, destino / "sala" / f"{nome}.webp", lado))
     return saidas
 
 
@@ -790,6 +813,7 @@ def preparar(origem: Path = ORIGEM, destino: Path = DESTINO) -> list[Path]:
     saidas.extend(preparar_arte_do_inventario(origem, destino))
     saidas.extend(preparar_arte_da_navegacao(origem, destino))
     saidas.extend(preparar_dados_da_sala(origem, destino))
+    saidas.extend(preparar_arte_da_gamificacao(origem, destino))
     return saidas
 
 

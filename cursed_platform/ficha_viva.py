@@ -168,17 +168,44 @@ class ValorDerivado:
     fontes: list[Fonte]
     situacionais: list[Situacional]
     minimo_zero: bool = False
+    # O total inteiro, efeitos incluídos, nunca fica abaixo de zero (Deslocamento, modo-de-turno D7).
+    piso_final: bool = False
 
     @property
     def total(self) -> float:
         base = sum(f.valor for f in self.fontes if f.tipo != "efeito")
         if self.minimo_zero:
             base = max(0, base)
-        return base + sum(f.valor for f in self.fontes if f.tipo == "efeito")
+        total = base + sum(f.valor for f in self.fontes if f.tipo == "efeito")
+        return max(0, total) if self.piso_final else total
 
 
 def _numero(valor: float) -> float | int:
     return int(valor) if float(valor).is_integer() else round(valor, 2)
+
+
+DESLOCAMENTO_PADRAO = 9  # metros, quando nenhuma regra determina (Iniciativa, Movimento e Posicionamento.md)
+
+
+def fontes_do_deslocamento(ficha: Mapping[str, Any], catalogo: catalogos.Catalogos | None = None) -> list[Fonte]:
+    """Base da raça (ou 9 m) e os bônus das habilidades de classe, arquétipo e raça do catálogo (modo-de-turno, D7).
+    Itens e efeitos entram depois, pelos modificadores com alvo `deslocamento`."""
+    catalogo = catalogo or catalogos.obter()
+    personagem = ficha.get("personagem") if isinstance(ficha.get("personagem"), Mapping) else {}
+    raca = catalogo.raca(personagem.get("raca")) if personagem.get("raca") else None
+    if raca is not None and raca.deslocamento is not None:
+        fontes = [Fonte("base", f"Raça: {raca.nome}", raca.deslocamento)]
+    else:
+        fontes = [Fonte("base", "Padrão das regras", DESLOCAMENTO_PADRAO)]
+    classe = catalogo.classe(personagem.get("classe")) if personagem.get("classe") else None
+    arquetipo = classe.arquetipo(personagem.get("arquetipo")) if classe is not None and personagem.get("arquetipo") else None
+    origens = [
+        *((f"Classe: {classe.nome}", h) for h in (classe.habilidades if classe else ())),
+        *((f"Arquétipo: {arquetipo.nome}", h) for h in (arquetipo.habilidades if arquetipo else ())),
+        *((f"Raça: {raca.nome}", h) for h in (raca.habilidades if raca else ())),
+    ]
+    fontes.extend(Fonte("habilidade", f"{rotulo} — {h.nome}", h.deslocamento) for rotulo, h in origens if h.deslocamento)
+    return fontes
 
 
 def calcular_valores_derivados(
@@ -246,7 +273,9 @@ def calcular_valores_derivados(
               item_id=item.id)
         for item in armaduras
     ], [])
-    resultado.extend(com_efeitos(v) for v in (esquiva, armadura, rdb))
+    deslocamento = ValorDerivado("deslocamento", "Deslocamento", "status", fontes_do_deslocamento(ficha), [],
+                                 minimo_zero=True, piso_final=True)
+    resultado.extend(com_efeitos(v) for v in (esquiva, armadura, rdb, deslocamento))
     return resultado
 
 

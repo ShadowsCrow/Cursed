@@ -6,7 +6,7 @@ import type { ApiClient } from "../characters/types";
 import { CHAVE_ABA_DO_PAINEL } from "./abasDoPainel";
 import { intervaloDaSala } from "./atualizacao";
 import {
-  CHAVE_CHAO_ABERTO, CHAVE_LARGURA_PAINEL, CHAVE_PAINEL_DA_CENA, LARGURA_PAINEL_MAXIMA, LARGURA_PAINEL_MINIMA, LARGURA_PAINEL_PADRAO, RoomView,
+  CHAVE_CHAO_ABERTO, CHAVE_LARGURA_PAINEL, CHAVE_PAINEL_DA_CENA, CHAVE_SUBABA_DA_CENA, LARGURA_PAINEL_MAXIMA, LARGURA_PAINEL_MINIMA, LARGURA_PAINEL_PADRAO, RoomView,
 } from "./RoomView";
 
 vi.mock("./SceneStashes", () => ({ SceneStashes: () => <p>Conteúdo do chão</p> }));
@@ -15,12 +15,14 @@ vi.mock("./BolsaDoPainel", () => ({ BolsaDoPainel: ({ narrator }: { narrator: bo
 vi.mock("./CartasDoPainel", () => ({ CartasDoPainel: ({ narrator }: { narrator: boolean }) => <p>Cartas do {narrator ? "Narrador" : "jogador"}</p> }));
 
 vi.mock("./RoomCanvas", () => ({
-  RoomCanvas: ({ cena, reservaDireita, retratos, onDragEnd, onSoltarPersonagem, onMenuDoToken }: {
+  RoomCanvas: ({ cena, reservaDireita, retratos, onDragEnd, onSoltarPersonagem, onMenuDoToken, tokenSelecionado }: {
     cena: { tokens: { id: string; x: number; y: number }[] }; reservaDireita?: number; retratos?: Record<string, string>;
+    tokenSelecionado?: string | null;
     onDragEnd?: (id: string, x: number, y: number) => void; onSoltarPersonagem?: (id: string, x: number, y: number) => void;
     onMenuDoToken?: (id: string, posicao: { x: number; y: number }) => void;
   }) => <>
-    <div data-testid="grid" data-reserva={reservaDireita ?? 0} data-retratos={JSON.stringify(retratos ?? {})}>
+    <div data-testid="grid" data-reserva={reservaDireita ?? 0} data-retratos={JSON.stringify(retratos ?? {})}
+      data-selecionado={tokenSelecionado ?? ""}>
       {cena.tokens.map((token) => `${token.id}:${token.x},${token.y}`).join(";")}</div>
     <button type="button" onClick={() => onDragEnd?.(cena.tokens[0]?.id ?? "", 4, 3)}>soltar o primeiro token em 4,3</button>
     {onSoltarPersonagem && <button type="button" onClick={() => onSoltarPersonagem("lion", 4, 2)}>soltar Lion em 4,2</button>}
@@ -46,6 +48,9 @@ function rotas(sala: unknown, extras: Record<string, unknown> = {}) {
     data: caminho === "/mesas/{mesa_id}/sala" ? sala : (extras[caminho] ?? []), error: undefined,
   }));
 }
+
+/** O conteúdo da aba aberta do painel (a aba Cena do Narrador tem, dentro, o painel da sub-aba). */
+const painelDaAba = () => document.getElementById("painel-sala-conteudo")!;
 
 function renderSala(api: ApiClient, narrator: boolean) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -79,9 +84,38 @@ describe("movimento da sala", () => {
     expect(screen.getByRole("alert").textContent).toContain("última posição confirmada foi restaurada");
     expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento", {
       params: { path: { mesa_id: "mesa", token_id: "heroi" } },
-      body: { x: 4, y: 3, versao_esperada: 0 },
+      body: { x: 4, y: 3, versao_esperada: 0, livre: false },
     });
     expect(GET.mock.calls.filter(([caminho]) => caminho === "/mesas/{mesa_id}/sala")).toHaveLength(1);
+  });
+});
+
+describe("movimento livre do Narrador (modo-de-turno)", () => {
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); window.localStorage.clear(); });
+
+  it("segurando Alt ao soltar, o movimento vai como livre; sem Alt, não", async () => {
+    const POST = vi.fn().mockResolvedValue({ data: { ...snapshot.cena.tokens[0], x: 4, y: 3, versao: 1 }, error: undefined });
+    renderSala({ GET: rotas(snapshot), POST } as unknown as ApiClient, true);
+    await screen.findByTestId("grid");
+    fireEvent.keyDown(window, { key: "Alt", altKey: true });
+    fireEvent.click(screen.getByRole("button", { name: "soltar o primeiro token em 4,3" }));
+    await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento", expect.objectContaining({
+      body: { x: 4, y: 3, versao_esperada: 0, livre: true } })));
+    fireEvent.keyUp(window, { key: "Alt", altKey: false });
+    POST.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "soltar o primeiro token em 4,3" }));
+    await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento", expect.objectContaining({
+      body: { x: 4, y: 3, versao_esperada: 0, livre: false } })));
+  });
+
+  it("o jogador nunca manda movimento livre, mesmo com Alt", async () => {
+    const POST = vi.fn().mockResolvedValue({ data: { ...snapshot.cena.tokens[0], x: 4, y: 3, versao: 1 }, error: undefined });
+    renderSala({ GET: rotas(snapshot), POST } as unknown as ApiClient, false);
+    await screen.findByTestId("grid");
+    fireEvent.keyDown(window, { key: "Alt", altKey: true });
+    fireEvent.click(screen.getByRole("button", { name: "soltar o primeiro token em 4,3" }));
+    await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento", expect.objectContaining({
+      body: { x: 4, y: 3, versao_esperada: 0, livre: false } })));
   });
 });
 
@@ -117,7 +151,8 @@ describe("sala de página única", () => {
     const brejo = within(faixa).getByRole("switch", { name: "Cena ativa: Brejo" }) as HTMLInputElement;
     expect(brejo.checked || brejo.disabled).toBe(false);
     const painel = screen.getByRole("complementary", { name: "Painel da Sala" });
-    expect(within(painel).getByRole("region", { name: "Personagens dos jogadores" })).toBeTruthy();
+    // A Cena abre na sub-aba Cenas; os personagens ficam na sub-aba Personagens.
+    expect(within(painel).getByRole("tab", { name: /^Cenas/ }).getAttribute("aria-selected")).toBe("true");
     // A gestão de cenas fica no topo da aba Cena, não sobre o grid (item 5); sobre o grid fica só o nome.
     expect(painel.contains(faixa)).toBe(true);
     expect(document.querySelector(".room-view__topo .room-view__cena")?.textContent).toBe("Pátio");
@@ -219,30 +254,30 @@ describe("painel da Sala com abas e chão embaixo", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); window.localStorage.clear(); });
   const api = () => ({ GET: rotas(comCenas) } as unknown as ApiClient);
 
-  it("tem as abas Cena, Dados, Chat, Fichas, Bolsa, Cartas e Música, com Cena selecionada e troca pelo clique e pelas setas", async () => {
+  it("tem as abas Cena, Dados, Mestre, Fichas, Bolsa, Cartas e Música, com Cena selecionada e troca pelo clique e pelas setas", async () => {
     renderSala(api(), true);
     await screen.findByTestId("grid");
     const abas = within(screen.getByRole("tablist", { name: "Painel da Sala" })).getAllByRole("tab");
-    expect(abas.map((aba) => aba.textContent)).toEqual(["Cena", "Dados", "Chat", "Fichas", "Bolsa", "Cartas", "Música"]);
+    expect(abas.map((aba) => aba.textContent)).toEqual(["Cena", "Dados", "Mestre", "Fichas", "Bolsa", "Cartas", "Música"]);
     // Com o painel estreito só o ícone aparece; o nome continua acessível e como dica.
     expect(abas.every((aba) => aba.querySelector("svg") && aba.getAttribute("title") === aba.textContent)).toBe(true);
     expect(screen.getByRole("tab", { name: "Cena" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tabpanel").textContent).toContain("Tokens da cena");
+    expect(within(painelDaAba()).getByRole("tablist", { name: "Temas da Cena" })).toBeTruthy();
     // A aba Cena não traz mais o chão: ele foi para baixo do grid.
-    expect(within(screen.getByRole("tabpanel")).queryByText("Conteúdo do chão")).toBeNull();
-    fireEvent.click(screen.getByRole("tab", { name: "Chat" }));
-    expect(screen.getByRole("tab", { name: "Chat" }).getAttribute("aria-selected")).toBe("true");
-    fireEvent.keyDown(screen.getByRole("tab", { name: "Chat" }), { key: "ArrowRight" });
+    expect(within(painelDaAba()).queryByText("Conteúdo do chão")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Mestre" }));
+    expect(screen.getByRole("tab", { name: "Mestre" }).getAttribute("aria-selected")).toBe("true");
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Mestre" }), { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: "Fichas" }).getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(screen.getByRole("tab", { name: "Fichas" }));
-    expect(screen.getByRole("tabpanel").textContent).toContain("Conteúdo das fichas");
+    expect(painelDaAba().textContent).toContain("Conteúdo das fichas");
     fireEvent.keyDown(screen.getByRole("tab", { name: "Fichas" }), { key: "ArrowRight" });
-    expect(screen.getByRole("tabpanel").textContent).toContain("Bolsa do Narrador");
+    expect(painelDaAba().textContent).toContain("Bolsa do Narrador");
     fireEvent.keyDown(screen.getByRole("tab", { name: "Bolsa" }), { key: "ArrowRight" });
-    expect(screen.getByRole("tabpanel").textContent).toContain("Cartas do Narrador");
+    expect(painelDaAba().textContent).toContain("Cartas do Narrador");
     fireEvent.keyDown(screen.getByRole("tab", { name: "Cartas" }), { key: "End" });
     expect(screen.getByRole("tab", { name: "Música" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tabpanel").textContent).toContain("A música da mesa ainda vai chegar");
+    expect(painelDaAba().textContent).toContain("Nenhuma música tocando.");
     fireEvent.keyDown(screen.getByRole("tab", { name: "Música" }), { key: "Home" });
     expect(screen.getByRole("tab", { name: "Cena" }).getAttribute("aria-selected")).toBe("true");
   });
@@ -278,16 +313,16 @@ describe("painel da Sala com abas e chão embaixo", () => {
     expect(GET.mock.calls.length).toBeGreaterThanOrEqual(chamadas);
   });
 
-  it("o Chat é só um espaço reservado, com o campo e o envio desativados", async () => {
+  it("o jogador tem a aba Jogador no lugar do Chat, e o Chat guardado de antes abre a aba do papel", async () => {
+    window.localStorage.setItem(CHAVE_ABA_DO_PAINEL, "chat");
     renderSala(api(), false);
     await screen.findByTestId("grid");
     fireEvent.click(screen.getByRole("button", { name: "Abrir painel" }));
-    fireEvent.click(screen.getByRole("tab", { name: "Chat" }));
-    const painel = screen.getByRole("tabpanel");
-    expect(painel.textContent).toContain("O chat da mesa ainda vai chegar");
-    expect(painel.textContent).toContain("registro da mesa");
-    expect((within(painel).getByRole("textbox", { name: "Mensagem" }) as HTMLTextAreaElement).disabled).toBe(true);
-    expect((within(painel).getByRole("button", { name: "Enviar" }) as HTMLButtonElement).disabled).toBe(true);
+    const abas = within(screen.getByRole("tablist", { name: "Painel da Sala" })).getAllByRole("tab");
+    expect(abas.map((aba) => aba.textContent)).toEqual(["Cena", "Dados", "Jogador", "Fichas", "Bolsa", "Cartas", "Música"]);
+    expect(screen.queryByRole("tab", { name: "Mestre" })).toBeNull();
+    expect(screen.getByRole("tab", { name: "Jogador" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tabpanel").textContent).toContain("Minhas estatísticas");
   });
 
   it("a aba fica lembrada, e recolher e reabrir volta na mesma aba", async () => {
@@ -366,7 +401,7 @@ describe("tokens da cena (item 9)", () => {
     expect(screen.getByTestId("grid").textContent).toContain("heroi:4,3");
     expect(screen.queryByRole("button", { name: /Confirmar/ })).toBeNull();
     expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/sala/tokens/{token_id}/movimento", {
-      params: { path: { mesa_id: "mesa", token_id: "heroi" } }, body: { x: 4, y: 3, versao_esperada: 0 },
+      params: { path: { mesa_id: "mesa", token_id: "heroi" } }, body: { x: 4, y: 3, versao_esperada: 0, livre: false },
     });
     const movido = { ...snapshot.cena.tokens[0]!, x: 4, y: 3, versao: 1 };
     estado = { ...snapshot, cena: { ...snapshot.cena, tokens: [movido] } };
@@ -376,6 +411,7 @@ describe("tokens da cena (item 9)", () => {
   });
 
   it("o Narrador vê os personagens dos jogadores, com os já postos marcados, e coloca pelo botão", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "personagens");
     const POST = vi.fn().mockResolvedValue({ data: {}, error: undefined });
     renderSala({ GET: rotas(comLion, { "/mesas/{mesa_id}/personagens": [lion, capanga] }), POST } as unknown as ApiClient, true);
     const lista = await screen.findByRole("region", { name: "Personagens dos jogadores" });
@@ -420,6 +456,7 @@ describe("tokens da cena (item 9)", () => {
   });
 
   it("o Narrador põe um NPC na cena pela lista à parte", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "personagens");
     const POST = vi.fn().mockResolvedValue({ data: {}, error: undefined });
     renderSala({ GET: rotas(comCenas, { "/mesas/{mesa_id}/personagens": [lion, capanga] }), POST } as unknown as ApiClient, true);
     const npcs = await screen.findByRole("region", { name: "NPCs e monstros" });
@@ -441,6 +478,7 @@ describe("retirar token e aba Cena enxuta (item 11)", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); window.localStorage.clear(); });
 
   it("o Narrador retira um token pela lista, com a versão conferida", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const DELETE = vi.fn().mockResolvedValue({ error: undefined });
     renderSala({ GET: rotas(comCenas), DELETE } as unknown as ApiClient, true);
     await screen.findByTestId("grid");
@@ -451,6 +489,7 @@ describe("retirar token e aba Cena enxuta (item 11)", () => {
   });
 
   it("a recusa do servidor ao retirar é anunciada", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const DELETE = vi.fn().mockResolvedValue({ error: { detail: "O token foi alterado por outra pessoa." } });
     renderSala({ GET: rotas(comCenas), DELETE } as unknown as ApiClient, true);
     await screen.findByTestId("grid");
@@ -459,15 +498,30 @@ describe("retirar token e aba Cena enxuta (item 11)", () => {
   });
 
   it("a aba Cena não tem mais ping por token, coordenadas com Mover nem o formulário Colocar token", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     renderSala({ GET: rotas(comCenas) } as unknown as ApiClient, true);
     await screen.findByTestId("grid");
     fireEvent.click(screen.getByRole("button", { name: /Herói \(1, 1\)/ }));
-    const painel = screen.getByRole("tabpanel");
+    const painel = painelDaAba();
     expect(within(painel).queryByRole("button", { name: "Enviar ping neste token" })).toBeNull();
     expect(within(painel).queryByLabelText("Coluna de destino")).toBeNull();
     expect(within(painel).queryByRole("button", { name: "Mover" })).toBeNull();
     expect(within(painel).queryByRole("heading", { name: "Colocar token" })).toBeNull();
     expect(within(painel).getByRole("status").textContent).toContain("Herói: coluna 1, linha 1");
+  });
+
+  it("o token escolhido na aba Tokens fica destacado no grid, e um novo clique tira o destaque", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
+    renderSala({ GET: rotas(comCenas) } as unknown as ApiClient, true);
+    const grid = await screen.findByTestId("grid");
+    const item = screen.getByRole("button", { name: /Herói \(1, 1\)/ });
+    expect(grid.getAttribute("data-selecionado")).toBe("");
+    fireEvent.click(item);
+    expect(item.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("grid").getAttribute("data-selecionado")).toBe("heroi");
+    fireEvent.click(item);
+    expect(item.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByTestId("grid").getAttribute("data-selecionado")).toBe("");
   });
 });
 
@@ -494,6 +548,7 @@ describe("ocultar tokens e tamanho do mapa (item 12)", () => {
   ] } };
 
   it("o Narrador oculta um token visível e mostra um oculto, com a versão conferida", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const POST = vi.fn().mockResolvedValue({ data: {}, error: undefined });
     renderSala({ GET: rotas(comOculto), POST } as unknown as ApiClient, true);
     const ocultar = await screen.findByRole("button", { name: "Ocultar Herói" });
@@ -562,6 +617,7 @@ describe("ocultar tokens e tamanho do mapa (item 12)", () => {
   });
 
   it("o olho cortado põe o token já oculto, e 'Colocar' o põe visível; não há chave geral", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "personagens");
     const lion = { id: "lion", nome: "Lion", mesa_id: "mesa", versao: 1, proprietario_id: "ana", tipo: "personagem",
       visibilidade: "mesa", retrato_objeto: null };
     const capanga = { ...lion, id: "capanga", nome: "Capanga", proprietario_id: null, tipo: "npc", visibilidade: "narrador" };
@@ -579,11 +635,10 @@ describe("ocultar tokens e tamanho do mapa (item 12)", () => {
   });
 
   it("o Narrador muda o tamanho do token escolhido, sempre quadrado; o jogador não", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const POST = vi.fn().mockResolvedValue({ data: {}, error: undefined });
     renderSala({ GET: rotas(comCenas), POST } as unknown as ApiClient, true);
     await screen.findByTestId("grid");
-    const tokens = screen.getByRole("button", { name: "Tokens da cena" });
-    if (tokens.getAttribute("aria-expanded") === "false") fireEvent.click(tokens);
     fireEvent.click(screen.getByRole("button", { name: /Herói \(1, 1\)/ }));
     const grupo = screen.getByRole("group", { name: "Tamanho de Herói" });
     expect(grupo.textContent).toContain("1×1 casa");
@@ -596,8 +651,6 @@ describe("ocultar tokens e tamanho do mapa (item 12)", () => {
     renderSala({ GET: rotas(comCenas) } as unknown as ApiClient, false);
     await screen.findByTestId("grid");
     fireEvent.click(screen.getByRole("button", { name: "Abrir painel" }));
-    const daCena = screen.getByRole("button", { name: "Tokens da cena" });
-    if (daCena.getAttribute("aria-expanded") === "false") fireEvent.click(daCena);
     fireEvent.click(screen.getByRole("button", { name: /Herói \(1, 1\)/ }));
     expect(screen.queryByRole("group", { name: "Tamanho de Herói" })).toBeNull();
   });
@@ -665,52 +718,52 @@ describe("ocultar tokens e tamanho do mapa (item 12)", () => {
   });
 });
 
-describe("seções retráteis da aba Cena (item 14)", () => {
+describe("sub-abas da aba Cena (pedido do usuário, 2026-10-04)", () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); window.localStorage.clear(); });
+  const personagens = [
+    { id: "lion", nome: "Lion", proprietario_id: "bia", tipo: "personagem", visibilidade: "mesa", retrato_objeto: null },
+    { id: "lobo", nome: "Lobo", proprietario_id: null, tipo: "monstro", visibilidade: "mesa", retrato_objeto: null },
+  ];
 
-  it("cada seção abre e fecha pelo título, mostra a quantidade e fica lembrada", async () => {
-    renderSala({ GET: rotas(comCenas) } as unknown as ApiClient, true);
+  it("o Narrador tem Cenas, Personagens e Tokens, com a quantidade, troca pelas setas e a escolha fica lembrada", async () => {
+    renderSala({ GET: rotas(comCenas, { "/mesas/{mesa_id}/personagens": personagens }) } as unknown as ApiClient, true);
     await screen.findByTestId("grid");
-    const titulo = screen.getByRole("button", { name: "Tokens da cena" });
-    expect(titulo.getAttribute("aria-expanded")).toBe("true");
-    expect(titulo.textContent).toContain("1");
-    expect(screen.getByRole("button", { name: /Herói \(1, 1\)/ })).toBeTruthy();
-    fireEvent.click(titulo);
-    expect(titulo.getAttribute("aria-expanded")).toBe("false");
+    const lista = screen.getByRole("tablist", { name: "Temas da Cena" });
+    await waitFor(() => expect(within(lista).getAllByRole("tab").map((aba) => aba.textContent)).toEqual(["Cenas2", "Personagens2", "Tokens1"]));
+    // Só o tema escolhido aparece: nada de seções retráteis.
+    expect(screen.getByRole("group", { name: "Cenas" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Colocar Lion" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Herói \(1, 1\)/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Cenas" }).getAttribute("aria-expanded")).toBe("true");
+    fireEvent.keyDown(within(lista).getByRole("tab", { name: /^Cenas/ }), { key: "ArrowRight" });
+    expect(document.activeElement).toBe(within(lista).getByRole("tab", { name: /^Personagens/ }));
+    // Os personagens dos jogadores e os NPCs e monstros, cada lista com título, sem abrir e fechar.
+    for (const nome of ["Personagens dos jogadores", "NPCs e monstros"]) {
+      expect(screen.getByRole("heading", { level: 3, name: new RegExp(`^${nome}`) })).toBeTruthy();
+    }
+    expect(screen.getByRole("button", { name: "Colocar Lobo" })).toBeTruthy();
+    fireEvent.keyDown(within(lista).getByRole("tab", { name: /^Personagens/ }), { key: "End" });
+    expect(screen.getByRole("button", { name: /Herói \(1, 1\)/ })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Cenas" })).toBeNull();
+    expect(window.localStorage.getItem(CHAVE_SUBABA_DA_CENA)).toBe("tokens");
     cleanup();
     renderSala({ GET: rotas(comCenas) } as unknown as ApiClient, true);
     await screen.findByTestId("grid");
-    expect(screen.getByRole("button", { name: "Tokens da cena" }).getAttribute("aria-expanded")).toBe("false");
-  });
-  it("para o Narrador, a barra de colocar e as três listas ficam dentro de uma seção 'Tokens' (item 15)", async () => {
-    const personagens = [
-      { id: "lion", nome: "Lion", proprietario_id: "bia", tipo: "personagem", visibilidade: "mesa", retrato_objeto: null },
-      { id: "lobo", nome: "Lobo", proprietario_id: null, tipo: "monstro", visibilidade: "mesa", retrato_objeto: null },
-    ];
-    renderSala({ GET: rotas(comCenas, { "/mesas/{mesa_id}/personagens": personagens }) } as unknown as ApiClient, true);
-    const grupo = await screen.findByRole("region", { name: "Tokens" });
-    await within(grupo).findByRole("button", { name: "Colocar Lion" });
-    expect(within(grupo).getByRole("button", { name: "Colocar Lion oculto dos jogadores" })).toBeTruthy();
-    // Jogadores e os demais separados, cada um retrátil, e os tokens em cena junto.
-    for (const nome of ["Personagens dos jogadores", "NPCs e monstros", "Tokens da cena"]) {
-      expect(within(grupo).getByRole("heading", { level: 3, name: nome })).toBeTruthy();
-    }
-    expect(within(grupo).getByRole("button", { name: "Colocar Lobo" })).toBeTruthy();
-    // Fechar "Tokens" recolhe tudo de uma vez.
-    fireEvent.click(screen.getByRole("button", { name: "Tokens" }));
-    expect(screen.queryByRole("button", { name: "Colocar Lion oculto dos jogadores" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Tokens da cena" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Cenas" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: /^Tokens/ }).getAttribute("aria-selected")).toBe("true");
   });
 
-  it("o jogador vê só a lista da cena, sem a seção 'Tokens' em volta", async () => {
+  it("sem cena aberta, Personagens e Tokens mandam para Cenas", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
+    renderSala({ GET: rotas({ cenas: [], cena: null }) } as unknown as ApiClient, true);
+    expect(await screen.findByText(/Sem cena aberta. Crie ou abra uma na sub-aba Cenas./)).toBeTruthy();
+  });
+
+  it("o jogador vê só a lista da cena, sem sub-abas", async () => {
     renderSala({ GET: rotas(comCenas) } as unknown as ApiClient, false);
     await screen.findByTestId("grid");
     fireEvent.click(screen.getByRole("button", { name: "Abrir painel" }));
-    expect(screen.getByRole("heading", { level: 2, name: "Tokens da cena" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Tokens" })).toBeNull();
+    expect(screen.getByRole("heading", { level: 2, name: /^Tokens da cena/ })).toBeTruthy();
+    expect(screen.queryByRole("tablist", { name: "Temas da Cena" })).toBeNull();
+    expect(screen.getByRole("button", { name: /Herói \(1, 1\)/ })).toBeTruthy();
   });
 });
 
@@ -732,6 +785,7 @@ describe("permissão de movimento dos tokens (item 13)", () => {
   };
 
   it("o cadeado bloqueia o token de um jogador, com a versão conferida", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const POST = vi.fn().mockResolvedValue({ data: {}, error: undefined });
     renderSala({ GET: rotas(comPermissoes, extras), POST } as unknown as ApiClient, true);
     const bloquear = await screen.findByRole("button", { name: "Bloquear movimento de Lion" });
@@ -745,6 +799,7 @@ describe("permissão de movimento dos tokens (item 13)", () => {
   });
 
   it("liberar um token sem dono pede os jogadores que podem movê-lo (só jogadores, não o Narrador)", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const POST = vi.fn().mockResolvedValue({ data: {}, error: undefined });
     renderSala({ GET: rotas(comPermissoes, extras), POST } as unknown as ApiClient, true);
     fireEvent.click(await screen.findByRole("button", { name: "Liberar movimento de Carroça" }));
@@ -761,6 +816,7 @@ describe("permissão de movimento dos tokens (item 13)", () => {
   });
 
   it("as ações em lote mandam o modo escolhido para a cena", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const POST = vi.fn().mockResolvedValue({ data: {}, error: undefined });
     renderSala({ GET: rotas(comPermissoes, extras), POST } as unknown as ApiClient, true);
     const lote = await screen.findByRole("group", { name: "Movimento dos jogadores" });
@@ -773,6 +829,7 @@ describe("permissão de movimento dos tokens (item 13)", () => {
   });
 
   it("a recusa do servidor é anunciada, e o jogador não tem cadeado nem ações em lote", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "tokens");
     const POST = vi.fn().mockResolvedValue({ data: undefined, error: { detail: "O token foi alterado por outra pessoa." } });
     renderSala({ GET: rotas(comPermissoes, extras), POST } as unknown as ApiClient, true);
     fireEvent.click(await screen.findByRole("button", { name: "Bloquear movimento de Lion" }));

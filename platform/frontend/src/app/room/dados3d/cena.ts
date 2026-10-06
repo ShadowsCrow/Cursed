@@ -4,7 +4,7 @@
  * das faces são trocados para a face de cima mostrar o valor sorteado; depois os quadros são reproduzidos.
  */
 import {
-  ACESFilmicToneMapping, AmbientLight, BufferGeometry, CanvasTexture, DirectionalLight, Float32BufferAttribute,
+  ACESFilmicToneMapping, AmbientLight, BufferGeometry, CanvasTexture, Color, DirectionalLight, Float32BufferAttribute,
   HemisphereLight, Mesh, MeshStandardMaterial, PerspectiveCamera, PlaneGeometry, Scene, ShadowMaterial,
   SRGBColorSpace, WebGLRenderer, type Material,
 } from "three";
@@ -17,6 +17,9 @@ import { ARTE_DA_PEDRA, carregarFonte, carregarImagem, desenharFace, LADO_DA_TEX
 /** Pixels de tela por unidade do mundo: um dado de raio 1 tem uns 80 px de diâmetro. */
 const PIXELS_POR_UNIDADE = 40;
 const CAMPO_DE_VISAO = 32;
+/** Brilho do dado marcado quando para (gamificacao-da-sala, D8). */
+export const COR_DO_DESTAQUE = { critico: 0xffb43c, falha_critica: 0xd2283c } as const;
+const INTENSIDADE_DO_DESTAQUE = 0.32;
 
 export interface MesaDeDados {
   rolar(dados: DadoParaAnimar[]): Promise<void>;
@@ -114,6 +117,7 @@ export async function criarMesaDeDados(container: HTMLElement): Promise<MesaDeDa
   }
 
   let malhas: Mesh[] = [];
+  const proprios = new Set<Material>();
   let quadro = 0;
   let encerrar: (() => void) | null = null;
 
@@ -143,6 +147,19 @@ export async function criarMesaDeDados(container: HTMLElement): Promise<MesaDeDa
   function limparDados() {
     for (const malha of malhas) cena.remove(malha);
     malhas = [];
+    // Os materiais próprios dos dados marcados não ficam no cache: saem com os dados.
+    for (const m of proprios) m.dispose();
+    proprios.clear();
+  }
+
+  function acenderDestaques(dados: DadoParaAnimar[]) {
+    let algum = false;
+    malhas.forEach((malha, i) => {
+      if (!dados[i]?.destaque) return;
+      algum = true;
+      for (const m of [malha.material].flat()) (m as MeshStandardMaterial).emissiveIntensity = INTENSIDADE_DO_DESTAQUE;
+    });
+    if (algum) renderizador.render(cena, camera);
   }
 
   return {
@@ -155,8 +172,18 @@ export async function criarMesaDeDados(container: HTMLElement): Promise<MesaDeDa
         const cima = indiceDeCima(dado.forma, arremesso.finais[i]!);
         const rotulos = forcarResultado(rotulosIniciais(dado.forma, dado.conjunto), cima, dado.rotulo);
         const s = solido(dado.forma);
-        const materiaisDasFaces = s.faces.map((_, f) => material(dado.forma,
+        let materiaisDasFaces: Material[] = s.faces.map((_, f) => material(dado.forma,
           dado.forma === "d4" ? rotulosDaFaceDoD4(rotulos, f) : [rotulos[f]!]));
+        // O dado marcado tem materiais próprios, para brilhar sem acender os outros que usam a mesma face.
+        if (dado.destaque) {
+          materiaisDasFaces = materiaisDasFaces.map((m) => {
+            const proprio = (m as MeshStandardMaterial).clone();
+            proprio.emissive = new Color(COR_DO_DESTAQUE[dado.destaque!]);
+            proprio.emissiveIntensity = 0;
+            proprios.add(proprio);
+            return proprio;
+          });
+        }
         let geometria = geometrias.get(dado.forma);
         if (!geometria) { geometria = geometriaDo(dado.forma); geometrias.set(dado.forma, geometria); }
         const malha = new Mesh(geometria, materiaisDasFaces);
@@ -184,7 +211,7 @@ export async function criarMesaDeDados(container: HTMLElement): Promise<MesaDeDa
           inicio ??= agora;
           const passo = Math.min(arremesso.passos - 1, Math.floor(((agora - inicio) / 1000) / (1 / 60)));
           posicionar(passo);
-          if (passo >= arremesso.passos - 1) { encerrar?.(); return; }
+          if (passo >= arremesso.passos - 1) { acenderDestaques(dados); encerrar?.(); return; }
           quadro = requestAnimationFrame(animar);
         };
         posicionar(0);

@@ -16,7 +16,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from cursed_platform.authorization import Acao, Autorizador
-from cursed_platform.persistence import EventoAuditoriaRegistro, PersonagemRegistro, SessaoRegistro
+from cursed_platform import sessoes
+from cursed_platform.persistence import EventoAuditoriaRegistro, PersonagemRegistro
 from cursed_platform.policies import campos_alterados
 
 
@@ -97,15 +98,6 @@ def nome_personagem(personagem: PersonagemRegistro) -> str:
     return nome.strip() if isinstance(nome, str) and nome.strip() else "Personagem sem nome"
 
 
-def _sessao_ativa(session: Session, mesa_id: str) -> str | None:
-    return session.scalar(
-        select(SessaoRegistro.id)
-        .where(SessaoRegistro.mesa_id == mesa_id, SessaoRegistro.encerrada_em.is_(None))
-        .order_by(SessaoRegistro.numero.desc())
-        .limit(1)
-    )
-
-
 def registrar(
     session: Session,
     *,
@@ -129,7 +121,7 @@ def registrar(
     if visibilidade is None:
         visibilidade = "narrador" if personagem is not None and personagem.visibilidade == "narrador" else "mesa"
     evento = EventoAuditoriaRegistro(
-        mesa_id=mesa_id, sessao_id=_sessao_ativa(session, mesa_id), ator_id=ator_id, origem=origem,
+        mesa_id=mesa_id, sessao_id=sessoes.ativa(session, mesa_id), ator_id=ator_id, origem=origem,
         categoria=categoria, acao=acao, relevancia=relevancia, visibilidade=visibilidade,
         personagem_id=personagem.id if personagem is not None else None,
         alvo_tipo=alvo_tipo or ("personagem" if personagem is not None else None),

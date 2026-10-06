@@ -381,6 +381,44 @@
         "title": "AlterarDesgasteRequest",
         "type": "object"
       },
+      "AlterarMusicaRequest": {
+        "description": "Estado da camada pedido pelo Narrador: tocar, pausar, continuar, parar ou mudar \"Repetir\".",
+        "properties": {
+          "faixa_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Faixa Id"
+          },
+          "posicao_ms": {
+            "default": 0,
+            "maximum": 86400000.0,
+            "minimum": 0.0,
+            "title": "Posicao Ms",
+            "type": "integer"
+          },
+          "repetir": {
+            "default": true,
+            "title": "Repetir",
+            "type": "boolean"
+          },
+          "tocando": {
+            "title": "Tocando",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tocando"
+        ],
+        "title": "AlterarMusicaRequest",
+        "type": "object"
+      },
       "AlterarVisibilidadeRequest": {
         "properties": {
           "revelacao": {
@@ -910,6 +948,46 @@
           "texto"
         ],
         "title": "BaseClasseResumo",
+        "type": "object"
+      },
+      "BibliotecaDeMusicas": {
+        "properties": {
+          "cenarios": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cenarios",
+            "type": "array"
+          },
+          "estilos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Estilos",
+            "type": "array"
+          },
+          "faixas": {
+            "items": {
+              "$ref": "#/components/schemas/FaixaDeMusica"
+            },
+            "title": "Faixas",
+            "type": "array"
+          },
+          "momentos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Momentos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "estilos",
+          "momentos",
+          "cenarios",
+          "faixas"
+        ],
+        "title": "BibliotecaDeMusicas",
         "type": "object"
       },
       "Body_enviar_foto_perfil_foto_put": {
@@ -1961,6 +2039,53 @@
         "title": "ColocarCartaRequest",
         "type": "object"
       },
+      "CombateDoTurno": {
+        "properties": {
+          "estado": {
+            "enum": [
+              "iniciativa",
+              "combate"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "participantes": {
+            "description": "Na ordem de iniciativa; quem falta rolar no fim.",
+            "items": {
+              "$ref": "#/components/schemas/ParticipanteDoTurno"
+            },
+            "title": "Participantes",
+            "type": "array"
+          },
+          "rodada": {
+            "title": "Rodada",
+            "type": "integer"
+          },
+          "vez_participante_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vez Participante Id"
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "rodada",
+          "participantes"
+        ],
+        "title": "CombateDoTurno",
+        "type": "object"
+      },
       "ConcederCartaRequest": {
         "properties": {
           "excecao_aprendizado": {
@@ -2697,6 +2822,21 @@
         "title": "DefinirFormatoRequest",
         "type": "object"
       },
+      "DesempatarMvpRequest": {
+        "properties": {
+          "vencedor_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Vencedor Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vencedor_id"
+        ],
+        "title": "DesempatarMvpRequest",
+        "type": "object"
+      },
       "DesgasteComandoResposta": {
         "properties": {
           "consequencias": {
@@ -3327,6 +3467,259 @@
         "title": "EstadoCatalogoResumo",
         "type": "object"
       },
+      "EstadoDaCamada": {
+        "description": "O que toca numa camada. A posição esperada é ``posicao_ms`` mais o tempo desde ``alterada_em`` enquanto toca.",
+        "properties": {
+          "alterada_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alterada Em"
+          },
+          "faixa_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Faixa Id"
+          },
+          "posicao_ms": {
+            "default": 0,
+            "title": "Posicao Ms",
+            "type": "integer"
+          },
+          "repetir": {
+            "default": true,
+            "title": "Repetir",
+            "type": "boolean"
+          },
+          "tocando": {
+            "default": false,
+            "title": "Tocando",
+            "type": "boolean"
+          }
+        },
+        "title": "EstadoDaCamada",
+        "type": "object"
+      },
+      "EstadoDaMusica": {
+        "description": "O que a mesa está ouvindo nas duas camadas, que tocam juntas; ``agora`` é o relógio do servidor no momento\nda resposta.",
+        "properties": {
+          "agora": {
+            "format": "date-time",
+            "title": "Agora",
+            "type": "string"
+          },
+          "ambiente": {
+            "$ref": "#/components/schemas/EstadoDaCamada"
+          },
+          "musica": {
+            "$ref": "#/components/schemas/EstadoDaCamada"
+          }
+        },
+        "required": [
+          "ambiente",
+          "musica",
+          "agora"
+        ],
+        "title": "EstadoDaMusica",
+        "type": "object"
+      },
+      "EstadoDoMvp": {
+        "properties": {
+          "apelidos": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Apelido de cada jogador citado.",
+            "title": "Apelidos",
+            "type": "object"
+          },
+          "historico": {
+            "items": {
+              "$ref": "#/components/schemas/MvpAnterior"
+            },
+            "title": "Historico",
+            "type": "array"
+          },
+          "votacao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VotacaoMvp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "EstadoDoMvp",
+        "type": "object"
+      },
+      "EstadoDoTurno": {
+        "properties": {
+          "combate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CombateDoTurno"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "EstadoDoTurno",
+        "type": "object"
+      },
+      "EstatisticasDaMesa": {
+        "description": "Estatísticas dos jogadores que o leitor pode ver; ``sessao`` é a de referência de \"Esta sessão\".",
+        "properties": {
+          "jogadores": {
+            "items": {
+              "$ref": "#/components/schemas/EstatisticasDoJogador"
+            },
+            "title": "Jogadores",
+            "type": "array"
+          },
+          "placar_visivel": {
+            "default": false,
+            "title": "Placar Visivel",
+            "type": "boolean"
+          },
+          "sessao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessaoDeJogo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "jogadores"
+        ],
+        "title": "EstatisticasDaMesa",
+        "type": "object"
+      },
+      "EstatisticasDoJogador": {
+        "properties": {
+          "apelido": {
+            "title": "Apelido",
+            "type": "string"
+          },
+          "campanha": {
+            "$ref": "#/components/schemas/EstatisticasDoPeriodo"
+          },
+          "sessao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstatisticasDoPeriodo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usuario_id": {
+            "title": "Usuario Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "usuario_id",
+          "apelido",
+          "campanha"
+        ],
+        "title": "EstatisticasDoJogador",
+        "type": "object"
+      },
+      "EstatisticasDoPeriodo": {
+        "properties": {
+          "criticos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só com o destaque de críticos ligado.",
+            "title": "Criticos"
+          },
+          "dados": {
+            "title": "Dados",
+            "type": "integer"
+          },
+          "falhas_criticas": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Falhas Criticas"
+          },
+          "rolagens": {
+            "title": "Rolagens",
+            "type": "integer"
+          },
+          "rotulo_sorte": {
+            "enum": [
+              "quentes",
+              "na_media",
+              "frios",
+              "poucos_dados"
+            ],
+            "title": "Rotulo Sorte",
+            "type": "string"
+          },
+          "sorte": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pontos percentuais acima (+) ou abaixo (−) da média esperada; nulo com poucos dados.",
+            "title": "Sorte"
+          },
+          "vida_perdida": {
+            "title": "Vida Perdida",
+            "type": "integer"
+          },
+          "vida_recuperada": {
+            "title": "Vida Recuperada",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "vida_perdida",
+          "vida_recuperada",
+          "rolagens",
+          "dados",
+          "rotulo_sorte"
+        ],
+        "title": "EstatisticasDoPeriodo",
+        "type": "object"
+      },
       "EventoAuditoriaResumo": {
         "properties": {
           "acao": {
@@ -3535,6 +3928,105 @@
           "tamanho"
         ],
         "title": "FaixaAlturaResumo",
+        "type": "object"
+      },
+      "FaixaDeMusica": {
+        "description": "Faixa da biblioteca de sons da Sala (só CC BY ou CC0), com o crédito exigido pela licença.",
+        "properties": {
+          "arquivo": {
+            "description": "Caminho público do áudio, servido pela interface.",
+            "title": "Arquivo",
+            "type": "string"
+          },
+          "autor": {
+            "title": "Autor",
+            "type": "string"
+          },
+          "cenario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "O lugar; sem ele, a faixa serve em qualquer lugar.",
+            "title": "Cenario"
+          },
+          "duracao_s": {
+            "title": "Duracao S",
+            "type": "integer"
+          },
+          "estilos": {
+            "description": "Estilos de jogo em que a faixa serve (Medieval, Moderno...).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Estilos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "licenca": {
+            "title": "Licenca",
+            "type": "string"
+          },
+          "licenca_url": {
+            "title": "Licenca Url",
+            "type": "string"
+          },
+          "momento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só nas músicas.",
+            "title": "Momento"
+          },
+          "origem_url": {
+            "title": "Origem Url",
+            "type": "string"
+          },
+          "sem_emenda": {
+            "description": "Feita para repetir sem emenda.",
+            "title": "Sem Emenda",
+            "type": "boolean"
+          },
+          "tipo": {
+            "description": "Camada em que a faixa toca.",
+            "enum": [
+              "ambiente",
+              "musica"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "titulo",
+          "autor",
+          "licenca",
+          "licenca_url",
+          "origem_url",
+          "arquivo",
+          "duracao_s",
+          "estilos",
+          "sem_emenda"
+        ],
+        "title": "FaixaDeMusica",
         "type": "object"
       },
       "FaixaDesgaste": {
@@ -3780,7 +4272,8 @@
               "efeito",
               "classe",
               "nivel",
-              "ajuste_narrador"
+              "ajuste_narrador",
+              "habilidade"
             ],
             "title": "Tipo",
             "type": "string"
@@ -4300,6 +4793,26 @@
         "title": "ImportarCodigoRequest",
         "type": "object"
       },
+      "IniciativaRolada": {
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDoTurno"
+          },
+          "rolagens": {
+            "items": {
+              "$ref": "#/components/schemas/RolagemDeDados"
+            },
+            "title": "Rolagens",
+            "type": "array"
+          }
+        },
+        "required": [
+          "estado",
+          "rolagens"
+        ],
+        "title": "IniciativaRolada",
+        "type": "object"
+      },
       "IntervaloAlturaResumo": {
         "description": "Altura em metros; `maxima` vazia é sem limite superior.",
         "properties": {
@@ -4791,6 +5304,35 @@
         "title": "ListasFichaResumo",
         "type": "object"
       },
+      "MarcaDeDado": {
+        "description": "Crítico ou falha crítica num d20 da rolagem (gamificacao-da-sala); só vem com o destaque ligado.",
+        "properties": {
+          "faces": {
+            "title": "Faces",
+            "type": "integer"
+          },
+          "indice": {
+            "description": "Posição do dado dentro do grupo de mesmas faces.",
+            "title": "Indice",
+            "type": "integer"
+          },
+          "tipo": {
+            "enum": [
+              "critico",
+              "falha_critica"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "faces",
+          "indice",
+          "tipo"
+        ],
+        "title": "MarcaDeDado",
+        "type": "object"
+      },
       "MesaDetalhe": {
         "properties": {
           "capa_objeto": {
@@ -5086,6 +5628,12 @@
       },
       "MoverTokenRequest": {
         "properties": {
+          "livre": {
+            "default": false,
+            "description": "Movimento livre do Narrador no modo turno: não gasta Deslocamento.",
+            "title": "Livre",
+            "type": "boolean"
+          },
           "versao_esperada": {
             "minimum": 0.0,
             "title": "Versao Esperada",
@@ -5110,6 +5658,30 @@
           "versao_esperada"
         ],
         "title": "MoverTokenRequest",
+        "type": "object"
+      },
+      "MovimentoDoTurno": {
+        "description": "Saldo de movimento da vez: metros andados, o limite (Deslocamento, dobrado ao Correr) e se está correndo.",
+        "properties": {
+          "correndo": {
+            "default": false,
+            "title": "Correndo",
+            "type": "boolean"
+          },
+          "gasto": {
+            "title": "Gasto",
+            "type": "integer"
+          },
+          "limite": {
+            "title": "Limite",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "gasto",
+          "limite"
+        ],
+        "title": "MovimentoDoTurno",
         "type": "object"
       },
       "MudancaAuditoria": {
@@ -5145,6 +5717,52 @@
           "campo"
         ],
         "title": "MudancaAuditoria",
+        "type": "object"
+      },
+      "MvpAnterior": {
+        "properties": {
+          "encerrada_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encerrada Em"
+          },
+          "sessao_numero": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessao Numero"
+          },
+          "vencedor_id": {
+            "title": "Vencedor Id",
+            "type": "string"
+          },
+          "votacao_id": {
+            "title": "Votacao Id",
+            "type": "string"
+          },
+          "votos": {
+            "title": "Votos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "votacao_id",
+          "vencedor_id",
+          "votos"
+        ],
+        "title": "MvpAnterior",
         "type": "object"
       },
       "NaturezaCriacaoResumo": {
@@ -5482,6 +6100,103 @@
           "eventos"
         ],
         "title": "PaginaAuditoria",
+        "type": "object"
+      },
+      "ParticipanteDoTurno": {
+        "description": "Participante do modo turno como o leitor pode vê-lo: o jogador não recebe o total de NPCs e monstros nem o\nvínculo com uma ficha oculta.",
+        "properties": {
+          "do_jogador": {
+            "default": false,
+            "title": "Do Jogador",
+            "type": "boolean"
+          },
+          "fora_da_cena": {
+            "default": false,
+            "title": "Fora Da Cena",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "meu": {
+            "default": false,
+            "title": "Meu",
+            "type": "boolean"
+          },
+          "movimento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovimentoDoTurno"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só na vez, para o Narrador e o dono."
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "personagem_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personagem Id"
+          },
+          "rolou": {
+            "title": "Rolou",
+            "type": "boolean"
+          },
+          "token_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Primeiro token visível, para o retrato.",
+            "title": "Token Id"
+          },
+          "token_ids": {
+            "description": "Tokens visíveis do participante, para ligar o token arrastado ao participante certo (o grupo da ficha ou o token próprio).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Token Ids",
+            "type": "array"
+          },
+          "tokens": {
+            "default": 0,
+            "title": "Tokens",
+            "type": "integer"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "rolou"
+        ],
+        "title": "ParticipanteDoTurno",
         "type": "object"
       },
       "ParticipanteResumo": {
@@ -6068,6 +6783,23 @@
           "item_id"
         ],
         "title": "PosicaoItemGrade",
+        "type": "object"
+      },
+      "PreferenciasDaSala": {
+        "description": "Preferências da Sala escolhidas pelo Narrador (gamificacao-da-sala); começam desligadas.",
+        "properties": {
+          "destaque_criticos": {
+            "default": false,
+            "title": "Destaque Criticos",
+            "type": "boolean"
+          },
+          "estatisticas_visiveis": {
+            "default": false,
+            "title": "Estatisticas Visiveis",
+            "type": "boolean"
+          }
+        },
+        "title": "PreferenciasDaSala",
         "type": "object"
       },
       "PreviaCriacaoResposta": {
@@ -7013,6 +7745,19 @@
             "title": "Expressao",
             "type": "string"
           },
+          "finalidade": {
+            "anyOf": [
+              {
+                "const": "iniciativa",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rolagem de iniciativa do modo turno.",
+            "title": "Finalidade"
+          },
           "grupos": {
             "items": {
               "$ref": "#/components/schemas/GrupoDeDados"
@@ -7023,6 +7768,13 @@
           "id": {
             "title": "Id",
             "type": "integer"
+          },
+          "marcas": {
+            "items": {
+              "$ref": "#/components/schemas/MarcaDeDado"
+            },
+            "title": "Marcas",
+            "type": "array"
           },
           "modificador": {
             "title": "Modificador",
@@ -7138,6 +7890,21 @@
         "title": "RolarDadosRequest",
         "type": "object"
       },
+      "RolarIniciativaRequest": {
+        "properties": {
+          "participante_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Participante Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "participante_id"
+        ],
+        "title": "RolarIniciativaRequest",
+        "type": "object"
+      },
       "SalaSnapshot": {
         "properties": {
           "cena": {
@@ -7198,6 +7965,69 @@
           "versao_esperada"
         ],
         "title": "SalvarRascunhoRequest",
+        "type": "object"
+      },
+      "SessaoDeJogo": {
+        "properties": {
+          "encerrada_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encerrada Em"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "iniciada_em": {
+            "format": "date-time",
+            "title": "Iniciada Em",
+            "type": "string"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "numero",
+          "iniciada_em"
+        ],
+        "title": "SessaoDeJogo",
+        "type": "object"
+      },
+      "SessoesDaMesa": {
+        "description": "A sessão em andamento (se houver) e a última encerrada.",
+        "properties": {
+          "atual": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessaoDeJogo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ultima_encerrada": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessaoDeJogo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "SessoesDaMesa",
         "type": "object"
       },
       "SituacionalResumo": {
@@ -7832,6 +8662,133 @@
           "versao_esperada"
         ],
         "title": "VisibilidadeTokenRequest",
+        "type": "object"
+      },
+      "VotacaoMvp": {
+        "description": "Votação de MVP sem contagem por candidato: só quantos votaram, o próprio voto e, no fim, o vencedor.",
+        "properties": {
+          "aberta_em": {
+            "format": "date-time",
+            "title": "Aberta Em",
+            "type": "string"
+          },
+          "candidatos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Candidatos",
+            "type": "array"
+          },
+          "empatados": {
+            "description": "Só para o Narrador, no desempate.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Empatados",
+            "type": "array"
+          },
+          "encerrada_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encerrada Em"
+          },
+          "estado": {
+            "enum": [
+              "aberta",
+              "desempate",
+              "encerrada"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "meu_voto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meu Voto"
+          },
+          "sessao_numero": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessao Numero"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "vencedor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vencedor Id"
+          },
+          "votaram": {
+            "title": "Votaram",
+            "type": "integer"
+          },
+          "votos_do_vencedor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Votos Do Vencedor"
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "aberta_em",
+          "votaram",
+          "total",
+          "candidatos"
+        ],
+        "title": "VotacaoMvp",
+        "type": "object"
+      },
+      "VotarMvpRequest": {
+        "properties": {
+          "candidato_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Candidato Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidato_id"
+        ],
+        "title": "VotarMvpRequest",
         "type": "object"
       }
     },
@@ -13926,6 +14883,530 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/sala/estatisticas": {
+      "get": {
+        "description": "O Narrador vê todos os jogadores; o jogador vê a si, ou todos com o placar ligado.",
+        "operationId": "ler_estatisticas_mesas__mesa_id__sala_estatisticas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstatisticasDaMesa"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Estatisticas",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/musica": {
+      "get": {
+        "description": "O que a mesa está ouvindo nas duas camadas, com o relógio do servidor para cada navegador calcular a\nposição esperada.",
+        "operationId": "ler_musica_mesas__mesa_id__sala_musica_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDaMusica"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Musica",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/musica/{camada}": {
+      "put": {
+        "description": "Só o Narrador muda o que a mesa ouve numa camada: tocar, pausar, continuar, parar ou \"Repetir\".",
+        "operationId": "alterar_musica_mesas__mesa_id__sala_musica__camada__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "camada",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ambiente",
+                "musica"
+              ],
+              "title": "Camada",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterarMusicaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDaMusica"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Alterar Musica",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/mvp": {
+      "get": {
+        "operationId": "ler_mvp_mesas__mesa_id__sala_mvp_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoMvp"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Mvp",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "post": {
+        "operationId": "abrir_mvp_mesas__mesa_id__sala_mvp_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoMvp"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Abrir Mvp",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/mvp/desempate": {
+      "post": {
+        "operationId": "desempatar_mvp_mesas__mesa_id__sala_mvp_desempate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesempatarMvpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoMvp"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Desempatar Mvp",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/mvp/encerramento": {
+      "post": {
+        "operationId": "encerrar_mvp_mesas__mesa_id__sala_mvp_encerramento_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoMvp"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Encerrar Mvp",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/mvp/voto": {
+      "put": {
+        "description": "O voto é secreto e não entra no registro da mesa.",
+        "operationId": "votar_mvp_mesas__mesa_id__sala_mvp_voto_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VotarMvpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoMvp"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Votar Mvp",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/preferencias": {
+      "get": {
+        "operationId": "ler_preferencias_mesas__mesa_id__sala_preferencias_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasDaSala"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Preferencias",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "put": {
+        "description": "Só o Narrador liga o destaque de críticos e o placar da mesa.",
+        "operationId": "alterar_preferencias_mesas__mesa_id__sala_preferencias_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferenciasDaSala"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasDaSala"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Alterar Preferencias",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/sala/recipientes": {
       "get": {
         "description": "Chão e baús da cena ativa, visíveis a todos os participantes.",
@@ -14295,6 +15776,146 @@
           }
         ],
         "summary": "Rolar Dados",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/sessoes": {
+      "get": {
+        "operationId": "ler_sessoes_mesas__mesa_id__sala_sessoes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessoesDaMesa"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Sessoes",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "post": {
+        "description": "Só o Narrador inicia uma sessão; com uma em andamento, 409.",
+        "operationId": "iniciar_sessao_mesas__mesa_id__sala_sessoes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessoesDaMesa"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Iniciar Sessao",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/sessoes/atual/encerramento": {
+      "post": {
+        "operationId": "encerrar_sessao_mesas__mesa_id__sala_sessoes_atual_encerramento_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessoesDaMesa"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Encerrar Sessao",
         "tags": [
           "Sala"
         ]
@@ -14683,6 +16304,394 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/sala/turno": {
+      "get": {
+        "operationId": "ler_turno_mesas__mesa_id__sala_turno_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoTurno"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Turno",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "post": {
+        "description": "Só o Narrador, com sessão em andamento e cena ativa com personagens.",
+        "operationId": "entrar_em_modo_turno_mesas__mesa_id__sala_turno_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoTurno"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Entrar Em Modo Turno",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/turno/correr": {
+      "post": {
+        "description": "Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento.",
+        "operationId": "correr_mesas__mesa_id__sala_turno_correr_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoTurno"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Correr",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/turno/encerramento": {
+      "post": {
+        "operationId": "sair_do_modo_turno_mesas__mesa_id__sala_turno_encerramento_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoTurno"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Sair Do Modo Turno",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/turno/iniciativa": {
+      "post": {
+        "description": "O jogador rola pelos próprios personagens; o Narrador, por qualquer participante.",
+        "operationId": "rolar_iniciativa_mesas__mesa_id__sala_turno_iniciativa_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolarIniciativaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IniciativaRolada"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rolar Iniciativa",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/turno/iniciativa/npcs": {
+      "post": {
+        "description": "Só o Narrador: rola de uma vez os NPCs e monstros que faltam, ocultos dos jogadores. Um que não tenha os valores\nna ficha interrompe tudo, com o nome dele.",
+        "operationId": "rolar_iniciativa_dos_npcs_mesas__mesa_id__sala_turno_iniciativa_npcs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IniciativaRolada"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rolar Iniciativa Dos Npcs",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/turno/inicio": {
+      "post": {
+        "operationId": "comecar_disputa_mesas__mesa_id__sala_turno_inicio_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoTurno"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Comecar Disputa",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/turno/proximo": {
+      "post": {
+        "operationId": "proximo_turno_mesas__mesa_id__sala_turno_proximo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoTurno"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Proximo Turno",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/solicitacoes": {
       "get": {
         "operationId": "listar_solicitacoes_mesas__mesa_id__solicitacoes_get",
@@ -14797,6 +16806,33 @@
         "summary": "Decidir Solicitacao",
         "tags": [
           "Personagens e políticas"
+        ]
+      }
+    },
+    "/musicas": {
+      "get": {
+        "description": "Biblioteca de sons da Sala (musica-da-sala), igual para todas as mesas: ambientes e músicas, só CC BY ou CC0.",
+        "operationId": "biblioteca_de_musicas_musicas_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibliotecaDeMusicas"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Biblioteca De Musicas",
+        "tags": [
+          "Sala"
         ]
       }
     },
