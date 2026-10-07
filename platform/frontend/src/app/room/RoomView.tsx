@@ -47,7 +47,15 @@ import { useRetratosDosTokens } from "./useRetratosDosTokens";
 import { intervaloDaSala } from "./atualizacao";
 import { Glyph } from "../../ui/Display";
 import { usePreferenciaLocal, usePreferenciaNumerica, usePreferenciaTexto } from "../shells/usePreferenciaLocal";
+import { MaoDeCartas, type AlvoMarcado, type OpcaoDePersonagem } from "./MaoDeCartas";
+import { personagensControlados } from "./maoDoJogador";
+import {
+  CHAVE_ANIMACAO_DAS_CARTAS, CHAVE_MAO_ABERTA, desfazerUso, deUsoDoServidor, usarCarta, useMaoDeCartas, useUsosDaMesa,
+  type CartaDaMao, type UsoDeCarta,
+} from "./useUsoDeCartas";
+import type { VooDeCarta } from "./RoomCanvas";
 import "./room.css";
+import "./cartasNaCena.css";
 
 /** Chão e baús (menu retrátil embaixo do grid) aberto ou fechado neste navegador. */
 export const CHAVE_CHAO_ABERTO = "cursed:mesa:chao-aberto";
@@ -204,6 +212,93 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   }, [narrator]);
   const rolarIniciativa = (participanteId: string) => { void modoTurno.rolar(participanteId).then(mostrarIniciativa); };
   const rolarIniciativaDosNpcs = () => { void modoTurno.rolarNpcs().then(mostrarIniciativa); };
+
+  // Cartas na cena (cartas-na-cena): a mão de cartas na parte de baixo, o uso com alvos marcados no grid, a animação
+  // da carta no tabuleiro e os usos no histórico da aba Dados.
+  const [animacaoDasCartas, setAnimacaoDasCartas] = usePreferenciaLocal(CHAVE_ANIMACAO_DAS_CARTAS, !movimentoReduzido());
+  const [maoAberta, setMaoAberta] = usePreferenciaLocal(CHAVE_MAO_ABERTA, true);
+  const [maoEscolhida, setMaoEscolhida] = useState<string | null>(null);
+  const [cartaAberta, setCartaAberta] = useState<string | null>(null);
+  const [alvos, setAlvos] = useState<AlvoMarcado[]>([]);
+  const [voo, setVoo] = useState<VooDeCarta | null>(null);
+  const [faixaDeCarta, setFaixaDeCarta] = useState<{ texto: string; vez: number } | null>(null);
+  const faixaTemporizador = useRef<number | null>(null);
+  // Arte de cada carta já carregada pela mão (id da versão → URL de dados), para a animação e o histórico.
+  const artes = useRef(new Map<string, string>());
+  const guardarArte = useCallback((versaoId: string, arte: string) => { artes.current.set(versaoId, arte); }, []);
+  const personagensPorId = useMemo(() => new Map((personagens.data ?? []).map((p) => [p.id, p])), [personagens.data]);
+  const tokensDoSnapshot = sala.data?.cena?.tokens;
+  const tokensDaCenaAtual = useMemo(() => tokensDoSnapshot ?? [], [tokensDoSnapshot]);
+  const combate = modoTurno.combate;
+  const emDisputa = combate?.estado === "combate";
+  const participanteDaVez = emDisputa ? combate.participantes.find((p) => p.id === combate.vez_participante_id) : undefined;
+  // De quem é a mão à mostra: o jogador vê a de um personagem seu com token na cena (o da vez primeiro); o Narrador vê
+  // a de quem está com a vez (a de um jogador só com a preferência ligada) ou, fora da disputa, a do token escolhido.
+  // Todos os personagens que o jogador controla na cena, inclusive um companion liberado pelo Narrador.
+  const meusNaCena: OpcaoDePersonagem[] = narrator ? [] : personagensControlados(tokensDaCenaAtual, personagens.data ?? [], userId);
+  let personagemDaMao: string | null = null;
+  let opcoesDaMao: OpcaoDePersonagem[] = meusNaCena;
+  if (narrator) {
+    const escolhido = tokensDaCenaAtual.find((t) => t.id === tokenEscolhido)?.personagem_id ?? null;
+    const daVez = participanteDaVez && (!participanteDaVez.do_jogador || gamificacao.preferencias.mao_dos_jogadores_visivel)
+      ? participanteDaVez.personagem_id ?? null : null;
+    personagemDaMao = emDisputa ? daVez : escolhido;
+    const personagem = personagemDaMao ? personagensPorId.get(personagemDaMao) : undefined;
+    opcoesDaMao = personagem ? [{ id: personagem.id, nome: personagem.nome }] : [];
+    if (!personagem) personagemDaMao = null;
+  } else {
+    const daVezMeu = participanteDaVez?.meu ? participanteDaVez.personagem_id ?? null : null;
+    personagemDaMao = (daVezMeu && meusNaCena.some((p) => p.id === daVezMeu) ? daVezMeu : null)
+      ?? (maoEscolhida && meusNaCena.some((p) => p.id === maoEscolhida) ? maoEscolhida : null)
+      ?? meusNaCena[0]?.id ?? null;
+  }
+  const maoDeCartas = useMaoDeCartas({ api, mesaId, personagemId: personagemDaMao, comTempoReal: Boolean(realtime),
+    ativo: Boolean(sala.data) });
+  const mostrarFaixaDeCarta = useCallback((texto: string, vez: number) => {
+    setFaixaDeCarta({ texto, vez });
+    if (faixaTemporizador.current) window.clearTimeout(faixaTemporizador.current);
+    faixaTemporizador.current = window.setTimeout(() => setFaixaDeCarta((atual) => (atual?.vez === vez ? null : atual)), 2500);
+  }, []);
+  useEffect(() => () => { if (faixaTemporizador.current) window.clearTimeout(faixaTemporizador.current); }, []);
+  const receberUsoNoHistorico = rolador.receberUso;
+  const mostrarUso = useCallback((uso: UsoDeCarta, autor?: string) => {
+    const arte = artes.current.get(uso.versao_id);
+    receberUsoNoHistorico(deUsoDoServidor(uso, autor, arte));
+    mostrarFaixaDeCarta(`${uso.personagem_nome} usa ${uso.titulo}`, uso.id);
+    if (!animacaoDasCartas || movimentoReduzido()) return;
+    const origem = tokensDaCenaAtual.find((t) => t.personagem_id === uso.personagem_id)?.id ?? null;
+    setVoo({ chave: Date.now() * 1000 + (uso.id % 1000), origemTokenId: origem, alvosTokenIds: (uso.alvos ?? []).map((a) => a.token_id),
+      titulo: uso.titulo, ...(arte ? { arte } : {}) });
+  }, [receberUsoNoHistorico, mostrarFaixaDeCarta, animacaoDasCartas, tokensDaCenaAtual]);
+  const atualizarUsoNoHistorico = rolador.atualizarUso;
+  const invalidarDepoisDoUso = useCallback(() => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["sala-mao", mesaId] }),
+    queryClient.invalidateQueries({ queryKey: chaveDoTurno(mesaId) }),
+    queryClient.invalidateQueries({ queryKey: ["usos", mesaId] }),
+    queryClient.invalidateQueries({ queryKey: ["sala-estatisticas", mesaId] }),
+    queryClient.invalidateQueries({ queryKey: ["valores-derivados"] }),
+  ]), [queryClient, mesaId]);
+  useUsosDaMesa({ api, mesaId, userId, comTempoReal: Boolean(realtime), ativo: Boolean(sala.data),
+    aoChegar: useCallback((uso: UsoDeCarta) => mostrarUso(uso, nomes.get(uso.autor_id) ?? "Alguém da mesa"), [mostrarUso, nomes]),
+    aoAtualizar: useCallback((uso: UsoDeCarta) => { atualizarUsoNoHistorico(uso.id, uso.desfeito); void invalidarDepoisDoUso(); },
+      [atualizarUsoNoHistorico, invalidarDepoisDoUso]) });
+  const usar = useMutation({
+    mutationFn: (carta: CartaDaMao) => usarCarta(api, mesaId, personagemDaMao ?? "", carta.versao_id, alvos.map((a) => a.tokenId)),
+    onSuccess: (uso) => { setCartaAberta(null); setAlvos([]); mostrarUso(uso); void invalidarDepoisDoUso(); },
+  });
+  const desfazer = useMutation({
+    mutationFn: (usoId: number) => desfazerUso(api, mesaId, usoId),
+    onSuccess: (uso) => { atualizarUsoNoHistorico(uso.id, true); void invalidarDepoisDoUso(); },
+  });
+  const fecharCarta = () => { setCartaAberta(null); setAlvos([]); usar.reset(); };
+  const alternarAlvo = (tokenId: string) => {
+    const alvo = tokensDaCenaAtual.find((t) => t.id === tokenId);
+    if (!alvo) return;
+    setAlvos((atuais) => (atuais.some((a) => a.tokenId === tokenId)
+      ? atuais.filter((a) => a.tokenId !== tokenId) : [...atuais, { tokenId, rotulo: alvo.rotulo }]));
+  };
+  // Só o Narrador desfaz, e só o último uso do personagem da mão que ainda vale.
+  const ultimoUsoDaMao = narrator && personagemDaMao ? rolador.usos.find((u) => u.personagemId === personagemDaMao && !u.desfeito) : undefined;
   // Ao ligar o destaque, as rolagens que já estão no histórico ganham as marcas guardadas no sorteio.
   const atualizarMarcas = rolador.atualizarMarcas;
   useEffect(() => {
@@ -341,20 +436,62 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
   // Personagem posto na cena pelo Narrador (itens 9 e 10): ligado ao personagem, na camada da mesa.
   const colocarPersonagem = useMutation({
     mutationFn: async ({ personagem, x: px, y: py, oculto }: {
-      personagem: { id: string; nome: string }; x: number; y: number; oculto?: boolean;
+      personagem: { id: string; nome: string; tipo?: string; instancia_de?: string | null }; x: number; y: number; oculto?: boolean;
     }) => {
       const alvo = sala.data?.cena;
       if (!alvo) throw new Error("Selecione uma cena.");
       const daMesa = alvo.camadas.find((c) => c.visibilidade === "mesa") ?? alvo.camadas[0];
-      const { error } = await api.POST("/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens", {
+      // Um modelo de NPC ou monstro entra como instância nova (instancias-de-personagem); instância e personagem de
+      // jogador entram como eles mesmos.
+      const instanciar = personagem.tipo !== undefined && personagem.tipo !== "personagem" && !personagem.instancia_de;
+      const { data, error } = await api.POST("/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens", {
         params: { path: { mesa_id: mesaId, cena_id: alvo.id } },
         body: { camada_id: daMesa?.id ?? "", rotulo: personagem.nome.slice(0, 100), x: px, y: py, tamanho: 1,
-          personagem_id: personagem.id, oculto: oculto ?? false },
+          personagem_id: personagem.id, oculto: oculto ?? false, instanciar },
       });
       if (error) throw new Error(extractErrorMessage(error, "Não foi possível pôr o personagem na cena."));
+      return data;
     },
-    // Com o modo turno aberto, quem chega entra na disputa sem iniciativa (modo-de-turno, D8c).
-    onSuccess: () => { void atualizar(); void queryClient.invalidateQueries({ queryKey: chaveDoTurno(mesaId) }); },
+    // Com o modo turno aberto, quem chega entra na disputa sem iniciativa (modo-de-turno, D8c). A instância nova
+    // entra na lista de personagens, e o token dela fica escolhido.
+    onSuccess: (token) => {
+      void atualizar();
+      void queryClient.invalidateQueries({ queryKey: chaveDoTurno(mesaId) });
+      void queryClient.invalidateQueries({ queryKey: ["personagens", mesaId] });
+      if (token?.id) setTokenEscolhido(token.id);
+    },
+  });
+  // Instâncias (instancias-de-personagem, D4): excluir pela lixeira, promover a ficha e limpar as fora da cena.
+  const invalidarPersonagens = () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["personagens", mesaId] }), atualizar(),
+  ]);
+  const excluirInstancia = useMutation({
+    mutationFn: async (alvo: PersonagemResumo) => {
+      const { error } = await api.DELETE("/mesas/{mesa_id}/personagens/{personagem_id}", {
+        params: { path: { mesa_id: mesaId, personagem_id: alvo.id }, query: { versao_esperada: alvo.versao } },
+      });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível excluir a instância."));
+    },
+    onSuccess: () => { void invalidarPersonagens(); },
+  });
+  const promoverInstancia = useMutation({
+    mutationFn: async (alvo: PersonagemResumo) => {
+      const { error } = await (api.POST as (c: string, o: unknown) => Promise<{ error?: unknown }>)(
+        "/mesas/{mesa_id}/personagens/{personagem_id}/promocao", { params: { path: { mesa_id: mesaId, personagem_id: alvo.id } } });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível promover a instância."));
+    },
+    onSuccess: () => { void invalidarPersonagens(); },
+  });
+  const limparInstancias = useMutation({
+    mutationFn: async (modelo: PersonagemResumo) => {
+      const alvo = sala.data?.cena;
+      if (!alvo) throw new Error("Selecione uma cena.");
+      const { error } = await (api.POST as (c: string, o: unknown) => Promise<{ error?: unknown }>)(
+        "/mesas/{mesa_id}/personagens/{personagem_id}/instancias/limpeza",
+        { params: { path: { mesa_id: mesaId, personagem_id: modelo.id }, query: { cena_id: alvo.id } } });
+      if (error) throw new Error(extractErrorMessage(error, "Não foi possível excluir as instâncias fora da cena."));
+    },
+    onSuccess: () => { void invalidarPersonagens(); },
   });
 
   const cena = sala.data?.cena;
@@ -498,7 +635,10 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
     <h1 className="sr-only">{cena ? `Sala — ${cena.nome}` : "Sala"}</h1>
     <div className="room-view__palco">
       {cena
-        ? <RoomCanvas cena={cenaVisual ?? cena} onSelectToken={setTokenEscolhido} mapaUrl={cena.mapa_objeto ? mapa.data : undefined}
+        ? <RoomCanvas cena={cenaVisual ?? cena} mapaUrl={cena.mapa_objeto ? mapa.data : undefined}
+          // Com o quadro de uso aberto, clicar num token marca ou desmarca o alvo (cartas-na-cena).
+          onSelectToken={(id) => { if (cartaAberta) alternarAlvo(id); else setTokenEscolhido(id); }}
+          tokensAlvo={alvos.map((a) => a.tokenId)} cartaVoando={voo}
           retratos={retratos} centroDaVistaRef={centroDaVista}
           onSoltarPersonagem={narrator ? (id, coluna, linha) => {
             const personagem = porPersonagem.get(id);
@@ -522,9 +662,22 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
       {modoTurno.combate && <BarraDeTurno combate={modoTurno.combate} narrador={narrator} retratos={retratos}
         pendente={modoTurno.pendente} onProximo={modoTurno.proximo} onSair={modoTurno.sair} onComecar={modoTurno.comecar}
         onRolarPor={rolarIniciativa} onRolarNpcs={rolarIniciativaDosNpcs} onCorrer={modoTurno.correr}
+        onDevolver={narrator ? modoTurno.devolver : undefined}
         movimentoLivre={narrator ? { ligado: movimentoLivre, aoMudar: setMovimentoLivre } : undefined} />}
       {!narrator && modoTurno.combate && <AvisoDeIniciativa combate={modoTurno.combate} pendente={modoTurno.pendente}
         onRolar={rolarIniciativa} />}
+      {faixaDeCarta && <div key={faixaDeCarta.vez} className="faixa-de-critico faixa-de-critico--carta" aria-hidden="true">
+        <span className="faixa-de-critico__texto">{faixaDeCarta.texto}</span>
+      </div>}
+      {personagemDaMao && <MaoDeCartas api={api} mesaId={mesaId} mao={maoDeCartas.data} carregando={maoDeCartas.isPending}
+        narrador={narrator} personagens={opcoesDaMao} personagemId={personagemDaMao} onEscolherPersonagem={setMaoEscolhida}
+        aberta={maoAberta} onAlternar={() => setMaoAberta(!maoAberta)}
+        cartaAberta={cartaAberta} onAbrirCarta={(id) => { if (id) { setCartaAberta(id); usar.reset(); } else fecharCarta(); }}
+        onFechar={fecharCarta} alvos={alvos} onTirarAlvo={alternarAlvo} onLimparAlvos={() => setAlvos([])}
+        onUsar={(carta) => usar.mutate(carta)} pendente={usar.isPending || desfazer.isPending}
+        erro={usar.isError ? usar.error.message : desfazer.isError ? desfazer.error.message : maoDeCartas.isError ? maoDeCartas.error.message : null}
+        desfazer={ultimoUsoDaMao ? { titulo: ultimoUsoDaMao.titulo, onDesfazer: () => desfazer.mutate(ultimoUsoDaMao.id) } : null}
+        aoCarregarArte={guardarArte} />}
       {mvpAnunciado && <AnuncioDoMvp apelido={mvpAnunciado} onFim={() => setMvpAnunciado(null)} />}
       <BaloesDeReacao baloes={ephemera.baloes}
         nomeDe={(id) => (id === userId ? "Você" : nomes.get(id) ?? "Alguém da mesa")} />
@@ -602,6 +755,7 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
           ...opcoesDaFicha,
         }} opcoes={{
           mostrar: mostrarRolagens, aoMostrar: setMostrarRolagens, animacao: animacaoDosDados, aoAnimar: setAnimacaoDosDados,
+          animacaoDasCartas, aoAnimarCartas: setAnimacaoDasCartas,
           ...(narrator ? { rolarOculto: { ligado: rolarOculto, aoMudar: setRolarOculto } } : {}),
         }} />
           : aba === "papel" ? (narrator ? <MestreDoPainel gamificacao={gamificacao} modoTurno={{
@@ -630,7 +784,13 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
                       : subAbaDaCena === "personagens"
                         ? <PersonagensDosJogadores api={api} mesaId={mesaId} personagens={personagens.data ?? []} naCena={naCena}
                           onColocar={(personagem, oculto) => colocarPersonagem.mutate({
-                            personagem, oculto, ...casaLivre(centroDaVista.current?.() ?? { x: 0, y: 0 }, cena.tokens) })} />
+                            personagem, oculto, ...casaLivre(centroDaVista.current?.() ?? { x: 0, y: 0 }, cena.tokens) })}
+                          instancias={{
+                            pendente: excluirInstancia.isPending || promoverInstancia.isPending || limparInstancias.isPending,
+                            erro: excluirInstancia.error?.message ?? promoverInstancia.error?.message ?? limparInstancias.error?.message ?? null,
+                            onExcluir: (p) => excluirInstancia.mutate(p), onPromover: (p) => promoverInstancia.mutate(p),
+                            onLimpar: (modelo) => limparInstancias.mutate(modelo),
+                          }} />
                         : listaDeTokens}
                 </SubAbas>
                 // O jogador só tem os tokens da cena: a lista aparece direto, sem sub-abas.

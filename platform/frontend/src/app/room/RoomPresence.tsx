@@ -130,8 +130,10 @@ export function RoomPresence({
           ["sala.preferencias", ["sala-preferencias", "sala-estatisticas", "rolagens"]],
           ["sala.sessao", ["sala-sessoes", "sala-estatisticas"]],
           ["sala.votacao", ["sala-mvp"]],
-          // Modo turno (modo-de-turno): a ordem, a vez e as rolagens de iniciativa mudaram.
-          ["sala.turno", ["sala-turno", "rolagens"]],
+          // Modo turno (modo-de-turno): a ordem, a vez e as rolagens de iniciativa mudaram; a mão depende delas.
+          ["sala.turno", ["sala-turno", "rolagens", "sala-mao"]],
+          // Carta usada ou uso desfeito (cartas-na-cena): histórico, mão, ações do turno, PP e estatísticas.
+          ["sala.uso", ["usos", "sala-mao", "sala-turno", "sala-estatisticas", "valores-derivados"]],
         ];
         for (const [evento, chaves] of daGamificacao) {
           canal.on("broadcast", { event: evento }, () => {

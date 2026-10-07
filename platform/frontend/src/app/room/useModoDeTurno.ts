@@ -25,6 +25,8 @@ export interface ModoDeTurno {
   proximo: () => void;
   /** Correr: o saldo de movimento da vez dobra (dono do personagem na vez ou Narrador). */
   correr: () => void;
+  /** Só o Narrador: devolve uma Ação Padrão, Ação Bônus ou Reação gasta (cartas-na-cena, D4). */
+  devolver: (participanteId: string, acao: "padrao" | "bonus" | "reacao") => void;
   sair: () => void;
   pendente: boolean;
   erro: string | null;
@@ -55,6 +57,8 @@ export function useModoDeTurno({ api, mesaId, comTempoReal, ativo }: {
     onSettled: () => Promise.all([
       queryClient.invalidateQueries({ queryKey: chaveDoTurno(mesaId) }),
       queryClient.invalidateQueries({ queryKey: ["sala-estatisticas", mesaId] }),
+      // A mão de cartas depende da vez e das ações (cartas-na-cena).
+      queryClient.invalidateQueries({ queryKey: ["sala-mao", mesaId] }),
     ]),
   });
   const rolagensDe = (dados: unknown): RolagemDoServidor[] =>
@@ -69,6 +73,8 @@ export function useModoDeTurno({ api, mesaId, comTempoReal, ativo }: {
     comecar: () => pedir.mutate({ rota: "/mesas/{mesa_id}/sala/turno/inicio", mensagem: "Não foi possível começar a disputa." }),
     proximo: () => pedir.mutate({ rota: "/mesas/{mesa_id}/sala/turno/proximo", mensagem: "Não foi possível passar a vez." }),
     correr: () => pedir.mutate({ rota: "/mesas/{mesa_id}/sala/turno/correr", mensagem: "Não foi possível correr." }),
+    devolver: (participanteId, acao) => pedir.mutate({ rota: "/mesas/{mesa_id}/sala/turno/acoes/devolucao",
+      corpo: { participante_id: participanteId, acao }, mensagem: "Não foi possível devolver a ação." }),
     sair: () => pedir.mutate({ rota: "/mesas/{mesa_id}/sala/turno/encerramento", mensagem: "Não foi possível sair do modo turno." }),
     pendente: pedir.isPending,
     erro: pedir.isError ? pedir.error.message : consulta.isError ? consulta.error.message : null,

@@ -8,7 +8,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, criticos, musica, preferencias_sala, rolagens, sala, turno
+from cursed_platform import auditoria, criticos, instancias, musica, preferencias_sala, rolagens, sala, turno
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CriarCenaRequest, AreaDoMapaRequest, CriarTokenRequest, PermissoesEmLoteRequest, PermitirMovimentoRequest, MoverTokenRequest, SalaSnapshot, TokenSala,
@@ -18,6 +18,7 @@ from cursed_platform.contracts import (
 from cursed_platform.persistence import CenaRegistro, PersonagemRegistro, TokenRegistro
 
 from .assets import AtivoResposta, ler_imagem
+from .catalogo_ficha import atualizar_cartas
 from .live_sheet import _personagem as personagem_legivel, deslocamento_da_ficha, valores_da_ficha
 from .auth import Ator, get_actor
 from .dependencies import get_correlacao, get_session
@@ -166,8 +167,24 @@ def criar_token(
 ) -> TokenSala:
     _exigir_narrador(session, mesa_id, ator)
     cena = _cena(session, mesa_id, cena_id)
+    dados = pedido.model_dump()
+    instanciar = dados.pop("instanciar")
+    # Colocar um modelo de NPC ou monstro cria uma instância e liga o token a ela, na mesma transação
+    # (instancias-de-personagem, D3); instância ou personagem de jogador entram como eles mesmos.
+    modelo = session.get(PersonagemRegistro, pedido.personagem_id) if instanciar and pedido.personagem_id else None
+    if modelo is not None and modelo.mesa_id == mesa_id and instancias.eh_modelo(modelo) and modelo.excluido_em is None:
+        instancia = instancias.criar(session, modelo)
+        atualizar_cartas(session, instancia, None, instancia.ficha, ator_id=ator.usuario_id, correlacao_id=correlacao)
+        auditoria.registrar(
+            session, mesa_id=mesa_id, ator_id=ator.usuario_id, categoria="personagem", acao="personagem.instanciado",
+            relevancia="organizacional", personagem=instancia,
+            resumo=f"{auditoria.nome_personagem(instancia)}: instância de {auditoria.nome_personagem(modelo)}"[:500],
+            detalhes={"modelo_id": modelo.id, "numero": instancias.numero_de(instancia)}, correlacao_id=correlacao,
+        )
+        dados["personagem_id"] = instancia.id
+        dados["rotulo"] = auditoria.nome_personagem(instancia)[:100]
     try:
-        token = sala.criar_token(session, cena, **pedido.model_dump())
+        token = sala.criar_token(session, cena, **dados)
     except ERROS as erro:
         raise _erro(erro, session) from None
     _, _, visivel = sala._contexto_token(session, token)

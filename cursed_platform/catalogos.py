@@ -67,6 +67,34 @@ class Habilidade:
     amplia_falha_critica: int = 0
     # Bônus de Deslocamento em metros (modo-de-turno, D7): soma no Deslocamento calculado de quem tem a habilidade.
     deslocamento: int = 0
+    # Custo especial das habilidades de classe (cartas-na-cena, D5): a parte em PP do texto `custo`, quando ela é um
+    # número fixo no começo ("2 PP + 1 de Exaustão" → 2). Nunca vem da Potência de Uso do Framework.
+    custo_pp: int | None = None
+    # Lançamento escrito no catálogo ("Bônus", "Instantâneo", "Ritual (10 min)"), levado à carta como texto.
+    lancamento: str | None = None
+
+
+_CUSTO_PP = re.compile(r"^\s*(\d+)\s*PP\b", re.IGNORECASE)
+
+
+def custo_em_pp(custo: str | None) -> int | None:
+    """A parte fixa em PP de um custo escrito; ``None`` quando o texto não começa com um número de PP
+    ("Variável", "+1 PP sobre o custo do feitiço", "10 componentes")."""
+    if not custo:
+        return None
+    encontrado = _CUSTO_PP.match(custo)
+    return int(encontrado.group(1)) if encontrado else None
+
+
+def custo_extra(custo: str | None) -> str | None:
+    """O que sobra do custo escrito depois do PP fixo ("1 de Exaustão"), ou nada."""
+    if not custo:
+        return None
+    encontrado = _CUSTO_PP.match(custo)
+    if encontrado is None:
+        return None
+    resto = custo[encontrado.end():].strip().lstrip("+").strip()
+    return resto or None
 
 
 @dataclass(frozen=True)
@@ -447,14 +475,19 @@ def _habilidades(brutas: list[Any], *, arquivo: str, onde: str) -> tuple[Habilid
             continue
         local = f"{onde}, habilidade {indice + 1}"
         custo = bruta.get("custo")
+        custo_texto = str(custo).strip() if custo not in (None, "") else None
+        lancamento = _texto(bruta, "lancamento", arquivo=arquivo, onde=local, obrigatorio=False) \
+            if isinstance(bruta.get("lancamento"), str) else ""
         habilidade = Habilidade(
             _texto(bruta, "nome", arquivo=arquivo, onde=local),
             _texto(bruta, "descricao", arquivo=arquivo, onde=local),
             _texto(bruta, "tipo", arquivo=arquivo, onde=local, obrigatorio=False),
-            str(custo).strip() if custo not in (None, "") else None,
+            custo_texto,
             _custos(bruta, arquivo=arquivo, onde=local),
             *(_ampliacao(bruta, campo, arquivo=arquivo, onde=local) for campo in AMPLIACOES_DE_FAIXA),
             _deslocamento(bruta, arquivo=arquivo, onde=local),
+            custo_em_pp(custo_texto),
+            lancamento or None,
         )
         if chave(habilidade.nome) in vistas:
             raise CatalogoInvalido(arquivo, f"{onde}: habilidade '{habilidade.nome}' repetida.")

@@ -166,6 +166,28 @@
         "title": "AcervoPersonagem",
         "type": "object"
       },
+      "AcoesDoTurno": {
+        "description": "Ação Padrão, Ação Bônus e Reação do participante (cartas-na-cena, D4): verdadeiro quando ainda disponível.",
+        "properties": {
+          "bonus": {
+            "default": true,
+            "title": "Bonus",
+            "type": "boolean"
+          },
+          "padrao": {
+            "default": true,
+            "title": "Padrao",
+            "type": "boolean"
+          },
+          "reacao": {
+            "default": true,
+            "title": "Reacao",
+            "type": "boolean"
+          }
+        },
+        "title": "AcoesDoTurno",
+        "type": "object"
+      },
       "AjustarEfeitoRequest": {
         "description": "Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração.",
         "properties": {
@@ -491,6 +513,35 @@
           "personagem_id"
         ],
         "title": "AlvoDescanso",
+        "type": "object"
+      },
+      "AlvoDoUso": {
+        "properties": {
+          "personagem_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personagem Id"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "token_id": {
+            "title": "Token Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token_id",
+          "rotulo"
+        ],
+        "title": "AlvoDoUso",
         "type": "object"
       },
       "AmpliacaoGradeResumo": {
@@ -1321,6 +1372,126 @@
         "title": "CanalPrivado",
         "type": "object"
       },
+      "CartaDaMao": {
+        "description": "Uma carta jogável do personagem, como a mão a mostra. O motivo de indisponibilidade vem do servidor.",
+        "properties": {
+          "acao": {
+            "enum": [
+              "padrao",
+              "bonus",
+              "reacao",
+              "nenhuma"
+            ],
+            "title": "Acao",
+            "type": "string"
+          },
+          "alvo_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alvo Area"
+          },
+          "ativacao": {
+            "enum": [
+              "ativa",
+              "reacao"
+            ],
+            "title": "Ativacao",
+            "type": "string"
+          },
+          "ativos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ativos",
+            "type": "array"
+          },
+          "aviso_lancamento": {
+            "default": false,
+            "description": "O Lançamento foi lido como Ação Padrão por falta de encaixe.",
+            "title": "Aviso Lancamento",
+            "type": "boolean"
+          },
+          "custo_extra": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custo Extra"
+          },
+          "custo_uso": {
+            "title": "Custo Uso",
+            "type": "integer"
+          },
+          "lancamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lancamento"
+          },
+          "motivo_indisponivel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Indisponivel"
+          },
+          "posse_id": {
+            "title": "Posse Id",
+            "type": "string"
+          },
+          "texto": {
+            "title": "Texto",
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "habilidade",
+              "magia"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          },
+          "versao_id": {
+            "title": "Versao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "posse_id",
+          "versao_id",
+          "tipo",
+          "titulo",
+          "ativacao",
+          "custo_uso",
+          "acao",
+          "texto"
+        ],
+        "title": "CartaDaMao",
+        "type": "object"
+      },
       "CartaDefinicaoResumo": {
         "properties": {
           "arquivada": {
@@ -1404,6 +1575,24 @@
           "versao"
         ],
         "title": "CartaDefinicaoResumo",
+        "type": "object"
+      },
+      "CartaFavorita": {
+        "properties": {
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          },
+          "usos": {
+            "title": "Usos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "titulo",
+          "usos"
+        ],
+        "title": "CartaFavorita",
         "type": "object"
       },
       "CartaPersonagemResumo": {
@@ -2739,6 +2928,12 @@
             "title": "Controladores",
             "type": "array"
           },
+          "instanciar": {
+            "default": false,
+            "description": "Com um modelo de NPC ou monstro, cria uma instância e liga o token a ela (instancias-de-personagem); com instância ou personagem de jogador, não muda nada.",
+            "title": "Instanciar",
+            "type": "boolean"
+          },
           "oculto": {
             "default": false,
             "title": "Oculto",
@@ -2917,6 +3112,32 @@
           "estado"
         ],
         "title": "DestinatarioOferta",
+        "type": "object"
+      },
+      "DevolverAcaoRequest": {
+        "description": "O Narrador devolve uma ação gasta a um participante (cartas-na-cena).",
+        "properties": {
+          "acao": {
+            "enum": [
+              "padrao",
+              "bonus",
+              "reacao"
+            ],
+            "title": "Acao",
+            "type": "string"
+          },
+          "participante_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Participante Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "participante_id",
+          "acao"
+        ],
+        "title": "DevolverAcaoRequest",
         "type": "object"
       },
       "DiferencaCarta": {
@@ -3648,6 +3869,22 @@
       },
       "EstatisticasDoPeriodo": {
         "properties": {
+          "carta_favorita": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CartaFavorita"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A carta mais usada; em empate, a usada por último."
+          },
+          "cartas_usadas": {
+            "default": 0,
+            "title": "Cartas Usadas",
+            "type": "integer"
+          },
           "criticos": {
             "anyOf": [
               {
@@ -3674,6 +3911,12 @@
               }
             ],
             "title": "Falhas Criticas"
+          },
+          "pp_gasto": {
+            "default": 0,
+            "description": "PP pago nos usos de carta do período (cartas-na-cena).",
+            "title": "Pp Gasto",
+            "type": "integer"
           },
           "rolagens": {
             "title": "Rolagens",
@@ -5221,6 +5464,27 @@
         "title": "LargarItemRequest",
         "type": "object"
       },
+      "LimpezaDeInstancias": {
+        "description": "Resultado de \"Excluir as instâncias fora da cena\" (instancias-de-personagem).",
+        "properties": {
+          "excluidas": {
+            "title": "Excluidas",
+            "type": "integer"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "excluidas"
+        ],
+        "title": "LimpezaDeInstancias",
+        "type": "object"
+      },
       "ListasFichaResumo": {
         "properties": {
           "alinhamentos": {
@@ -5302,6 +5566,53 @@
           "campos_personalidade"
         ],
         "title": "ListasFichaResumo",
+        "type": "object"
+      },
+      "MaoDeCartas": {
+        "properties": {
+          "cartas": {
+            "items": {
+              "$ref": "#/components/schemas/CartaDaMao"
+            },
+            "title": "Cartas",
+            "type": "array"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "personagem_nome": {
+            "title": "Personagem Nome",
+            "type": "string"
+          },
+          "pp_atual": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pp Atual"
+          },
+          "pp_maximo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pp Maximo"
+          }
+        },
+        "required": [
+          "personagem_id",
+          "personagem_nome"
+        ],
+        "title": "MaoDeCartas",
         "type": "object"
       },
       "MarcaDeDado": {
@@ -6105,6 +6416,17 @@
       "ParticipanteDoTurno": {
         "description": "Participante do modo turno como o leitor pode vê-lo: o jogador não recebe o total de NPCs e monstros nem o\nvínculo com uma ficha oculta.",
         "properties": {
+          "acoes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AcoesDoTurno"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ações ainda disponíveis na vez; para o Narrador e o dono."
+          },
           "do_jogador": {
             "default": false,
             "title": "Do Jogador",
@@ -6555,6 +6877,18 @@
             "title": "Id",
             "type": "string"
           },
+          "instancia_de": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Id do modelo de que esta ficha é instância (instancias-de-personagem).",
+            "title": "Instancia De"
+          },
           "mesa_id": {
             "title": "Mesa Id",
             "type": "string"
@@ -6562,6 +6896,18 @@
           "nome": {
             "title": "Nome",
             "type": "string"
+          },
+          "numero_da_instancia": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Número da instância no modelo, para ordenar a lista.",
+            "title": "Numero Da Instancia"
           },
           "proprietario_id": {
             "anyOf": [
@@ -6796,6 +7142,12 @@
           "estatisticas_visiveis": {
             "default": false,
             "title": "Estatisticas Visiveis",
+            "type": "boolean"
+          },
+          "mao_dos_jogadores_visivel": {
+            "default": true,
+            "description": "O Narrador vê a mão de cartas dos personagens dos jogadores na vez deles (cartas-na-cena).",
+            "title": "Mao Dos Jogadores Visivel",
             "type": "boolean"
           }
         },
@@ -8110,6 +8462,18 @@
             "title": "Camada Id",
             "type": "string"
           },
+          "controlador": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Só para o jogador: ele controla o personagem deste token (dono ou controlador escolhido pelo Narrador).",
+            "title": "Controlador"
+          },
           "controladores": {
             "anyOf": [
               {
@@ -8458,6 +8822,161 @@
           "faixa"
         ],
         "title": "TrilhaDesgaste",
+        "type": "object"
+      },
+      "UsarCartaRequest": {
+        "properties": {
+          "alvos": {
+            "description": "Tokens marcados no grid.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Alvos",
+            "type": "array"
+          },
+          "personagem_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "versao_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Versao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "personagem_id",
+          "versao_id"
+        ],
+        "title": "UsarCartaRequest",
+        "type": "object"
+      },
+      "UsoDeCarta": {
+        "description": "Uma carta jogada na Sala. ``id`` cresce na ordem dos usos e serve de cursor.",
+        "properties": {
+          "acao": {
+            "enum": [
+              "padrao",
+              "bonus",
+              "reacao",
+              "nenhuma"
+            ],
+            "title": "Acao",
+            "type": "string"
+          },
+          "alvos": {
+            "items": {
+              "$ref": "#/components/schemas/AlvoDoUso"
+            },
+            "title": "Alvos",
+            "type": "array"
+          },
+          "autor_id": {
+            "title": "Autor Id",
+            "type": "string"
+          },
+          "combate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Combate Id"
+          },
+          "criado_em": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criado Em"
+          },
+          "custo_extra": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Parte do custo escrito que não é PP; só aviso.",
+            "title": "Custo Extra"
+          },
+          "custo_pago": {
+            "title": "Custo Pago",
+            "type": "integer"
+          },
+          "desfeito": {
+            "default": false,
+            "title": "Desfeito",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "personagem_id": {
+            "title": "Personagem Id",
+            "type": "string"
+          },
+          "personagem_nome": {
+            "title": "Personagem Nome",
+            "type": "string"
+          },
+          "rodada": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rodada"
+          },
+          "sessao_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessao Id"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          },
+          "versao_id": {
+            "title": "Versao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "autor_id",
+          "personagem_id",
+          "personagem_nome",
+          "versao_id",
+          "titulo",
+          "custo_pago",
+          "acao"
+        ],
+        "title": "UsoDeCarta",
         "type": "object"
       },
       "ValidacaoCarta": {
@@ -13399,6 +13918,74 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/instancias/limpeza": {
+      "post": {
+        "description": "Envia à lixeira as instâncias do modelo sem token na cena; devolve quantas foram.",
+        "operationId": "excluir_instancias_fora_da_cena_mesas__mesa_id__personagens__personagem_id__instancias_limpeza_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cena_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Cena Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimpezaDeInstancias"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Excluir Instancias Fora Da Cena",
+        "tags": [
+          "Personagens"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/personagens/{personagem_id}/inventario": {
       "get": {
         "operationId": "listar_inventario_mesas__mesa_id__personagens__personagem_id__inventario_get",
@@ -14074,6 +14661,63 @@
         "summary": "Ler Permissoes",
         "tags": [
           "Ficha viva"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/personagens/{personagem_id}/promocao": {
+      "post": {
+        "description": "A instância vira uma ficha comum da mesa: sai de baixo do modelo, entra no acervo e serve de modelo.",
+        "operationId": "promover_instancia_mesas__mesa_id__personagens__personagem_id__promocao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonagemResumo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Promover Instancia",
+        "tags": [
+          "Personagens"
         ]
       }
     },
@@ -14926,6 +15570,65 @@
           }
         ],
         "summary": "Ler Estatisticas",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/mao": {
+      "get": {
+        "description": "A mão de cartas jogáveis do personagem; o jogador só pede a dos próprios personagens.",
+        "operationId": "ler_mao_mesas__mesa_id__sala_mao_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "personagem_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Personagem Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaoDeCartas"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ler Mao",
         "tags": [
           "Sala"
         ]
@@ -16397,9 +17100,67 @@
         ]
       }
     },
+    "/mesas/{mesa_id}/sala/turno/acoes/devolucao": {
+      "post": {
+        "description": "Só o Narrador devolve uma Ação Padrão, Ação Bônus ou Reação gasta (cartas-na-cena, D4).",
+        "operationId": "devolver_acao_mesas__mesa_id__sala_turno_acoes_devolucao_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevolverAcaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoDoTurno"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Devolver Acao",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
     "/mesas/{mesa_id}/sala/turno/correr": {
       "post": {
-        "description": "Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento.",
+        "description": "Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento. Com a Ação\nPadrão já gasta, 409 (cartas-na-cena).",
         "operationId": "correr_mesas__mesa_id__sala_turno_correr_post",
         "parameters": [
           {
@@ -16647,6 +17408,7 @@
     },
     "/mesas/{mesa_id}/sala/turno/proximo": {
       "post": {
+        "description": "O Narrador passa a vez; o jogador encerra a própria vez (decisão do usuário, 2026-10-06).",
         "operationId": "proximo_turno_mesas__mesa_id__sala_turno_proximo_post",
         "parameters": [
           {
@@ -16687,6 +17449,188 @@
           }
         ],
         "summary": "Proximo Turno",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/usos": {
+      "get": {
+        "description": "Usos da mesa depois do id dado, em ordem (até 50). O jogador não recebe usos de personagem oculto.",
+        "operationId": "listar_usos_mesas__mesa_id__sala_usos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "depois",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Depois"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UsoDeCarta"
+                  },
+                  "title": "Response Listar Usos Mesas  Mesa Id  Sala Usos Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Usos",
+        "tags": [
+          "Sala"
+        ]
+      },
+      "post": {
+        "description": "Usa a carta pelo personagem: valida, debita o PP, gasta a ação do turno e registra.",
+        "operationId": "usar_carta_mesas__mesa_id__sala_usos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsarCartaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsoDeCarta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Usar Carta",
+        "tags": [
+          "Sala"
+        ]
+      }
+    },
+    "/mesas/{mesa_id}/sala/usos/{uso_id}/desfazer": {
+      "post": {
+        "description": "Só o Narrador desfaz o último uso de um personagem, na mesma rodada: o PP e a ação voltam.",
+        "operationId": "desfazer_uso_mesas__mesa_id__sala_usos__uso_id__desfazer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mesa_id",
+            "required": true,
+            "schema": {
+              "title": "Mesa Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "uso_id",
+            "required": true,
+            "schema": {
+              "title": "Uso Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsoDeCarta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Desfazer Uso",
         "tags": [
           "Sala"
         ]

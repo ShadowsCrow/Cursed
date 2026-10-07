@@ -5,6 +5,22 @@
 import { Graphics } from "pixi.js";
 
 export const COR_DA_SELECAO = 0x7fd8ff;
+/** Alvo marcado para uma carta (cartas-na-cena): vermelho-alaranjado, distinto da escolha e da vez. */
+export const COR_DO_ALVO = 0xff7a5c;
+
+/** Aro tracejado de alvo por fora do token de lado `lado`, sem receber eventos. */
+export function criarAroDeAlvo(lado: number): Graphics {
+  const centro = lado / 2;
+  const raio = lado / 2 - 3;
+  const aro = new Graphics().circle(centro, centro, raio + 10).fill({ color: COR_DO_ALVO, alpha: 0.14 });
+  const dentes = 12;
+  for (let i = 0; i < dentes; i += 1) {
+    const inicio = (i / dentes) * Math.PI * 2;
+    aro.arc(centro, centro, raio + 6, inicio, inicio + Math.PI / dentes).stroke({ color: COR_DO_ALVO, width: 3, alpha: 1 });
+  }
+  aro.eventMode = "none";
+  return aro;
+}
 
 /** Aro largo e um halo fraco por fora do token de lado `lado`, sem receber eventos. */
 export function criarAroDeSelecao(lado: number): Graphics {

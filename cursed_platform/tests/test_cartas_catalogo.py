@@ -64,7 +64,39 @@ class MaterializacaoTest(_Base):
             versao = cartas.versao_publicada(self.session, definicao)
             self.assertTrue(definicao.origem_sistema.startswith("classes/Druida/habilidades/"))
             self.assertIn("classe:Druida", versao.conteudo["tags"])
-            self.assertTrue(all(versao.conteudo[c] is None for c in ("custo_aprendizado", "custo_uso", "potencia_uso")))
+            self.assertTrue(all(versao.conteudo[c] is None for c in ("custo_aprendizado", "potencia_uso")))
+            # O Custo de Uso vem só do texto do custo especial da classe (cartas-na-cena, D5), nunca da Potência.
+            self.assertEqual(versao.conteudo["custo_uso"], catalogos.custo_em_pp(versao.conteudo.get("custo_legado")))
+
+    def test_custo_em_pp_e_lancamento_do_catalogo_na_carta(self):
+        """cartas-na-cena 2.2: "2 PP + 1 (ou 2) de Exaustão" dá Custo de Uso 2 e o Lançamento vai como texto."""
+        por_titulo = {h.conteudo["titulo"]: h.conteudo for h in cartas_catalogo.todas_as_habilidades(CATALOGO)}
+        palavra = por_titulo["Palavra da Cura"]
+        self.assertEqual((palavra["custo_uso"], palavra["lancamento"], palavra["custo_legado"]),
+                         (2, "Bônus", "2 PP + 1 (ou 2) de Exaustão"))
+        entalhe = por_titulo["Entalhe Místico"]
+        self.assertNotIn("custo_uso", entalhe)
+        self.assertEqual(entalhe["custo_legado"], "Variável (ver lista de totens)")
+        self.assertNotIn("custo_uso", por_titulo["Metamagia Espontânea"])
+        self.assertEqual(por_titulo["Rajada de Energia"]["custo_uso"], 1)
+
+    def test_custo_alterado_no_json_gera_nova_versao(self):
+        """cartas-na-cena 2.2: mudar o custo no catálogo versiona a carta como o texto já fazia."""
+        self.personagem.ficha = _ficha(classe="Feiticeiro", arquetipo="Arcano")
+        self.conceder()
+        classes = []
+        for classe in CATALOGO.classes:
+            if classe.nome == "Feiticeiro":
+                habilidades = tuple(replace(h, custo_legado="2 PP", custo_pp=2) if h.nome == "Rajada de Energia" else h
+                                    for h in classe.habilidades)
+                classe = replace(classe, habilidades=habilidades)
+            classes.append(classe)
+        resultado = self.conceder(replace(CATALOGO, classes=tuple(classes)))
+        self.assertEqual(resultado.atualizadas, ["Rajada de Energia"])
+        posse = next(p for p in self.posses("aprendida")
+                     if self.session.get(CartaVersaoRegistro, p.versao_id).conteudo["titulo"] == "Rajada de Energia")
+        versao = self.session.get(CartaVersaoRegistro, posse.versao_id)
+        self.assertEqual((versao.numero, versao.conteudo["custo_uso"]), (2, 2))
 
     def test_repetir_nao_duplica_nem_versiona(self):
         habilidades = cartas_catalogo.habilidades_da_ficha(_ficha(), CATALOGO)

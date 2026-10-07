@@ -427,8 +427,28 @@ describe("tokens da cena (item 9)", () => {
     fireEvent.click(within(lista).getByRole("button", { name: "Colocar Lion" }));
     await waitFor(() => expect(POST).toHaveBeenCalledWith("/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens", {
       params: { path: { mesa_id: "mesa", cena_id: "cena" } },
-      body: { camada_id: "camada", rotulo: "Lion", x: 0, y: 0, tamanho: 1, personagem_id: "lion", oculto: false },
+      body: { camada_id: "camada", rotulo: "Lion", x: 0, y: 0, tamanho: 1, personagem_id: "lion", oculto: false, instanciar: false },
     }));
+  });
+
+  it("colocar um modelo de NPC pede uma instância; uma instância ou um personagem de jogador entram como eles mesmos", async () => {
+    window.localStorage.setItem(CHAVE_SUBABA_DA_CENA, "personagens");
+    const POST = vi.fn().mockResolvedValue({ data: { id: "t-novo" }, error: undefined });
+    const instancia = { ...capanga, id: "capanga-1", nome: "Capanga 1", instancia_de: "capanga", numero_da_instancia: 1 };
+    renderSala({ GET: rotas(comCenas, { "/mesas/{mesa_id}/personagens": [lion, capanga, instancia] }), POST } as unknown as ApiClient, true);
+    const npcs = await screen.findByRole("region", { name: "NPCs e monstros" });
+    fireEvent.click(within(npcs).getByRole("button", { name: "Colocar Capanga" }));
+    await waitFor(() => expect(POST).toHaveBeenLastCalledWith("/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens", expect.objectContaining({
+      body: expect.objectContaining({ personagem_id: "capanga", instanciar: true }),
+    })));
+    // A instância aparece sob o modelo e volta à cena como ela mesma.
+    const grupo = within(npcs).getByRole("group", { name: "Instâncias de Capanga" });
+    fireEvent.click(within(grupo).getByRole("button", { name: "Colocar Capanga 1" }));
+    await waitFor(() => expect(POST).toHaveBeenLastCalledWith("/mesas/{mesa_id}/sala/cenas/{cena_id}/tokens", expect.objectContaining({
+      body: expect.objectContaining({ personagem_id: "capanga-1", instanciar: false }),
+    })));
+    // O token criado fica escolhido.
+    await waitFor(() => expect(screen.getByTestId("grid").getAttribute("data-selecionado")).toBe("t-novo"));
   });
 
   it("soltar um personagem da lista no grid cria o token naquela casa", async () => {

@@ -1,0 +1,84 @@
+/* ---------------------------------------------------------------- cartas na cena (cartas-na-cena) */
+
+/* Ações da vez ao lado do saldo: selos de Ação Padrão, Ação Bônus e Reação, apagados quando gastos. */
+.turno__vez { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; pointer-events: none; }
+.turno__acoes-vez { pointer-events: auto; display: flex; align-items: center; gap: .3rem; padding: .3rem .5rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: 999px; background: rgb(11 17 24 / .88); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgb(0 0 0 / .4); }
+.turno__selo { display: inline-flex; align-items: center; gap: .25rem; padding: .1rem .5rem; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 999px; color: var(--accent-strong, var(--gold)); font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.turno__selo--gasta { border-color: color-mix(in srgb, var(--text-muted) 35%, transparent); color: var(--text-muted); background: transparent; opacity: .75; }
+.turno__selo--gasta .turno__selo-nome { text-decoration: line-through; }
+.turno__devolver { display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; padding: 0; border: 1px solid currentColor; border-radius: 50%; background: transparent; color: inherit; font-size: .7rem; line-height: 1; cursor: pointer; }
+.turno__devolver:disabled { opacity: .4; cursor: default; }
+
+/* Faixa "Lia usa Lança de Fogo", no estilo da faixa de crítico. */
+.faixa-de-critico--carta { top: 30%; }
+.faixa-de-critico--carta .faixa-de-critico__texto { color: #c9b7ff; font-size: clamp(1.1rem, 2.6vw, 1.7rem); text-transform: none; letter-spacing: .03em; text-shadow: 0 0 20px rgb(150 110 255 / .7); }
+
+/* A mão de cartas: na parte de baixo da Sala, em leque, como se a pessoa as segurasse. */
+.mao { position: absolute; z-index: 3; left: 50%; bottom: 3.1rem; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: .25rem; width: min(40rem, calc(100% - 7rem)); pointer-events: none; }
+.room-view--painel-aberto .mao { left: calc((100% - var(--largura-painel, 22rem)) / 2); width: min(40rem, calc(100% - var(--largura-painel, 22rem) - 7rem)); }
+.room-view--chao-aberto .mao { bottom: calc(var(--altura-chao, 0px) + 3.1rem); }
+@media (max-width: 760px) { .room-view--painel-aberto .mao { left: 50%; width: min(40rem, calc(100% - 7rem)); } }
+.mao__cabeca { pointer-events: auto; display: flex; align-items: center; gap: .6rem; padding: .25rem .7rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: 999px; background: rgb(11 17 24 / .88); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgb(0 0 0 / .4); color: var(--text); font-size: .76rem; }
+.mao__nome { font: 600 .9rem/1.1 var(--font-display); color: var(--accent-strong, var(--gold)); }
+.mao__escolha select { max-width: 11rem; padding: .1rem .3rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-radius: .4rem; background: rgb(0 0 0 / .3); color: var(--text); font: 600 .82rem/1.2 var(--font-display); }
+.mao__pp { padding: .05rem .5rem; border-radius: 999px; border: 1px solid color-mix(in srgb, #7fd8ff 45%, transparent); color: #9fe3ff; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mao__alternar { display: inline-flex; align-items: center; gap: .3rem; padding: .1rem .3rem; border: 0; background: transparent; color: var(--text-muted); font-size: .74rem; font-weight: 700; cursor: pointer; }
+.mao__alternar:hover, .mao__alternar:focus-visible { color: var(--text); }
+.mao__seta { transform: rotate(90deg); transition: transform var(--motion-fast); }
+.mao--recolhida .mao__seta { transform: rotate(-90deg); }
+.mao__leque { position: relative; pointer-events: auto; }
+.mao__cartas { display: flex; justify-content: center; align-items: flex-end; margin: 0; padding: 1.4rem .9rem .2rem; list-style: none; }
+.mao__posicao { position: relative; margin: 0 -.85rem; transform: rotate(var(--ang, 0deg)) translateY(var(--sobe, 0px)); transform-origin: 50% 130%; transition: transform var(--motion-fast); }
+.mao__posicao:hover, .mao__posicao:focus-within { z-index: 4; transform: translateY(-1.5rem) scale(1.14); }
+.mao__carta { position: relative; display: block; width: 5.2rem; height: 7.3rem; padding: 0; overflow: hidden; border: 2px solid color-mix(in srgb, var(--border-ornate) 80%, transparent); border-radius: .55rem; background: #1b1b27; color: var(--text); box-shadow: 0 8px 20px rgb(0 0 0 / .55); cursor: pointer; }
+.mao__carta:focus-visible { outline: 2px solid var(--accent-strong, var(--gold)); outline-offset: 2px; }
+.mao__carta--aberta { border-color: var(--accent-strong, var(--gold)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 45%, transparent), 0 10px 24px rgb(0 0 0 / .6); }
+.mao__carta--apagada { filter: grayscale(.85) brightness(.55); }
+.mao__arte { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mao__iniciais { display: grid; place-items: center; width: 100%; height: 100%; color: var(--accent-strong, var(--gold)); font: 800 1.5rem/1 var(--font-display); }
+.mao__custo { position: absolute; top: .25rem; left: .25rem; padding: 0 .35rem; border-radius: 999px; background: rgb(11 17 24 / .9); border: 1px solid color-mix(in srgb, #7fd8ff 55%, transparent); color: #9fe3ff; font-size: .62rem; font-weight: 800; }
+.mao__reacao { position: absolute; top: .25rem; right: .25rem; width: 1.1rem; height: 1.1rem; display: grid; place-items: center; border-radius: 50%; background: rgb(11 17 24 / .9); border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); color: var(--accent-strong, var(--gold)); font-size: .6rem; font-weight: 800; }
+.mao__titulo { position: absolute; left: 0; right: 0; bottom: 0; padding: .9rem .3rem .25rem; background: linear-gradient(180deg, transparent, rgb(11 17 24 / .95) 55%); color: var(--text); font-size: .62rem; font-weight: 700; line-height: 1.15; text-align: center; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mao__quadro { position: absolute; left: 50%; bottom: calc(100% - .6rem); z-index: 5; transform: translateX(-50%); display: grid; gap: .45rem; width: min(22rem, calc(100vw - 2rem)); padding: .65rem .8rem; border: 1px solid var(--border-ornate); border-radius: .7rem; background: rgb(11 17 24 / .96); backdrop-filter: blur(8px); box-shadow: 0 12px 32px rgb(0 0 0 / .55); color: var(--text); font-size: .8rem; text-align: left; }
+.mao__quadro-cabeca { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.mao__quadro-titulo { margin: 0; color: var(--accent-strong, var(--gold)); font: 700 1.05rem/1.15 var(--font-display); }
+.mao__fechar { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; padding: 0; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: 50%; background: transparent; color: var(--text-muted); cursor: pointer; }
+.mao__quadro-texto { margin: 0; max-height: 6.2rem; overflow: auto; color: var(--text); font-size: .78rem; line-height: 1.35; white-space: pre-line; }
+.mao__quadro-dados { display: grid; gap: .2rem; margin: 0; }
+.mao__quadro-dados div { display: flex; gap: .4rem; align-items: baseline; }
+.mao__quadro-dados dt { flex: none; min-width: 5.4rem; color: var(--text-muted); font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.mao__quadro-dados dd { margin: 0; }
+.mao__quadro-dados small { color: var(--text-muted); }
+.mao__aviso { margin: 0; color: var(--color-warning, #e3b75a); font-size: .74rem; }
+.mao__motivo { margin: 0; padding: .35rem .5rem; border-radius: .4rem; background: rgb(255 120 90 / .12); color: #ffb3a1; font-size: .76rem; font-weight: 700; }
+.mao__dica { margin: 0; color: var(--text-muted); font-size: .74rem; }
+.mao__erro { margin: 0; color: #ff9aa5; font-size: .76rem; }
+.mao__alvos { display: grid; gap: .3rem; }
+.mao__alvos-lista { display: flex; flex-wrap: wrap; gap: .3rem; margin: 0; padding: 0; list-style: none; }
+.mao__alvos-lista li { display: inline-flex; align-items: center; gap: .3rem; padding: .1rem .2rem .1rem .55rem; border-radius: 999px; border: 1px solid color-mix(in srgb, #ff7a5c 60%, transparent); background: rgb(255 122 92 / .14); color: #ffc2b3; font-size: .74rem; font-weight: 700; }
+.mao__quadro-acoes { display: flex; justify-content: flex-end; gap: .4rem; }
+.mao__quadro-acoes .button { min-height: 2rem; padding: .25rem .8rem; font-size: .78rem; }
+.mao > .mao__dica { pointer-events: auto; padding: .3rem .7rem; border-radius: 999px; background: rgb(11 17 24 / .8); }
+@media (prefers-reduced-motion: reduce) { .mao__posicao, .mao__seta { transition: none; } }
+
+/* Uso de carta no histórico da aba Dados: miniatura da carta, sem "Rolar de novo"; riscado quando desfeito. */
+.rolador__item--uso { background: rgb(150 110 255 / .08); }
+.rolador__item-uso { justify-content: flex-start; align-items: center; }
+.rolador__miniatura { flex: none; display: grid; place-items: center; width: 2rem; height: 2.7rem; overflow: hidden; border: 1px solid color-mix(in srgb, var(--border-ornate) 55%, transparent); border-radius: .3rem; background: #1b1b27; color: var(--accent-strong, var(--gold)); }
+.rolador__miniatura img { width: 100%; height: 100%; object-fit: cover; }
+.rolador__item--desfeito .rolador__item-expressao { text-decoration: line-through; color: var(--text-muted); }
+.rolador__item-extra { grid-column: 1 / -1; color: var(--color-warning, #e3b75a); font-size: .7rem; }
+
+/* "Encerrar meu turno" do jogador, ao lado do saldo e das ações da vez. */
+.turno__encerrar { pointer-events: auto; min-height: 2rem; padding: .25rem .8rem; font-size: .76rem; }
+
+/* ---------------------------------------------------------------- instâncias (instancias-de-personagem) */
+.personagens-cena__modelo { display: grid; gap: .3rem; }
+.personagens-cena__instancias { display: grid; gap: .3rem; margin-left: 1.1rem; padding-left: .6rem; border-left: 2px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); }
+.personagens-cena__item--instancia { grid-template-columns: 32px minmax(0, 1fr) auto auto auto auto; padding: .25rem .45rem; background: rgb(255 255 255 / .015); }
+.personagens-cena__item--instancia .personagens-cena__retrato { width: 32px; height: 32px; }
+.personagens-cena__instancia-acoes { display: flex; gap: .35rem; }
+.personagens-cena__texto { padding: .1rem .3rem; border: 0; background: none; color: var(--text-muted); font-size: .74rem; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.personagens-cena__texto:hover, .personagens-cena__texto:focus-visible { color: var(--text); }
+.personagens-cena__texto--excluir:hover { color: #ff9aa5; }
+.personagens-cena__limpar { justify-self: start; }

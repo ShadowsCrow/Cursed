@@ -4,6 +4,7 @@ import {
   acrescentarDado, ajustarModificador, MONTAGEM_VAZIA, quantidadeDeDados, removerDado, rolar,
   type EscolhaDaFicha, type FonteAleatoria, type Faces, type MarcaDoDado, type Montagem, type Rolagem,
 } from "./dados";
+import type { UsoNoHistorico } from "./useUsoDeCartas";
 
 export const LIMITE_DO_HISTORICO = 20;
 
@@ -29,6 +30,11 @@ export interface EstadoDoRolador {
   limparHistorico: () => void;
   /** Rolagem de outra pessoa da mesa: entra no histórico com o nome dela, sem mudar o visor. */
   receber: (rolagem: Rolagem) => void;
+  /** Usos de carta (cartas-na-cena): acontecimentos ao lado das rolagens, na mesma ordem de chegada. */
+  usos: UsoNoHistorico[];
+  receberUso: (uso: Omit<UsoNoHistorico, "ordem">) => void;
+  /** Um uso já no histórico foi desfeito (ou refeito) pelo Narrador. */
+  atualizarUso: (id: number, desfeito: boolean) => void;
   /**
    * Marcas de crítico vindas de novo do servidor (gamificacao-da-sala): ao ligar o destaque, as rolagens já no
    * histórico e no visor ganham as marcas que foram guardadas no sorteio.
@@ -57,6 +63,9 @@ export function useRolador({ fonte, sortear, aoRolar }: OpcoesDoRolador = {}): E
   const [ficha, setFicha] = useState<EscolhaDaFicha | undefined>(undefined);
   const fichaAtual = useRef<EscolhaDaFicha | undefined>(undefined);
   const [historico, setHistorico] = useState<Rolagem[]>([]);
+  const [usos, setUsos] = useState<UsoNoHistorico[]>([]);
+  // Ordem de chegada compartilhada entre rolagens e usos, para o histórico misto da aba Dados.
+  const ordem = useRef(0);
   // O resultado do visor é separado do histórico: "Limpar" o apaga, e o histórico continua.
   const [ultima, setUltima] = useState<Rolagem | null>(null);
   const [rolando, setRolando] = useState(false);
@@ -74,7 +83,12 @@ export function useRolador({ fonte, sortear, aoRolar }: OpcoesDoRolador = {}): E
     setMontagem(atual.current);
   }, []);
   const guardar = useCallback((rolagem: Rolagem) => {
-    setHistorico((anteriores) => [rolagem, ...anteriores].slice(0, LIMITE_DO_HISTORICO));
+    const numerada = { ...rolagem, ordem: ++ordem.current };
+    setHistorico((anteriores) => [numerada, ...anteriores].slice(0, LIMITE_DO_HISTORICO));
+  }, []);
+  const guardarUso = useCallback((uso: Omit<UsoNoHistorico, "ordem">) => {
+    const numerado = { ...uso, ordem: ++ordem.current };
+    setUsos((anteriores) => [numerado, ...anteriores.filter((u) => u.id !== uso.id)].slice(0, LIMITE_DO_HISTORICO));
   }, []);
   const registrar = useCallback((origem: Montagem, escolha: EscolhaDaFicha | undefined) => {
     if (quantidadeDeDados(origem) === 0) return;
@@ -124,8 +138,13 @@ export function useRolador({ fonte, sortear, aoRolar }: OpcoesDoRolador = {}): E
     limpar: () => { mudar(() => MONTAGEM_VAZIA); vez.current += 1; setUltima(null); setRolando(false); setErro(null); },
     rolarMontagem: () => registrar(atual.current, fichaAtual.current),
     rolarDeNovo: (rolagem) => registrar(rolagem.montagem, rolagem.ficha ?? fichaAtual.current),
-    limparHistorico: () => setHistorico([]),
+    limparHistorico: () => { setHistorico([]); setUsos([]); },
     receber: guardar,
+    usos,
+    receberUso: guardarUso,
+    atualizarUso: useCallback((id: number, desfeito: boolean) => {
+      setUsos((anteriores) => anteriores.map((u) => (u.id === id && u.desfeito !== desfeito ? { ...u, desfeito } : u)));
+    }, []),
     atualizarMarcas: useCallback((porId: ReadonlyMap<number, MarcaDoDado[]>) => {
       const marcar = (rolagem: Rolagem): Rolagem => {
         const marcas = porId.get(rolagem.id);

@@ -41,6 +41,8 @@ function SaldoDaVez({ participante, pendente, onCorrer }: {
   const movimento = participante.movimento;
   if (!movimento) return null;
   const resta = Math.max(0, movimento.limite - movimento.gasto);
+  // Correr troca a Ação Padrão por outro movimento: com ela já gasta, não dá (cartas-na-cena).
+  const semAcaoPadrao = participante.acoes ? !participante.acoes.padrao : false;
   return (
     <div className="turno__saldo" role="group" aria-label={`Deslocamento de ${participante.nome}`}>
       <span className="turno__saldo-texto">
@@ -50,9 +52,43 @@ function SaldoDaVez({ participante, pendente, onCorrer }: {
         <span style={{ width: `${movimento.limite > 0 ? (resta / movimento.limite) * 100 : 0}%` }} />
       </span>
       {!movimento.correndo && onCorrer && (
-        <button type="button" className="button button--ghost" disabled={pendente} onClick={onCorrer}
-          title="Troca a Ação Padrão por outro movimento: o Deslocamento do turno dobra">Correr</button>
+        <button type="button" className="button button--ghost" disabled={pendente || semAcaoPadrao} onClick={onCorrer}
+          title={semAcaoPadrao ? "Ação Padrão já usada nesta vez" : "Troca a Ação Padrão por outro movimento: o Deslocamento do turno dobra"}>
+          Correr</button>
       )}
+    </div>
+  );
+}
+
+const ACOES_DO_TURNO = [["padrao", "Ação"], ["bonus", "Bônus"], ["reacao", "Reação"]] as const;
+export type AcaoDoTurno = (typeof ACOES_DO_TURNO)[number][0];
+const NOME_DA_ACAO: Record<AcaoDoTurno, string> = { padrao: "Ação Padrão", bonus: "Ação Bônus", reacao: "Reação" };
+
+/**
+ * Ações da vez (cartas-na-cena, D4): os selos de Ação Padrão, Ação Bônus e Reação, apagados quando gastos, para o
+ * Narrador e o dono; o Narrador devolve uma ação gasta.
+ */
+export function AcoesDaVez({ participante, pendente, onDevolver }: {
+  participante: ParticipanteDoTurno; pendente: boolean; onDevolver?: (acao: AcaoDoTurno) => void;
+}) {
+  const acoes = participante.acoes;
+  if (!acoes) return null;
+  return (
+    <div className="turno__acoes-vez" role="group" aria-label={`Ações de ${participante.nome}`}>
+      {ACOES_DO_TURNO.map(([acao, rotulo]) => {
+        const disponivel = acoes[acao];
+        return (
+          <span key={acao} className={`turno__selo${disponivel ? "" : " turno__selo--gasta"}`}
+            title={`${NOME_DA_ACAO[acao]}: ${disponivel ? "disponível" : "usada nesta vez"}`}>
+            <span className="turno__selo-nome">{rotulo}</span>
+            <span className="sr-only">: {disponivel ? "disponível" : "usada"}</span>
+            {!disponivel && onDevolver && (
+              <button type="button" className="turno__devolver" disabled={pendente} onClick={() => onDevolver(acao)}
+                aria-label={`Devolver ${NOME_DA_ACAO[acao]} a ${participante.nome}`} title="Devolver">↺</button>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -96,7 +132,7 @@ function PendentesDeIniciativa({ faltam, pendente, onRolarPor }: {
 }
 
 export function BarraDeTurno({ combate, narrador, retratos, pendente, onProximo, onSair, onComecar, onRolarPor, onRolarNpcs,
-  onCorrer, movimentoLivre }: {
+  onCorrer, onDevolver, movimentoLivre }: {
   combate: CombateDoTurno;
   narrador: boolean;
   /** Retrato de cada token (os mesmos do grid). */
@@ -108,6 +144,8 @@ export function BarraDeTurno({ combate, narrador, retratos, pendente, onProximo,
   onRolarPor: (participanteId: string) => void;
   onRolarNpcs: () => void;
   onCorrer?: () => void;
+  /** Só do Narrador: devolve uma ação gasta ao participante (cartas-na-cena, D4). */
+  onDevolver?: (participanteId: string, acao: AcaoDoTurno) => void;
   /** Só do Narrador: movimento livre, que não gasta Deslocamento (empurrão, queda, teleporte, correção). */
   movimentoLivre?: { ligado: boolean; aoMudar: (ligado: boolean) => void };
 }) {
@@ -156,7 +194,16 @@ export function BarraDeTurno({ combate, narrador, retratos, pendente, onProximo,
           </div>}
         </div>
       )}
-      {daVez && <SaldoDaVez participante={daVez} pendente={pendente} onCorrer={narrador || daVez.meu ? onCorrer : undefined} />}
+      {daVez && (daVez.movimento || daVez.acoes || daVez.meu) && <div className="turno__vez">
+        <SaldoDaVez participante={daVez} pendente={pendente} onCorrer={narrador || daVez.meu ? onCorrer : undefined} />
+        <AcoesDaVez participante={daVez} pendente={pendente}
+          onDevolver={narrador && onDevolver ? (acao) => onDevolver(daVez.id, acao) : undefined} />
+        {/* O jogador encerra a própria vez (decisão do usuário, 2026-10-06); fica travado pelo mesmo motivo do Narrador. */}
+        {!narrador && daVez.meu && (
+          <button type="button" className="button button--primary turno__encerrar" disabled={pendente || Boolean(travado)}
+            onClick={onProximo} title={travado ?? "Passa a vez ao próximo da ordem"}>Encerrar meu turno</button>
+        )}
+      </div>}
       {narrador && iniciativa && (
         <div className="turno__quadro" role="group" aria-label="Iniciativa">
           {faltam.length === 0 ? <p className="turno__dica">Todos rolaram.</p>

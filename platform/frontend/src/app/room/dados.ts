@@ -44,6 +44,8 @@ export interface Rolagem {
   marcas?: MarcaDoDado[];
   /** Rolagem de iniciativa do modo turno (modo-de-turno), marcada no histórico. */
   finalidade?: "iniciativa";
+  /** Posição na ordem de chegada ao histórico, compartilhada com os usos de carta (cartas-na-cena). */
+  ordem?: number;
 }
 
 /** Junta várias rolagens de d20 numa só para animar de uma vez (iniciativa de vários NPCs), com as marcas no lugar. */

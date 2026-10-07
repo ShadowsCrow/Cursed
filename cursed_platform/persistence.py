@@ -142,8 +142,12 @@ class PersonagemRegistro(Base):
     revelacao: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     excluido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     excluido_por: Mapped[str | None] = mapped_column(String(100))
-    # Cópia independente: {"mesa_id", "personagem_id", "copiado_em"} da origem; nulo nos demais.
+    # Cópia independente: {"mesa_id", "personagem_id", "copiado_em"} da origem; nulo nos demais. Numa instância
+    # (instancias-de-personagem), {"instancia": {"modelo_id", "numero", "criada_em", "promovida_em"?}}.
     procedencia: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    # Instância de um modelo de NPC ou monstro (instancias-de-personagem, D1): o id do modelo; nulo nos modelos, nos
+    # personagens de jogador e nas fichas promovidas. Apagar o modelo anula o vínculo.
+    instancia_de: Mapped[str | None] = mapped_column(String(100), ForeignKey("characters.id", ondelete="SET NULL"), index=True)
 
 
 class SessaoRegistro(Base):
@@ -901,6 +905,8 @@ class PreferenciasSalaRegistro(Base):
     mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="CASCADE"), primary_key=True)
     destaque_criticos: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
     estatisticas_visiveis: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    # O Narrador vê a mão de cartas dos personagens dos jogadores (cartas-na-cena); ligado por padrão.
+    mao_dos_jogadores_visivel: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
     alterada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     alterada_por: Mapped[str] = mapped_column(String(100), nullable=False)
 
@@ -981,6 +987,10 @@ class ParticipanteCombateRegistro(Base):
     personagem_id: Mapped[str] = mapped_column(String(100), nullable=False)
     # Sem chave estrangeira: o token pode sair da cena e o participante fica, fora da cena, até o fim do modo turno.
     token_id: Mapped[str | None] = mapped_column(String(100))
+    # Posição em que entrou no modo turno (1, 2, 3…), preenchida por `turno.entrar` e `turno.incluir`: dá a ordem
+    # estável dos nomes numerados ("Goblin 2", "Goblin 3") e dos desempates sem rolagem, que os ids aleatórios não
+    # dão (cartas-na-cena, D9). Linhas anteriores à migração 0033 ficam com 0.
+    ordem_de_entrada: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
     rolagem_id: Mapped[int | None] = mapped_column(BigInteger().with_variant(Integer, "sqlite"),
                                                     ForeignKey("dice_rolls.id", ondelete="SET NULL"))
     total: Mapped[int | None] = mapped_column(Integer)
@@ -991,3 +1001,40 @@ class ParticipanteCombateRegistro(Base):
     # Saldo de movimento da vez (D8): metros já andados e se o participante está correndo; zerados ao receber a vez.
     movimento_gasto: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
     correndo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    # Ações do turno (cartas-na-cena, D4): Ação Padrão, Ação Bônus e Reação gastas; voltam ao receber a vez.
+    acao_padrao_gasta: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    acao_bonus_gasta: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+    reacao_gasta: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
+
+
+class UsoDeCartaRegistro(Base):
+    """Uma carta de habilidade ou magia jogada na Sala (cartas-na-cena, D1). O número cresce na ordem dos usos e serve
+    de cursor para o histórico de acontecimentos. Um uso desfeito pelo Narrador fica, marcado, e não conta."""
+
+    __tablename__ = "card_uses"
+    __table_args__ = (
+        CheckConstraint("custo_pago >= 0", name="ck_card_uses_custo"),
+        CheckConstraint("acao IN ('padrao', 'bonus', 'reacao', 'nenhuma')", name="ck_card_uses_acao"),
+        Index("ix_card_uses_mesa", "mesa_id", "id"),
+        Index("ix_card_uses_mesa_sessao", "mesa_id", "sessao_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
+    mesa_id: Mapped[str] = mapped_column(String(100), ForeignKey("rpg_tables.id", ondelete="CASCADE"), nullable=False)
+    autor_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    personagem_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    sessao_id: Mapped[str | None] = mapped_column(String(100), ForeignKey("table_sessions.id", ondelete="SET NULL"))
+    combate_id: Mapped[str | None] = mapped_column(String(100), ForeignKey("turn_combats.id", ondelete="SET NULL"))
+    rodada: Mapped[int | None] = mapped_column(Integer)
+    # A versão exata da carta usada (sem FK: a versão é imutável e a definição pode ser arquivada depois).
+    versao_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    titulo: Mapped[str] = mapped_column(String(200), nullable=False)
+    custo_pago: Mapped[int] = mapped_column(Integer, nullable=False)
+    # A parte do custo escrito que não é PP ("1 de Exaustão"): só aviso, nada é debitado.
+    custo_extra: Mapped[str | None] = mapped_column(String(500))
+    acao: Mapped[str] = mapped_column(String(20), nullable=False)
+    # [{"token_id", "personagem_id", "rotulo"}]: registro e destino da animação; sem validação de alcance.
+    alvos: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    desfeito_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    desfeito_por: Mapped[str | None] = mapped_column(String(100))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

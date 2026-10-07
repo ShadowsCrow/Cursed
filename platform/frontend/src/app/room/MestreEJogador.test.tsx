@@ -8,7 +8,7 @@ import type { EstatisticasDoPeriodo, GamificacaoDaSala, VotacaoMvp } from "./use
 
 const periodo = (parcial: Partial<EstatisticasDoPeriodo> = {}): EstatisticasDoPeriodo => ({
   vida_perdida: 15, vida_recuperada: 3, rolagens: 12, dados: 12, sorte: 12.4, rotulo_sorte: "quentes",
-  criticos: null, falhas_criticas: null, ...parcial,
+  criticos: null, falhas_criticas: null, pp_gasto: 0, cartas_usadas: 0, carta_favorita: null, ...parcial,
 });
 
 const SESSAO = { id: "s2", numero: 2, iniciada_em: "2026-10-04T20:14:00Z", encerrada_em: null };
@@ -21,7 +21,7 @@ function votacao(parcial: Partial<VotacaoMvp> = {}): VotacaoMvp {
 
 function gamificacao(parcial: Partial<GamificacaoDaSala> = {}): GamificacaoDaSala {
   return {
-    preferencias: { destaque_criticos: false, estatisticas_visiveis: false },
+    preferencias: { destaque_criticos: false, estatisticas_visiveis: false, mao_dos_jogadores_visivel: true },
     sessoes: { atual: SESSAO, ultima_encerrada: null },
     estatisticas: {
       sessao: SESSAO, placar_visivel: false,

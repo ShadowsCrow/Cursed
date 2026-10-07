@@ -190,6 +190,15 @@ class PersonagemResumo(BaseModel):
     excluido_em: datetime | None = None
     restauravel_ate: datetime | None = None
     retrato_objeto: str | None = Field(default=None, description="Ler por /mesas/{mesa_id}/ativos com exibicao=true.")
+    instancia_de: str | None = Field(default=None, description="Id do modelo de que esta ficha é instância (instancias-de-personagem).")
+    numero_da_instancia: int | None = Field(default=None, description="Número da instância no modelo, para ordenar a lista.")
+
+
+class LimpezaDeInstancias(BaseModel):
+    """Resultado de "Excluir as instâncias fora da cena" (instancias-de-personagem)."""
+
+    excluidas: int
+    ids: list[str] = Field(default_factory=list)
 
 
 class AcervoPersonagem(BaseModel):
@@ -1429,6 +1438,8 @@ class PreferenciasDaSala(BaseModel):
 
     destaque_criticos: bool = False
     estatisticas_visiveis: bool = False
+    mao_dos_jogadores_visivel: bool = Field(
+        default=True, description="O Narrador vê a mão de cartas dos personagens dos jogadores na vez deles (cartas-na-cena).")
 
 
 class SessaoDeJogo(BaseModel):
@@ -1445,6 +1456,11 @@ class SessoesDaMesa(BaseModel):
     ultima_encerrada: SessaoDeJogo | None = None
 
 
+class CartaFavorita(BaseModel):
+    titulo: str
+    usos: int
+
+
 class EstatisticasDoPeriodo(BaseModel):
     vida_perdida: int
     vida_recuperada: int
@@ -1454,6 +1470,9 @@ class EstatisticasDoPeriodo(BaseModel):
     rotulo_sorte: Literal["quentes", "na_media", "frios", "poucos_dados"]
     criticos: int | None = Field(default=None, description="Só com o destaque de críticos ligado.")
     falhas_criticas: int | None = None
+    pp_gasto: int = Field(default=0, description="PP pago nos usos de carta do período (cartas-na-cena).")
+    cartas_usadas: int = 0
+    carta_favorita: CartaFavorita | None = Field(default=None, description="A carta mais usada; em empate, a usada por último.")
 
 
 class EstatisticasDoJogador(BaseModel):
@@ -1520,6 +1539,14 @@ class MovimentoDoTurno(BaseModel):
     correndo: bool = False
 
 
+class AcoesDoTurno(BaseModel):
+    """Ação Padrão, Ação Bônus e Reação do participante (cartas-na-cena, D4): verdadeiro quando ainda disponível."""
+
+    padrao: bool = True
+    bonus: bool = True
+    reacao: bool = True
+
+
 class ParticipanteDoTurno(BaseModel):
     """Participante do modo turno como o leitor pode vê-lo: o jogador não recebe o total de NPCs e monstros nem o
     vínculo com uma ficha oculta."""
@@ -1537,6 +1564,7 @@ class ParticipanteDoTurno(BaseModel):
     do_jogador: bool = False
     fora_da_cena: bool = False
     movimento: MovimentoDoTurno | None = Field(default=None, description="Só na vez, para o Narrador e o dono.")
+    acoes: AcoesDoTurno | None = Field(default=None, description="Ações ainda disponíveis na vez; para o Narrador e o dono.")
 
 
 class CombateDoTurno(BaseModel):
@@ -1558,6 +1586,77 @@ class RolarIniciativaRequest(BaseModel):
 class IniciativaRolada(BaseModel):
     estado: EstadoDoTurno
     rolagens: list[RolagemDeDados]
+
+
+class DevolverAcaoRequest(BaseModel):
+    """O Narrador devolve uma ação gasta a um participante (cartas-na-cena)."""
+
+    participante_id: str = Field(min_length=1, max_length=100)
+    acao: Literal["padrao", "bonus", "reacao"]
+
+
+# ------------------------------------------------------------------ uso de cartas na cena (cartas-na-cena)
+
+AcaoDaCarta = Literal["padrao", "bonus", "reacao", "nenhuma"]
+
+
+class AlvoDoUso(BaseModel):
+    token_id: str
+    personagem_id: str | None = None
+    rotulo: str
+
+
+class UsoDeCarta(BaseModel):
+    """Uma carta jogada na Sala. ``id`` cresce na ordem dos usos e serve de cursor."""
+
+    id: int
+    autor_id: str
+    personagem_id: str
+    personagem_nome: str
+    sessao_id: str | None = None
+    combate_id: str | None = None
+    rodada: int | None = None
+    versao_id: str
+    titulo: str
+    custo_pago: int
+    custo_extra: str | None = Field(default=None, description="Parte do custo escrito que não é PP; só aviso.")
+    acao: AcaoDaCarta
+    alvos: list[AlvoDoUso] = Field(default_factory=list)
+    desfeito: bool = False
+    criado_em: datetime | None = None
+
+
+class UsarCartaRequest(BaseModel):
+    personagem_id: str = Field(min_length=1, max_length=100)
+    versao_id: str = Field(min_length=1, max_length=100)
+    alvos: list[str] = Field(default_factory=list, max_length=12, description="Tokens marcados no grid.")
+
+
+class CartaDaMao(BaseModel):
+    """Uma carta jogável do personagem, como a mão a mostra. O motivo de indisponibilidade vem do servidor."""
+
+    posse_id: str
+    versao_id: str
+    tipo: Literal["habilidade", "magia"]
+    titulo: str
+    ativacao: Literal["ativa", "reacao"]
+    custo_uso: int
+    custo_extra: str | None = None
+    acao: AcaoDaCarta
+    aviso_lancamento: bool = Field(default=False, description="O Lançamento foi lido como Ação Padrão por falta de encaixe.")
+    lancamento: str | None = None
+    alvo_area: str | None = None
+    texto: str
+    ativos: list[str] = Field(default_factory=list)
+    motivo_indisponivel: str | None = None
+
+
+class MaoDeCartas(BaseModel):
+    personagem_id: str
+    personagem_nome: str
+    pp_atual: int | None = None
+    pp_maximo: int | None = None
+    cartas: list[CartaDaMao] = Field(default_factory=list)
 
 
 class CriarCenaRequest(BaseModel):
@@ -1594,6 +1693,8 @@ class CriarTokenRequest(BaseModel):
     personagem_id: str | None = Field(default=None, max_length=100)
     controladores: list[str] = Field(default_factory=list, max_length=20)
     oculto: bool = False
+    instanciar: bool = Field(default=False, description="Com um modelo de NPC ou monstro, cria uma instância e liga o token a ela "
+                             "(instancias-de-personagem); com instância ou personagem de jogador, não muda nada.")
 
 
 class MoverTokenRequest(BaseModel):
@@ -1633,6 +1734,8 @@ class TokenSala(BaseModel):
     movimento_liberado: bool | None = Field(default=None, description="Somente para o Narrador: jogadores podem mover.")
     tipo_personagem: Literal["personagem", "npc", "monstro"] | None = Field(
         default=None, description="Tipo do personagem ligado (para a arte padrão do retrato); o retrato vem de /sala/tokens/{id}/retrato.")
+    controlador: bool | None = Field(
+        default=None, description="Só para o jogador: ele controla o personagem deste token (dono ou controlador escolhido pelo Narrador).")
 
 
 class CamadaSala(BaseModel):

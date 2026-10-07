@@ -84,10 +84,10 @@ class SessoesTest(_Api):
 class PreferenciasTest(_Api):
     def test_padrao_desligado_gravar_e_ler(self):
         self.assertEqual(self.como("ana").get("/mesas/mesa/sala/preferencias").json(),
-                         {"destaque_criticos": False, "estatisticas_visiveis": False})
+                         {"destaque_criticos": False, "estatisticas_visiveis": False, "mao_dos_jogadores_visivel": True})
         self.preferencias(destaque_criticos=True)
         self.assertEqual(self.como("ana").get("/mesas/mesa/sala/preferencias").json(),
-                         {"destaque_criticos": True, "estatisticas_visiveis": False})
+                         {"destaque_criticos": True, "estatisticas_visiveis": False, "mao_dos_jogadores_visivel": True})
         self.assertEqual(len(self.auditados("sala.preferencias_alteradas")), 1)
         self.preferencias(destaque_criticos=True)  # sem mudança, sem novo registro
         self.assertEqual(len(self.auditados("sala.preferencias_alteradas")), 1)
@@ -96,6 +96,12 @@ class PreferenciasTest(_Api):
         resposta = self.como("ana").put("/mesas/mesa/sala/preferencias",
                                         json={"destaque_criticos": True, "estatisticas_visiveis": True})
         self.assertEqual(resposta.status_code, 403)
+
+    def test_mao_dos_jogadores_pode_ser_desligada(self):
+        """cartas-na-cena: o Narrador escolhe ver ou não a mão dos personagens dos jogadores."""
+        self.preferencias(mao_dos_jogadores_visivel=False)
+        self.assertFalse(self.como("mestre").get("/mesas/mesa/sala/preferencias").json()["mao_dos_jogadores_visivel"])
+        self.assertIn("Mão de cartas", self.auditados("sala.preferencias_alteradas")[0].resumo)
 
 
 class MarcasTest(_Api):

@@ -53,6 +53,10 @@ export function QuadroDoPeriodo({ periodo, vazio = "Ainda não houve sessão." }
           && <Numero rotulo="Críticos" valor={periodo.criticos} tom="critico" />}
         {periodo.falhas_criticas !== null && periodo.falhas_criticas !== undefined
           && <Numero rotulo="Falhas críticas" valor={periodo.falhas_criticas} tom="falha" />}
+        <Numero rotulo="PP gasto" valor={periodo.pp_gasto ?? 0} tom="perda" />
+        <Numero rotulo="Cartas usadas" valor={periodo.cartas_usadas ?? 0} />
+        <Numero rotulo="Carta favorita" valor={periodo.carta_favorita
+          ? <>{periodo.carta_favorita.titulo} <small>({periodo.carta_favorita.usos})</small></> : "Nenhuma ainda"} />
       </dl>
       <p className={`estatisticas__sorte estatisticas__sorte--${periodo.rotulo_sorte}`}>
         <span className="estatisticas__sorte-nome">Sorte nos dados</span>

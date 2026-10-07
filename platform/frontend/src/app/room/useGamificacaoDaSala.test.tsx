@@ -105,6 +105,8 @@ describe("avisos da gamificação no RoomPresence", () => {
     expect(chamadas("sala.sessao")).toEqual(["sala-sessoes", "sala-estatisticas"]);
     expect(chamadas("sala.votacao")).toEqual(["sala-mvp"]);
     expect(chamadas("sala.rolagem")).toEqual(["rolagens", "sala-estatisticas"]);
-    expect(chamadas("sala.turno")).toEqual(["sala-turno", "rolagens"]);
+    expect(chamadas("sala.turno")).toEqual(["sala-turno", "rolagens", "sala-mao"]);
+    // Carta usada ou uso desfeito (cartas-na-cena): histórico, mão, ações do turno, estatísticas e PP da ficha.
+    expect(chamadas("sala.uso")).toEqual(["usos", "sala-mao", "sala-turno", "sala-estatisticas", "valores-derivados"]);
   });
 });

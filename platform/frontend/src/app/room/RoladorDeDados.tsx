@@ -5,10 +5,13 @@ import {
   TIPOS_DE_DADO, type Faces, type MarcaDoDado, type Rolagem,
 } from "./dados";
 import type { EstadoDoRolador } from "./useRolador";
+import { acontecimentos } from "./acontecimentos";
 import type { MostrarRolagens } from "./rolagensDaMesa";
 import type { OpcaoDaFicha } from "./useOpcoesDaFicha";
 import type { TermoDaFicha } from "./dados";
 import { usePintura } from "../characters/sheet/cartas/pinturasDasCartas";
+import { descreverUso, type UsoNoHistorico } from "./useUsoDeCartas";
+import { Glyph } from "../../ui/Display";
 
 /** Pintura de cada dado (gerada pelo Codex, preparada por `preparar_arte.py`). */
 const arteDoDado = (faces: Faces) => `/arte/sala/dados-d${faces}.webp`;
@@ -75,15 +78,29 @@ export interface OpcoesDaAbaDados {
   aoMostrar: (valor: MostrarRolagens) => void;
   animacao: boolean;
   aoAnimar: (ligada: boolean) => void;
+  /** Animação das cartas usadas na cena (cartas-na-cena), ao lado da dos dados. */
+  animacaoDasCartas?: boolean;
+  aoAnimarCartas?: (ligada: boolean) => void;
   /** Só para o Narrador (item 5): as próprias rolagens saem ocultas dos jogadores. */
   rolarOculto?: { ligado: boolean; aoMudar: (ligado: boolean) => void };
 }
 
-/**
- * Aba Dados do painel da Sala (melhorias-da-sala, itens 1 e 3): rolador parecido com o do Google.
- * Cada toque num dado o acrescenta à rolagem. A única leitura do resultado é o selo de crítico ou de falha crítica
- * no d20, quando o Narrador liga o destaque (gamificacao-da-sala); nada de sucesso, CD ou vantagem.
- */
+/** Um uso de carta no histórico (cartas-na-cena): sem "Rolar de novo"; riscado quando desfeito. */
+function ItemDeUso({ uso }: { uso: UsoNoHistorico }) {
+  return (
+    <li className={`rolador__item rolador__item--uso${uso.desfeito ? " rolador__item--desfeito" : ""}`}>
+      <span className="rolador__item-autor">{["Carta", uso.autor, uso.desfeito ? "desfeito" : null].filter(Boolean).join(" · ")}</span>
+      <div className="rolador__item-cabeca rolador__item-uso">
+        <span className="rolador__miniatura" aria-hidden="true">
+          {uso.arte ? <img src={uso.arte} alt="" decoding="async" /> : <Glyph name="cards" size={18} />}
+        </span>
+        <span className="rolador__item-expressao">{descreverUso(uso)}{uso.desfeito && <span className="sr-only"> (desfeito)</span>}</span>
+      </div>
+      {uso.custoExtra && <small className="rolador__item-extra">Custo extra: {uso.custoExtra}</small>}
+    </li>
+  );
+}
+
 /** Rolar pela ficha (item 8): a faixa de retratos e os Atributos e Perícias da ficha escolhida. */
 export interface FichaDaAbaDados {
   faixa: ReactNode;
@@ -113,12 +130,19 @@ function SeletorDaFicha({ rotulo, nenhum, valor, opcoesDaFicha, onMudar }: {
   );
 }
 
+/**
+ * Aba Dados do painel da Sala (melhorias-da-sala, itens 1 e 3): rolador parecido com o do Google.
+ * Cada toque num dado o acrescenta à rolagem. A única leitura do resultado é o selo de crítico ou de falha crítica
+ * no d20, quando o Narrador liga o destaque (gamificacao-da-sala); nada de sucesso, CD ou vantagem. Os usos de carta
+ * (cartas-na-cena) entram no histórico ao lado das rolagens.
+ */
 export function RoladorDeDados({ rolador, opcoes, ficha, destaque = true }: {
   rolador: EstadoDoRolador; opcoes?: OpcoesDaAbaDados; ficha?: FichaDaAbaDados;
   /** Destaque de críticos ligado pelo Narrador (gamificacao-da-sala): mostra as marcas que o servidor enviou. */
   destaque?: boolean;
 }) {
   const { montagem, ultima, historico, rolando } = rolador;
+  const itens = acontecimentos(historico, rolador.usos ?? []);
   const marcaDa = (rolagem: Rolagem) => (destaque ? destaqueDaRolagem(rolagem) : null);
   const marcaDaUltima = ultima ? marcaDa(ultima) : null;
   const escolha = rolador.ficha;
@@ -233,6 +257,14 @@ export function RoladorDeDados({ rolador, opcoes, ficha, destaque = true }: {
             <input type="checkbox" role="switch" checked={opcoes.animacao} onChange={(evento) => opcoes.aoAnimar(evento.target.checked)} />
             <span className="rolador__chave-trilho" aria-hidden="true" />
           </label>
+          {opcoes.aoAnimarCartas && (
+            <label className="rolador__opcao rolador__chave">
+              <span className="rolador__opcao-nome">Animação das cartas</span>
+              <input type="checkbox" role="switch" checked={opcoes.animacaoDasCartas ?? true}
+                onChange={(evento) => opcoes.aoAnimarCartas?.(evento.target.checked)} />
+              <span className="rolador__chave-trilho" aria-hidden="true" />
+            </label>
+          )}
           <p className="rolador__aviso">{opcoes.rolarOculto?.ligado
             ? "As rolagens são sorteadas pelo servidor. As suas ficam ocultas: só você as vê."
             : "As rolagens são sorteadas pelo servidor e vão para a mesa; cada pessoa escolhe se vê as dos outros."}</p>
@@ -240,15 +272,15 @@ export function RoladorDeDados({ rolador, opcoes, ficha, destaque = true }: {
         </details>
       )}
 
-      {historico.length > 0 && (
+      {itens.length > 0 && (
         <section className="rolador__historico" aria-labelledby="rolador-historico-titulo">
           <div className="rolador__historico-topo">
             <h3 id="rolador-historico-titulo">Histórico</h3>
             <button type="button" className="rolador__texto" onClick={rolador.limparHistorico}>Limpar histórico</button>
           </div>
-          {/* Rolagem própria do histórico (item 7); focável para rolar pelo teclado. */}
+          {/* Rolagem própria do histórico (item 7); focável para rolar pelo teclado. Usos de carta entram na ordem (cartas-na-cena). */}
           <ol className="rolador__lista" tabIndex={0} aria-labelledby="rolador-historico-titulo">
-            {historico.map((rolagem) => (
+            {itens.map((item) => ("uso" in item ? <ItemDeUso key={`uso-${item.uso.id}`} uso={item.uso} /> : (() => { const { rolagem } = item; return (
               <li key={rolagem.id} className="rolador__item">
                 {(rolagem.autor || rolagem.oculta || rolagem.personagem || rolagem.finalidade) && <span className="rolador__item-autor">
                   {[rolagem.finalidade === "iniciativa" ? "Iniciativa" : null, rolagem.autor, rolagem.personagem,
@@ -262,7 +294,7 @@ export function RoladorDeDados({ rolador, opcoes, ficha, destaque = true }: {
                 <button type="button" className="rolador__texto" aria-label={`Rolar de novo ${rolagem.expressao}`}
                   onClick={() => rolador.rolarDeNovo(rolagem)}>Rolar de novo</button>
               </li>
-            ))}
+            ); })()))}
           </ol>
         </section>
       )}

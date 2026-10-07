@@ -37,8 +37,10 @@ def listar(session: Session, usuario_id: str, colecao: Colecao) -> list[tuple[Pe
         consulta = consulta.where(PersonagemRegistro.tipo == "personagem",
                                   PersonagemRegistro.proprietario_id == usuario_id)
     else:
+        # Instâncias de um modelo ficam fora do acervo (instancias-de-personagem): só modelos e fichas promovidas.
         consulta = consulta.where(PersonagemRegistro.tipo == TIPO_DA_COLECAO[colecao],
-                                  MembroRegistro.papel == "narrador", MesaRegistro.narrador_id == usuario_id)
+                                  MembroRegistro.papel == "narrador", MesaRegistro.narrador_id == usuario_id,
+                                  PersonagemRegistro.instancia_de.is_(None))
     linhas = session.execute(consulta.order_by(MesaRegistro.nome, PersonagemRegistro.id)).all()
     return sorted(((p, m) for p, m in linhas), key=lambda par: (nome(par[0]).casefold(), par[1].nome.casefold()))
 

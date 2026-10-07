@@ -11,13 +11,13 @@ O período da sessão filtra por ``sessao_id``; o da campanha, pela mesa toda.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Iterable
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cursed_platform.persistence import EventoAuditoriaRegistro, PersonagemRegistro, RolagemRegistro
+from cursed_platform.persistence import EventoAuditoriaRegistro, PersonagemRegistro, RolagemRegistro, UsoDeCartaRegistro
 
 CAMPO_PV_ATUAL = "recursos.pv.atual"
 MINIMO_DE_DADOS = 10
@@ -33,6 +33,18 @@ class Periodo:
     criticos: int = 0
     falhas_criticas: int = 0
     _soma_sorte: float = 0.0
+    # Cartas usadas na cena (cartas-na-cena): PP pago e usos por título, com o id do último uso para o desempate.
+    pp_gasto: int = 0
+    cartas_usadas: int = 0
+    _usos_por_carta: dict[str, tuple[int, int]] = field(default_factory=dict)
+
+    @property
+    def carta_favorita(self) -> dict[str, Any] | None:
+        """A carta mais usada no período; em empate, a usada por último."""
+        if not self._usos_por_carta:
+            return None
+        titulo, (usos, _) = max(self._usos_por_carta.items(), key=lambda item: (item[1][0], item[1][1]))
+        return {"titulo": titulo, "usos": usos}
 
     @property
     def sorte(self) -> float | None:
@@ -57,6 +69,7 @@ class Periodo:
             "dados": self.dados, "sorte": self.sorte, "rotulo_sorte": self.rotulo_sorte,
             "criticos": self.criticos if destaque else None,
             "falhas_criticas": self.falhas_criticas if destaque else None,
+            "pp_gasto": self.pp_gasto, "cartas_usadas": self.cartas_usadas, "carta_favorita": self.carta_favorita,
         }
 
 
@@ -100,6 +113,13 @@ def _somar_rolagem(periodo: Periodo, rolagem: RolagemRegistro) -> None:
             periodo.falhas_criticas += 1
 
 
+def _somar_uso(periodo: Periodo, uso: UsoDeCartaRegistro) -> None:
+    periodo.pp_gasto += uso.custo_pago
+    periodo.cartas_usadas += 1
+    usos, _ = periodo._usos_por_carta.get(uso.titulo, (0, 0))
+    periodo._usos_por_carta[uso.titulo] = (usos + 1, uso.id)
+
+
 def calcular(session: Session, mesa_id: str, jogadores: Iterable[str],
              sessao_id: str | None) -> dict[str, tuple[Periodo | None, Periodo]]:
     """Para cada jogador, (período da sessão ou nada sem sessão de referência, campanha)."""
@@ -126,6 +146,17 @@ def calcular(session: Session, mesa_id: str, jogadores: Iterable[str],
             _somar_vida(campanha, deltas)
             if da_sessao is not None and evento.sessao_id == sessao_id:
                 _somar_vida(da_sessao, deltas)
+        usos = session.scalars(
+            select(UsoDeCartaRegistro)
+            .where(UsoDeCartaRegistro.mesa_id == mesa_id, UsoDeCartaRegistro.personagem_id.in_(list(donos)),
+                   UsoDeCartaRegistro.desfeito_em.is_(None))
+            .order_by(UsoDeCartaRegistro.id)
+        )
+        for uso in usos:
+            da_sessao, campanha = resultado[donos[uso.personagem_id]]
+            _somar_uso(campanha, uso)
+            if da_sessao is not None and uso.sessao_id == sessao_id:
+                _somar_uso(da_sessao, uso)
     rolagens = session.scalars(
         select(RolagemRegistro)
         .where(RolagemRegistro.mesa_id == mesa_id, RolagemRegistro.oculta.is_(False),

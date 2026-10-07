@@ -136,6 +136,9 @@ export function MestreDoPainel({ gamificacao, modoTurno }: { gamificacao: Gamifi
             <Chave rotulo="Mostrar estatísticas da mesa" dica="Os jogadores veem o placar do grupo na aba Jogador."
               ligada={preferencias.estatisticas_visiveis} desativada={pendente}
               onMudar={(ligada) => gamificacao.mudarPreferencias({ estatisticas_visiveis: ligada })} />
+            <Chave rotulo="Ver as cartas dos jogadores" dica="Na vez de um personagem de jogador, a mão dele aparece para você também."
+              ligada={preferencias.mao_dos_jogadores_visivel ?? true} desativada={pendente}
+              onMudar={(ligada) => gamificacao.mudarPreferencias({ mao_dos_jogadores_visivel: ligada })} />
           </div>
         )}
 

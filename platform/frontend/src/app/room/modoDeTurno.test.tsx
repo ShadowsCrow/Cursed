@@ -203,7 +203,7 @@ describe("aviso de iniciativa do jogador", () => {
 });
 
 const gamificacao = (): GamificacaoDaSala => ({
-  preferencias: { destaque_criticos: false, estatisticas_visiveis: false },
+  preferencias: { destaque_criticos: false, estatisticas_visiveis: false, mao_dos_jogadores_visivel: true },
   sessoes: { atual: { id: "s1", numero: 1, iniciada_em: "2026-10-04T20:00:00Z", encerrada_em: null }, ultima_encerrada: null },
   estatisticas: null, mvp: null, mudarPreferencias: vi.fn(), iniciarSessao: vi.fn(), encerrarSessao: vi.fn(),
   abrirVotacao: vi.fn(), encerrarVotacao: vi.fn(), desempatar: vi.fn(), votar: vi.fn(), pendente: false, erro: null,

@@ -22,7 +22,7 @@ import secrets
 from typing import Any, Callable, Iterable
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from cursed_platform import sessoes
@@ -50,7 +50,15 @@ class SemDeslocamento(ValueError):
     """O movimento passa do saldo do turno (422)."""
 
 
+class AcaoGasta(ValueError):
+    """A Ação Padrão, a Ação Bônus ou a Reação já foi usada nesta vez (409)."""
+
+
 FORA_DA_VEZ_NARRADOR = "Fora da vez: ligue o Movimento livre para mover."
+
+# Ações do turno (cartas-na-cena, D4), com a coluna do participante e o rótulo da regra (`Turnos e Ações.md`).
+ACOES = {"padrao": ("acao_padrao_gasta", "Ação Padrão"), "bonus": ("acao_bonus_gasta", "Ação Bônus"),
+         "reacao": ("reacao_gasta", "Reação")}
 
 # Deslocamento calculado da ficha de um personagem, em metros (D7); vem de quem chama, que tem o caminho da ficha.
 Deslocamento = Callable[[str], int]
@@ -66,9 +74,17 @@ def aberto(session: Session, mesa_id: str) -> CombateRegistro | None:
 
 
 def participantes(session: Session, combate: CombateRegistro) -> list[ParticipanteCombateRegistro]:
+    """Na ordem de entrada no modo turno (D9); o id só desempata linhas anteriores à migração 0033."""
     return list(session.scalars(select(ParticipanteCombateRegistro)
                                 .where(ParticipanteCombateRegistro.combate_id == combate.id)
-                                .order_by(ParticipanteCombateRegistro.id)))
+                                .order_by(ParticipanteCombateRegistro.ordem_de_entrada, ParticipanteCombateRegistro.id)))
+
+
+def _proxima_entrada(session: Session, combate: CombateRegistro) -> int:
+    """A posição de entrada do próximo participante: uma a mais que a maior já dada nesta disputa."""
+    maior = session.scalar(select(func.max(ParticipanteCombateRegistro.ordem_de_entrada))
+                           .where(ParticipanteCombateRegistro.combate_id == combate.id))
+    return (maior or 0) + 1
 
 
 def _tokens_por_personagem(session: Session, cena_id: str) -> dict[str, list[TokenRegistro]]:
@@ -110,8 +126,9 @@ def entrar(session: Session, mesa_id: str, autor_id: str) -> CombateRegistro:
                               rodada=0, aberto_em=datetime.now(UTC), aberto_por=autor_id)
     session.add(combate)
     session.flush()
-    session.add_all([ParticipanteCombateRegistro(id=uuid4().hex, combate_id=combate.id, personagem_id=pid, desempate=[])
-                     for pid in personagens])
+    session.add_all([ParticipanteCombateRegistro(id=uuid4().hex, combate_id=combate.id, personagem_id=pid, desempate=[],
+                                                 ordem_de_entrada=posicao)
+                     for posicao, pid in enumerate(personagens, start=1)])
     session.flush()
     emitir(session, mesa_id, EVENTO, {}, publico=True)
     return combate
@@ -127,7 +144,8 @@ def chave_de_ordem(participante: ParticipanteCombateRegistro) -> tuple:
 
 
 def ordenar(lista: Iterable[ParticipanteCombateRegistro]) -> list[ParticipanteCombateRegistro]:
-    return sorted(lista, key=lambda p: (chave_de_ordem(p), p.id), reverse=True)
+    """Quem empata sem rolagem (os que faltam rolar) fica na ordem de entrada (D9)."""
+    return sorted(lista, key=lambda p: (chave_de_ordem(p), -p.ordem_de_entrada, p.id), reverse=True)
 
 
 def desempatar(lista: Iterable[ParticipanteCombateRegistro], sortear: Callable[[], int] = _d20) -> None:
@@ -229,6 +247,31 @@ def proximo(session: Session, combate: CombateRegistro) -> ParticipanteCombateRe
     return ordem[indice]
 
 
+def controla_participante(session: Session, combate: CombateRegistro, leitor: Leitor,
+                          participante: ParticipanteCombateRegistro) -> bool:
+    """Quem joga por um participante (cartas-na-cena; decisão do usuário de 2026-10-06): o Narrador, o dono da ficha,
+    ou um jogador posto como controlador de um dos tokens **deste participante** na cena. O controle é por token, e
+    não pela ficha: liberar o "Lagarto-macaco 2" dá ao jogador só a vez do 2, não a do 1 nem a do grupo."""
+    if leitor.narrador:
+        return True
+    personagem = session.get(PersonagemRegistro, participante.personagem_id)
+    if personagem is not None and personagem.proprietario_id == leitor.usuario_id:
+        return True
+    tokens = tokens_dos_participantes(session, combate).get(participante.id, [])
+    return any(leitor.usuario_id in (token.controladores or []) for token in tokens)
+
+
+def pode_passar_a_vez(session: Session, combate: CombateRegistro, leitor: Leitor) -> bool:
+    """Quem avança a vez: o Narrador sempre; o jogador, só na vez de um participante que ele controla ("Encerrar meu
+    turno", decisão do usuário de 2026-10-06, em cartas-na-cena)."""
+    if leitor.narrador:
+        return True
+    if combate.estado != "combate" or not combate.vez_participante_id:
+        return False
+    participante = session.get(ParticipanteCombateRegistro, combate.vez_participante_id)
+    return participante is not None and controla_participante(session, combate, leitor, participante)
+
+
 def _grupo(session: Session, combate: CombateRegistro, personagem_id: str) -> ParticipanteCombateRegistro | None:
     return session.scalar(select(ParticipanteCombateRegistro).where(
         ParticipanteCombateRegistro.combate_id == combate.id, ParticipanteCombateRegistro.personagem_id == personagem_id,
@@ -239,8 +282,9 @@ def incluir(session: Session, mesa_id: str, token: TokenRegistro) -> Participant
     """Token novo na cena do modo turno aberto, já gravado, entra sem iniciativa (D8c, D8d; decisões do usuário de
     2026-10-05):
     - de uma ficha que ainda não participa, entra como o grupo da ficha;
-    - de uma ficha cujo grupo ainda tem token na cena, vira participante sozinho, com iniciativa e vez próprias;
-    - de uma ficha cujo grupo saiu da cena, volta ao grupo e mantém a iniciativa dele."""
+    - de uma ficha que já participa (com o grupo na cena ou não), vira participante sozinho, com iniciativa e vez
+      próprias. Quem saiu da mesa e volta rola de novo: não é a mesma criatura (decisão do usuário, 2026-10-06, em
+      instancias-de-personagem); o grupo antigo fica fora da barra e é pulado."""
     combate = aberto(session, mesa_id)
     if combate is None or token.personagem_id is None or token.cena_id != combate.cena_id:
         return None
@@ -248,12 +292,9 @@ def incluir(session: Session, mesa_id: str, token: TokenRegistro) -> Participant
     if personagem is None or personagem.excluido_em is not None:
         return None
     grupo = _grupo(session, combate, token.personagem_id)
-    if grupo is not None:
-        outros = [t for t in tokens_dos_participantes(session, combate)[grupo.id] if t.id != token.id]
-        if not outros:
-            return None
     participante = ParticipanteCombateRegistro(id=uuid4().hex, combate_id=combate.id, personagem_id=token.personagem_id,
-                                               token_id=token.id if grupo is not None else None, desempate=[])
+                                               token_id=token.id if grupo is not None else None, desempate=[],
+                                               ordem_de_entrada=_proxima_entrada(session, combate))
     session.add(participante)
     session.flush()
     emitir(session, mesa_id, EVENTO, {}, publico=True)
@@ -261,8 +302,57 @@ def incluir(session: Session, mesa_id: str, token: TokenRegistro) -> Participant
 
 
 def _receber_a_vez(participante: ParticipanteCombateRegistro) -> None:
-    """O saldo de movimento volta ao inteiro no começo de cada vez (D8)."""
+    """O saldo de movimento volta ao inteiro no começo de cada vez (D8), e as três ações voltam a disponíveis: a
+    Reação "só a recupera no começo de seu próximo turno" (`Turnos e Ações.md`)."""
     participante.movimento_gasto, participante.correndo = 0, False
+    participante.acao_padrao_gasta = participante.acao_bonus_gasta = participante.reacao_gasta = False
+
+
+# ------------------------------------------------------------------ ações do turno (cartas-na-cena, D4)
+
+def acoes_de(participante: ParticipanteCombateRegistro) -> dict[str, bool]:
+    """Quais ações ainda estão disponíveis: {"padrao": True, "bonus": True, "reacao": False}."""
+    return {acao: not getattr(participante, coluna) for acao, (coluna, _) in ACOES.items()}
+
+
+def gastar_acao(session: Session, participante: ParticipanteCombateRegistro, acao: str) -> None:
+    """Marca a ação como gasta; `nenhuma` (Ação Livre) não gasta nada. Gastar de novo é recusado."""
+    if acao == "nenhuma":
+        return
+    coluna, rotulo = ACOES[acao]
+    if getattr(participante, coluna):
+        raise AcaoGasta(f"{rotulo} já usada nesta vez.")
+    setattr(participante, coluna, True)
+    session.flush()
+
+
+def devolver_acao(session: Session, participante: ParticipanteCombateRegistro, acao: str) -> bool:
+    """O Narrador devolve uma ação gasta. Devolve se algo mudou."""
+    if acao == "nenhuma":
+        return False
+    coluna, _ = ACOES[acao]
+    if not getattr(participante, coluna):
+        return False
+    setattr(participante, coluna, False)
+    session.flush()
+    return True
+
+
+def participante_do_personagem(session: Session, combate: CombateRegistro, personagem_id: str,
+                               leitor: Leitor | None = None) -> ParticipanteCombateRegistro | None:
+    """O participante que joga por um personagem: o da vez, se for dele; senão um que o leitor controla; senão o
+    grupo da ficha; senão o primeiro."""
+    todos = [p for p in participantes(session, combate) if p.personagem_id == personagem_id]
+    if not todos:
+        return None
+    da_vez = next((p for p in todos if p.id == combate.vez_participante_id), None)
+    if da_vez is not None:
+        return da_vez
+    if leitor is not None and not leitor.narrador:
+        controlado = next((p for p in todos if controla_participante(session, combate, leitor, p)), None)
+        if controlado is not None:
+            return controlado
+    return next((p for p in todos if p.token_id is None), todos[0])
 
 
 # ------------------------------------------------------------------ movimento (D8, D9)
@@ -309,8 +399,7 @@ def checar_movimento(session: Session, mesa_id: str, token: TokenRegistro, leito
         return participante, _dentro_do_saldo(participante, token, x, y, deslocamento)
     if combate.estado != "combate":
         raise ForaDaVez("A disputa ainda não começou: espere a sua vez.")
-    personagem = session.get(PersonagemRegistro, participante.personagem_id)
-    if participante.id != combate.vez_participante_id or personagem is None or personagem.proprietario_id != leitor.usuario_id:
+    if participante.id != combate.vez_participante_id or not controla_participante(session, combate, leitor, participante):
         raise ForaDaVez("Não é a sua vez.")
     return participante, _dentro_do_saldo(participante, token, x, y, deslocamento)
 
@@ -339,10 +428,11 @@ def correr(session: Session, mesa_id: str, leitor: Leitor) -> ParticipanteCombat
     participante = session.get(ParticipanteCombateRegistro, combate.vez_participante_id) if combate.vez_participante_id else None
     if participante is None:
         raise ConflitoTurno("Ninguém está na vez.")
-    personagem = session.get(PersonagemRegistro, participante.personagem_id)
-    if not leitor.narrador and (personagem is None or personagem.proprietario_id != leitor.usuario_id):
+    if not controla_participante(session, combate, leitor, participante):
         raise ForaDaVez("Não é a sua vez.")
     if not participante.correndo:
+        # Correr troca a Ação Padrão por outro movimento: a Ação Padrão fica gasta (cartas-na-cena).
+        gastar_acao(session, participante, "padrao")
         participante.correndo = True
         session.flush()
         emitir(session, mesa_id, EVENTO, {}, publico=True)
@@ -377,13 +467,13 @@ def _nome_base(session: Session, participante: ParticipanteCombateRegistro, toke
 
 def _numerar(itens: list[tuple[ParticipanteCombateRegistro, str]]) -> dict[str, str]:
     """Nomes repetidos ganham número: o grupo fica com o nome puro e os tokens próprios viram "Goblin 2", "Goblin 3"
-    (na ordem dos tokens, que não muda com as rolagens)."""
+    na ordem em que entraram no modo turno (D9), que não muda com as rolagens nem depende dos ids."""
     nomes: dict[str, str] = {}
     por_nome: dict[str, list[ParticipanteCombateRegistro]] = {}
     for participante, nome in itens:
         por_nome.setdefault(nome, []).append(participante)
     for nome, iguais in por_nome.items():
-        iguais.sort(key=lambda p: (p.token_id is not None, p.token_id or "", p.id))
+        iguais.sort(key=lambda p: (p.token_id is not None, p.ordem_de_entrada, p.token_id or "", p.id))
         for posicao, participante in enumerate(iguais, start=1):
             nomes[participante.id] = nome if len(iguais) == 1 or posicao == 1 else f"{nome} {posicao}"
     return nomes
@@ -409,6 +499,8 @@ def estado(session: Session, mesa_id: str, leitor: Leitor, deslocamento: Desloca
     for p in todos:
         personagem = session.get(PersonagemRegistro, p.personagem_id)
         dono = personagem.proprietario_id if personagem else None
+        # "Meu": o jogador joga por este participante (dono da ficha ou controlador de um token dele; cartas-na-cena).
+        meu = not leitor.narrador and controla_participante(session, combate, leitor, p)
         da_cena = tokens[p.id]
         visiveis = []
         for token in da_cena:
@@ -431,14 +523,18 @@ def estado(session: Session, mesa_id: str, leitor: Leitor, deslocamento: Desloca
             "token_ids": [t.id for t in visiveis],
             "rolou": p.total is not None,
             "total": p.total if mostra_total else None,
-            "meu": dono is not None and dono == leitor.usuario_id,
+            "meu": meu,
             "do_jogador": dono is not None,
             "fora_da_cena": fora,
             "movimento": (
                 {"gasto": p.movimento_gasto, "limite": limite(deslocamento(p.personagem_id), p.correndo), "correndo": p.correndo}
                 if deslocamento is not None and combate.estado == "combate" and p.id == combate.vez_participante_id
-                and (leitor.narrador or (dono is not None and dono == leitor.usuario_id)) else None
+                and (leitor.narrador or meu) else None
             ),
+            # Ações do turno (cartas-na-cena, D4): ao Narrador, de todos; ao dono, dos próprios, inclusive fora da vez
+            # (a Reação é usada fora dela).
+            "acoes": acoes_de(p) if combate.estado == "combate"
+            and (leitor.narrador or meu) else None,
         })
     # Numera só entre os que o leitor vê, para o número não revelar token oculto.
     nomes = _numerar(vistos)

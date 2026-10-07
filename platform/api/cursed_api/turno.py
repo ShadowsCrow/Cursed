@@ -10,17 +10,17 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, criticos, preferencias_sala, rolagens, turno
+from cursed_platform import auditoria, criticos, preferencias_sala, rolagens, sala, turno
 from cursed_platform.contracts import (
-    EstadoDoTurno, IniciativaRolada, RolagemDeDados, RolarDadosRequest, RolarIniciativaRequest,
+    DevolverAcaoRequest, EstadoDoTurno, IniciativaRolada, RolagemDeDados, RolarIniciativaRequest,
 )
 from cursed_platform.persistence import CombateRegistro, ParticipanteCombateRegistro, PersonagemRegistro
 from cursed_platform.sala import Leitor
 
 from .auth import Ator, get_actor
 from .dependencies import get_correlacao, get_session
-from .live_sheet import deslocamento_da_ficha
-from .room import _exigir_narrador, _leitor, _termos_da_ficha
+from .live_sheet import deslocamento_da_ficha, valores_da_ficha
+from .room import _exigir_narrador, _leitor
 
 
 router = APIRouter(tags=["Sala"])
@@ -90,18 +90,19 @@ def _rolar(session: Session, mesa_id: str, ator: Ator, narrador: bool, combate: 
     if participante.total is not None:
         raise turno.ConflitoTurno("Este participante já rolou a iniciativa.")
     personagem = session.get(PersonagemRegistro, participante.personagem_id)
-    comando = RolarDadosRequest(dados=[{"faces": 20, "quantidade": 1}], personagem_id=participante.personagem_id,
-                                atributo=ATRIBUTO, pericia=PERICIA)
-    try:
-        termos = _termos_da_ficha(session, mesa_id, ator, comando)
-    except HTTPException as erro:
-        # Diz qual valor falta, sem inferir nenhum (regras: nunca inventar valor mecânico).
-        if erro.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT:
-            detalhe = str(erro.detail)
-            falta = "Raciocínio" if detalhe.startswith(("Atributo", "Raciocínio")) else "Prontidão"
-            raise HTTPException(status_code=erro.status_code,
-                                detail=f"A ficha não tem valor de {falta} para a iniciativa.") from None
-        raise
+    if personagem is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personagem não encontrado.")
+    # Quem chega aqui já controla o personagem (dono, controlador do token ou Narrador): as parcelas vêm direto da
+    # ficha, sem exigir a permissão de abrir a ficha, que um controlador de companion não tem (cartas-na-cena).
+    # Diz qual valor falta, sem inferir nenhum (regras: nunca inventar valor mecânico).
+    derivados = {v.chave: v for v in valores_da_ficha(session, mesa_id, personagem)}
+    termos = []
+    for chave, rotulo in ((ATRIBUTO, "Raciocínio"), (PERICIA, "Prontidão")):
+        valor = derivados.get(chave)
+        if valor is None or valor.total is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                                detail=f"A ficha não tem valor de {rotulo} para a iniciativa.")
+        termos.append({"chave": chave, "rotulo": valor.rotulo, "valor": int(valor.total)})
     valores = {t["chave"]: t["valor"] for t in termos}
     oculta = narrador and (personagem is None or personagem.proprietario_id is None)
     rolagem = rolagens.rolar(
@@ -127,8 +128,8 @@ def rolar_iniciativa(
     if participante is None or participante.combate_id != combate.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participante não encontrado.")
     personagem = session.get(PersonagemRegistro, participante.personagem_id)
-    if not leitor.narrador and (personagem is None or personagem.proprietario_id != ator.usuario_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você só rola a iniciativa dos seus personagens.")
+    if not sala.controla_personagem(session, leitor, personagem):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você só rola a iniciativa dos personagens que controla.")
     try:
         rolagem = _rolar(session, mesa_id, ator, leitor.narrador, combate, participante)
     except ERROS as erro:
@@ -194,17 +195,22 @@ def proximo_turno(
     mesa_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
     correlacao: str = Depends(get_correlacao),
 ) -> EstadoDoTurno:
-    _exigir_narrador(session, mesa_id, ator)
+    """O Narrador passa a vez; o jogador encerra a própria vez (decisão do usuário, 2026-10-06)."""
+    leitor = _leitor(session, mesa_id, ator)
     combate = _aberto(session, mesa_id)
+    if not turno.pode_passar_a_vez(session, combate, leitor):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Só o Narrador ou quem está na vez encerra o turno.")
+    anterior = session.get(ParticipanteCombateRegistro, combate.vez_participante_id) if combate.vez_participante_id else None
     try:
         vez = turno.proximo(session, combate)
     except ERROS as erro:
         raise _erro(erro, session) from None
     nome = turno.nome_do_participante(session, combate, vez)
-    _registrar(session, mesa_id, ator, "turno.vez", f"Rodada {combate.rodada}: vez de {nome}", correlacao, combate,
-               rodada=combate.rodada)
+    quem = "" if leitor.narrador or anterior is None else f" ({turno.nome_do_participante(session, combate, anterior)} encerrou o turno)"
+    _registrar(session, mesa_id, ator, "turno.vez", f"Rodada {combate.rodada}: vez de {nome}{quem}", correlacao, combate,
+               rodada=combate.rodada, encerrado_pelo_jogador=not leitor.narrador)
     session.commit()
-    return _estado(session, mesa_id, ator, True)
+    return _estado(session, mesa_id, ator, leitor.narrador)
 
 
 @router.post("/mesas/{mesa_id}/sala/turno/encerramento", response_model=EstadoDoTurno)
@@ -225,14 +231,39 @@ def sair_do_modo_turno(
 
 @router.post("/mesas/{mesa_id}/sala/turno/correr", response_model=EstadoDoTurno)
 def correr(mesa_id: str, ator: Ator = Depends(get_actor), session: Session = Depends(get_session)) -> EstadoDoTurno:
-    """Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento."""
+    """Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento. Com a Ação
+    Padrão já gasta, 409 (cartas-na-cena)."""
     leitor = _leitor(session, mesa_id, ator)
     try:
         turno.correr(session, mesa_id, leitor)
     except turno.ForaDaVez as erro:
         session.rollback()
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(erro)) from None
+    except turno.AcaoGasta as erro:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro)) from None
     except ERROS as erro:
         raise _erro(erro, session) from None
     session.commit()
     return _estado(session, mesa_id, ator, leitor.narrador)
+
+
+@router.post("/mesas/{mesa_id}/sala/turno/acoes/devolucao", response_model=EstadoDoTurno)
+def devolver_acao(
+    mesa_id: str, pedido: DevolverAcaoRequest, ator: Ator = Depends(get_actor), session: Session = Depends(get_session),
+    correlacao: str = Depends(get_correlacao),
+) -> EstadoDoTurno:
+    """Só o Narrador devolve uma Ação Padrão, Ação Bônus ou Reação gasta (cartas-na-cena, D4)."""
+    _exigir_narrador(session, mesa_id, ator)
+    combate = _aberto(session, mesa_id)
+    participante = session.get(ParticipanteCombateRegistro, pedido.participante_id)
+    if participante is None or participante.combate_id != combate.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participante não encontrado.")
+    if turno.devolver_acao(session, participante, pedido.acao):
+        rotulo = turno.ACOES[pedido.acao][1]
+        _registrar(session, mesa_id, ator, "turno.acao_devolvida",
+                   f"{rotulo} devolvida a {turno.nome_do_participante(session, combate, participante)}", correlacao,
+                   combate, participante_id=participante.id, acao_devolvida=pedido.acao)
+        turno.emitir(session, mesa_id, turno.EVENTO, {}, publico=True)
+    session.commit()
+    return _estado(session, mesa_id, ator, True)

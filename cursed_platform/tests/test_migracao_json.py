@@ -82,8 +82,10 @@ class MigracaoJsonTest(unittest.TestCase):
             [manifestar] = [h for h in cartas_catalogo.todas_as_habilidades(catalogos.obter())
                             if h.conteudo["titulo"] == "Manifestar Gêmeo"]
             self.assertEqual(manifestar.conteudo["custo_legado"], "2 PP")
-            for campo in ("custo_aprendizado", "descansos_minimos", "potencia_uso", "custo_uso"):
+            for campo in ("custo_aprendizado", "descansos_minimos", "potencia_uso"):
                 self.assertNotIn(campo, manifestar.conteudo)
+            # O custo especial da classe dá o Custo de Uso em PP (cartas-na-cena, decisão do usuário de 2026-10-06).
+            self.assertEqual(manifestar.conteudo["custo_uso"], 2)
             self.assertEqual(session.scalar(select(func.count()).select_from(MigracaoLegadaRegistro)),
                              sum(item.destino_id is not None for item in primeira.registros))
 

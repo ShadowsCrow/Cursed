@@ -87,6 +87,22 @@ def ficha_oculta(personagem: PersonagemRegistro | None) -> bool:
     return personagem is not None and personagem.visibilidade != "mesa"
 
 
+def controla_personagem(session: Session, leitor: Leitor, personagem: PersonagemRegistro | None) -> bool:
+    """Quem joga por um personagem (cartas-na-cena; decisão do usuário de 2026-10-06): o Narrador, o dono da ficha
+    ou um jogador posto como controlador de um token dele na cena ativa (um companion criado pelo Narrador e
+    liberado para o jogador, por exemplo)."""
+    if personagem is None:
+        return False
+    if leitor.narrador or personagem.proprietario_id == leitor.usuario_id:
+        return True
+    cena = session.scalar(select(CenaRegistro).where(CenaRegistro.mesa_id == personagem.mesa_id, CenaRegistro.ativa.is_(True)))
+    if cena is None:
+        return False
+    tokens = session.scalars(select(TokenRegistro).where(TokenRegistro.cena_id == cena.id,
+                                                         TokenRegistro.personagem_id == personagem.id))
+    return any(leitor.usuario_id in (token.controladores or []) for token in tokens)
+
+
 def pode_controlar(token: TokenRegistro, leitor: Leitor, visivel: bool, personagem: PersonagemRegistro | None) -> bool:
     """O Narrador sempre move; o jogador só move token visível e liberado (experiencia-da-mesa, item 13), e só se for o
     dono do personagem ligado ou um dos controladores escolhidos pelo Narrador."""
@@ -107,8 +123,13 @@ def token_para(token: TokenRegistro, leitor: Leitor, visivel: bool, personagem: 
     if leitor.narrador:
         dados |= {"oculto": token.oculto, "visivel_para_jogadores": visivel, "controladores": list(token.controladores or []),
                   "movimento_liberado": token.movimento_liberado}
-    elif ficha_oculta(personagem):
-        dados |= {"personagem_id": None}
+    else:
+        # O jogador controla o personagem deste token (dono ou controlador escolhido pelo Narrador), mesmo com o
+        # movimento bloqueado: é por ele que a mão de cartas aparece (cartas-na-cena).
+        dados["controlador"] = (personagem is not None and personagem.proprietario_id == leitor.usuario_id) \
+            or leitor.usuario_id in (token.controladores or [])
+        if ficha_oculta(personagem):
+            dados |= {"personagem_id": None}
     return dados
 
 
@@ -383,3 +404,25 @@ def remover_token(session: Session, token: TokenRegistro, versao_esperada: int) 
         raise ConflitoSala("O token foi alterado por outra pessoa.")
     versao = _avancar_cena(session, cena)
     emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=visivel)
+
+
+def remover_tokens_do_personagem(session: Session, mesa_id: str, personagem_id: str) -> list[dict[str, Any]]:
+    """Tira de todas as cenas da mesa os tokens da ficha que vai à lixeira (decisão do usuário em 2026-10-06, em
+    instancias-de-personagem: excluir a ficha some com o token; não ficam tokens órfãos). Devolve, por token removido,
+    o id, o rótulo, a cena e se os jogadores o viam, para a auditoria."""
+    tokens = list(session.scalars(select(TokenRegistro).where(
+        TokenRegistro.mesa_id == mesa_id, TokenRegistro.personagem_id == personagem_id)))
+    removidos: list[dict[str, Any]] = []
+    por_cena: dict[str, list[TokenRegistro]] = {}
+    for token in tokens:
+        por_cena.setdefault(token.cena_id, []).append(token)
+    for cena_id, lista in por_cena.items():
+        cena = session.get(CenaRegistro, cena_id)
+        visiveis = [_contexto_token(session, t)[2] for t in lista]
+        for token, visivel in zip(lista, visiveis):
+            removidos.append({"token_id": token.id, "rotulo": token.rotulo, "cena_id": cena_id, "visivel": visivel})
+            session.delete(token)
+        session.flush()
+        versao = _avancar_cena(session, cena)
+        emitir(session, cena.mesa_id, "sala.atualizada", {"cena_id": cena.id, "cena_versao": versao}, publico=any(visiveis))
+    return removidos

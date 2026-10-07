@@ -1176,6 +1176,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/instancias/limpeza": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Excluir Instancias Fora Da Cena
+         * @description Envia à lixeira as instâncias do modelo sem token na cena; devolve quantas foram.
+         */
+        post: operations["excluir_instancias_fora_da_cena_mesas__mesa_id__personagens__personagem_id__instancias_limpeza_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/personagens/{personagem_id}/inventario": {
         parameters: {
             query?: never;
@@ -1355,6 +1375,26 @@ export interface paths {
         get: operations["ler_permissoes_mesas__mesa_id__personagens__personagem_id__permissoes_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/personagens/{personagem_id}/promocao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Promover Instancia
+         * @description A instância vira uma ficha comum da mesa: sai de baixo do modelo, entra no acervo e serve de modelo.
+         */
+        post: operations["promover_instancia_mesas__mesa_id__personagens__personagem_id__promocao_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1593,6 +1633,26 @@ export interface paths {
          * @description O Narrador vê todos os jogadores; o jogador vê a si, ou todos com o placar ligado.
          */
         get: operations["ler_estatisticas_mesas__mesa_id__sala_estatisticas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/mao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ler Mao
+         * @description A mão de cartas jogáveis do personagem; o jogador só pede a dos próprios personagens.
+         */
+        get: operations["ler_mao_mesas__mesa_id__sala_mao_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1994,6 +2054,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mesas/{mesa_id}/sala/turno/acoes/devolucao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Devolver Acao
+         * @description Só o Narrador devolve uma Ação Padrão, Ação Bônus ou Reação gasta (cartas-na-cena, D4).
+         */
+        post: operations["devolver_acao_mesas__mesa_id__sala_turno_acoes_devolucao_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mesas/{mesa_id}/sala/turno/correr": {
         parameters: {
             query?: never;
@@ -2005,7 +2085,8 @@ export interface paths {
         put?: never;
         /**
          * Correr
-         * @description Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento.
+         * @description Correr (D9): o dono do personagem na vez, ou o Narrador, troca a Ação Padrão por outro movimento. Com a Ação
+         *     Padrão já gasta, 409 (cartas-na-cena).
          */
         post: operations["correr_mesas__mesa_id__sala_turno_correr_post"];
         delete?: never;
@@ -2098,8 +2179,55 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Proximo Turno */
+        /**
+         * Proximo Turno
+         * @description O Narrador passa a vez; o jogador encerra a própria vez (decisão do usuário, 2026-10-06).
+         */
         post: operations["proximo_turno_mesas__mesa_id__sala_turno_proximo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/usos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Usos
+         * @description Usos da mesa depois do id dado, em ordem (até 50). O jogador não recebe usos de personagem oculto.
+         */
+        get: operations["listar_usos_mesas__mesa_id__sala_usos_get"];
+        put?: never;
+        /**
+         * Usar Carta
+         * @description Usa a carta pelo personagem: valida, debita o PP, gasta a ação do turno e registra.
+         */
+        post: operations["usar_carta_mesas__mesa_id__sala_usos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mesas/{mesa_id}/sala/usos/{uso_id}/desfazer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Desfazer Uso
+         * @description Só o Narrador desfaz o último uso de um personagem, na mesma rodada: o PP e a ação voltam.
+         */
+        post: operations["desfazer_uso_mesas__mesa_id__sala_usos__uso_id__desfazer_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2283,6 +2411,27 @@ export interface components {
             visibilidade: "mesa" | "narrador";
         };
         /**
+         * AcoesDoTurno
+         * @description Ação Padrão, Ação Bônus e Reação do participante (cartas-na-cena, D4): verdadeiro quando ainda disponível.
+         */
+        AcoesDoTurno: {
+            /**
+             * Bonus
+             * @default true
+             */
+            bonus: boolean;
+            /**
+             * Padrao
+             * @default true
+             */
+            padrao: boolean;
+            /**
+             * Reacao
+             * @default true
+             */
+            reacao: boolean;
+        };
+        /**
          * AjustarEfeitoRequest
          * @description Somente os campos enviados são alterados; `duracao_rodadas: null` remove a duração.
          */
@@ -2390,6 +2539,15 @@ export interface components {
             foco?: ("pv" | "pp" | "exaustao" | "estresse") | null;
             /** Personagem Id */
             personagem_id: string;
+        };
+        /** AlvoDoUso */
+        AlvoDoUso: {
+            /** Personagem Id */
+            personagem_id?: string | null;
+            /** Rotulo */
+            rotulo: string;
+            /** Token Id */
+            token_id: string;
         };
         /** AmpliacaoGradeResumo */
         AmpliacaoGradeResumo: {
@@ -2696,6 +2854,53 @@ export interface components {
             /** Topico */
             topico: string;
         };
+        /**
+         * CartaDaMao
+         * @description Uma carta jogável do personagem, como a mão a mostra. O motivo de indisponibilidade vem do servidor.
+         */
+        CartaDaMao: {
+            /**
+             * Acao
+             * @enum {string}
+             */
+            acao: "padrao" | "bonus" | "reacao" | "nenhuma";
+            /** Alvo Area */
+            alvo_area?: string | null;
+            /**
+             * Ativacao
+             * @enum {string}
+             */
+            ativacao: "ativa" | "reacao";
+            /** Ativos */
+            ativos?: string[];
+            /**
+             * Aviso Lancamento
+             * @description O Lançamento foi lido como Ação Padrão por falta de encaixe.
+             * @default false
+             */
+            aviso_lancamento: boolean;
+            /** Custo Extra */
+            custo_extra?: string | null;
+            /** Custo Uso */
+            custo_uso: number;
+            /** Lancamento */
+            lancamento?: string | null;
+            /** Motivo Indisponivel */
+            motivo_indisponivel?: string | null;
+            /** Posse Id */
+            posse_id: string;
+            /** Texto */
+            texto: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "habilidade" | "magia";
+            /** Titulo */
+            titulo: string;
+            /** Versao Id */
+            versao_id: string;
+        };
         /** CartaDefinicaoResumo */
         CartaDefinicaoResumo: {
             /**
@@ -2731,6 +2936,13 @@ export interface components {
             versao: number;
             /** Versao Publicada */
             versao_publicada?: number | null;
+        };
+        /** CartaFavorita */
+        CartaFavorita: {
+            /** Titulo */
+            titulo: string;
+            /** Usos */
+            usos: number;
         };
         /** CartaPersonagemResumo */
         CartaPersonagemResumo: {
@@ -3233,6 +3445,12 @@ export interface components {
             /** Controladores */
             controladores?: string[];
             /**
+             * Instanciar
+             * @description Com um modelo de NPC ou monstro, cria uma instância e liga o token a ela (instancias-de-personagem); com instância ou personagem de jogador, não muda nada.
+             * @default false
+             */
+            instanciar: boolean;
+            /**
              * Oculto
              * @default false
              */
@@ -3290,6 +3508,19 @@ export interface components {
             personagem_id: string;
             /** Respondido Em */
             respondido_em?: string | null;
+        };
+        /**
+         * DevolverAcaoRequest
+         * @description O Narrador devolve uma ação gasta a um participante (cartas-na-cena).
+         */
+        DevolverAcaoRequest: {
+            /**
+             * Acao
+             * @enum {string}
+             */
+            acao: "padrao" | "bonus" | "reacao";
+            /** Participante Id */
+            participante_id: string;
         };
         /** DiferencaCarta */
         DiferencaCarta: {
@@ -3560,6 +3791,13 @@ export interface components {
         };
         /** EstatisticasDoPeriodo */
         EstatisticasDoPeriodo: {
+            /** @description A carta mais usada; em empate, a usada por último. */
+            carta_favorita?: components["schemas"]["CartaFavorita"] | null;
+            /**
+             * Cartas Usadas
+             * @default 0
+             */
+            cartas_usadas: number;
             /**
              * Criticos
              * @description Só com o destaque de críticos ligado.
@@ -3569,6 +3807,12 @@ export interface components {
             dados: number;
             /** Falhas Criticas */
             falhas_criticas?: number | null;
+            /**
+             * Pp Gasto
+             * @description PP pago nos usos de carta do período (cartas-na-cena).
+             * @default 0
+             */
+            pp_gasto: number;
             /** Rolagens */
             rolagens: number;
             /**
@@ -4167,6 +4411,16 @@ export interface components {
             /** Versao Esperada */
             versao_esperada: number;
         };
+        /**
+         * LimpezaDeInstancias
+         * @description Resultado de "Excluir as instâncias fora da cena" (instancias-de-personagem).
+         */
+        LimpezaDeInstancias: {
+            /** Excluidas */
+            excluidas: number;
+            /** Ids */
+            ids?: string[];
+        };
         /** ListasFichaResumo */
         ListasFichaResumo: {
             /** Alinhamentos */
@@ -4203,6 +4457,19 @@ export interface components {
             personalidade_topo?: components["schemas"]["TopoPersonalidadeResumo"] | null;
             /** Sexos */
             sexos: string[];
+        };
+        /** MaoDeCartas */
+        MaoDeCartas: {
+            /** Cartas */
+            cartas?: components["schemas"]["CartaDaMao"][];
+            /** Personagem Id */
+            personagem_id: string;
+            /** Personagem Nome */
+            personagem_nome: string;
+            /** Pp Atual */
+            pp_atual?: number | null;
+            /** Pp Maximo */
+            pp_maximo?: number | null;
         };
         /**
          * MarcaDeDado
@@ -4512,6 +4779,8 @@ export interface components {
          *     vínculo com uma ficha oculta.
          */
         ParticipanteDoTurno: {
+            /** @description Ações ainda disponíveis na vez; para o Narrador e o dono. */
+            acoes?: components["schemas"]["AcoesDoTurno"] | null;
             /**
              * Do Jogador
              * @default false
@@ -4688,10 +4957,20 @@ export interface components {
             excluido_em?: string | null;
             /** Id */
             id: string;
+            /**
+             * Instancia De
+             * @description Id do modelo de que esta ficha é instância (instancias-de-personagem).
+             */
+            instancia_de?: string | null;
             /** Mesa Id */
             mesa_id: string;
             /** Nome */
             nome: string;
+            /**
+             * Numero Da Instancia
+             * @description Número da instância no modelo, para ordenar a lista.
+             */
+            numero_da_instancia?: number | null;
             /** Proprietario Id */
             proprietario_id: string | null;
             /** Restauravel Ate */
@@ -4790,6 +5069,12 @@ export interface components {
              * @default false
              */
             estatisticas_visiveis: boolean;
+            /**
+             * Mao Dos Jogadores Visivel
+             * @description O Narrador vê a mão de cartas dos personagens dos jogadores na vez deles (cartas-na-cena).
+             * @default true
+             */
+            mao_dos_jogadores_visivel: boolean;
         };
         /**
          * PreviaCriacaoResposta
@@ -5263,6 +5548,11 @@ export interface components {
             /** Camada Id */
             camada_id: string;
             /**
+             * Controlador
+             * @description Só para o jogador: ele controla o personagem deste token (dono ou controlador escolhido pelo Narrador).
+             */
+            controlador?: boolean | null;
+            /**
              * Controladores
              * @description Somente para o Narrador.
              */
@@ -5388,6 +5678,63 @@ export interface components {
              * @description Falso quando a ficha ainda não registra a trilha (valor 0 presumido).
              */
             registrado: boolean;
+        };
+        /** UsarCartaRequest */
+        UsarCartaRequest: {
+            /**
+             * Alvos
+             * @description Tokens marcados no grid.
+             */
+            alvos?: string[];
+            /** Personagem Id */
+            personagem_id: string;
+            /** Versao Id */
+            versao_id: string;
+        };
+        /**
+         * UsoDeCarta
+         * @description Uma carta jogada na Sala. ``id`` cresce na ordem dos usos e serve de cursor.
+         */
+        UsoDeCarta: {
+            /**
+             * Acao
+             * @enum {string}
+             */
+            acao: "padrao" | "bonus" | "reacao" | "nenhuma";
+            /** Alvos */
+            alvos?: components["schemas"]["AlvoDoUso"][];
+            /** Autor Id */
+            autor_id: string;
+            /** Combate Id */
+            combate_id?: string | null;
+            /** Criado Em */
+            criado_em?: string | null;
+            /**
+             * Custo Extra
+             * @description Parte do custo escrito que não é PP; só aviso.
+             */
+            custo_extra?: string | null;
+            /** Custo Pago */
+            custo_pago: number;
+            /**
+             * Desfeito
+             * @default false
+             */
+            desfeito: boolean;
+            /** Id */
+            id: number;
+            /** Personagem Id */
+            personagem_id: string;
+            /** Personagem Nome */
+            personagem_nome: string;
+            /** Rodada */
+            rodada?: number | null;
+            /** Sessao Id */
+            sessao_id?: string | null;
+            /** Titulo */
+            titulo: string;
+            /** Versao Id */
+            versao_id: string;
         };
         /** ValidacaoCarta */
         ValidacaoCarta: {
@@ -8038,6 +8385,40 @@ export interface operations {
             };
         };
     };
+    excluir_instancias_fora_da_cena_mesas__mesa_id__personagens__personagem_id__instancias_limpeza_post: {
+        parameters: {
+            query: {
+                cena_id: string;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LimpezaDeInstancias"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_inventario_mesas__mesa_id__personagens__personagem_id__inventario_get: {
         parameters: {
             query?: never;
@@ -8377,6 +8758,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PermissoesFicha"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promover_instancia_mesas__mesa_id__personagens__personagem_id__promocao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                personagem_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonagemResumo"];
                 };
             };
             /** @description Validation Error */
@@ -8856,6 +9269,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EstatisticasDaMesa"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ler_mao_mesas__mesa_id__sala_mao_get: {
+        parameters: {
+            query: {
+                personagem_id: string;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaoDeCartas"];
                 };
             };
             /** @description Validation Error */
@@ -9735,6 +10181,41 @@ export interface operations {
             };
         };
     };
+    devolver_acao_mesas__mesa_id__sala_turno_acoes_devolucao_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevolverAcaoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     correr_mesas__mesa_id__sala_turno_correr_post: {
         parameters: {
             query?: never;
@@ -9912,6 +10393,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EstadoDoTurno"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_usos_mesas__mesa_id__sala_usos_get: {
+        parameters: {
+            query?: {
+                depois?: number | null;
+            };
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsoDeCarta"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    usar_carta_mesas__mesa_id__sala_usos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsarCartaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsoDeCarta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    desfazer_uso_mesas__mesa_id__sala_usos__uso_id__desfazer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mesa_id: string;
+                uso_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsoDeCarta"];
                 };
             };
             /** @description Validation Error */

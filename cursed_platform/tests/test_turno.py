@@ -238,12 +238,15 @@ class VezTest(_Base):
         self.assertEqual(self.ordem(self.combate)[:2], ["kira", "lobo"])
         turno.proximo(self.session, self.combate)
         self.assertEqual(self.vez(), "lobo")
-        # Quem volta à cena (o grupo do Ogro estava fora) mantém a iniciativa do grupo; token sem ficha não entra.
+        # Quem saiu da mesa e volta rola de novo (decisão do usuário, 2026-10-06): o novo token do Ogro é um participante
+        # próprio, sem iniciativa; o grupo antigo fica fora da barra. Token sem ficha não entra.
         volta = sala.criar_token(self.session, cena, camada_id=self.ids["camada"], rotulo="Ogro", x=5, y=5, personagem_id="ogro")
-        self.assertIsNone(turno.incluir(self.session, "mesa", volta))
+        de_novo = turno.incluir(self.session, "mesa", volta)
+        self.assertEqual((de_novo.token_id, de_novo.total), (volta.id, None))
+        self.assertEqual([p.id for p in turno.pendentes(self.session, self.combate)], [de_novo.id])
         bau = sala.criar_token(self.session, cena, camada_id=self.ids["camada"], rotulo="Barril", x=6, y=6)
         self.assertIsNone(turno.incluir(self.session, "mesa", bau))
-        self.assertEqual(len(turno.participantes(self.session, self.combate)), 5)
+        self.assertEqual(len(turno.participantes(self.session, self.combate)), 6)
 
     def test_outro_token_da_mesma_ficha_rola_e_joga_sozinho(self):
         """Decisão do usuário (2026-10-05): os Goblins postos com o modo turno aberto rolam a própria iniciativa; os
@@ -347,6 +350,28 @@ class EstadoTest(_Base):
     def test_sem_modo_turno(self):
         turno.encerrar(self.session, self.combate)
         self.assertEqual(turno.estado(self.session, "mesa", sala.Leitor("ana", False)), {"combate": None})
+
+
+class NumeracaoTest(unittest.TestCase):
+    """A numeração dos nomes repetidos e a ordem de quem falta rolar seguem a ordem de entrada, não os ids (D9)."""
+
+    def test_numeracao_segue_a_ordem_de_entrada_e_nao_os_ids(self):
+        # Ids escolhidos ao contrário da entrada: por id, o terceiro viria antes do segundo.
+        grupo = ParticipanteCombateRegistro(id="zz-grupo", combate_id="c", personagem_id="goblin", desempate=[],
+                                            ordem_de_entrada=1)
+        lion = ParticipanteCombateRegistro(id="mm-lion", combate_id="c", personagem_id="lion", desempate=[],
+                                           ordem_de_entrada=2)
+        segundo = ParticipanteCombateRegistro(id="zz-segundo", combate_id="c", personagem_id="goblin", token_id="zz-t",
+                                              desempate=[], ordem_de_entrada=5)
+        terceiro = ParticipanteCombateRegistro(id="aa-terceiro", combate_id="c", personagem_id="goblin", token_id="aa-t",
+                                               desempate=[], ordem_de_entrada=6)
+        nomes = turno._numerar([(terceiro, "Goblin"), (lion, "Lion"), (segundo, "Goblin"), (grupo, "Goblin")])
+        self.assertEqual([nomes[p.id] for p in (grupo, segundo, terceiro, lion)], ["Goblin", "Goblin 2", "Goblin 3", "Lion"])
+        # Sem rolagem, a barra lista na ordem de entrada; quem rolou vem antes de todos.
+        self.assertEqual([p.id for p in turno.ordenar([terceiro, lion, segundo, grupo])],
+                         ["zz-grupo", "mm-lion", "zz-segundo", "aa-terceiro"])
+        lion.total = 3
+        self.assertEqual(turno.ordenar([terceiro, segundo, grupo, lion])[0].id, "mm-lion")
 
 
 if __name__ == "__main__":

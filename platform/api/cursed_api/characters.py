@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cursed_platform import auditoria, catalogos, inventario_grade
+from cursed_platform import auditoria, catalogos, instancias, inventario_grade, sala
 from cursed_platform.authorization import Acao, Autorizador
 from cursed_platform.contracts import (
     CriarPersonagemRequest, DecidirPedidoRequest, FichaContrato,
@@ -122,6 +122,7 @@ def _personagem_resumo(
         restauravel_ate=fichas.prazo_restauracao(personagem) if fichas else None,
         revelacao=RevelacaoContrato(**personagem.revelacao) if personagem.revelacao else None,
         retrato_objeto=retrato if isinstance(retrato, str) and retrato else None,
+        instancia_de=personagem.instancia_de, numero_da_instancia=instancias.numero_de(personagem),
     )
 
 
@@ -302,7 +303,22 @@ def excluir_personagem(
         acao="personagem.excluido", relevancia="organizacional", personagem=personagem,
         resumo=f"{auditoria.nome_personagem(personagem)}: enviado à lixeira", correlacao_id=correlacao,
     )
+    registrar_tokens_removidos(session, mesa_id, personagem, ator.usuario_id, correlacao)
     session.commit()
+
+
+def registrar_tokens_removidos(session: Session, mesa_id: str, personagem: PersonagemRegistro, ator_id: str, correlacao: str) -> int:
+    """A ficha que vai à lixeira leva os tokens dela de todas as cenas (instancias-de-personagem, decisão do usuário
+    em 2026-10-06: não ficam tokens órfãos); cada token removido entra no registro da mesa."""
+    removidos = sala.remover_tokens_do_personagem(session, mesa_id, personagem.id)
+    for token in removidos:
+        auditoria.registrar(
+            session, mesa_id=mesa_id, ator_id=ator_id, categoria="mesa", acao="token.removido", relevancia="narrativa",
+            alvo_tipo="token", alvo_id=token["token_id"], visibilidade="mesa" if token["visivel"] else "narrador",
+            resumo=f"Token removido com a ficha: {token['rotulo']}"[:500], correlacao_id=correlacao,
+            detalhes={"cena_id": token["cena_id"], "personagem_id": personagem.id},
+        )
+    return len(removidos)
 
 
 @router.get("/mesas/{mesa_id}/solicitacoes", response_model=list[PedidoAlteracaoResumo])

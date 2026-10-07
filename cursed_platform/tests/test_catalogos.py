@@ -121,6 +121,23 @@ class ConteudoTest(unittest.TestCase):
                 catalogos._habilidades([{**bruta, "potencia_uso": valor}], arquivo="classes.json", onde="Druida")
             self.assertIn("potencia_uso", str(erro.exception))
 
+    def test_custo_em_pp_lido_do_texto_do_custo(self):
+        """cartas-na-cena 2.1: só a parte fixa em PP no começo do texto; nada mais é interpretado."""
+        casos = {"2 PP + 1 de Exaustão": 2, "1 PP": 1, "3 PP (+2 PP opcional no acerto)": 3, "2 pp": 2,
+                 "Variável (ver lista de totens)": None, "+1 PP sobre o custo do feitiço": None,
+                 "10 componentes, polvora - 3 ouro.": None, None: None, "": None}
+        for texto, esperado in casos.items():
+            with self.subTest(texto=texto):
+                self.assertEqual(catalogos.custo_em_pp(texto), esperado)
+        self.assertEqual(catalogos.custo_extra("2 PP + 1 (ou 2) de Exaustão"), "1 (ou 2) de Exaustão")
+        self.assertIsNone(catalogos.custo_extra("1 PP"))
+        self.assertIsNone(catalogos.custo_extra("Variável"))
+        bruta = {"nome": "Fúria", "descricao": "Texto.", "tipo": "Ativa", "custo": "1 PP + 1 de Exaustão", "lancamento": "Bônus"}
+        habilidade, = catalogos._habilidades([bruta], arquivo="classes.json", onde="Furioso")
+        self.assertEqual((habilidade.custo_pp, habilidade.lancamento), (1, "Bônus"))
+        sem, = catalogos._habilidades([{"nome": "Outra", "descricao": "Texto."}], arquivo="classes.json", onde="Furioso")
+        self.assertEqual((sem.custo_pp, sem.lancamento), (None, None))
+
     def test_ampliacao_das_faixas_de_critico(self):
         """gamificacao-da-sala 2.1."""
         bruta = {"nome": "Olho", "descricao": "Texto.", "amplia_critico": 1, "amplia_falha_critica": 2}

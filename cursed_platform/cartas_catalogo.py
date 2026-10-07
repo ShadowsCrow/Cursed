@@ -62,6 +62,12 @@ def _conteudo(habilidade: Habilidade, tag: str) -> dict[str, Any]:
     conteudo: dict[str, Any] = {"titulo": habilidade.nome, "texto": habilidade.descricao, "ativacao": ativacao, "tags": tags}
     if habilidade.custo_legado:
         conteudo["custo_legado"] = habilidade.custo_legado
+    if habilidade.lancamento:
+        conteudo["lancamento"] = habilidade.lancamento
+    # Custo especial da habilidade de classe (cartas-na-cena, D5): a parte em PP do texto vira o Custo de Uso da
+    # carta, sem passar pela Potência. Um `custo_uso` numérico no JSON prevalece.
+    if habilidade.custo_pp is not None and "custo_uso" not in dict(habilidade.custos):
+        conteudo["custo_uso"] = habilidade.custo_pp
     conteudo.update(habilidade.custos)
     return conteudo
 
@@ -135,7 +141,8 @@ def _definicao(session: Session, mesa_id: str, origem: str) -> CartaDefinicaoReg
 
 def _comparavel(conteudo: Mapping[str, Any]) -> tuple[Any, ...]:
     return (conteudo.get("titulo"), conteudo.get("texto"), conteudo.get("ativacao"), tuple(conteudo.get("tags") or ()),
-            conteudo.get("custo_legado"), *(conteudo.get(campo) for campo in CUSTOS_DE_HABILIDADE))
+            conteudo.get("custo_legado"), conteudo.get("lancamento"),
+            *(conteudo.get(campo) for campo in CUSTOS_DE_HABILIDADE))
 
 
 @dataclass

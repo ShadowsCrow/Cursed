@@ -102,10 +102,21 @@ class FichasExistentesTest(unittest.TestCase):
             ]
             return limpas
 
+        # Em cartas-na-cena (2026-10-06), o usuário aprovou o custo especial das habilidades que faltavam e o tipo
+        # "Passiva" da Infusão da Seiva Primal: só esses campos ficam fora da comparação.
+        def habilidades_sem_custo(lista):
+            return [{k: v for k, v in h.items() if k != "custo" and not (k == "tipo" and h.get("nome") == "Infusão da Seiva Primal")}
+                    for h in lista]
+
+        def classes_sem_custos(d):
+            return [{**c, "habilidades": habilidades_sem_custo(c.get("habilidades", [])),
+                     "arquetipos": [{**a, "habilidades": habilidades_sem_custo(a.get("habilidades", []))} for a in c.get("arquetipos", [])]}
+                    for c in d]
+
         sem_altura = {
             "racas.json": lambda d: [{k: v for k, v in r.items() if k != "altura"} for r in d],
             "listas_ficha.json": listas_sem_aprovadas,
-            "classes.json": lambda d: d,
+            "classes.json": classes_sem_custos,
             "efeitos_default.json": lambda d: d,
         }
         for arquivo, limpar in sem_altura.items():

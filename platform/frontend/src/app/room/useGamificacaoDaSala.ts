@@ -24,7 +24,9 @@ export const chaveDasSessoes = (mesaId: string) => ["sala-sessoes", mesaId] as c
 export const chaveDasEstatisticas = (mesaId: string) => ["sala-estatisticas", mesaId] as const;
 export const chaveDoMvp = (mesaId: string) => ["sala-mvp", mesaId] as const;
 
-export const PREFERENCIAS_PADRAO: PreferenciasDaSala = { destaque_criticos: false, estatisticas_visiveis: false };
+export const PREFERENCIAS_PADRAO: PreferenciasDaSala = {
+  destaque_criticos: false, estatisticas_visiveis: false, mao_dos_jogadores_visivel: true,
+};
 
 const objeto = <T,>(dados: unknown): T | null => (dados && typeof dados === "object" && !Array.isArray(dados) ? dados as T : null);
 

@@ -5,13 +5,26 @@ import { ARRASTE_DE_PERSONAGEM } from "./arrastes";
 import type { Casa, MedidaDoArraste } from "./medidaDoArraste";
 import { CELULA, desenharRastro } from "./rastroDoArraste";
 import { aplicarPulso, criarBrilhoDaVez } from "./brilhoDaVez";
-import { criarAroDeSelecao } from "./selecaoDoToken";
+import { criarAroDeAlvo, criarAroDeSelecao } from "./selecaoDoToken";
+import { criarCartaVoadora } from "./cartaVoadora";
+import { quadroDoVoo } from "./vooDaCarta";
 import { areaDeInteresse, dentroDoLimite, enquadrar, LIMITE_DA_CENA, pontoFixoNoZoom, proximoZoom } from "./viewport";
 import { Glyph } from "../../ui/Display";
 
 type Cena = components["schemas"]["CenaSala"];
 type Sinal = { x: number; y: number };
 type ArrasteRemoto = Sinal & { tokenId: string };
+
+/** Uma carta usada a animar (cartas-na-cena, D7): sobe do token de quem usou e voa até cada alvo. */
+export interface VooDeCarta {
+  /** Muda a cada uso: a mesma carta usada duas vezes voa duas vezes. */
+  chave: number;
+  origemTokenId: string | null;
+  alvosTokenIds: string[];
+  titulo: string;
+  /** Arte da carta (URL de dados), quando já se conhece. */
+  arte?: string;
+}
 /** Folga do enquadramento: em cima ficam a faixa de cenas e o botão do painel; embaixo, o zoom. */
 const MARGEM_ENQUADRAMENTO = { x: 24, y: 72 };
 
@@ -40,7 +53,7 @@ function casaDaGrade(): Texture {
  */
 function desenharCena(mundo: Container, cena: Cena, mapa: Texture | null,
   retratoDe: (tokenId: string) => Texture | undefined, daVez: ReadonlySet<string> = new Set(),
-  selecionado: string | null = null) {
+  selecionado: string | null = null, alvos: ReadonlySet<string> = new Set()) {
   const pecas = new Map<string, Container>();
   const brilhos: Graphics[] = [];
   for (const filho of mundo.removeChildren()) filho.destroy({ children: true });
@@ -98,6 +111,8 @@ function desenharCena(mundo: Container, cena: Cena, mapa: Texture | null,
     peca.addChild(new Graphics().circle(centro, centro, raio).stroke({ color: aro, width: 3 }));
     // Token escolhido na aba Tokens ou no grid: aro azul-gelo por cima de tudo da peça.
     if (token.id === selecionado) peca.addChild(criarAroDeSelecao(lado));
+    // Alvo marcado para a carta que vai ser usada (cartas-na-cena): aro próprio, distinto da escolha.
+    if (alvos.has(token.id)) peca.addChild(criarAroDeAlvo(lado));
     mundo.addChild(peca);
     pecas.set(token.id, peca);
   }
@@ -135,10 +150,14 @@ function desenharSinais(marcadores: Container, cursores: Sinal[], pings: Sinal[]
 /** Canvas visual da cena. A lista de tokens no DOM oferece seleção por teclado e toque. */
 export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPreview, onDragEnd, onDragCancel, medirArraste,
   cursores = [], pings = [], arrastes = [], mapaUrl, reservaDireita = 0, retratos = {}, centroDaVistaRef, onSoltarPersonagem,
-  onMenuDoToken, tokensDaVez = [], tokenSelecionado = null }: {
+  onMenuDoToken, tokensDaVez = [], tokenSelecionado = null, tokensAlvo = [], cartaVoando = null }: {
   cena: Cena;
   /** Token escolhido na aba Tokens ou no grid: ganha o aro de seleção. */
   tokenSelecionado?: string | null;
+  /** Tokens marcados como alvos da carta que vai ser usada (cartas-na-cena). */
+  tokensAlvo?: string[];
+  /** Carta usada a animar agora (cartas-na-cena, D7); nula sem animação. */
+  cartaVoando?: VooDeCarta | null;
   /** Tokens de quem está na vez no modo turno (modo-de-turno, D8e): brilham, pulsando devagar. */
   tokensDaVez?: string[];
   /** URL do retrato de cada token ligado a personagem (por id do token); sem ele, o token mostra as iniciais. */
@@ -280,6 +299,7 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
 
   // Os retratos chegam como objeto novo a cada redesenho da Sala; o canvas só redesenha quando o conteúdo muda.
   const chaveDaVez = tokensDaVez.join("|");
+  const chaveDosAlvos = tokensAlvo.join("|");
   const chaveDosRetratos = Object.entries(retratos).map(([id, url]) => `${id}=${url.length}:${url.slice(-24)}`).sort().join("|");
   const retratosAtuais = useRef(retratos);
   useEffect(() => {
@@ -291,7 +311,7 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
       const desenhada = desenharCena(mundo.current, cena, mapa, (tokenId) => {
         const url = retratosAtuais.current[tokenId];
         return url ? texturas[url] : undefined;
-      }, new Set(chaveDaVez ? chaveDaVez.split("|") : []), tokenSelecionado);
+      }, new Set(chaveDaVez ? chaveDaVez.split("|") : []), tokenSelecionado, new Set(chaveDosAlvos ? chaveDosAlvos.split("|") : []));
       brilhos.current = desenhada.brilhos;
       aplicarPulso(brilhos.current, performance.now(), movimentoReduzido());
       pecas.current = desenhada.pecas;
@@ -302,7 +322,51 @@ export function RoomCanvas({ cena, onSelectToken, onCursor, onPing, onDragPrevie
       if (emCurso) pecas.current.get(emCurso.id)?.position.set(emCurso.x * CELULA, emCurso.y * CELULA);
       redesenharRastro();
     }
-  }, [pronto, cena, mapa, chaveDosRetratos, texturas, chaveDaVez, tokenSelecionado]);
+  }, [pronto, cena, mapa, chaveDosRetratos, texturas, chaveDaVez, tokenSelecionado, chaveDosAlvos]);
+
+  // Voo da carta usada (cartas-na-cena, D7): fica no palco, não no mundo, para sobreviver aos redesenhos da cena;
+  // a posição é convertida do mundo a cada quadro. Sem token de origem nem alvo na cena, não há o que animar.
+  const chaveDoVoo = cartaVoando?.chave ?? null;
+  useEffect(() => {
+    const aplicacao = app.current;
+    const viewport = mundo.current;
+    if (!pronto || !aplicacao || !viewport || !cartaVoando || chaveDoVoo === null) return undefined;
+    const centroDe = (id: string | null) => {
+      const token = id ? cenaAtual.current.tokens.find((item) => item.id === id) : undefined;
+      return token ? { x: (token.x + token.tamanho / 2) * CELULA, y: (token.y + token.tamanho / 2) * CELULA } : null;
+    };
+    const alvos = cartaVoando.alvosTokenIds.map(centroDe).filter((p): p is { x: number; y: number } => p !== null);
+    const origem = centroDe(cartaVoando.origemTokenId) ?? alvos[0] ?? null;
+    if (!origem) return undefined;
+    const carta = criarCartaVoadora(cartaVoando.titulo, cartaVoando.arte);
+    aplicacao.stage.addChild(carta.container);
+    const inicio = performance.now();
+    let acabou = false;
+    const passo = () => {
+      if (acabou) return;
+      const quadro = quadroDoVoo(performance.now() - inicio, origem, alvos);
+      const escalaDoMundo = viewport.scale.x;
+      carta.container.position.set(viewport.x + quadro.posicao.x * escalaDoMundo, viewport.y + quadro.posicao.y * escalaDoMundo);
+      carta.container.scale.set(quadro.escala * Math.max(0.6, escalaDoMundo));
+      carta.container.alpha = quadro.alpha;
+      carta.container.rotation = quadro.rotacao;
+      if (quadro.terminou) {
+        acabou = true;
+        aplicacao.ticker?.remove(passo);
+        carta.container.destroy({ children: true });
+      }
+    };
+    passo();
+    aplicacao.ticker.add(passo);
+    return () => {
+      acabou = true;
+      carta.cancelar();
+      aplicacao.ticker?.remove(passo);
+      if (!carta.container.destroyed) carta.container.destroy({ children: true });
+    };
+    // Só a chave reinicia o voo; os demais dados vêm com ela.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pronto, chaveDoVoo]);
 
   // O pulso do brilho da vez acompanha o relógio do PixiJS; com menos movimento pedido, fica parado.
   useEffect(() => {
