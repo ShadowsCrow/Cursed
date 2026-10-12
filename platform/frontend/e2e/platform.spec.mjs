@@ -243,7 +243,8 @@ for (const [tela, viewport] of [["desktop", { width: 1440, height: 900 }], ["cel
       await editor.getByLabel("História", { exact: true }).fill("Veio do norte.\n\nPerdeu tudo na travessia.");
       await expect(editor.getByText("41 de 4.000 caracteres")).toBeVisible();
       await editor.getByRole("button", { name: "Salvar" }).click();
-      await expect(pagina.getByRole("tabpanel", { name: "Personalidade" }).getByText("Veio do norte.")).toBeVisible();
+      // Exato: enquanto o editor fecha, a prévia e a caixa de texto ainda trazem a História inteira.
+      await expect(pagina.getByRole("tabpanel", { name: "Personalidade" }).getByText("Veio do norte.", { exact: true })).toBeVisible();
 
       await pagina.getByRole("tab", { name: "Resumo" }).click();
       const historia = pagina.getByRole("region", { name: "História" });
