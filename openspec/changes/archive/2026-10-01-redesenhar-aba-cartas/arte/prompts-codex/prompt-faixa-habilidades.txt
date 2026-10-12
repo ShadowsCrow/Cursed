@@ -1,0 +1,5 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is the approved top banner of a skill card: a dark night-blue painted scene with warrior silhouettes lit by warm rim light on both sides, embers in the air, light rays, and in the exact center a round golden medallion (polished gold ring with four small diamond points at top, bottom, left and right, dark blue center with fine rays) holding two crossed golden swords glowing orange.
+
+Generate the SAME banner as a landscape image 1536 x 1024: the whole banner composition must fit in the middle horizontal band of the image (from about 28% to 72% of the height), with the medallion exactly centered horizontally and vertically, its outer ring about 38% of the image height in diameter. Above and below that band, continue the dark night sky and dark ground with no important detail. Same colors, lighting, painterly style. No text, no letters, no frame. When done, reply only with the absolute path of the generated image file.

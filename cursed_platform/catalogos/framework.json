@@ -1,0 +1,72 @@
+{
+  "graus": [
+    {"id": "basica", "rotulo": "Básica"},
+    {"id": "simples", "rotulo": "Simples"},
+    {"id": "intermediaria", "rotulo": "Intermediária"},
+    {"id": "avancada", "rotulo": "Avançada"},
+    {"id": "especialista", "rotulo": "Especialista"},
+    {"id": "mestra", "rotulo": "Mestra"},
+    {"id": "lendaria", "rotulo": "Lendária"}
+  ],
+  "naturezas": {
+    "habilidade": {
+      "custo_minimo": 6,
+      "faixas": [
+        {"grau": "basica", "minimo": 6, "maximo": 10, "descansos": 3},
+        {"grau": "simples", "minimo": 11, "maximo": 16, "descansos": 4},
+        {"grau": "intermediaria", "minimo": 17, "maximo": 24, "descansos": 6},
+        {"grau": "avancada", "minimo": 25, "maximo": 34, "descansos": 8},
+        {"grau": "especialista", "minimo": 35, "maximo": 47, "descansos": 12},
+        {"grau": "mestra", "minimo": 48, "maximo": 63, "descansos": 18},
+        {"grau": "lendaria", "minimo": 64, "maximo": null, "descansos": 25}
+      ]
+    },
+    "magia": {
+      "custo_minimo": 12,
+      "faixas": [
+        {"grau": "basica", "minimo": 12, "maximo": 16, "descansos": 3},
+        {"grau": "simples", "minimo": 17, "maximo": 23, "descansos": 4},
+        {"grau": "intermediaria", "minimo": 24, "maximo": 32, "descansos": 6},
+        {"grau": "avancada", "minimo": 33, "maximo": 44, "descansos": 8},
+        {"grau": "especialista", "minimo": 45, "maximo": 59, "descansos": 12},
+        {"grau": "mestra", "minimo": 60, "maximo": 79, "descansos": 18},
+        {"grau": "lendaria", "minimo": 80, "maximo": null, "descansos": 25}
+      ]
+    }
+  },
+  "custo_uso": {"divisor": 80, "minimo": 1, "sem_custo": ["passiva_permanente"]},
+  "tipos": [
+    {"id": "ativa", "rotulo": "Ativa"},
+    {"id": "reacao", "rotulo": "Reação"},
+    {"id": "passiva_condicional", "rotulo": "Passiva condicional"},
+    {"id": "passiva_permanente", "rotulo": "Passiva permanente"}
+  ],
+  "escolas": [
+    {"id": "elemental", "rotulo": "Elemental"},
+    {"id": "somatica", "rotulo": "Somática"},
+    {"id": "perceptiva", "rotulo": "Perceptiva"},
+    {"id": "psiquica", "rotulo": "Psíquica"},
+    {"id": "dimensional", "rotulo": "Dimensional"},
+    {"id": "oculta", "rotulo": "Oculta"},
+    {"id": "sagrada", "rotulo": "Sagrada da Criação"},
+    {"id": "druidica", "rotulo": "Druídica"}
+  ],
+  "formas": [
+    {"id": "circulo", "rotulo": "Círculo"},
+    {"id": "esfera", "rotulo": "Esfera"},
+    {"id": "cone", "rotulo": "Cone"},
+    {"id": "linha", "rotulo": "Linha"},
+    {"id": "quadrado", "rotulo": "Quadrado"},
+    {"id": "cubo", "rotulo": "Cubo"},
+    {"id": "golpe", "rotulo": "Golpe"},
+    {"id": "projetil", "rotulo": "Projétil"},
+    {"id": "corrente", "rotulo": "Corrente"},
+    {"id": "aura", "rotulo": "Aura"}
+  ],
+  "alcances": [
+    {"id": "pessoal", "rotulo": "Pessoal"},
+    {"id": "toque", "rotulo": "Toque"},
+    {"id": "arma", "rotulo": "Alcance da arma"},
+    {"id": "metros", "rotulo": "Em metros", "distancia": true}
+  ]
+}

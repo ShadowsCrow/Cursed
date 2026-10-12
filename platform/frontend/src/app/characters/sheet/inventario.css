@@ -1,0 +1,605 @@
+/*
+ * Aba Inventário da ficha (reformular-visual-da-ficha, D1–D5). A bolsa é montada em camadas que
+ * esticam com qualquer grade: couro em gradiente com grão procedural, costura e rebites em SVG de
+ * 9 fatias, alça que acompanha a altura e peças de tamanho fixo presas aos cantos. A célula muda de
+ * tamanho com o espaço da seção (container query), entre 2.25rem e 5.25rem.
+ */
+
+.moldura-secao__corpo { container: secao / inline-size; }
+
+.inventario-ficha {
+  /* Largura do painel do item (mínimo de 22rem) e das categorias, mais os vãos: as células encolhem antes do painel. */
+  --reserva: 38rem;
+  --folga-bolsa: 6.6rem;
+  --vao: 3px;
+  /* Tamanho da célula pela largura da seção (container), não da tela. */
+  --celula: clamp(2.25rem, calc((100cqi - var(--reserva) - var(--folga-bolsa)) / var(--colunas)), 5.75rem);
+  --largura-bolsa: calc(var(--colunas) * var(--celula) + var(--folga-bolsa));
+  display: grid;
+  grid-template-columns: var(--largura-bolsa) minmax(22rem, 1fr) 12.5rem;
+  grid-template-areas:
+    "fileira fileira fileira"
+    "bolsa lateral categorias"
+    "rodape rodape rodape";
+  align-items: start;
+  gap: 1rem 1.6rem;
+}
+.inventario-ficha > p { grid-column: 1 / -1; margin: 0; }
+.inventario-ficha__fileira { grid-area: fileira; display: none; }
+.inventario-ficha__bolsa { grid-area: bolsa; min-width: 0; }
+/* Textos longos (placa, bandeja, anúncios) quebram na largura da bolsa em vez de alargá-la. */
+.inventario-ficha__bolsa .grade-inventario > * { min-width: 0; }
+.inventario-ficha .grade-inventario__resumo--proprio, .inventario-ficha .grade-inventario__bandeja { contain: inline-size; }
+.inventario-ficha__lateral { grid-area: lateral; display: grid; gap: 1.1rem; min-width: 0; }
+.inventario-ficha__categorias { grid-area: categorias; }
+.inventario-ficha__rodape { grid-area: rodape; display: grid; gap: 1rem; }
+.inventario-ficha__rodape:empty { display: none; }
+
+/* Grade larga (9 colunas ou mais): as categorias sobem para uma fileira acima. */
+.inventario-ficha--larga {
+  --reserva: 25rem;
+  grid-template-columns: var(--largura-bolsa) minmax(22rem, 1fr);
+  grid-template-areas: "fileira fileira" "bolsa lateral" "rodape rodape";
+}
+.inventario-ficha--larga .inventario-ficha__fileira { display: block; }
+.inventario-ficha--larga .inventario-ficha__categorias { display: none; }
+
+@container secao (max-width: 70rem) {
+  .inventario-ficha {
+    --reserva: 25rem;
+    grid-template-columns: var(--largura-bolsa) minmax(22rem, 1fr);
+    grid-template-areas: "fileira fileira" "bolsa lateral" "rodape rodape";
+  }
+  .inventario-ficha__fileira { display: block; }
+  .inventario-ficha__categorias { display: none; }
+}
+@container secao (max-width: 50rem) {
+  .inventario-ficha, .inventario-ficha--larga {
+    --reserva: 0rem;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "fileira" "bolsa" "lateral" "rodape";
+  }
+  .inventario-ficha__bolsa { justify-self: center; max-width: 100%; }
+}
+@container secao (max-width: 34rem) {
+  .inventario-ficha { --folga-bolsa: 1.7rem; --vao: 2px; }
+}
+/*
+ * Laterais pintadas (D1, item 4): cada uma tem --lado de largura, e --lado-sobre dela fica por cima da
+ * borda da bolsa (a tira de couro). O resto, com os objetos, avança para fora: a coluna reserva esse
+ * espaço dos dois lados, e a folga entra na conta do tamanho da célula.
+ */
+.inventario-ficha:has(.bolsa--lateral) {
+  --lado: 7.2rem;
+  --lado-sobre: 2.65rem;
+  --folga-bolsa: calc(2 * var(--lado) + 2.8rem);
+}
+.inventario-ficha__bolsa:has(.bolsa--lateral) { padding-inline: calc(var(--lado) - var(--lado-sobre)); }
+@container secao (max-width: 34rem) {
+  /*
+   * Celular: laterais finas que não reservam espaço. A grade de 8 colunas precisa caber em 400 px e não
+   * sobra nada: cada lateral fica sobre o acolchoado da bolsa e avança pela margem da moldura da seção.
+   */
+  .inventario-ficha:has(.bolsa--lateral) { --lado: 2.3rem; --lado-sobre: .6rem; --folga-bolsa: 1.7rem; }
+  .inventario-ficha__bolsa:has(.bolsa--lateral) { padding-inline: 0; }
+}
+
+/* ---------- Bolsa ---------- */
+.bolsa {
+  /* Objeto escuro dentro do pergaminho: volta à paleta noturna. */
+  color-scheme: dark;
+  --text: var(--osso-100);
+  --text-muted: var(--osso-300);
+  --text-quiet: var(--osso-400);
+  --accent: var(--ouro-300);
+  --accent-strong: var(--ouro-200);
+  --border: var(--noite-500);
+  --border-subtle: var(--noite-600);
+  --focus-color: var(--ouro-200);
+  --gold: var(--accent);
+  --muted: var(--text-muted);
+  --quiet: var(--text-quiet);
+  position: relative;
+  padding: 1.1rem 3.1rem 1.4rem 1.5rem;
+  border-radius: 22px;
+  color: var(--osso-100);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .18 0 0 0 0 .1 0 0 0 0 .05 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 22% 12%, #7a4a2b88 0%, transparent 55%),
+    url("/arte/inventario/inventario-couro.webp") 0 0 / 256px 256px,
+    radial-gradient(ellipse at 85% 95%, #26130a 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 50%, #5a341d, #3a2012);
+  box-shadow: 0 14px 26px #0008, inset 0 2px 0 #9a6a4455, inset 0 -3px 8px #0007;
+}
+.bolsa::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 40px solid transparent;
+  border-image: url("./molduras/bolsa-costura.svg") 40 / 40px / 0 stretch;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.bolsa__conteudo { position: relative; display: grid; justify-items: center; gap: .9rem; }
+
+.bolsa__alca {
+  position: absolute;
+  top: -.6rem;
+  bottom: 1.2rem;
+  right: .55rem;
+  width: 1.9rem;
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(90deg, #2c170b, #5f3a20 30%, #6c4427 60%, #2c170b);
+  box-shadow: inset 0 0 0 1px #1a0c05, 2px 4px 8px #0008;
+  pointer-events: none;
+}
+.bolsa__alca::before, .bolsa__alca::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 0;
+  border-left: 1.4px dashed #d9b27a99;
+}
+.bolsa__alca::before { left: 4px; }
+.bolsa__alca::after { right: 4px; }
+.bolsa__fivela { position: absolute; top: 18%; left: 50%; width: 2.6rem; transform: translateX(-50%); filter: drop-shadow(1px 2px 2px #000a); }
+.bolsa__alca-fim {
+  position: absolute;
+  bottom: -.9rem;
+  left: 50%;
+  width: 2.1rem;
+  height: 1.6rem;
+  transform: translateX(-50%);
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, #4d2e18, #2a150a);
+  box-shadow: inset 0 0 0 1px #1a0c05;
+}
+.bolsa__pingente {
+  position: absolute;
+  right: -1.6rem;
+  bottom: -2.2rem;
+  width: 3.4rem;
+  filter: drop-shadow(2px 4px 4px #000a);
+  pointer-events: none;
+}
+.bolsa--lateral, .bolsa--lateral.bolsa--mini { padding-inline: calc(var(--lado-sobre) + .7rem); }
+.bolsa__lado {
+  position: absolute;
+  top: -.5rem;
+  bottom: -.5rem;
+  z-index: 1;
+  width: var(--lado);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  pointer-events: none;
+  filter: drop-shadow(2px 5px 6px #000a);
+}
+.bolsa__lado--esquerdo { left: calc(var(--lado-sobre) - var(--lado)); }
+.bolsa__lado--direito { right: calc(var(--lado-sobre) - var(--lado)); }
+.bolsa__lado img { display: block; width: 100%; height: auto; }
+/* O miolo se repete na vertical com um número inteiro de cópias (round): a lateral estica sem distorcer. */
+.bolsa__lado-miolo { background-position: center top; background-size: 100% auto; background-repeat: no-repeat round; }
+
+/*
+ * Tampa e base pintadas (D1, item 5). A tampa aberta sai por cima, atrás da bolsa (z-index negativo;
+ * a bolsa não cria contexto de empilhamento), com altura fixa e sem esticar: numa bolsa estreita, o
+ * limite de 80% encolhe a imagem, ancorada embaixo. A base estica na largura com as pontas inteiras e
+ * fica dentro do acolchoado de baixo, sem cobrir células. A coluna reserva o que sai para fora.
+ */
+/* A tampa fica bem mais alta do que aparece: a parte de baixo do arco some atrás da bolsa, e ela ganha largura sem ocupar mais altura. */
+/*
+ * A base (fundo do saco com o pano caindo) entra na bolsa só o acolchoado de baixo (--base-altura menos
+ * --base-fora) e o resto pende para fora; a coluna reserva --base-fora embaixo.
+ */
+.inventario-ficha:has(.bolsa--tampa) { --tampa-visivel: 4.2rem; --tampa-dentro: 4rem; --base-altura: 7rem; --base-fora: 5.7rem; --base-recuo: 2.9rem; }
+.inventario-ficha__bolsa:has(.bolsa--tampa) { padding-top: var(--tampa-visivel); padding-bottom: var(--base-fora); }
+.bolsa__tampa {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  bottom: calc(100% - var(--tampa-dentro));
+  height: calc(var(--tampa-visivel) + var(--tampa-dentro));
+  width: auto;
+  max-width: 80%;
+  object-fit: contain;
+  object-position: bottom;
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 -2px 6px #0007);
+}
+.bolsa__base {
+  position: absolute;
+  z-index: 1;
+  /* Estica até as pontas ficarem atrás das fivelas do pé das laterais (desenhadas por cima), e o pano cai logo abaixo delas. */
+  left: calc(var(--lado-sobre, 0px) - var(--base-recuo, 0px));
+  right: calc(var(--lado-sobre, 0px) - var(--base-recuo, 0px));
+  bottom: calc(-1 * var(--base-fora));
+  height: var(--base-altura);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
+  pointer-events: none;
+  filter: drop-shadow(0 4px 5px #0009);
+}
+.bolsa__base img { display: block; width: auto; height: 100%; }
+/* A borda de cima do couro esmaece no couro da bolsa, sem emenda. A máscara fica nas partes, e não na
+   base inteira, para não cortar a sombra que a base projeta embaixo. */
+.bolsa__base > * {
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%);
+  mask-image: linear-gradient(180deg, transparent, #000 12%);
+}
+/* O miolo se repete na horizontal com um número inteiro de cópias: a base estica sem distorcer. */
+.bolsa__base-miolo { background-position: left center; background-size: auto 100%; background-repeat: round no-repeat; }
+@container secao (max-width: 34rem) {
+  .inventario-ficha:has(.bolsa--tampa) { --tampa-visivel: 2.6rem; --tampa-dentro: 2.4rem; --base-altura: 4.2rem; --base-fora: 3.4rem; --base-recuo: .9rem; }
+}
+/* Bolsa estreita (grade de poucas colunas): peças grandes somem para não cobrir nada. */
+.bolsa--mini .bolsa__pingente { display: none; }
+.bolsa--mini { padding-right: 2.9rem; }
+@container secao (max-width: 34rem) {
+  .bolsa { padding: .7rem .7rem .9rem; border-radius: 14px; }
+  .bolsa::before { border-width: 24px; border-image-width: 24px; }
+  .bolsa__alca, .bolsa__pingente { display: none; }
+  .bolsa--lateral, .bolsa--lateral.bolsa--mini { padding-inline: .7rem; }
+  .bolsa__conteudo { overflow-x: auto; justify-items: start; }
+  .bolsa__conteudo .placa { position: sticky; left: 0; }
+  .bolsa__conteudo[data-rolagem="mais"] {
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 2.5rem), #0004);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 2.5rem), #0004);
+  }
+}
+.bolsa__dica { position: relative; margin: 0 0 .4rem; color: var(--osso-300); font-size: .78rem; text-align: center; }
+
+/* ---------- Placa de indicadores ---------- */
+.inventario-ficha .grade-inventario__resumo--proprio { display: block; width: 100%; color: inherit; }
+.placa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: .2rem;
+  padding: .55rem .7rem;
+  border: 1px solid #8a6a3a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #1b130d, #0f0a07);
+  box-shadow: inset 0 0 0 2px #0008, inset 0 0 0 3px #c9a15a22, 0 4px 10px #0007;
+}
+.placa__bloco {
+  flex: 1 1 7.6rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .15rem .45rem;
+  color: var(--ouro-300);
+}
+.placa__bloco + .placa__bloco { border-left: 1px solid #6e532f66; }
+.placa__bloco > div { display: grid; gap: .1rem; min-width: 0; }
+.placa__icone { flex: none; }
+.placa__rotulo { color: var(--osso-300); font-size: .72rem; letter-spacing: .04em; }
+.placa .placa__valor { color: var(--osso-100); font-size: .95rem; }
+.placa__barra {
+  display: block;
+  width: min(8rem, 100%);
+  height: 5px;
+  margin-top: .2rem;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--ouro-300) calc(var(--fracao) * 100%), #3a2d20 0);
+  box-shadow: inset 0 0 0 1px #0006;
+}
+.placa__barra--sangue { background: linear-gradient(90deg, var(--sangue-300) calc(var(--fracao) * 100%), #3a2d20 0); }
+.placa__maos { display: flex; gap: .3rem; margin-top: .2rem; }
+.placa__mao { width: .8rem; height: .8rem; border-radius: 50%; border: 1.5px solid var(--ouro-300); }
+.placa__mao--cheia { background: radial-gradient(circle at 35% 35%, var(--ouro-100), var(--ouro-500)); }
+.placa .placa__estado {
+  justify-self: start;
+  padding: .05rem .6rem;
+  border: 1px solid var(--musgo-300);
+  border-radius: 99px;
+  color: var(--musgo-300);
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.placa__bloco--sobrecarga { color: var(--sangue-300); }
+.placa .placa__bloco--sobrecarga .placa__estado { border-color: var(--sangue-300); color: #ffb3a1; background: #5a151055; }
+.placa__detalhe { color: #ffb3a1; font-size: .72rem; }
+.placa__bloco--estado .grade-inventario__regra-botao { margin-left: auto; border-color: #8a6a3a; color: var(--ouro-300); }
+.placa__ampliacoes { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: .3rem 0 0; padding-top: .35rem;
+  border-top: 1px solid #6e532f66; color: var(--osso-300); font-size: .78rem; }
+.placa__ampliacoes .text-action { color: var(--ouro-300); }
+
+/* ---------- Grade dentro da bolsa ---------- */
+.inventario-ficha .grade-inventario { justify-items: stretch; }
+.inventario-ficha .grade-inventario__area {
+  /* A célula vem da seção (.inventario-ficha), não do cálculo por largura de tela do inventory.css. */
+  --celula: inherit;
+  padding: 0;
+  margin-inline: auto;
+}
+.bolsa .grade-inventario__area {
+  outline: 3px solid #0f0906;
+  outline-offset: 3px;
+  border-radius: 4px;
+  background: #120b07;
+  box-shadow: 0 0 0 7px #2b170c, 0 0 0 8px #8a6a3a66;
+}
+.bolsa .grade-inventario__celula {
+  margin: var(--vao);
+  border: 1px solid #6e532f;
+  border-radius: 6px;
+  background: radial-gradient(circle at 50% 35%, #2b2622, #15110e 75%);
+  box-shadow: inset 0 2px 6px #000c, inset 0 0 0 1px #0008;
+}
+.bolsa .grade-inventario__celula--vermelha {
+  border-color: #8e3a33;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8a08f' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M12 4 21 19H3Z'/%3E%3Cpath d='M12 10v4M12 16.6v.2'/%3E%3C/svg%3E") center / 38% no-repeat,
+    repeating-linear-gradient(135deg, #4a1714 0 5px, #2a0e0c 5px 10px);
+  opacity: .9;
+}
+.bolsa .grade-inventario__item,
+.bolsa .grade-inventario__previa {
+  left: calc(var(--c) * var(--celula) + var(--vao));
+  top: calc(var(--l) * var(--celula) + var(--vao));
+  width: calc(var(--w) * var(--celula) - 2 * var(--vao));
+  height: calc(var(--h) * var(--celula) - 2 * var(--vao));
+}
+.bolsa .grade-inventario__item {
+  padding: 3px;
+  border: 1px solid #8a6a3a;
+  border-radius: 6px;
+  color: var(--ouro-300);
+  background: radial-gradient(circle at 50% 38%, #3a3a3f, #16161b 72%);
+  box-shadow: inset 0 0 12px #000a, 0 2px 4px #000a;
+}
+.bolsa .grade-inventario__item:hover { border-color: var(--ouro-300); box-shadow: inset 0 0 12px #000a, 0 0 0 1px #e5c78a66, 0 2px 4px #000a; }
+.bolsa .grade-inventario__item--equipado { border: 2px solid var(--ouro-300); box-shadow: inset 0 0 12px #000a, 0 0 10px #e5c78a55; }
+.bolsa .grade-inventario__item--selecionado {
+  border: 2px solid #ffe3a3;
+  box-shadow: inset 0 0 12px #000a, 0 0 0 2px #0f0906, 0 0 0 4px #ffe3a3, 0 0 16px #ffd88a88;
+  z-index: 1;
+}
+.bolsa .grade-inventario__item--sobrecarga { outline-color: #ff8f7a; }
+.bolsa .grade-inventario__item--esmaecido { opacity: .28; filter: saturate(.3); }
+.bolsa .grade-inventario__item--destacado { border-color: #ffe3a3; }
+.bolsa .grade-inventario__item:focus-visible { outline: 3px solid #ffe3a3; outline-offset: 1px; }
+.grade-inventario__sem-icone { display: grid; place-items: center; width: 100%; height: 100%; }
+.grade-inventario__sem-icone :is(.icone-subtipo, .icone-categoria) {
+  width: min(78%, calc(var(--celula) * .6));
+  height: auto;
+  max-height: 78%;
+  filter: drop-shadow(0 2px 3px #000c);
+}
+/* O nome aparece só quando cabe (itens grandes); nos pequenos fica no rótulo e no title. */
+.bolsa .grade-inventario__sem-icone .grade-inventario__nome { display: none; }
+.bolsa .grade-inventario__marca {
+  top: 4px;
+  right: 4px;
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 1px solid #3b2a10;
+  background: radial-gradient(circle at 35% 35%, var(--ouro-100), var(--ouro-500));
+  font-size: .62rem;
+  line-height: 1rem;
+}
+.grade-inventario__quantidade {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 .3rem;
+  border: 1px solid var(--ouro-500);
+  border-radius: 99px;
+  background: #0e0b08e6;
+  color: var(--osso-100);
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+}
+.inventario-ficha .grade-inventario__bandeja { padding: .8rem 1rem; border: 1px dashed var(--pergaminho-600); border-radius: var(--radius-md); }
+.inventario-ficha .grade-inventario__anuncio { color: var(--text-muted); text-align: center; }
+
+/* Aviso de "colocar na grade": a bolsa é escura, mas --surface vem do pergaminho; cores próprias garantem o contraste. */
+.bolsa .grade-inventario__colocar {
+  background: color-mix(in srgb, var(--teal) 22%, var(--noite-700));
+  border-color: var(--teal);
+  color: var(--osso-100);
+}
+.bolsa .grade-inventario__colocar strong { color: var(--ouro-200); }
+.bolsa .grade-inventario__colocar .button--secondary {
+  background: linear-gradient(140deg, var(--ouro-200), var(--ouro-300));
+  border-color: var(--ouro-500);
+  color: var(--tinta-900);
+}
+.bolsa .grade-inventario__colocar .button--ghost {
+  background: transparent;
+  border-color: var(--osso-300);
+  color: var(--osso-100);
+}
+
+/* ---------- Painel do item ---------- */
+.inventario-ficha__painel { min-height: 12rem; }
+.item-painel { display: grid; gap: .8rem; }
+.item-painel__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin: 0;
+  color: var(--tinta-900);
+  font: 600 1.35rem/1.1 var(--font-display);
+}
+.item-painel__cabecalho::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--ouro-700), transparent); }
+.item-painel__vazio { margin: 0; color: var(--text-muted); font-style: italic; }
+.item-painel__topo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: start; }
+.item-painel__arte {
+  display: grid;
+  place-items: center;
+  width: 8.2rem;
+  aspect-ratio: 1;
+  padding: .5rem;
+  border: 2px solid #8a6a3a;
+  border-radius: 6px;
+  background: radial-gradient(circle at 50% 38%, #3b3440, #120e12 75%);
+  box-shadow: inset 0 0 0 3px #0f0906, inset 0 0 0 4px #c9a15a55, 0 4px 10px #0006;
+  color: var(--ouro-300);
+}
+.item-painel__arte img { width: 100%; height: 100%; object-fit: contain; }
+.item-painel__arte .icone-subtipo { width: 70%; height: 70%; }
+.item-painel__identidade { display: grid; gap: .45rem; min-width: 0; }
+.item-painel__nome { margin: 0; color: var(--tinta-900); font: 700 1.45rem/1.1 var(--font-display); }
+.item-painel__etiquetas { display: flex; flex-wrap: wrap; gap: .35rem; }
+.etiqueta-raridade {
+  padding: .05rem .6rem;
+  border: 1.5px solid var(--cor-raridade);
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--cor-raridade) 12%, var(--pergaminho-50));
+  color: var(--cor-raridade);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.etiqueta-categoria {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .05rem .55rem;
+  border: 1px solid var(--pergaminho-600);
+  border-radius: 99px;
+  color: var(--tinta-700);
+  font-size: .78rem;
+}
+.item-painel__detalhes { display: grid; gap: .2rem; margin: 0; font-size: .88rem; }
+.item-painel__detalhes div { display: flex; gap: .45rem; }
+.item-painel__detalhes dt { min-width: 5.2rem; color: var(--tinta-700); }
+.item-painel__detalhes dd { margin: 0; color: var(--tinta-900); font-weight: 600; }
+.item-painel__descricao { margin: 0; padding-top: .7rem; border-top: 1px solid color-mix(in srgb, var(--ouro-700) 45%, transparent); color: var(--tinta-900); line-height: 1.5; }
+.item-painel__efeitos {
+  display: grid;
+  gap: .3rem;
+  margin: 0;
+  padding: .6rem .8rem .6rem 2.2rem;
+  border: 1px solid color-mix(in srgb, var(--sangue-700) 40%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sangue-700) 7%, var(--pergaminho-50));
+  color: var(--sangue-700);
+  font-size: .88rem;
+}
+.item-painel__recusa { margin: 0; color: var(--sangue-700); font-weight: 700; }
+.item-painel__acoes { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+@container secao (max-width: 34rem) {
+  .item-painel__topo { grid-template-columns: 5.2rem minmax(0, 1fr); gap: .75rem; }
+  .item-painel__arte { width: 5.2rem; }
+  .item-painel__nome { font-size: 1.25rem; overflow-wrap: anywhere; }
+  .item-painel__detalhes div { display: grid; gap: 0; }
+  .item-painel__detalhes dt { min-width: 0; font-size: .78rem; }
+}
+.item-painel__acoes .button { justify-content: center; }
+.item-painel__principal { grid-column: 1 / -1; }
+/* Carmesim, puxado para o vinho do pano das laterais, no lugar do vermelho vivo do botão principal do site. */
+.item-painel .button--primary {
+  background: linear-gradient(170deg, #7d1628, #4f0d19);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--ouro-200) 18%, transparent), 0 6px 16px #4f0d1940;
+}
+.item-painel .button--primary:not(:disabled):hover { background: linear-gradient(170deg, #8c1a2e, #5c0f1e); }
+.item-painel__extras .grade-inventario__imagens { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+
+/* ---------- Categorias ---------- */
+.categorias ul { display: grid; gap: .15rem; margin: 0; padding: 0; list-style: none; }
+.categorias__titulo { margin: 0 0 .5rem; color: var(--tinta-900); font: 600 1.25rem/1.1 var(--font-display); }
+.categorias__opcao {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  width: 100%;
+  min-height: 2.4rem;
+  padding: .3rem .6rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--tinta-900);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.categorias__opcao:hover { background: color-mix(in srgb, var(--ouro-700) 12%, transparent); }
+.categorias__opcao[aria-pressed="true"] {
+  border-color: var(--ouro-700);
+  background: linear-gradient(90deg, var(--noite-800), var(--noite-700));
+  color: var(--ouro-200);
+  font-weight: 700;
+}
+.categorias__opcao:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.categorias__rotulo { flex: 1; }
+.categorias__total {
+  min-width: 1.5rem;
+  padding: 0 .35rem;
+  border: 1px solid color-mix(in srgb, var(--ouro-700) 60%, transparent);
+  border-radius: 99px;
+  font-size: .75rem;
+  text-align: center;
+}
+.categorias--lista {
+  padding: .2rem 0 .2rem 1.1rem;
+  border-left: 1px solid color-mix(in srgb, var(--ouro-700) 55%, transparent);
+}
+.categorias--fileira ul { display: flex; flex-wrap: wrap; gap: .4rem; }
+@container secao (max-width: 34rem) {
+  .categorias--fileira ul { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem; scrollbar-width: thin; }
+}
+.categorias--fileira .categorias__opcao { width: auto; min-height: 2.2rem; white-space: nowrap; border-color: color-mix(in srgb, var(--ouro-700) 45%, transparent); border-radius: 99px; }
+
+/* Estado da gravação ao lado da busca: largura e altura fixas, para o texto trocar sem empurrar nada. */
+.inventario-ficha__estado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 11rem;
+  min-height: 2.5rem;
+  overflow: hidden;
+  color: var(--tinta-700);
+  font-size: .85rem;
+  font-style: italic;
+  line-height: 1.2;
+  text-align: right;
+}
+@media (max-width: 760px) {
+  .inventario-ficha__estado { order: 3; width: 100%; min-height: 1.3rem; justify-content: flex-start; text-align: left; }
+}
+
+/* ---------- Busca ---------- */
+.busca-inventario { position: relative; display: flex; align-items: center; }
+.busca-inventario svg { position: absolute; left: .7rem; color: var(--tinta-700); pointer-events: none; }
+.busca-inventario input {
+  width: min(16rem, 60vw);
+  min-height: 2.5rem;
+  padding: .4rem .8rem .4rem 2.2rem;
+  border: 1px solid var(--pergaminho-600);
+  border-radius: 6px;
+  background: var(--pergaminho-50);
+  color: var(--tinta-900);
+}
+
+/* ---------- Moedas ---------- */
+.barra-moedas { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
+.barra-moedas__titulo { margin: 0; color: var(--tinta-900); font: 600 1.25rem/1 var(--font-display); }
+.barra-moedas__totais {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: .3rem .9rem;
+  border: 1px solid color-mix(in srgb, var(--ouro-700) 55%, transparent);
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--pergaminho-300) 35%, transparent);
+}
+.barra-moedas__totais div { display: flex; align-items: center; gap: .35rem; }
+.barra-moedas__totais dt { display: flex; }
+.barra-moedas__totais dd { margin: 0; color: var(--tinta-900); font-weight: 800; }
+.barra-moedas__gerenciar { margin-left: auto; }
+.dialogo-moedas { width: min(46rem, 100%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bolsa .grade-inventario__item { transition: none; }
+}

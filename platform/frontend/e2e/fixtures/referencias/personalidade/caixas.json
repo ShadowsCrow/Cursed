@@ -1,0 +1,859 @@
+{
+  "descricao": "Gabarito da aba Personalidade (reformular-personalidade-da-ficha, D0). 'regiao' é a região de busca em px da referência inteira; 'caixa' é a caixa de tinta medida, em px a partir do canto da folha (âncora 'folha'). Âncoras 'area' comparam a caixa do elemento, não a tinta. Gerado e conferido por `node e2e/fidelidade-personalidade.mjs medir`.",
+  "referencia": "personalidade.webp",
+  "largura_da_folha": 1098,
+  "ancoras": [
+    {
+      "nome": "folha",
+      "tipo": "quadro",
+      "seletor": ".folha-personalidade",
+      "modo": "claro",
+      "limiar": 60,
+      "minimo": 20,
+      "regiao": [
+        0,
+        396,
+        1122,
+        1400
+      ],
+      "caixa": [
+        0,
+        0,
+        1096,
+        966
+      ]
+    },
+    {
+      "nome": "haste",
+      "tipo": "ornamento",
+      "seletor": ".folha-personalidade__haste",
+      "modo": "escuro",
+      "limiar": 170,
+      "regiao": [
+        42,
+        446,
+        72,
+        592
+      ],
+      "caixa": [
+        29,
+        52,
+        30,
+        133
+      ]
+    },
+    {
+      "nome": "eyebrow",
+      "tipo": "texto",
+      "seletor": ".folha-personalidade__eyebrow",
+      "modo": "escuro",
+      "limiar": 150,
+      "regiao": [
+        76,
+        448,
+        300,
+        468
+      ],
+      "caixa": [
+        69,
+        49,
+        89,
+        10
+      ]
+    },
+    {
+      "nome": "titulo",
+      "tipo": "texto",
+      "seletor": ".folha-personalidade__titulo",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        76,
+        474,
+        462,
+        528
+      ],
+      "caixa": [
+        70,
+        75,
+        259,
+        37
+      ]
+    },
+    {
+      "nome": "linha-titulo",
+      "tipo": "ornamento",
+      "seletor": ".folha-personalidade__linha-titulo",
+      "modo": "escuro",
+      "limiar": 195,
+      "minimo": 1,
+      "regiao": [
+        76,
+        529,
+        462,
+        540
+      ],
+      "caixa": [
+        68,
+        125,
+        362,
+        4
+      ]
+    },
+    {
+      "nome": "subtitulo",
+      "tipo": "texto",
+      "seletor": ".folha-personalidade__subtitulo",
+      "modo": "escuro",
+      "limiar": 140,
+      "regiao": [
+        76,
+        543,
+        462,
+        572
+      ],
+      "caixa": [
+        73,
+        142,
+        340,
+        17
+      ]
+    },
+    {
+      "nome": "divisor-topo",
+      "tipo": "ornamento",
+      "seletor": ".folha-personalidade__divisor",
+      "modo": "escuro",
+      "limiar": 195,
+      "minimo": 1,
+      "regiao": [
+        40,
+        588,
+        800,
+        604
+      ],
+      "caixa": [
+        33,
+        181,
+        754,
+        16
+      ]
+    },
+    {
+      "nome": "citacao",
+      "tipo": "quadro",
+      "seletor": ".personalidade-citacao",
+      "modo": "escuro",
+      "limiar": 190,
+      "regiao": [
+        462,
+        440,
+        746,
+        552
+      ],
+      "caixa": [
+        461,
+        33,
+        272,
+        104
+      ]
+    },
+    {
+      "nome": "citacao-frase",
+      "tipo": "texto",
+      "seletor": ".personalidade-citacao",
+      "modo": "escuro",
+      "limiar": 120,
+      "regiao": [
+        490,
+        468,
+        760,
+        532
+      ],
+      "caixa": [
+        486,
+        69,
+        244,
+        47
+      ],
+      "dentro": "strong"
+    },
+    {
+      "nome": "etiquetas",
+      "tipo": "texto",
+      "seletor": ".personalidade-etiquetas",
+      "modo": "escuro",
+      "limiar": 150,
+      "regiao": [
+        478,
+        553,
+        784,
+        592
+      ],
+      "caixa": [
+        474,
+        148,
+        297,
+        29
+      ]
+    },
+    {
+      "nome": "pintura-topo",
+      "tipo": "area",
+      "seletor": ".personalidade-pintura--escrivaninha",
+      "caixa_manual": [
+        727,
+        3,
+        360,
+        210
+      ]
+    },
+    {
+      "nome": "grupo-essencia",
+      "tipo": "quadro",
+      "seletor": ".personalidade-grupo--essencia",
+      "modo": "escuro",
+      "limiar": 185,
+      "regiao": [
+        40,
+        612,
+        560,
+        1086
+      ],
+      "caixa": [
+        34,
+        212,
+        504,
+        457
+      ]
+    },
+    {
+      "nome": "essencia-emblema",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-grupo--essencia .personalidade-grupo__emblema",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        60,
+        622,
+        152,
+        712
+      ],
+      "caixa": [
+        60,
+        225,
+        67,
+        70
+      ]
+    },
+    {
+      "nome": "essencia-titulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--essencia .personalidade-grupo__titulo",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        150,
+        640,
+        520,
+        674
+      ],
+      "caixa": [
+        142,
+        242,
+        144,
+        21
+      ]
+    },
+    {
+      "nome": "essencia-subtitulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--essencia .personalidade-grupo__subtitulo",
+      "modo": "escuro",
+      "limiar": 140,
+      "regiao": [
+        150,
+        676,
+        530,
+        699
+      ],
+      "caixa": [
+        142,
+        273,
+        243,
+        14
+      ]
+    },
+    {
+      "nome": "essencia-l1-icone",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": 0,
+      "dentro": ".personalidade-linha__icone",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        68,
+        718,
+        130,
+        774
+      ],
+      "caixa": [
+        67,
+        322,
+        35,
+        34
+      ]
+    },
+    {
+      "nome": "essencia-l1-rotulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": 0,
+      "dentro": ".eyebrow",
+      "modo": "escuro",
+      "limiar": 150,
+      "regiao": [
+        136,
+        718,
+        256,
+        774
+      ],
+      "caixa": [
+        130,
+        333,
+        82,
+        8
+      ]
+    },
+    {
+      "nome": "essencia-l1-valor",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": 0,
+      "dentro": "strong",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        258,
+        718,
+        438,
+        774
+      ],
+      "caixa": [
+        252,
+        332,
+        62,
+        13
+      ],
+      "tolerancia": {
+        "posicao": 8,
+        "tamanho": 0.15
+      },
+      "nota": "A referência espaça rótulo e valor de forma diferente nas duas colunas (a direita tem folga maior); a tela usa uma regra só, e os valores ficam a até 8 px nas duas colunas. Além disso, a referência escreve \"Leal|Bom\" quase sem espaço em volta da barra; o valor gravado tem os espaços (\"Leal | Bom\")."
+    },
+    {
+      "nome": "essencia-l1-botao",
+      "tipo": "quadro",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": 0,
+      "dentro": ".popover__trigger",
+      "modo": "escuro",
+      "limiar": 200,
+      "regiao": [
+        438,
+        724,
+        538,
+        766
+      ],
+      "caixa": [
+        431,
+        318,
+        85,
+        37
+      ]
+    },
+    {
+      "nome": "essencia-l5-icone",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": -1,
+      "dentro": ".personalidade-linha__icone",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        68,
+        986,
+        130,
+        1042
+      ],
+      "caixa": [
+        65,
+        585,
+        39,
+        43
+      ]
+    },
+    {
+      "nome": "essencia-l5-rotulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": -1,
+      "dentro": ".eyebrow",
+      "modo": "escuro",
+      "limiar": 150,
+      "regiao": [
+        136,
+        986,
+        256,
+        1042
+      ],
+      "caixa": [
+        130,
+        601,
+        96,
+        8
+      ]
+    },
+    {
+      "nome": "essencia-l5-valor",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": -1,
+      "dentro": "strong",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        258,
+        986,
+        438,
+        1042
+      ],
+      "caixa": [
+        254,
+        600,
+        112,
+        17
+      ]
+    },
+    {
+      "nome": "essencia-l5-botao",
+      "tipo": "quadro",
+      "seletor": ".personalidade-grupo--essencia .personalidade-linha",
+      "indice": -1,
+      "dentro": ".popover__trigger",
+      "modo": "escuro",
+      "limiar": 200,
+      "regiao": [
+        438,
+        992,
+        538,
+        1034
+      ],
+      "caixa": [
+        431,
+        585,
+        85,
+        39
+      ]
+    },
+    {
+      "nome": "grupo-sombras-esq",
+      "tipo": "quadro",
+      "seletor": ".personalidade-grupo--sombras",
+      "modo": "escuro",
+      "limiar": 185,
+      "regiao": [
+        562,
+        612,
+        735,
+        1086
+      ],
+      "caixa": [
+        556,
+        213,
+        166,
+        456
+      ]
+    },
+    {
+      "nome": "grupo-sombras-dir",
+      "tipo": "quadro",
+      "seletor": ".personalidade-grupo--sombras",
+      "modo": "escuro",
+      "limiar": 185,
+      "regiao": [
+        900,
+        640,
+        1080,
+        1086
+      ],
+      "caixa": [
+        887,
+        233,
+        177,
+        436
+      ]
+    },
+    {
+      "nome": "sombras-emblema",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-grupo--sombras .personalidade-grupo__emblema",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        588,
+        622,
+        680,
+        712
+      ],
+      "caixa": [
+        586,
+        226,
+        69,
+        68
+      ]
+    },
+    {
+      "nome": "sombras-titulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--sombras .personalidade-grupo__titulo",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        678,
+        636,
+        1040,
+        674
+      ],
+      "caixa": [
+        670,
+        238,
+        182,
+        22
+      ]
+    },
+    {
+      "nome": "sombras-subtitulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--sombras .personalidade-grupo__subtitulo",
+      "modo": "escuro",
+      "limiar": 140,
+      "regiao": [
+        678,
+        676,
+        1064,
+        699
+      ],
+      "caixa": [
+        670,
+        272,
+        309,
+        14
+      ]
+    },
+    {
+      "nome": "sombras-l1-icone",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": 0,
+      "dentro": ".personalidade-linha__icone",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        592,
+        716,
+        658,
+        770
+      ],
+      "caixa": [
+        597,
+        319,
+        26,
+        35
+      ]
+    },
+    {
+      "nome": "sombras-l1-rotulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": 0,
+      "dentro": ".eyebrow",
+      "modo": "escuro",
+      "limiar": 150,
+      "regiao": [
+        664,
+        716,
+        812,
+        770
+      ],
+      "caixa": [
+        660,
+        332,
+        99,
+        8
+      ]
+    },
+    {
+      "nome": "sombras-l1-valor",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": 0,
+      "dentro": "strong",
+      "modo": "escuro",
+      "limiar": 150,
+      "regiao": [
+        814,
+        716,
+        964,
+        770
+      ],
+      "caixa": [
+        807,
+        330,
+        90,
+        18
+      ]
+    },
+    {
+      "nome": "sombras-l1-botao",
+      "tipo": "quadro",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": 0,
+      "dentro": ".popover__trigger",
+      "modo": "escuro",
+      "limiar": 200,
+      "regiao": [
+        964,
+        722,
+        1064,
+        764
+      ],
+      "caixa": [
+        959,
+        318,
+        84,
+        37
+      ]
+    },
+    {
+      "nome": "sombras-l6-icone",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": -1,
+      "dentro": ".personalidade-linha__icone",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        592,
+        1008,
+        658,
+        1060
+      ],
+      "caixa": [
+        593,
+        608,
+        33,
+        37
+      ]
+    },
+    {
+      "nome": "sombras-l6-rotulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": -1,
+      "dentro": ".eyebrow",
+      "modo": "escuro",
+      "limiar": 150,
+      "regiao": [
+        664,
+        1008,
+        812,
+        1060
+      ],
+      "caixa": [
+        660,
+        621,
+        127,
+        11
+      ]
+    },
+    {
+      "nome": "sombras-l6-valor",
+      "tipo": "texto",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": -1,
+      "dentro": "strong",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        814,
+        1008,
+        964,
+        1060
+      ],
+      "caixa": [
+        809,
+        620,
+        87,
+        13
+      ],
+      "tolerancia": {
+        "posicao": 8
+      },
+      "nota": "A referência espaça rótulo e valor de forma diferente nas duas colunas (a direita tem folga maior); a tela usa uma regra só, e os valores ficam a até 8 px nas duas colunas."
+    },
+    {
+      "nome": "sombras-l6-botao",
+      "tipo": "quadro",
+      "seletor": ".personalidade-grupo--sombras .personalidade-linha",
+      "indice": -1,
+      "dentro": ".popover__trigger",
+      "modo": "escuro",
+      "limiar": 200,
+      "regiao": [
+        964,
+        1012,
+        1058,
+        1054
+      ],
+      "caixa": [
+        959,
+        607,
+        84,
+        38
+      ]
+    },
+    {
+      "nome": "historia",
+      "tipo": "quadro",
+      "seletor": ".personalidade-historia",
+      "modo": "escuro",
+      "limiar": 170,
+      "regiao": [
+        42,
+        1080,
+        1080,
+        1342
+      ],
+      "caixa": [
+        29,
+        684,
+        1038,
+        251
+      ]
+    },
+    {
+      "nome": "historia-icone",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-historia__icone",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        84,
+        1108,
+        152,
+        1166
+      ],
+      "caixa": [
+        84,
+        719,
+        44,
+        38
+      ]
+    },
+    {
+      "nome": "historia-titulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-historia__titulo",
+      "modo": "escuro",
+      "limiar": 110,
+      "regiao": [
+        154,
+        1108,
+        340,
+        1154
+      ],
+      "caixa": [
+        151,
+        717,
+        116,
+        27
+      ]
+    },
+    {
+      "nome": "historia-subtitulo",
+      "tipo": "texto",
+      "seletor": ".personalidade-historia__subtitulo",
+      "modo": "escuro",
+      "limiar": 140,
+      "regiao": [
+        154,
+        1155,
+        430,
+        1180
+      ],
+      "caixa": [
+        151,
+        754,
+        192,
+        15
+      ]
+    },
+    {
+      "nome": "historia-divisor",
+      "tipo": "ornamento",
+      "seletor": ".personalidade-historia__divisor",
+      "modo": "escuro",
+      "limiar": 195,
+      "minimo": 1,
+      "regiao": [
+        84,
+        1181,
+        610,
+        1200
+      ],
+      "caixa": [
+        71,
+        774,
+        518,
+        19
+      ]
+    },
+    {
+      "nome": "historia-texto",
+      "tipo": "texto",
+      "seletor": ".personalidade-historia__texto",
+      "modo": "escuro",
+      "limiar": 130,
+      "regiao": [
+        108,
+        1206,
+        606,
+        1272
+      ],
+      "caixa": [
+        104,
+        811,
+        457,
+        43
+      ]
+    },
+    {
+      "nome": "pintura-historia",
+      "tipo": "area",
+      "seletor": ".personalidade-pintura--historia",
+      "caixa_manual": [
+        578,
+        690,
+        488,
+        238
+      ],
+      "nota": "Na referência, a cena vai até o filete de dentro em cima, embaixo e à direita, e esmaece à esquerda a partir de x ≈ 580 (revisado em 2026-09-30)."
+    }
+  ],
+  "origem_na_referencia": [
+    13,
+    407
+  ]
+}

@@ -1,0 +1,45 @@
+/*
+ * Editor dos Traços (reformular-personalidade-da-ficha, D3): no popover da aba Personalidade e em linha na
+ * criação guiada. Usa os tokens das superfícies flutuantes, como os outros editores de campo.
+ */
+.editor-tracos { display: grid; gap: .45rem; text-align: left; }
+.editor-tracos__entrada { display: flex; align-items: stretch; gap: .5rem; }
+.editor-tracos__entrada input { flex: 1; min-width: 0; }
+.editor-tracos__entrada .button { flex: none; min-height: 0; padding: .35rem .8rem; }
+.editor-tracos__contador { color: var(--muted); }
+.editor-tracos__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: .15rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.editor-tracos__lista li {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  padding: .2rem .25rem .2rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  color: var(--text);
+  font-weight: 700;
+  font-size: .8rem;
+}
+.editor-tracos__remover {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: .95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.editor-tracos__remover:hover { background: color-mix(in srgb, var(--text) 14%, transparent); color: var(--text); }
+.editor-tracos__remover:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }

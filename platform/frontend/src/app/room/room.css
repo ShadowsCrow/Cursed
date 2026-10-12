@@ -1,0 +1,728 @@
+/*
+ * Sala de página única (experiencia-da-mesa, item 2): o grid ocupa a área do palco; o nome da cena,
+ * os controles do mapa, os avisos e o painel da cena ficam por cima dele (grade infinita, pedido de 2026-10-02).
+ */
+.room-view [hidden] { display: none !important; }
+.room-view { position: relative; flex: 1; min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.room-view__palco { position: relative; min-width: 0; min-height: 0; display: flex; }
+.room-view__vazio { margin: auto; padding: 1rem; color: var(--text-muted); text-align: center; }
+
+/* Sobreposições: só as próprias caixas recebem o ponteiro; o resto do grid continua arrastável. */
+.room-view__topo { position: absolute; z-index: 2; inset: .75rem .75rem auto .75rem; display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; pointer-events: none; }
+.room-view__topo > * { pointer-events: auto; }
+.room-view__cena, .room-view__alternar {
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: .6rem;
+  background: rgb(11 17 24 / .88); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgb(0 0 0 / .35);
+}
+.room-view__ativa { color: var(--quiet); font-size: .75rem; }
+.room-view__cena { padding: .45rem .8rem; font: 600 1rem/1.2 var(--font-display); }
+/* Com o painel aberto, o que fica à direita no topo e embaixo se desloca para a esquerda dele. */
+.room-view--painel-aberto .room-view__topo { right: calc(var(--largura-painel, 22rem) + .75rem); }
+.room-view--painel-aberto .room-canvas__controls { right: calc(var(--largura-painel, 22rem) + .75rem); }
+.room-view__alternar { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: .45rem; min-height: 2.5rem; padding: .4rem .8rem; color: var(--text); font-size: .8rem; font-weight: 700; white-space: nowrap; }
+.room-view__alternar[aria-expanded="true"] { border-color: var(--border-ornate); }
+
+.room-view__signals { position: absolute; z-index: 2; left: .75rem; bottom: .75rem; max-width: min(26rem, 55%); display: grid; gap: .25rem; pointer-events: none; }
+.room-view__signals p, .room-view__avisos p { margin: 0; padding: .3rem .6rem; border-radius: .4rem; background: rgb(11 17 24 / .85); font-size: .8rem; }
+.room-view__avisos { position: absolute; z-index: 2; left: 50%; bottom: .75rem; transform: translateX(-50%); display: grid; gap: .25rem; max-width: min(30rem, 60%); pointer-events: none; text-align: center; }
+
+/* Painel da cena */
+.room-view__painel { position: absolute; z-index: 3; top: 0; right: 0; bottom: 0; width: var(--largura-painel, 22rem); max-width: 60%; min-height: 0; overflow-y: auto; overflow-x: hidden; backdrop-filter: blur(6px); display: grid; align-content: start; gap: 1.1rem; padding: 1rem; border-left: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); background: rgb(11 17 24 / .84); }
+/* Alça de largura do painel: fica na borda esquerda dele, fora da área que rola. */
+.room-view__alca { position: absolute; z-index: 4; top: 0; bottom: 0; right: calc(var(--largura-painel, 22rem) - 5px); width: 10px; cursor: col-resize; touch-action: none; display: flex; justify-content: center; }
+.room-view__alca::before { content: ""; width: 2px; height: 100%; background: transparent; transition: background var(--motion-fast); }
+.room-view__alca::after { content: ""; position: absolute; top: 50%; width: 6px; height: 2.6rem; transform: translateY(-50%); border-radius: 4px; background: color-mix(in srgb, var(--border-ornate) 55%, transparent); }
+.room-view__alca:hover::before, .room-view__alca:focus-visible::before, .room-view__alca--ativa::before { background: var(--border-ornate); }
+.room-view__alca:focus-visible { outline: none; box-shadow: none; }
+.room-view__alca:focus-visible::after { box-shadow: var(--focus-ring); }
+.room-view__painel .panel { min-width: 0; margin: 0; padding: .9rem; }
+.room-view__painel h2 { margin: 0; font: 600 1.05rem/1.2 var(--font-display); }
+.room-view__hint { margin: 0; color: var(--text-muted); font-size: .8rem; line-height: 1.5; }
+.room-view__details { display: grid; gap: .6rem; }
+.room-view__details ul { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: 0; }
+.room-view__details p { margin: 0; }
+
+/* Estados sem grid: carregando e erro (a Sala é sempre ligada; melhorias-da-sala, item 9). */
+.room-view--aviso { place-items: center; padding: 2rem 1rem; }
+
+/* Grid */
+.room-canvas { position: relative; width: 100%; min-width: 0; }
+.room-canvas__surface { height: min(65vh, 650px); min-height: 300px; width: 100%; overflow: hidden; border: 1px solid var(--border, #716a80); border-radius: .75rem; touch-action: none; }
+.room-canvas__surface canvas { display: block; }
+/* Controle de zoom compacto, na moldura do nome da cena (melhorias-da-sala, item 2). */
+.room-canvas__controls {
+  position: absolute; z-index: 1; right: .75rem; top: .75rem; display: flex; align-items: center; gap: .1rem;
+  height: 2.25rem; padding: .2rem; color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: .6rem;
+  background: rgb(11 17 24 / .88); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgb(0 0 0 / .35);
+}
+.room-canvas__controls button {
+  display: grid; place-items: center; width: 1.75rem; height: 1.75rem; min-height: 0; padding: 0; cursor: pointer;
+  border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font: 600 1.05rem/1 var(--font-display);
+  transition: color var(--motion-fast), background var(--motion-fast);
+}
+.room-canvas__controls button:hover { color: var(--accent-strong); background: color-mix(in srgb, var(--border-ornate) 16%, transparent); }
+.room-canvas__zoom { min-width: 2.6rem; color: var(--text-muted); font-size: .72rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; text-align: center; }
+.room-canvas__divisor { width: 1px; height: 1.1rem; margin: 0 .15rem; background: color-mix(in srgb, var(--border-ornate) 35%, transparent); }
+.room-view .room-canvas { flex: 1; height: 100%; }
+.room-view .room-canvas__surface { height: 100%; min-height: 0; border: 0; border-radius: 0; }
+.room-view .room-canvas__controls { top: auto; bottom: .75rem; z-index: 2; }
+
+@media (max-width: 760px) {
+  .room-view__alca { display: none; }
+  .room-view--painel-aberto .room-view__topo { right: .5rem; }
+  .room-view--painel-aberto .room-canvas__controls { right: .75rem; }
+  .room-view__topo { flex-wrap: wrap; inset: .5rem .5rem auto .5rem; }
+  .room-view__painel { top: auto; width: auto; max-width: none; left: 0; right: 0; bottom: 0; max-height: 60%; border-left: 0; border-top: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-radius: .8rem .8rem 0 0; box-shadow: 0 -10px 30px rgb(0 0 0 / .5); }
+  .room-view__signals { max-width: 70%; bottom: 4rem; }
+  .room-view__avisos { bottom: 4rem; max-width: 90%; }
+}
+
+/* ---------- Painel da Sala com abas (item 4) ---------- */
+.room-view__painel { padding: 0; gap: 0; }
+.painel-sala__topo { position: sticky; top: 0; z-index: 1; display: flex; align-items: stretch; gap: .25rem; padding: .5rem .5rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); background: rgb(11 17 24 / .96); }
+.painel-sala__abas { flex: 1; min-width: 0; display: flex; gap: .15rem; container: abas-do-painel / inline-size; }
+.painel-sala__abas [role="tab"] { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: .35rem; padding: .6rem .3rem; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-muted); font-size: .82rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.painel-sala__abas [role="tab"]:hover { color: var(--text); }
+.painel-sala__abas [role="tab"] svg { flex: none; }
+.painel-sala__aba-rotulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Painel estreito: só o ícone; o nome fica para leitores de tela e no title (item 8). */
+@container abas-do-painel (max-width: 30rem) {
+  .painel-sala__aba-rotulo { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+}
+.bolsa-painel { display: grid; gap: .8rem; min-width: 0; }
+.bolsa-painel__titulo { margin: 0; font: 600 1.15rem/1.2 var(--font-display); }
+.painel-sala__abas [role="tab"][aria-selected="true"] { color: var(--accent-strong, var(--gold)); border-bottom-color: var(--border-ornate); }
+.painel-sala__recolher { flex: none; align-self: center; display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; border: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); border-radius: .45rem; background: none; color: var(--text-muted); }
+.painel-sala__recolher:hover { color: var(--text); border-color: var(--border-ornate); }
+.painel-sala__conteudo { display: grid; align-content: start; gap: 1.1rem; padding: 1rem; min-width: 0; }
+.painel-sala__cena { display: grid; gap: 1.1rem; min-width: 0; }
+.painel-sala__vazio { color: var(--text-muted); }
+
+/* Chat reservado */
+
+/* Fichas: faixa de retratos e resumo */
+.fichas-painel { display: grid; gap: .9rem; min-width: 0; }
+.fichas-painel__faixa { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .3rem; }
+.fichas-painel__retratos { display: flex; justify-content: center; gap: 10px; min-width: 0; overflow: hidden; }
+.fichas-painel__retrato { flex: none; width: 64px; height: 64px; padding: 0; border-radius: 50%; overflow: hidden; border: 2px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); background: var(--bg); opacity: .78; transition: opacity var(--motion-fast), border-color var(--motion-fast), transform var(--motion-fast); }
+.fichas-painel__retrato img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fichas-painel__retrato:hover { opacity: 1; }
+.fichas-painel__retrato[aria-pressed="true"] { opacity: 1; border-color: var(--border-ornate); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 25%, transparent); }
+.fichas-painel__seta { width: 2rem; height: 2.6rem; padding: 0; border: 0; background: none; color: var(--gold); font: 700 2rem/1 var(--font-display); }
+.fichas-painel__seta:disabled { opacity: .25; cursor: default; }
+.fichas-painel__titulo { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.fichas-painel__titulo h2 { margin: 0; font: 600 1.15rem/1.2 var(--font-display); }
+.fichas-painel__titulo .button { min-height: 2.2rem; padding: .35rem .8rem; }
+.fichas-painel__resumo { min-width: 0; }
+
+/* Cartas */
+.cartas-painel { display: grid; gap: .8rem; min-width: 0; }
+.cartas-painel__busca input { width: 100%; }
+.cartas-painel__aviso { margin: 0; min-height: 0; color: var(--text-muted); font-size: .82rem; }
+.cartas-painel__aviso:empty { display: none; }
+/* Com o painel largo, as cartas ficam lado a lado (pelo menos duas colunas a partir de ~490 px de painel). */
+.cartas-painel__lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .45rem; margin: 0; padding: 0; list-style: none; }
+.cartas-painel__carta { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: .65rem; padding: .45rem .55rem; border: 1px solid var(--border-subtle); border-radius: .5rem; background: rgb(255 255 255 / .02); }
+.cartas-painel__texto { display: grid; gap: .2rem; min-width: 0; }
+.cartas-painel__texto strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cartas-painel__miniatura { display: grid; place-items: center; width: 56px; height: 56px; overflow: hidden; border-radius: .4rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); background: linear-gradient(150deg, var(--noite-700, #1d2733), var(--noite-950, #0b1118)); color: var(--gold); font: 700 1.3rem/1 var(--font-display); }
+.cartas-painel__miniatura img { width: 100%; height: 100%; object-fit: cover; }
+.cartas-painel__filtro { display: flex; flex-wrap: wrap; gap: .35rem; }
+.cartas-painel__filtro button { display: inline-flex; align-items: center; gap: .35rem; min-height: 2rem; padding: .25rem .65rem; border-radius: 999px; border: 1px solid var(--border-subtle); background: none; color: var(--text-muted); font-size: .78rem; font-weight: 700; }
+.cartas-painel__filtro button span { color: var(--quiet); font-weight: 600; }
+.cartas-painel__filtro button:hover { color: var(--text); }
+.cartas-painel__filtro button[aria-pressed="true"] { color: var(--accent-strong, var(--gold)); border-color: var(--border-ornate); background: color-mix(in srgb, var(--gold) 10%, transparent); }
+.cartas-painel__tipo { color: var(--quiet); font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.cartas-painel__estado { color: var(--text-muted); font-size: .78rem; }
+.cartas-painel__acoes { display: flex; flex-wrap: wrap; gap: .35rem; }
+.cartas-painel__acoes button { min-height: 1.9rem; padding: .25rem .65rem; border-radius: .4rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); background: none; color: var(--text); font-size: .78rem; font-weight: 700; }
+.cartas-painel__acoes button:hover { border-color: var(--border-ornate); color: var(--accent-strong, var(--gold)); }
+.cartas-painel__personagem { display: grid; gap: .5rem; }
+.cartas-painel__personagem h3 { margin: 0; font: 600 1rem/1.2 var(--font-display); }
+
+/* ---------- Chão e baús: menu retrátil embaixo do grid ---------- */
+.room-view { --altura-chao: min(40vh, 22rem); }
+.room-view__chao { position: absolute; z-index: 2; left: .75rem; right: .75rem; bottom: 0; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.room-view--painel-aberto .room-view__chao { right: calc(var(--largura-painel, 22rem) + .75rem); }
+.room-view__chao > * { pointer-events: auto; }
+.room-view__chao-botao { display: inline-flex; align-items: center; gap: .45rem; margin-bottom: .75rem; padding: .45rem .9rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-radius: .6rem; background: rgb(11 17 24 / .9); color: var(--text); font-size: .8rem; font-weight: 700; box-shadow: 0 6px 18px rgb(0 0 0 / .35); }
+.room-view__chao-seta { transform: rotate(-90deg); transition: transform var(--motion-fast); }
+.room-view--chao-aberto .room-view__chao-botao { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: transparent; }
+.room-view--chao-aberto .room-view__chao-seta { transform: rotate(90deg); }
+.room-view__chao-corpo { align-self: stretch; height: var(--altura-chao); overflow-y: auto; padding: .8rem 1rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-bottom: 0; border-radius: .7rem .7rem 0 0; background: rgb(11 17 24 / .92); backdrop-filter: blur(6px); }
+/* Com o chão aberto, o zoom, os sinais e os avisos sobem acima dele. */
+.room-view .room-canvas__controls { bottom: 3.6rem; }
+.room-view__signals, .room-view__avisos { bottom: 3.6rem; }
+.room-view--chao-aberto .room-canvas__controls,
+.room-view--chao-aberto .room-view__signals,
+.room-view--chao-aberto .room-view__avisos { bottom: calc(var(--altura-chao) + 3.2rem); }
+@media (prefers-reduced-motion: reduce) { .room-view__chao-seta { transition: none; } }
+
+/* Ficha completa flutuando por cima da Sala */
+.dialog.ficha-flutuante { width: min(1440px, 96vw); max-height: 94vh; }
+.dialog.ficha-flutuante .dialog__body { overflow-y: auto; }
+
+@media (max-width: 760px) {
+  .room-view--painel-aberto .room-view__chao { right: .75rem; }
+  .room-view .room-canvas__controls, .room-view__signals, .room-view__avisos { bottom: 3.6rem; }
+}
+
+/* Gestão de cenas no topo da aba Cena (item 5) */
+.painel-sala__cenas { display: grid; gap: .6rem; padding-bottom: 1rem; border-bottom: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); }
+.painel-sala__cenas h2 { margin: 0; font: 600 1.05rem/1.2 var(--font-display); }
+/* Cenas lado a lado: no máximo 4 por linha (painel no máximo); o mínimo de 8.5rem dá 2 na largura padrão. */
+.painel-sala__lista-cenas { --vao-cenas: .4rem; display: grid; gap: var(--vao-cenas); margin: 0; padding: 0; list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(max(8.5rem, (100% - 3 * var(--vao-cenas)) / 4), 1fr)); }
+.painel-sala__cena-item { display: grid; align-content: space-between; gap: .3rem; min-width: 0; padding: .35rem .45rem .45rem; border: 1px solid var(--border-subtle); border-radius: .5rem; background: rgb(255 255 255 / .02); }
+.painel-sala__cena-item:has(.painel-sala__cena-botao[aria-current="true"]) { border-color: var(--border-ornate); background: color-mix(in srgb, var(--gold) 8%, transparent); }
+.painel-sala__cena-botao { min-width: 0; display: inline-flex; align-items: center; gap: .45rem; min-height: 2.1rem; padding: .25rem .3rem; border: 0; border-radius: .4rem; background: none; color: var(--text-muted); font-size: .88rem; font-weight: 700; text-align: left; }
+.painel-sala__cena-botao span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.painel-sala__cena-botao:hover { color: var(--text); }
+.painel-sala__cena-botao[aria-current="true"] { color: var(--accent-strong, var(--gold)); }
+
+/* Chave liga/desliga (role="switch" num checkbox nativo: teclado e leitor de tela de graça). */
+.chave { position: relative; flex: none; justify-self: end; display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+.chave__entrada { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.chave__entrada:disabled { cursor: default; }
+.chave__trilho { position: relative; width: 2.4rem; height: 1.35rem; border-radius: 999px; border: 1px solid var(--border-subtle); background: rgb(255 255 255 / .08); transition: background var(--motion-fast), border-color var(--motion-fast); }
+.chave__botao { position: absolute; top: 2px; left: 2px; width: calc(1.35rem - 6px); height: calc(1.35rem - 6px); border-radius: 50%; background: var(--text-muted); transition: transform var(--motion-fast), background var(--motion-fast); }
+.chave__entrada:checked + .chave__trilho { border-color: var(--border-ornate); background: color-mix(in srgb, var(--gold) 45%, transparent); }
+.chave__entrada:checked + .chave__trilho .chave__botao { transform: translateX(1.05rem); background: var(--ouro-200, #f3d488); }
+.chave__entrada:focus-visible + .chave__trilho { box-shadow: var(--focus-ring); }
+.chave:hover .chave__entrada:not(:disabled) + .chave__trilho { border-color: color-mix(in srgb, var(--border-ornate) 70%, transparent); }
+.chave__rotulo { color: var(--quiet); font-size: .72rem; font-weight: 700; }
+.chave__entrada:checked ~ .chave__rotulo { color: var(--accent-strong, var(--gold)); }
+@media (prefers-reduced-motion: reduce) { .chave__trilho, .chave__botao { transition: none; } }
+.painel-sala__nova-cena { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4rem; }
+.painel-sala__nova-cena .button { min-height: 2.3rem; padding: .3rem .8rem; }
+
+/* Personagens dos jogadores, para o Narrador pôr na cena (item 9) */
+.personagens-cena { display: grid; gap: .5rem; }
+.personagens-cena h2 { margin: 0; font: 600 1.05rem/1.2 var(--font-display); }
+.personagens-cena__lista { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.personagens-cena__item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto auto; align-items: center; gap: .6rem; padding: .35rem .5rem; border: 1px solid var(--border-subtle); border-radius: .5rem; background: rgb(255 255 255 / .02); cursor: grab; }
+.personagens-cena__item:active { cursor: grabbing; }
+.personagens-cena__retrato { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-ornate); }
+.personagens-cena__nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.personagens-cena__marca { padding: .1rem .45rem; border-radius: 999px; border: 1px solid var(--border-subtle); color: var(--quiet); font-size: .72rem; white-space: nowrap; }
+.personagens-cena__colocar { min-height: 1.9rem; padding: .25rem .65rem; border-radius: .4rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); background: none; color: var(--text); font-size: .78rem; font-weight: 700; }
+.personagens-cena__colocar:hover { border-color: var(--border-ornate); color: var(--accent-strong, var(--gold)); }
+/* "Colocar oculto" ao lado de "Colocar" (melhorias-da-sala, item 4): só o olho cortado, com o nome na dica. */
+.personagens-cena__colocar--oculto { display: grid; place-items: center; width: 1.9rem; padding: 0; color: var(--text-muted); }
+.personagens-cena__grupos { display: grid; gap: 1rem; }
+.personagens-cena__nome { display: grid; }
+.personagens-cena__tipo { color: var(--quiet); font-size: .72rem; font-weight: 600; }
+.personagens-cena__marcas { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .25rem; }
+.personagens-cena__marca--oculto { color: var(--accent-strong, var(--gold)); border-color: color-mix(in srgb, var(--border-ornate) 50%, transparent); }
+
+/* Tokens da cena (item 11): mesmo visual das listas de personagens; "Retirar" discreto para o Narrador */
+.tokens-cena { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.room-view__details ul.tokens-cena { display: grid; }
+.tokens-cena__item { display: flex; align-items: stretch; gap: .35rem; }
+.tokens-cena__escolher { flex: 1; min-width: 0; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: .6rem;
+  padding: .35rem .55rem; border: 1px solid var(--border-subtle); border-radius: .5rem; background: rgb(255 255 255 / .02);
+  color: var(--text); text-align: left; transition: border-color var(--motion-fast), background var(--motion-fast); }
+.tokens-cena__escolher:hover { border-color: color-mix(in srgb, var(--border-ornate) 55%, transparent); }
+/* Mesma cor do aro de seleção no grid (selecaoDoToken.ts). */
+.tokens-cena__escolher[aria-pressed="true"] { border-color: #7fd8ff; background: color-mix(in srgb, #7fd8ff 12%, transparent);
+  box-shadow: inset 3px 0 0 #7fd8ff; }
+.tokens-cena__retrato { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-ornate); }
+.tokens-cena__retrato--iniciais { display: grid; place-items: center; background: #816247; color: #fff; font-size: .75rem; font-weight: 800; }
+.tokens-cena__nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.tokens-cena__posicao { color: var(--quiet); font-size: .75rem; font-variant-numeric: tabular-nums; }
+.tokens-cena__acao, .tokens-cena__retirar { flex: none; display: grid; place-items: center; width: 2.25rem; padding: 0; border: 1px solid var(--border-subtle); border-radius: .5rem; background: none; color: var(--text-muted); }
+.tokens-cena__acao:hover { color: var(--text); border-color: var(--border-ornate); }
+.tokens-cena__acao[aria-pressed="true"] { color: var(--accent-strong, var(--gold)); border-color: var(--border-ornate); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.tokens-cena__marcas { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: .3rem; margin-top: -.15rem; }
+.tokens-cena__oculto { padding: .05rem .4rem; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--border-ornate) 50%, transparent); color: var(--accent-strong, var(--gold)); font-size: .68rem; }
+.tokens-cena__retirar:hover { color: #fff; border-color: var(--sangue-500, #a33); background: color-mix(in srgb, var(--sangue-500, #a33) 30%, transparent); }
+.tokens-cena__estado { margin: 0; color: var(--text-muted); font-size: .8rem; }
+
+/* Permissão de movimento (item 13): ações em lote e escolha de jogadores para token sem dono. */
+.permissao-lote { display: grid; gap: .3rem; }
+.permissao-lote__titulo { color: var(--quiet); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.permissao-lote__botoes { display: flex; flex-wrap: wrap; gap: .35rem; }
+.permissao-lote__botao { padding: .3rem .6rem; border: 1px solid var(--border-subtle); border-radius: 999px; background: none; color: var(--text-muted); font-size: .78rem; font-weight: 600; }
+.permissao-lote__botao:hover { color: var(--text); border-color: var(--border-ornate); }
+.permissao-lote__botao:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.permissao-lote__botao:disabled { opacity: .6; cursor: progress; }
+.escolher-jogadores { display: grid; gap: 1rem; }
+.escolher-jogadores__lista { display: grid; gap: .5rem; margin: 0; padding: 0; border: 0; }
+.escolher-jogadores__item { display: flex; align-items: center; gap: .55rem; }
+.escolher-jogadores__acoes { display: flex; justify-content: flex-end; gap: .5rem; }
+
+/* Tamanho do mapa na grade (item 12): uma barra que aplica ao soltar */
+.tamanho-mapa { display: grid; gap: .35rem; }
+.tamanho-mapa__cabecalho { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.tamanho-mapa__titulo { color: var(--quiet); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.tamanho-mapa__valor { color: var(--text-muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.tamanho-mapa__linha { display: grid; gap: .15rem; }
+.tamanho-mapa__rotulo { color: var(--text-muted); font-size: .8rem; }
+.tamanho-mapa__proporcao { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--text-muted); }
+.tamanho-mapa__barra { width: 100%; accent-color: var(--gold); cursor: pointer; }
+.tamanho-mapa__barra:disabled { cursor: progress; opacity: .6; }
+
+.chave__rotulo--texto { font-size: .8rem; font-weight: 600; letter-spacing: 0; }
+
+/* Aba Cena: conteúdo de cada sub-aba (pedido do usuário, 2026-10-04) e títulos das listas, com a quantidade ao lado. */
+.painel-sala__cenas, .painel-sala__tokens, .personagens-cena__secao { display: grid; gap: .6rem; min-width: 0; }
+.painel-sala__titulo, .personagens-cena__titulo { display: flex; align-items: center; gap: .45rem; margin: 0; color: var(--text); font: 600 1.02rem/1.2 var(--font-display); }
+.personagens-cena__titulo { font-size: .95rem; }
+.personagens-cena__secao + .personagens-cena__secao { padding-top: .7rem; border-top: 1px solid color-mix(in srgb, var(--border-ornate) 22%, transparent); }
+
+/* Mapa da cena: amostra da imagem no board, ou um quadro vazio tracejado convidando a enviar (item 12). */
+.room-view .image-upload--miniatura { position: relative; display: grid; gap: .3rem; }
+.room-view .image-upload__quadro {
+  position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; padding: 0; overflow: hidden;
+  border: 1px solid var(--border-ornate); border-radius: 6px; background: #0006; color: var(--text-muted); cursor: pointer;
+}
+.room-view .image-upload__quadro img { width: 100%; height: 100%; object-fit: cover; }
+.room-view .image-upload__quadro--vazio { border: 2px dashed var(--border-ornate); background: transparent; }
+.room-view .image-upload__quadro:hover, .room-view .image-upload__quadro:focus-visible { border-color: var(--gold); color: var(--text); }
+.room-view .image-upload__quadro:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.room-view .image-upload__quadro:disabled { opacity: .6; cursor: progress; }
+.room-view .image-upload__vazio { display: grid; justify-items: center; gap: .3rem; font-size: .8rem; }
+.room-view .image-upload__vazio svg { width: 1.6rem; height: 1.6rem; }
+.room-view .image-upload__trocar {
+  position: absolute; inset: auto 0 0; padding: .25rem; background: linear-gradient(transparent, #000c); color: var(--text);
+  font-size: .75rem; opacity: 0; transition: opacity var(--motion-fast);
+}
+.room-view .image-upload__quadro:hover .image-upload__trocar, .room-view .image-upload__quadro:focus-visible .image-upload__trocar { opacity: 1; }
+.room-view .image-upload--miniatura .image-upload__remover {
+  position: absolute; top: .35rem; right: .35rem; display: grid; place-items: center; box-sizing: border-box; width: 1.6rem; height: 1.6rem;
+  min-width: 0; min-height: 0; padding: 0; line-height: 1;
+  border: 1px solid var(--border-ornate); border-radius: 50%; background: #000b; color: var(--text); font-size: 1rem; cursor: pointer;
+}
+.room-view .image-upload--miniatura .image-upload__remover:hover { border-color: var(--gold); }
+.room-view .image-upload--miniatura .image-upload__mensagem { position: static; max-width: none; margin: 0; font-size: .8rem; }
+
+/* ---------- Aba Dados: rolador de dados (melhorias-da-sala, item 1) ---------- */
+.rolador { display: grid; gap: .9rem; min-width: 0; }
+.rolador__visor {
+  display: grid; gap: .3rem; justify-items: end; padding: .6rem .8rem; min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-radius: .6rem;
+  background: linear-gradient(180deg, rgb(0 0 0 / .32), rgb(0 0 0 / .18));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent-strong) 10%, transparent);
+}
+.rolador__expressao { margin: 0; max-width: 100%; color: var(--text-muted); font-size: .85rem; font-variant-numeric: lining-nums tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.rolador__expressao[data-vazia] { color: var(--quiet); font-style: italic; }
+.rolador__resultado { display: flex; align-items: baseline; gap: .6rem; min-height: 2.6rem; }
+.rolador__total { color: var(--accent-strong); font: 600 2.6rem/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; animation: rolador-surge 260ms ease-out; }
+.rolador__total--vazio { color: var(--quiet); animation: none; }
+.rolador__rolada { order: -1; color: var(--quiet); font-size: .78rem; }
+@keyframes rolador-surge { from { opacity: 0; transform: translateY(-.35rem) scale(.92); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rolador__total { animation: none; } }
+
+.rolador__grupos { display: grid; gap: .3rem; justify-items: end; margin: 0; padding: 0; list-style: none; }
+.rolador__grupos li { display: flex; align-items: center; justify-content: flex-end; gap: .45rem; flex-wrap: wrap; }
+.rolador__grupo-tipo { color: var(--quiet); font-size: .75rem; font-weight: 700; }
+.rolador__valores { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .25rem; }
+.rolador__valor {
+  display: inline-grid; place-items: center; min-width: 1.6rem; height: 1.6rem; padding: 0 .3rem;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); border-radius: .35rem;
+  background: rgb(255 255 255 / .04); color: var(--text); font-size: .8rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums;
+}
+.rolador__valor--mod { border-style: dashed; color: var(--text-muted); }
+
+.rolador__dados { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr)); gap: .45rem; }
+.rolador__dado {
+  position: relative; display: grid; justify-items: center; gap: .1rem; padding: .35rem .25rem .4rem; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .55rem;
+  background: var(--surface-raised); color: var(--text-muted);
+  transition: color var(--motion-fast), border-color var(--motion-fast), transform var(--motion-fast);
+}
+.rolador__dado:hover:not(:disabled) { color: var(--accent-strong); border-color: var(--border-ornate); }
+.rolador__dado:active:not(:disabled) { transform: translateY(1px); }
+.rolador__dado:disabled { opacity: .4; cursor: default; }
+.rolador__silhueta, .rolador__pintura { width: 3.5rem; height: 3.5rem; }
+.rolador__silhueta { padding: .55rem; }
+.rolador__pintura { object-fit: contain; filter: drop-shadow(0 3px 4px rgb(0 0 0 / .55)); transition: transform var(--motion-fast); }
+.rolador__dado:hover:not(:disabled) .rolador__pintura { transform: rotate(-8deg) scale(1.06); }
+@media (prefers-reduced-motion: reduce) { .rolador__dado:hover:not(:disabled) .rolador__pintura { transform: none; } }
+.rolador__dado-nome { color: var(--text); font: 600 .95rem/1 var(--font-display); }
+.rolador__contagem {
+  position: absolute; top: -.4rem; right: -.35rem; min-width: 1.35rem; padding: .1rem .3rem; border-radius: 999px;
+  background: var(--accent-strong); color: var(--tinta-900, #111); font-size: .68rem; font-weight: 800; line-height: 1.1;
+}
+.rolador__dado:has(.rolador__contagem) { border-color: var(--border-ornate); color: var(--accent-strong); }
+
+.rolador__linha { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.rolador__modificador {
+  display: inline-flex; align-items: center; gap: .1rem; height: 2.4rem; padding: .2rem;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .2);
+}
+.rolador__modificador button {
+  display: grid; place-items: center; width: 1.9rem; height: 1.9rem; padding: 0; cursor: pointer;
+  border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font: 600 1.1rem/1 var(--font-display);
+}
+.rolador__modificador button:hover:not(:disabled) { color: var(--accent-strong); background: color-mix(in srgb, var(--border-ornate) 16%, transparent); }
+.rolador__modificador button:disabled { opacity: .35; cursor: default; }
+.rolador__modificador-valor { min-width: 2.2rem; color: var(--text); font-size: .9rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; text-align: center; }
+.rolador__limpar, .rolador__rolar { min-height: 2.4rem; padding: .4rem .9rem; }
+.rolador__rolar { flex: 1; min-width: 6rem; }
+.rolador__aviso { margin: -.3rem 0 0; color: var(--quiet); font-size: .75rem; }
+
+.rolador__historico { display: grid; gap: .5rem; padding-top: .8rem; border-top: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); }
+.rolador__historico-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.rolador__historico h3 { margin: 0; color: var(--quiet); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.rolador__historico ol { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.rolador__item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3rem .6rem; padding: .5rem .65rem; border-radius: .5rem; background: rgb(0 0 0 / .18); }
+.rolador__item > .rolador__item-autor, .rolador__item > .rolador__item-cabeca { grid-column: 1 / -1; }
+.rolador__item > .rolador__texto { justify-self: end; }
+.rolador__item-cabeca { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.rolador__item-expressao { color: var(--text-muted); font-size: .82rem; overflow-wrap: anywhere; }
+.rolador__item-total { color: var(--accent-strong); font: 600 1.25rem/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; }
+.rolador__item .rolador__grupos { justify-items: start; }
+.rolador__item .rolador__grupos li { justify-content: flex-start; }
+.rolador__item .rolador__valor { min-width: 1.35rem; height: 1.35rem; font-size: .72rem; }
+.rolador__texto { justify-self: start; padding: .15rem 0; border: 0; background: none; color: var(--accent); font-size: .75rem; font-weight: 700; cursor: pointer; }
+.rolador__texto:hover { color: var(--accent-strong); text-decoration: underline; }
+
+/* ---------- Item 3: opções da aba Dados e dados 3D no tabuleiro ---------- */
+.rolador__total--rolando { font-size: 1.4rem; color: var(--text-muted); font-style: italic; animation: rolador-pulso 900ms ease-in-out infinite alternate; }
+@keyframes rolador-pulso { from { opacity: .55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rolador__total--rolando { animation: none; } }
+.rolador__item-autor { color: var(--accent); font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.rolador__opcoes { margin: 0; min-width: 0; border: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .14); }
+.rolador__opcoes-titulo { display: flex; align-items: center; gap: .45rem; padding: .5rem .75rem; color: var(--text-muted); font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; list-style: none; }
+.rolador__opcoes-titulo::-webkit-details-marker { display: none; }
+.rolador__opcoes-titulo::before { content: ""; width: .45rem; height: .45rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform var(--motion-fast); }
+.rolador__opcoes[open] > .rolador__opcoes-titulo::before { transform: rotate(45deg); }
+.rolador__opcoes-titulo:hover { color: var(--text); }
+.rolador__opcoes-titulo:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: .55rem; }
+.rolador__opcoes-campos { display: grid; gap: .55rem; margin: 0; padding: 0 .75rem .7rem; border: 0; min-width: 0; }
+.rolador__opcao { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.rolador__opcao-nome { color: var(--text-muted); font-size: .8rem; font-weight: 700; }
+.rolador__segmentos { display: inline-flex; padding: .15rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .5rem; background: rgb(0 0 0 / .2); }
+.rolador__segmento { position: relative; cursor: pointer; }
+.rolador__segmento input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.rolador__segmento span { display: block; padding: .3rem .6rem; border-radius: .38rem; color: var(--text-muted); font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.rolador__segmento input:checked + span { background: color-mix(in srgb, var(--border-ornate) 28%, transparent); color: var(--accent-strong); }
+.rolador__segmento input:focus-visible + span { box-shadow: var(--focus-ring); }
+.rolador__chave { position: relative; cursor: pointer; }
+.rolador__chave input { position: absolute; opacity: 0; width: 2.4rem; height: 1.35rem; right: 0; margin: 0; cursor: pointer; }
+.rolador__chave-trilho { position: relative; flex: none; width: 2.4rem; height: 1.35rem; border-radius: 999px; background: rgb(255 255 255 / .12); border: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); transition: background var(--motion-fast); }
+.rolador__chave-trilho::after { content: ""; position: absolute; top: .12rem; left: .14rem; width: 1rem; height: 1rem; border-radius: 50%; background: var(--text-muted); transition: transform var(--motion-fast), background var(--motion-fast); }
+.rolador__chave input:checked + .rolador__chave-trilho { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.rolador__chave input:checked + .rolador__chave-trilho::after { transform: translateX(1.02rem); background: var(--accent-strong); }
+.rolador__chave input:focus-visible + .rolador__chave-trilho { box-shadow: var(--focus-ring); }
+.rolador__opcoes .rolador__aviso { margin: 0; }
+
+/* Camada dos dados 3D: por cima do grid, fora do painel aberto, sem receber cliques. */
+.dados-no-tabuleiro { position: absolute; z-index: 2; inset: 0; pointer-events: none; transition: opacity 450ms ease; }
+.room-view--painel-aberto .dados-no-tabuleiro { right: var(--largura-painel, 22rem); }
+@media (max-width: 760px) { .room-view--painel-aberto .dados-no-tabuleiro { right: 0; } }
+.dados-no-tabuleiro canvas { display: block; pointer-events: none; }
+.dados-no-tabuleiro--sumindo { opacity: 0; }
+.rolador__erro { margin: 0; justify-self: stretch; color: var(--danger); font-size: .8rem; text-align: right; }
+.rolador__oculta { order: -2; padding: .05rem .45rem; border: 1px dashed color-mix(in srgb, var(--border-ornate) 50%, transparent); border-radius: 999px; color: var(--text-muted); font-size: .7rem; font-weight: 700; }
+
+/* Tamanho do token escolhido (melhorias-da-sala, item 6) */
+.tamanho-token { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .5rem .65rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .14); }
+.tamanho-token__titulo { color: var(--quiet); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.tamanho-token__controle { display: inline-flex; align-items: center; gap: .1rem; padding: .15rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .5rem; background: rgb(0 0 0 / .2); }
+.tamanho-token__controle button { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; padding: 0; border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font: 600 1.1rem/1 var(--font-display); cursor: pointer; }
+.tamanho-token__controle button:hover:not(:disabled) { color: var(--accent-strong); background: color-mix(in srgb, var(--border-ornate) 16%, transparent); }
+.tamanho-token__controle button:disabled { opacity: .35; cursor: default; }
+.tamanho-token__valor { min-width: 5.5rem; color: var(--text); font-size: .85rem; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; text-align: center; }
+
+/* Menu do botão direito sobre o token (item 6): flutua junto ao cursor, na moldura das sobreposições da Sala. */
+.menu-do-token { position: fixed; z-index: 30; display: grid; gap: .5rem; min-width: 15rem; padding: .55rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 55%, transparent); border-radius: .65rem; background: rgb(11 17 24 / .96); backdrop-filter: blur(8px); box-shadow: 0 12px 30px rgb(0 0 0 / .5); }
+.menu-do-token:focus-visible { outline: none; box-shadow: var(--focus-ring), 0 12px 30px rgb(0 0 0 / .5); }
+.menu-do-token__topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: 0 .1rem; }
+.menu-do-token__nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 1rem/1.2 var(--font-display); }
+.menu-do-token__fechar { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; padding: 0; border: 0; border-radius: .35rem; background: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; }
+.menu-do-token__fechar:hover { color: var(--text); background: rgb(255 255 255 / .06); }
+.menu-do-token__erro { margin: 0; color: var(--danger); font-size: .78rem; }
+
+/* Histórico das rolagens com barra de rolagem própria (melhorias-da-sala, item 7). Em tela larga e alta, o
+   histórico ocupa o espaço que sobra no painel e só ele rola; o visor, os dados e as opções ficam parados. */
+.rolador__lista { max-height: 20rem; overflow-y: auto; overscroll-behavior: contain; align-content: start; padding-right: .3rem;
+  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--border-ornate) 55%, transparent) transparent; }
+.rolador__lista:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: .4rem; }
+@media (min-width: 761px) and (min-height: 620px) {
+  .room-view__painel:has(.rolador) { display: flex; flex-direction: column; }
+  .room-view__painel:has(.rolador) .painel-sala__conteudo { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .rolador { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .rolador > * { flex: none; }
+  .rolador__historico { flex: 1 1 auto; min-height: 10rem; grid-template-rows: auto minmax(0, 1fr); }
+  .rolador__lista { max-height: none; min-height: 0; }
+}
+
+/* Rolar pela ficha (melhorias-da-sala, item 8): faixa de retratos compacta e Atributo + Perícia. */
+.fichas-painel__faixa--compacta .fichas-painel__retrato { width: 44px; height: 44px; }
+.fichas-painel__faixa--compacta .fichas-painel__seta { height: 2rem; font-size: 1.6rem; }
+.fichas-painel__sem-ficha { display: grid; place-items: center; color: var(--text-muted); background: rgb(0 0 0 / .25); }
+.fichas-painel__sem-ficha[aria-pressed="true"] { color: var(--accent-strong); }
+.rolador__ficha { display: grid; gap: .5rem; min-width: 0; }
+.rolador__ficha-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .45rem; }
+.rolador__seletor { display: grid; gap: .2rem; min-width: 0; color: var(--quiet); font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.rolador__seletor select { min-width: 0; width: 100%; min-height: 2.2rem; padding: .3rem .5rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: .45rem; background: rgb(0 0 0 / .25); color: var(--text); font-size: .85rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+
+/* Música da mesa (musica-da-sala) */
+.musica { display: grid; gap: .9rem; min-width: 0; }
+.musica__secao { margin: 0; color: var(--quiet); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.musica__agora {
+  display: grid; gap: .35rem; padding: .7rem .8rem; min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-radius: .6rem;
+  background: linear-gradient(180deg, rgb(0 0 0 / .32), rgb(0 0 0 / .18));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent-strong) 10%, transparent);
+}
+.musica__agora .musica__titulo { color: var(--accent-strong); font: 600 1.3rem/1.15 var(--font-display); }
+.musica__titulo { margin: 0; color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
+.musica__duracao { color: var(--quiet); font-weight: 600; font-variant-numeric: lining-nums tabular-nums; }
+.musica__nada { margin: 0; color: var(--text-muted); font-size: .85rem; }
+.musica__rotulos { display: flex; flex-wrap: wrap; gap: .3rem; margin: 0; }
+.musica__rotulo { padding: .05rem .45rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); border-radius: .35rem; color: var(--text-muted); font-size: .72rem; }
+.musica__rotulo--loop { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.musica__credito { margin: 0; color: var(--quiet); font-size: .72rem; overflow-wrap: anywhere; }
+.musica__credito a { color: inherit; }
+.musica__credito a:hover { color: var(--text-muted); }
+.musica__tempo { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin: 0; color: var(--text-muted); font-size: .8rem; font-variant-numeric: lining-nums tabular-nums; }
+.musica__situacao { color: var(--accent); font-weight: 700; }
+.musica__controles { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .2rem; }
+.musica__controles .chave { margin-left: auto; }
+.musica .button--secondary { background: transparent; border-color: color-mix(in srgb, var(--border-ornate) 45%, transparent); color: var(--text-muted); }
+.musica .button--secondary[aria-pressed="true"] { color: var(--accent-strong); border-color: var(--border-ornate); }
+.musica__tocando { display: grid; gap: .6rem; }
+.musica__tocando-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.musica__camada { margin: 0; color: var(--text-muted); font-size: .7rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.musica__agora--vazio { gap: .45rem; }
+.musica__tipos { display: inline-flex; justify-self: start; padding: .15rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .2); }
+.musica__tipo { padding: .3rem .9rem; border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font-size: .8rem; font-weight: 700; cursor: pointer; }
+.musica__tipo[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 70%, transparent); color: #1a130b; }
+.musica__tipo:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.musica__volume-campo { display: flex; flex: 1; align-items: center; gap: .5rem; min-width: 0; color: var(--text-muted); font-size: .8rem; }
+.musica__volume-campo input { flex: 1; min-width: 0; accent-color: var(--gold); }
+.musica__bloqueio { display: grid; gap: .5rem; padding: .7rem .8rem; border: 1px solid var(--border-ornate); border-radius: .6rem; background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.musica__bloqueio p { margin: 0; color: var(--text); font-size: .85rem; }
+.musica__bloqueio .button { justify-self: start; display: inline-flex; align-items: center; gap: .4rem; }
+.musica__biblioteca { display: grid; gap: .6rem; padding-top: .8rem; border-top: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); }
+.musica__filtro { display: grid; gap: .35rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+.musica__filtro legend { padding: 0; margin-bottom: .3rem; color: var(--text-muted); font-size: .75rem; font-weight: 700; }
+.musica__opcoes { display: flex; flex-wrap: wrap; gap: .3rem; }
+.musica__opcao { padding: .2rem .6rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: 999px; background: transparent; color: var(--text-muted); font-size: .75rem; cursor: pointer; }
+.musica__opcao:hover:not(:disabled) { color: var(--text); border-color: var(--border-ornate); }
+.musica__opcao[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 70%, transparent); border-color: var(--border-ornate); color: #1a130b; font-weight: 700; }
+.musica__opcao:disabled { opacity: .35; cursor: default; }
+.musica__opcao:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.musica__lista { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; }
+.musica__faixa { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .6rem; padding: .55rem .65rem; border: 1px solid transparent; border-radius: .5rem; background: rgb(0 0 0 / .18); }
+.musica__faixa-texto { display: grid; gap: .25rem; min-width: 0; }
+.musica__acoes { display: flex; align-items: center; gap: .35rem; }
+.musica__favorita { display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--quiet); cursor: pointer; }
+.musica__favorita:hover { color: var(--accent); }
+.musica__favorita[aria-pressed="true"] { color: var(--accent-strong, var(--gold)); }
+.musica__favorita[aria-pressed="true"] svg { fill: currentColor; }
+.musica__favorita:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.musica__opcao--favoritas { display: inline-flex; align-items: center; gap: .3rem; }
+.musica__opcao--favoritas[aria-pressed="true"] svg { fill: currentColor; }
+.musica__faixa--atual { border-color: color-mix(in srgb, var(--border-ornate) 70%, transparent); background: color-mix(in srgb, var(--gold) 10%, rgb(0 0 0 / .2)); }
+
+/* ---------------------------------------------------------------- gamificação da Sala (gamificacao-da-sala) */
+
+/* Destaque de críticos: selo com texto, valor marcado e faixa sobre o tabuleiro. */
+.rolador__selo { padding: .08rem .5rem; border-radius: 999px; font-size: .7rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
+.rolador__selo--critico { color: #2a1a04; background: linear-gradient(180deg, #ffd884, #e0a43a); box-shadow: 0 0 10px rgb(255 190 80 / .45); }
+.rolador__selo--falha_critica { color: #fff1f1; background: linear-gradient(180deg, #c8414f, #8d1d2a); box-shadow: 0 0 10px rgb(210 40 60 / .4); }
+.rolador__valor--critico { border-color: #f0b04a; color: #ffd27a; background: color-mix(in srgb, #f0b04a 18%, transparent); box-shadow: 0 0 8px rgb(255 180 60 / .45); }
+.rolador__valor--falha_critica { border-color: #d2283c; color: #ff9aa5; background: color-mix(in srgb, #d2283c 18%, transparent); box-shadow: 0 0 8px rgb(210 40 60 / .4); }
+.rolador__total--critico { color: #ffd27a; text-shadow: 0 0 18px rgb(255 180 60 / .55); }
+.rolador__total--falha_critica { color: #ff8b97; text-shadow: 0 0 18px rgb(210 40 60 / .5); }
+.rolador__item-cabeca .rolador__selo { margin-left: auto; }
+
+.faixa-de-critico {
+  position: absolute; z-index: 3; left: 0; right: 0; top: 38%; display: flex; justify-content: center; pointer-events: none;
+  animation: faixa-surge 2500ms ease-out forwards;
+}
+.room-view--painel-aberto .faixa-de-critico { right: var(--largura-painel, 22rem); }
+@media (max-width: 760px) { .room-view--painel-aberto .faixa-de-critico { right: 0; } }
+.faixa-de-critico__texto {
+  padding: .45rem 2.4rem; font: 700 clamp(1.6rem, 4vw, 2.6rem)/1.1 var(--font-display); letter-spacing: .06em; text-transform: uppercase;
+  border-block: 2px solid currentColor; background: linear-gradient(90deg, transparent, rgb(11 17 24 / .88) 18%, rgb(11 17 24 / .88) 82%, transparent);
+}
+.faixa-de-critico--critico .faixa-de-critico__texto { color: #ffd27a; text-shadow: 0 0 22px rgb(255 180 60 / .75); }
+.faixa-de-critico--falha_critica .faixa-de-critico__texto { color: #ff8b97; text-shadow: 0 0 22px rgb(210 40 60 / .7); }
+@keyframes faixa-surge {
+  0% { opacity: 0; transform: scale(.85); }
+  12% { opacity: 1; transform: scale(1.04); }
+  20% { transform: scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .faixa-de-critico { animation: faixa-sem-movimento 2500ms linear forwards; } }
+@keyframes faixa-sem-movimento { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Reações: botão discreto acima do zoom e balões que sobem pelo canto direito. */
+.reacoes { position: absolute; z-index: 2; right: .75rem; bottom: 6.3rem; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
+.room-view--painel-aberto .reacoes, .room-view--painel-aberto .baloes-de-reacao { right: calc(var(--largura-painel, 22rem) + .75rem); }
+.room-view--chao-aberto .reacoes { bottom: calc(var(--altura-chao) + 5.9rem); }
+.room-view--chao-aberto .baloes-de-reacao { bottom: calc(var(--altura-chao) + 8.6rem); }
+@media (max-width: 760px) { .room-view--painel-aberto .reacoes, .room-view--painel-aberto .baloes-de-reacao { right: .75rem; } }
+.reacoes__botao {
+  display: grid; place-items: center; width: 2.25rem; height: 2.25rem; min-height: 0; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); background: rgb(11 17 24 / .78); color: var(--text-muted);
+  backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgb(0 0 0 / .35); opacity: .78; transition: opacity var(--motion-fast), color var(--motion-fast);
+}
+.reacoes__botao:hover, .reacoes__botao[aria-expanded="true"] { opacity: 1; color: var(--accent-strong, var(--gold)); }
+.reacoes__botao:focus-visible, .reacoes__opcao:focus-visible { outline: none; box-shadow: var(--focus-ring); opacity: 1; }
+.reacoes__bandeja {
+  display: grid; grid-template-columns: repeat(3, 2.6rem); gap: .2rem; padding: .3rem;
+  border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: .7rem;
+  background: rgb(11 17 24 / .92); backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgb(0 0 0 / .45);
+}
+.reacoes__opcao { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; min-height: 0; padding: 0; border: 0; border-radius: .5rem; background: none; cursor: pointer; transition: transform var(--motion-fast), background var(--motion-fast); }
+.reacoes__opcao:hover { background: color-mix(in srgb, var(--gold) 12%, transparent); transform: scale(1.1); }
+.reacao__figura { display: block; object-fit: contain; filter: drop-shadow(0 2px 4px rgb(0 0 0 / .5)); }
+.reacao__figura--texto { display: grid; place-items: center; overflow: hidden; color: var(--text-muted); font-size: .5rem; font-weight: 700; text-align: center; }
+
+.baloes-de-reacao { position: absolute; z-index: 2; right: .75rem; bottom: 9rem; width: 7rem; height: 14rem; pointer-events: none; }
+.balao-de-reacao {
+  position: absolute; right: calc(.2rem - var(--deslocamento, 0px)); bottom: 0; display: flex; align-items: center; gap: .3rem;
+  padding: .2rem .5rem .2rem .25rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 30%, transparent); border-radius: 999px;
+  background: rgb(11 17 24 / .7); backdrop-filter: blur(6px); animation: balao-sobe 3000ms ease-out forwards;
+}
+.balao-de-reacao__nome { max-width: 4.5rem; overflow: hidden; color: var(--text-muted); font-size: .66rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+@keyframes balao-sobe {
+  0% { opacity: 0; transform: translateY(0) scale(.7); }
+  12% { opacity: .95; transform: translateY(-1.5rem) scale(1); }
+  75% { opacity: .9; }
+  100% { opacity: 0; transform: translateY(-12rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .balao-de-reacao { animation: balao-no-lugar 3000ms linear forwards; }
+  .reacoes__botao, .reacoes__opcao { transition: none; }
+  .reacoes__opcao:hover { transform: none; }
+}
+@keyframes balao-no-lugar { 0% { opacity: 0; } 10%, 80% { opacity: .95; } 100% { opacity: 0; } }
+
+/* Anúncio do MVP sobre o tabuleiro. */
+.anuncio-do-mvp {
+  position: absolute; z-index: 3; left: 50%; top: 22%; transform: translateX(-50%); display: grid; justify-items: center; gap: .3rem;
+  pointer-events: none; animation: mvp-surge 6000ms ease-out forwards;
+}
+.anuncio-do-mvp__selo { filter: drop-shadow(0 8px 20px rgb(0 0 0 / .6)) drop-shadow(0 0 24px rgb(255 190 80 / .35)); }
+.anuncio-do-mvp__texto { display: grid; justify-items: center; margin: 0; padding: .45rem 1.6rem; border-block: 2px solid var(--border-ornate);
+  background: linear-gradient(90deg, transparent, rgb(11 17 24 / .9) 15%, rgb(11 17 24 / .9) 85%, transparent); }
+.anuncio-do-mvp__rotulo { color: var(--text-muted); font-size: .72rem; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
+.anuncio-do-mvp__nome { color: #ffd27a; font: 700 clamp(1.5rem, 3.5vw, 2.3rem)/1.1 var(--font-display); text-shadow: 0 0 18px rgb(255 180 60 / .6); }
+@keyframes mvp-surge { 0% { opacity: 0; transform: translateX(-50%) scale(.8); } 8% { opacity: 1; transform: translateX(-50%) scale(1.05); } 14% { transform: translateX(-50%) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .anuncio-do-mvp { animation: mvp-sem-movimento 6000ms linear forwards; } }
+@keyframes mvp-sem-movimento { 0%, 90% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Sub-abas das abas Mestre e Cena (no lugar das seções retráteis), no visual segmentado da Música. */
+.sub-abas { display: flex; gap: .15rem; padding: .15rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: .55rem; background: rgb(0 0 0 / .2); }
+.sub-abas__aba { position: relative; flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: .3rem; padding: .4rem .45rem; border: 0; border-radius: .4rem; background: transparent; color: var(--text-muted); font-size: .76rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.sub-abas__aba:hover { color: var(--text); }
+.sub-abas__aba[aria-selected="true"] { color: var(--accent-strong, var(--gold)); background: color-mix(in srgb, var(--gold) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-ornate) 55%, transparent); }
+.sub-abas__aba:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.sub-abas__contagem { min-width: 1.1rem; padding: 0 .3rem; border-radius: 999px; background: rgb(255 255 255 / .08); color: var(--text-muted); font-size: .66rem; font-variant-numeric: tabular-nums; }
+.sub-abas__aviso { position: absolute; top: .3rem; right: .35rem; width: .42rem; height: .42rem; border-radius: 50%; background: #f0b04a; box-shadow: 0 0 6px rgb(255 180 60 / .7); }
+.sub-abas__conteudo { display: grid; gap: .8rem; padding-top: .2rem; min-width: 0; }
+
+/* Abas Mestre e Jogador. */
+.mestre__bloco { display: grid; gap: .5rem; }
+.mestre, .jogador { display: grid; gap: .6rem; padding: .8rem 1rem 1rem; }
+.mestre__estado { margin: 0; color: var(--text); font-size: .88rem; font-weight: 600; }
+.mestre__dica { display: block; margin: 0; color: var(--text-muted); font-size: .76rem; font-weight: 400; line-height: 1.45; }
+.mestre__sessao, .mestre__votacao, .mestre__preferencias { display: grid; gap: .55rem; justify-items: start; }
+.mestre__preferencias { justify-items: stretch; }
+.mestre__chave .rolador__opcao-nome { display: grid; gap: .15rem; }
+.mestre__empatados { display: flex; flex-wrap: wrap; gap: .4rem; }
+.mestre__mvps { display: grid; gap: .35rem; margin: 0; padding: 0; list-style: none; }
+.mestre__mvps li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .4rem; padding: .4rem .55rem; border: 1px solid var(--border-subtle); border-radius: .45rem; }
+.mestre__mvps strong { color: var(--accent-strong, var(--gold)); }
+.mestre__mvps span { color: var(--text-muted); font-size: .76rem; }
+.jogador__titulo { margin: 0; color: var(--accent-strong, var(--gold)); font: 600 1rem/1.2 var(--font-display); }
+.jogador__sessao { padding: .4rem .6rem; border: 1px solid var(--border-subtle); border-radius: .45rem; }
+.jogador__votacao { display: grid; gap: .45rem; padding: .7rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 55%, transparent); border-radius: .6rem; background: color-mix(in srgb, var(--gold) 7%, rgb(0 0 0 / .2)); }
+.jogador__candidatos { display: grid; gap: .35rem; }
+.jogador__candidato { display: flex; align-items: center; gap: .55rem; min-height: 2.6rem; padding: .3rem .55rem; border: 1px solid var(--border-subtle); border-radius: .5rem; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.jogador__candidato:hover { border-color: var(--border-ornate); }
+.jogador__candidato[aria-pressed="true"] { border-color: var(--border-ornate); background: color-mix(in srgb, var(--gold) 14%, transparent); }
+.jogador__candidato-retrato { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; overflow: hidden; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); background: rgb(0 0 0 / .3); color: var(--gold); font-size: .72rem; font-weight: 800; }
+.jogador__candidato-retrato img { width: 100%; height: 100%; object-fit: cover; }
+.jogador__candidato-nome { flex: 1; min-width: 0; font-weight: 700; }
+.jogador__candidato-voto { color: var(--accent-strong, var(--gold)); font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+
+.estatisticas { display: grid; gap: .55rem; }
+.estatisticas__vazio { margin: 0; color: var(--text-muted); font-size: .82rem; }
+.estatisticas__quadro { display: grid; gap: .45rem; }
+.estatisticas__numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: .35rem; margin: 0; }
+.estatisticas__numero { display: grid; gap: .1rem; padding: .4rem .5rem; border: 1px solid var(--border-subtle); border-radius: .45rem; background: rgb(0 0 0 / .18); }
+.estatisticas__numero dt { color: var(--text-muted); font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.estatisticas__numero dd { margin: 0; color: var(--text); font: 600 1.35rem/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; }
+.estatisticas__numero--perda dd { color: #ff8b97; }
+.estatisticas__numero--ganho dd { color: #8fd6a6; }
+.estatisticas__numero--critico dd { color: #ffd27a; }
+.estatisticas__numero--falha dd { color: #ff8b97; }
+.estatisticas__sorte { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .5rem; margin: 0; padding: .45rem .6rem; border-radius: .45rem; border: 1px solid var(--border-subtle); }
+.estatisticas__sorte-nome { color: var(--text-muted); font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+.estatisticas__sorte strong { font: 600 1rem/1.2 var(--font-display); }
+.estatisticas__sorte-desvio { color: var(--text-muted); font-size: .76rem; }
+.estatisticas__sorte--quentes { border-color: color-mix(in srgb, #f0b04a 55%, transparent); }
+.estatisticas__sorte--quentes strong { color: #ffd27a; }
+.estatisticas__sorte--frios { border-color: color-mix(in srgb, #6fa8dc 55%, transparent); }
+.estatisticas__sorte--frios strong { color: #9cc8f0; }
+.estatisticas__placar { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.estatisticas__jogador { display: grid; gap: .35rem; padding: .55rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 25%, transparent); border-radius: .55rem; }
+.estatisticas__apelido { margin: 0; color: var(--accent-strong, var(--gold)); font: 600 .95rem/1.2 var(--font-display); }
+
+/* ---------------------------------------------------------------- modo turno (modo-de-turno) */
+
+/* Barra de ordem no topo do grid, no estilo do Baldur's Gate 3: retratos em ordem, a vez em destaque. */
+.turno { position: absolute; z-index: 3; top: 3.1rem; left: .75rem; right: .75rem; display: flex; flex-direction: column; align-items: center; gap: .4rem; pointer-events: none; }
+.room-view--painel-aberto .turno { right: calc(var(--largura-painel, 22rem) + .75rem); }
+@media (max-width: 760px) { .room-view--painel-aberto .turno { right: .75rem; } }
+.turno__faixa, .turno__quadro { pointer-events: auto; max-width: 100%; border: 1px solid color-mix(in srgb, var(--border-ornate) 45%, transparent); border-radius: .7rem; background: rgb(11 17 24 / .88); backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgb(0 0 0 / .45); }
+.turno__faixa { display: flex; align-items: center; gap: .6rem; padding: .35rem .55rem; }
+.turno__rodada { flex: none; margin: 0; padding-right: .55rem; border-right: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); color: var(--accent-strong, var(--gold)); font: 600 .95rem/1.1 var(--font-display); white-space: nowrap; }
+.turno__ordem { display: flex; gap: .35rem; min-width: 0; margin: 0; padding: .3rem .25rem; list-style: none; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.turno__participante { flex: none; position: relative; display: grid; justify-items: center; gap: .1rem; width: 3.6rem; padding: .25rem .15rem .2rem; border: 1px solid transparent; border-radius: .55rem; opacity: .78; transition: opacity var(--motion-fast), transform var(--motion-fast); }
+.turno__participante--vez { opacity: 1; border-color: var(--border-ornate); background: color-mix(in srgb, var(--gold) 14%, transparent); box-shadow: 0 0 14px rgb(255 190 80 / .35); transform: translateY(1px) scale(1.06); }
+.turno__participante--falta { opacity: .5; }
+.turno__retrato { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid color-mix(in srgb, var(--border-ornate) 55%, transparent); background: rgb(0 0 0 / .35); }
+.turno__participante--vez .turno__retrato { border-color: #f0b04a; }
+.turno__retrato--iniciais { display: grid; place-items: center; color: var(--gold); font-size: .72rem; font-weight: 800; }
+.turno__nome { max-width: 100%; overflow: hidden; color: var(--text); font-size: .66rem; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+.turno__nome small { color: var(--text-muted); font-size: .6rem; }
+.turno__total { position: absolute; top: -.2rem; right: .05rem; min-width: 1.25rem; padding: 0 .25rem; border-radius: 999px; background: #1b2430; border: 1px solid color-mix(in srgb, var(--border-ornate) 55%, transparent); color: var(--accent-strong, var(--gold)); font-size: .62rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+.turno__falta { color: var(--text-muted); font-size: .56rem; font-style: italic; white-space: nowrap; }
+.turno__acoes { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: center; }
+.turno__faixa .turno__acoes { flex: none; padding-left: .55rem; border-left: 1px solid color-mix(in srgb, var(--border-ornate) 35%, transparent); }
+.turno__acoes .button { min-height: 2rem; padding: .25rem .7rem; font-size: .76rem; }
+.turno__quadro { display: grid; gap: .5rem; width: min(26rem, 100%); padding: .65rem .75rem; }
+.turno__pendentes { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; }
+.turno__pendentes li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; color: var(--text); font-size: .82rem; }
+.turno__pendentes .button { min-height: 1.8rem; padding: .15rem .6rem; font-size: .72rem; }
+.turno__dica { margin: 0; color: var(--text-muted); font-size: .74rem; text-align: center; }
+.turno__quadro--travado { border-color: color-mix(in srgb, var(--color-warning, #d9a441) 55%, transparent); }
+.turno__dica--travado { color: var(--color-warning, #e3b75a); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .turno__participante { transition: none; } .turno__participante--vez { transform: none; } }
+
+/* Saldo de movimento da vez: "Deslocamento: 4 de 9 m", com uma barrinha e o botão Correr. */
+.turno__saldo { pointer-events: auto; display: flex; align-items: center; gap: .55rem; padding: .3rem .65rem; border: 1px solid color-mix(in srgb, var(--border-ornate) 40%, transparent); border-radius: 999px; background: rgb(11 17 24 / .88); backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgb(0 0 0 / .4); }
+.turno__saldo-texto { color: var(--text-muted); font-size: .76rem; white-space: nowrap; }
+.turno__saldo-texto strong { color: var(--accent-strong, var(--gold)); font-size: .86rem; font-variant-numeric: tabular-nums; }
+.turno__saldo-barra { position: relative; width: 4.5rem; height: .35rem; overflow: hidden; border-radius: 999px; background: rgb(255 255 255 / .1); }
+.turno__saldo-barra span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, #c98a2e, #ffd27a); transition: width var(--motion-fast); }
+.turno__saldo .button { min-height: 1.7rem; padding: .1rem .6rem; font-size: .72rem; }
+@media (prefers-reduced-motion: reduce) { .turno__saldo-barra span { transition: none; } }
+
+/* Chave "Movimento livre" na barra do Narrador, no visual das demais chaves da Sala. */
+.turno__livre { padding: 0 .35rem; white-space: nowrap; cursor: pointer; }
+.turno__livre .chave__rotulo { font-size: .76rem; }
+
+/* Aviso "Role iniciativa" do jogador. */
+.aviso-de-iniciativa {
+  position: absolute; z-index: 4; left: 50%; top: 34%; transform: translateX(-50%); display: grid; justify-items: center; gap: .45rem;
+  width: min(22rem, calc(100% - 2rem)); padding: 1rem 1.2rem; border: 1px solid var(--border-ornate); border-radius: .8rem;
+  background: rgb(11 17 24 / .94); backdrop-filter: blur(8px); box-shadow: 0 12px 32px rgb(0 0 0 / .55), 0 0 22px rgb(255 190 80 / .18);
+}
+.room-view--painel-aberto .aviso-de-iniciativa { left: calc((100% - var(--largura-painel, 22rem)) / 2); }
+@media (max-width: 760px) { .room-view--painel-aberto .aviso-de-iniciativa { left: 50%; } }
+.aviso-de-iniciativa__titulo { margin: 0; color: var(--accent-strong, var(--gold)); font: 700 1.35rem/1.1 var(--font-display); letter-spacing: .04em; }
+.aviso-de-iniciativa__texto { margin: 0; color: var(--text-muted); font-size: .8rem; }
+.aviso-de-iniciativa__botoes { display: grid; gap: .4rem; width: 100%; }
+.mestre__turno { padding-top: .6rem; border-top: 1px solid color-mix(in srgb, var(--border-ornate) 22%, transparent); justify-items: start; }

@@ -1,0 +1,5 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is the approved sepia engraving from the header of a card screen: fine pen-and-ink hatching in brown and ochre on light smooth parchment, with a pile of old books, a travel chest with metal corners, a standing ornate grimoire, an open scroll, a lit iron lantern, a large thin-lined compass rose, gothic spires, fine flourishes and big four-pointed stars.
+
+Generate the SAME engraving as a very wide landscape image 1536 x 1024: all the drawing in one horizontal band in the middle third of the height, arranged from left to right as in the reference, with the top third and bottom third only plain light parchment, and plain parchment at the left and right edges too. Monochrome sepia only. No text, no letters, no frame. When done, reply only with the absolute path of the generated image file.

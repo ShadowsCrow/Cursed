@@ -1,0 +1,7 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is the approved banner painting for skill cards (1536 x 1024, with the banner composition in the middle horizontal band and the golden medallion exactly centered). Generate the SAME image with exactly the same composition, medallion size and position, framing, lighting and painterly style, with only these changes:
+1. Inside the medallion, replace the crossed swords with a heraldic shield with a diagonal band, in the same glowing polished gold.
+2. The overall color of the scene is dark bronze and ember brown night.
+3. The silhouettes on the sides become: on the left a row of soldiers with raised shields, on the right a castle wall with banners.
+No text, no letters, no frame. When done, reply only with the absolute path of the generated image file.

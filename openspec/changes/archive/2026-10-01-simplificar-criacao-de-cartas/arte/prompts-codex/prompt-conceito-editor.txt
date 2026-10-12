@@ -1,0 +1,29 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is the approved "card detail" screen of a dark medieval fantasy tabletop RPG web app called Cursed: an open grimoire with parchment pages, gold filigree frames, round dark-brown icon medallions, blue night painting with a gold medallion, candles, quill and velvet, inside a thin ornate gold frame with a round close button "x" at the top right.
+
+Generate a UI CONCEPT MOCKUP, landscape 1536 x 1024, of the NEW "card creation / editing" screen for the Game Master, in EXACTLY the same visual style, scene, book, lighting, fonts (elegant serif, small-caps letter-spaced labels) and ornament density as the attached image. All interface text is in Brazilian Portuguese, spelled exactly as written below.
+
+Layout:
+
+1. Above the book, sticking out of the top edge of the pages like leather bookmark tabs, FOUR tabs in a row, each with a small gold emblem and a label: "Habilidade" (crossed swords emblem), "Magia" (blue flame emblem), "Item" (backpack emblem), "Efeito" (star burst emblem). The "Item" tab is the active one: taller, brighter gold, glowing. The other three are darker and lower. This is the card type selector.
+
+2. LEFT PAGE = live preview of the card being created:
+   - the same framed blue night painting with a gold medallion in the center, but the emblem in the medallion is a leather backpack;
+   - a small round parchment button with a camera icon at the bottom-right corner of the painting (to upload custom art);
+   - below it, the same title cartouche: small label "ITEM", and the large title "Mochila de Viajante" with a tiny gold quill icon next to it (meaning the title is editable directly here);
+   - under the title, a small pill label "Comum".
+
+3. RIGHT PAGE = the form, only the fields that make sense for a backpack, using the same gold-framed parchment boxes as the reference:
+   - top: small-caps heading "O QUE É?" and below it a row of ten small round dark-brown icon buttons with gold line icons: one-handed sword, two-handed greatsword, breastplate, shield, helmet, gauntlet, boot, backpack, quiver of arrows, three dots. The backpack button is selected (gold ring, glowing); the others are plain;
+   - then a 2 x 2 grid of framed field boxes in the same style as the reference (round icon medallion on the left, small-caps label, value below):
+     "ESPAÇO NA BOLSA:" value "2 × 2" (icon: small grid of squares);
+     "AMPLIA A BOLSA EM:" value "2 × 3" (icon: grid with a plus);
+     "REQUISITO DE FORÇA:" value "2" (icon: flexed arm);
+     "RARIDADE:" value "Comum" (icon: gem);
+   - then one wide framed text box with the small-caps label "DESCRIÇÃO" and the text "Couro curtido e fivelas de latão. Aguenta a estrada e a chuva.";
+   - then a thin dashed gold outline button "+ Adicionar efeito";
+   - at the bottom of the right page, a footer line: on the left, a small check mark and the muted text "Rascunho salvo"; on the right, a prominent button that looks like a deep red wax seal with gold border and the label "Publicar".
+   There are NO fields for damage, armor or RDB anywhere.
+
+Keep everything crisp and legible like a high-fidelity UI mockup, not blurred. No other text than the strings given above. No watermark, no logo. When done, reply only with the absolute path of the generated image file.

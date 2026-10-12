@@ -1,0 +1,173 @@
+/*
+ * Aba Perícias (redesenhar-aba-pericias). A folha e os cartões são os da aba Atributos (`atributos.css`);
+ * aqui ficam só as diferenças medidas na referência do usuário a 1448 px: cabeçalho mais baixo com a
+ * paisagem em sépia, estandarte de ~104 px, dez linhas de ~31 px por cartão, base em número simples com o
+ * selo só na maior base, caixa de ajuste de 54 × 24 px e placa do total de 58 × 27 px.
+ */
+
+.pericias-folha { padding-top: 1.75rem; }
+
+/* ---------- Cabeçalho ---------- */
+.pericias-cabecalho { grid-template-areas: "titulos . acoes"; min-height: 0; }
+.pericias-cabecalho .atributos-cabecalho__titulos { padding: .2rem 0 0 .45rem; }
+/* Na referência, o título e o texto são quase pretos, mais pesados que o marrom da tinta da folha. */
+.pericias-cabecalho .atributos-cabecalho__sobretitulo { color: #45362a; -webkit-text-stroke: .45px currentColor; }
+.pericias-cabecalho .atributos-cabecalho__titulo { color: #17110b; -webkit-text-stroke: 1.3px currentColor; }
+.pericias-cabecalho .atributos-cabecalho__frase { color: #231a12; -webkit-text-stroke: .3px currentColor; }
+.pericias-cabecalho .atributos-cabecalho__titulo { margin: .2rem 0 .05rem; }
+.pericias-cabecalho .atributos-cabecalho__frase { max-width: 21.8rem; font-size: 1.08rem; line-height: 1.02; }
+.pericias-cabecalho .atributos-cabecalho__acoes { padding-top: 0; }
+
+/*
+ * Paisagem atrás do cabeçalho, de ~410 a ~1340 px na referência. Fica atrás dos títulos e dos cartões (que
+ * vêm depois no DOM), multiplicada sobre o papel e esmaecida nas bordas; o pé passa por trás dos estandartes.
+ */
+.pericias-cena {
+  position: absolute;
+  z-index: -1;
+  top: -1.1rem;
+  left: 24.5rem;
+  right: 2rem;
+  aspect-ratio: 4 / 1;
+  max-height: 15rem;
+  pointer-events: none;
+}
+.pericias-cena__pintura {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  mix-blend-mode: multiply;
+  opacity: .9;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent), linear-gradient(180deg, #000 55%, transparent 88%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent), linear-gradient(180deg, #000 55%, transparent 88%);
+  mask-composite: intersect;
+}
+.pericias-cena__reserva {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 70%;
+  color: #7a5a26;
+  opacity: .35;
+}
+
+/* ---------- Cartões ---------- */
+/* Na referência os cartões passam da margem do cabeçalho: ~26 px da borda da folha, contra ~42 px do texto. */
+.pericias-cartoes { margin: 2.25rem -1rem 0; }
+
+.pericias-cartao--tecnicas { --faixa-escura: #0b1a14; --faixa-media: #173427; --faixa-clara: #29503d; --medalhao-miolo: #123528; --medalhao-miolo-claro: #25624a; --subtitulo: #c7b58a; --faixa-tinta: #2f6a50; }
+.pericias-cartao--conhecimentos { --faixa-escura: #08131f; --faixa-media: #13263c; --faixa-clara: #213f60; --medalhao-miolo: #12243c; --medalhao-miolo-claro: #25497a; --subtitulo: #c9b58a; --faixa-tinta: #2c5a8e; }
+.pericias-cartao--outros { grid-column: 1 / -1; --faixa-escura: var(--noite-950); --faixa-media: var(--noite-800); --faixa-clara: var(--noite-600); --medalhao-miolo: var(--noite-800); --medalhao-miolo-claro: var(--noite-500); --subtitulo: var(--osso-300); }
+.pericias-cartao { padding-bottom: .45rem; }
+/* As pinturas das perícias já vêm na cor do grupo: menos tinta por cima que nas faixas dos Atributos. */
+.pericias-cartao .atributos-cartao__pintura { filter: saturate(.85) brightness(.88) contrast(1.05); }
+.pericias-cartao .atributos-cartao__cena:has(.atributos-cartao__pintura)::before { opacity: .3; }
+/* Na referência, Talentos é um vinho escuro; o céu da pintura vem em brasa. */
+.pericias-cartao--talentos .atributos-cartao__cena:has(.atributos-cartao__pintura)::before { opacity: .45; }
+/* O céu amarelo da floresta puxa o estandarte para o dourado: mais verde por cima, como na referência. */
+.pericias-cartao--tecnicas .atributos-cartao__cena:has(.atributos-cartao__pintura)::before { opacity: .55; }
+.pericias-cartao .atributos-cartao__cena::after { background: linear-gradient(180deg, transparent 40%, color-mix(in srgb, var(--faixa-escura) 60%, transparent) 88%); }
+
+.pericias-cartao .atributos-cartao__faixa { min-height: 6.5rem; padding: 2.4rem 1rem .55rem; }
+.pericias-cartao .atributos-cartao__medalhao { top: -1.85rem; width: 5rem; height: 5rem; }
+.pericias-cartao .atributos-cartao__medalhao .icone-grupo { width: 2.7rem; height: 2.7rem; }
+.pericias-cartao .atributos-cartao__titulo { font-size: clamp(1.6rem, 2.2vw, 1.95rem); }
+.pericias-cartao .atributos-cartao__subtitulo { margin-top: .3rem; color: color-mix(in srgb, var(--subtitulo) 40%, #f3d48c); font-size: .78rem; letter-spacing: .22em; }
+.pericias-cartao .atributos-cartao__ornato--ie, .pericias-cartao .atributos-cartao__ornato--id { width: 78px; height: 56px; }
+
+/* ---------- Tabela ---------- */
+.pericias-tabela { margin-top: .3rem; }
+/* Centros das colunas na referência: Base a 51%, Ajuste a 68% e Total a 88% do cartão. */
+.pericias-tabela th:nth-child(1) { width: 47%; }
+.pericias-tabela th:nth-child(2) { width: 8%; }
+.pericias-tabela th:nth-child(3) { width: 26%; }
+.pericias-tabela th:nth-child(4) { width: 19%; }
+.pericias-tabela thead th { padding: .25rem .15rem .35rem; font-size: .86rem; line-height: 1.1; -webkit-text-stroke: .45px currentColor; }
+.pericias-tabela thead th:first-child { padding-left: 3rem; }
+.pericias-tabela tbody th,
+.pericias-tabela tbody td { height: 1.85rem; padding: 0 .15rem; line-height: 1; }
+.pericias-tabela tbody th { padding-left: 1.9rem; }
+/* A placa do total é inline-block: sem isto, a linha de base soma alguns pixels a cada linha. */
+.pericias-tabela .atributos-linha__total .popover { display: inline-flex; vertical-align: middle; }
+
+.pericias-linha__nome { gap: 1.1rem; font-size: 1rem; font-weight: 600; line-height: 1.05; letter-spacing: -.01em; white-space: nowrap; -webkit-text-stroke: .4px currentColor; }
+/* Nomes longos ("Conhecimento urbano", "Lidar com animais") vêm condensados na referência, para caber antes da base. */
+.pericias-linha__nome--longo { font-size: .92rem; letter-spacing: -.035em; }
+.pericias-linha__icone { display: inline-grid; place-items: center; width: 1.5rem; flex: none; color: #1a110a; }
+.pericias-linha__icone svg { width: 1.5rem; height: 1.5rem; }
+
+/* Base em número simples; a maior base ganha o disco escuro dos Atributos, em tamanho menor. */
+.pericias-base { font: 700 1rem/1 var(--font-display); font-variant-numeric: lining-nums; color: var(--atr-tinta); -webkit-text-stroke: .3px currentColor; }
+.pericias-base.pericias-base--selo { width: 1.5rem; height: 1.5rem; border-width: 2px; color: #fbf1dc; font-size: .9rem; }
+
+.pericias-tabela .pericias-ajuste { width: min(100%, 3.4rem); height: 1.5rem; border-radius: 3px; font-size: 1.05rem; -webkit-text-stroke: .45px currentColor; }
+
+.pericias-tabela .atributos-linha__total .derived-value__trigger,
+.pericias-tabela .atributos-total-vazio {
+  min-width: 3.65rem;
+  height: 1.75rem;
+  font-size: 1.2rem;
+  -webkit-text-stroke: .8px currentColor;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+}
+.pericias-tabela .atributos-linha__total .derived-value__trigger::before,
+.pericias-tabela .atributos-total-vazio::before {
+  clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px);
+}
+
+/* Campos da edição, do tamanho das caixas de leitura. */
+.pericias-campo {
+  width: min(100%, 3.4rem);
+  height: 1.6rem;
+  min-height: 0;
+  padding: 0 .2rem;
+  border: 1px solid #b89d68;
+  border-radius: 3px;
+  background: #fffaf0;
+  color: var(--atr-tinta);
+  font: 700 .95rem/1 var(--font-display);
+  font-variant-numeric: lining-nums;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.pericias-campo--base { width: min(100%, 2.6rem); }
+.pericias-campo::-webkit-inner-spin-button, .pericias-campo::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.pericias-campo:focus-visible { outline: 2px solid var(--atr-ouro); outline-offset: 1px; }
+.pericias-campo[aria-invalid="true"] { box-shadow: 0 0 0 2px var(--sangue-500); }
+
+/* ---------- Larguras menores ---------- */
+/* Três cartões estreitos (folha de 1180 a 1320 px): nomes longos quebram a linha em vez de encostar na base. */
+@container atributos (max-width: 1320px) {
+  .pericias-linha__nome { gap: .55rem; font-size: .9rem; white-space: normal; }
+  .pericias-cena { left: 27rem; }
+  .pericias-tabela tbody th { padding-left: .6rem; }
+  .pericias-tabela thead th:first-child { padding-left: 2.3rem; }
+}
+/* Uma coluna (como nos Atributos): centrada, com espaço para o medalhão que sobe do primeiro cartão. */
+@container atributos (max-width: 1180px) {
+  .pericias-cartoes { margin: 2.9rem auto 0; }
+}
+@container atributos (max-width: 1100px) {
+  .pericias-cabecalho { grid-template-areas: "titulos acoes"; min-height: 0; }
+  .pericias-cena { left: 40%; right: 0; top: 2.6rem; opacity: .75; }
+}
+@container atributos (max-width: 560px) {
+  .pericias-folha { padding-top: 1.6rem; }
+  .pericias-cabecalho { grid-template-areas: "titulos" "acoes"; }
+  .pericias-cena { left: 0; right: 0; top: -1rem; opacity: .35; }
+  .pericias-tabela th:nth-child(1) { width: 44%; }
+  .pericias-tabela th:nth-child(2) { width: 13%; }
+  .pericias-tabela th:nth-child(3) { width: 21%; }
+  .pericias-tabela th:nth-child(4) { width: 22%; }
+  .pericias-tabela thead th { font-size: .74rem; }
+  .pericias-tabela thead th:first-child { padding-left: .3rem; }
+  .pericias-tabela tbody th { padding-left: .25rem; }
+  .pericias-linha__nome { gap: .35rem; font-size: .9rem; }
+  .pericias-linha__icone, .pericias-linha__icone svg { width: 1.15rem; height: 1.15rem; }
+  .pericias-tabela .pericias-ajuste { height: 1.4rem; }
+  .pericias-tabela .atributos-linha__total .derived-value__trigger, .pericias-tabela .atributos-total-vazio { min-width: 2.8rem; height: 1.55rem; font-size: .95rem; }
+}

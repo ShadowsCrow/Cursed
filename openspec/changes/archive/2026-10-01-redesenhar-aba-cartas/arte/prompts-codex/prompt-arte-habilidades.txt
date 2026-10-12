@@ -1,0 +1,5 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is an approved card illustration from a dark medieval fantasy RPG: a square navy-blue panel with fine light rays radiating from the center, small four-pointed golden stars, ornate golden filigree corners and small golden diamond ornaments at the middle of each edge, and in the center a golden medallion (a polished gold ring with a dark blue center and a warm orange glow) holding two crossed golden swords glowing with light.
+
+Generate the SAME illustration as a square image 1024 x 1024, with the same style, colors, lighting, composition and ornaments: the medallion exactly centered, with a diameter of about 60% of the image, the two crossed golden swords inside it, the navy background with rays and stars, and the ornate gold filigree frame hugging the four edges of the image. No text, no letters, no numbers. When done, reply only with the absolute path of the generated image file.

@@ -1,0 +1,11 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is an approved UI concept of a fantasy grimoire. Above the book there are four leather bookmark tabs (labelled Habilidade, Magia, Item, Efeito). Look at the three DARK, inactive tabs (Habilidade, Magia, Efeito).
+
+Generate ONE single inactive bookmark tab, in exactly the same painterly style, material and colors as those dark tabs: dark brown tooled leather, a thin gold stitched/embossed border following its outline, rounded top corners, flat bottom edge, seen straight from the front. It is wider than tall, with proportions about 175 x 70 (width x height).
+
+The tab must be COMPLETELY BLANK: no emblem, no icon, no letters, no text, no ornament in the middle, just the leather surface with its gold border and subtle leather texture and soft lighting from the candles.
+
+Place the single tab in the center of a landscape image 1536 x 1024, about 900 pixels wide, on a perfectly plain, flat, uniform light parchment-beige background (#e9dcc0), with no table, no shadow on the background, no vignette, no texture, no other objects. The tab must not touch the edges of the image; the top-left corner area of the image must be only the plain background.
+
+When done, reply only with the absolute path of the generated image file.

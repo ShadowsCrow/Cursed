@@ -1,0 +1,42 @@
+{
+  "_descricao": "Casos dos cálculos do Framework de Criação (mudança adaptar-cartas-ao-framework): Grau e Descansos Mínimos pelas seções 22 a 24, Custo de Uso pela seção 27. Executados pelas suítes Python e TypeScript; as duas precisam dar a mesma resposta.",
+  "graus": [
+    { "nome": "Magia abaixo do mínimo", "natureza": "magia", "custo": 11, "esperado": { "grau": null, "descansos": null, "abaixo_do_minimo": true } },
+    { "nome": "Magia no mínimo", "natureza": "magia", "custo": 12, "esperado": { "grau": "basica", "descansos": 3, "abaixo_do_minimo": false } },
+    { "nome": "Magia no topo da Básica", "natureza": "magia", "custo": 16, "esperado": { "grau": "basica", "descansos": 3, "abaixo_do_minimo": false } },
+    { "nome": "Magia no início da Simples", "natureza": "magia", "custo": 17, "esperado": { "grau": "simples", "descansos": 4, "abaixo_do_minimo": false } },
+    { "nome": "Ping Pong Flamejante", "natureza": "magia", "custo": 22, "esperado": { "grau": "simples", "descansos": 4, "abaixo_do_minimo": false } },
+    { "nome": "Magia de 26 PP", "natureza": "magia", "custo": 26, "esperado": { "grau": "intermediaria", "descansos": 6, "abaixo_do_minimo": false } },
+    { "nome": "Raízes do Brejo Faminto", "natureza": "magia", "custo": 31, "esperado": { "grau": "intermediaria", "descansos": 6, "abaixo_do_minimo": false } },
+    { "nome": "Magia no topo da Mestra", "natureza": "magia", "custo": 79, "esperado": { "grau": "mestra", "descansos": 18, "abaixo_do_minimo": false } },
+    { "nome": "Magia no início da Lendária", "natureza": "magia", "custo": 80, "esperado": { "grau": "lendaria", "descansos": 25, "abaixo_do_minimo": false } },
+    { "nome": "Magia Dimensional de 87 PP", "natureza": "magia", "custo": 87, "esperado": { "grau": "lendaria", "descansos": 25, "abaixo_do_minimo": false } },
+    { "nome": "Habilidade abaixo do mínimo", "natureza": "habilidade", "custo": 5, "esperado": { "grau": null, "descansos": null, "abaixo_do_minimo": true } },
+    { "nome": "Habilidade no mínimo", "natureza": "habilidade", "custo": 6, "esperado": { "grau": "basica", "descansos": 3, "abaixo_do_minimo": false } },
+    { "nome": "Resposta Tática", "natureza": "habilidade", "custo": 7, "esperado": { "grau": "basica", "descansos": 3, "abaixo_do_minimo": false } },
+    { "nome": "Habilidade no início da Simples", "natureza": "habilidade", "custo": 11, "esperado": { "grau": "simples", "descansos": 4, "abaixo_do_minimo": false } },
+    { "nome": "Ruptura em Cruz", "natureza": "habilidade", "custo": 25, "esperado": { "grau": "avancada", "descansos": 8, "abaixo_do_minimo": false } },
+    { "nome": "Habilidade de 26 PP", "natureza": "habilidade", "custo": 26, "esperado": { "grau": "avancada", "descansos": 8, "abaixo_do_minimo": false } },
+    { "nome": "Habilidade no topo da Mestra", "natureza": "habilidade", "custo": 63, "esperado": { "grau": "mestra", "descansos": 18, "abaixo_do_minimo": false } },
+    { "nome": "Habilidade no início da Lendária", "natureza": "habilidade", "custo": 64, "esperado": { "grau": "lendaria", "descansos": 25, "abaixo_do_minimo": false } },
+    { "nome": "Sem Custo de Aprendizado", "natureza": "magia", "custo": null, "esperado": { "grau": null, "descansos": null, "abaixo_do_minimo": false } }
+  ],
+  "custo_uso": [
+    { "nome": "Potência zero", "potencia": 0, "tipo": "ativa", "esperado": 1 },
+    { "nome": "Resposta Tática", "potencia": 4, "tipo": "ativa", "esperado": 1 },
+    { "nome": "Topo do 1 PP", "potencia": 8, "tipo": "ativa", "esperado": 1 },
+    { "nome": "Início do 2 PP", "potencia": 9, "tipo": "ativa", "esperado": 2 },
+    { "nome": "Ping Pong Flamejante", "potencia": 11, "tipo": "ativa", "esperado": 2 },
+    { "nome": "Raízes do Brejo Faminto", "potencia": 20, "tipo": "ativa", "esperado": 5 },
+    { "nome": "Ruptura em Cruz", "potencia": 22, "tipo": "ativa", "esperado": 7 },
+    { "nome": "Potência 40", "potencia": 40, "tipo": "ativa", "esperado": 20 },
+    { "nome": "Potência 41", "potencia": 41, "tipo": "ativa", "esperado": 22 },
+    { "nome": "15d8 em círculo a 30 m", "potencia": 54, "tipo": "ativa", "esperado": 37 },
+    { "nome": "Reação", "potencia": 9, "tipo": "reacao", "esperado": 2 },
+    { "nome": "Passiva permanente", "potencia": 8, "tipo": "passiva_permanente", "esperado": 0 },
+    { "nome": "Passiva condicional", "potencia": 8, "tipo": "passiva_condicional", "esperado": 1 },
+    { "nome": "Tipo indefinido", "potencia": 9, "tipo": null, "esperado": 2 },
+    { "nome": "Sem Potência", "potencia": null, "tipo": "ativa", "esperado": null },
+    { "nome": "Passiva permanente sem Potência", "potencia": null, "tipo": "passiva_permanente", "esperado": 0 }
+  ]
+}

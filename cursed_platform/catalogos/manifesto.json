@@ -1,0 +1,63 @@
+{
+  "descricao": "Procedência dos catálogos do sistema. A partir da cópia, os arquivos deste diretório são a fonte de trabalho; a divergência com a origem é esperada e só aparece no relatório de procedência. Os hashes ignoram a diferença entre CRLF e LF.",
+  "arquivos": {
+    "classes.json": {
+      "origem": "app_streamlit/data/catalogs/classes.json",
+      "sha256_origem": "2af56f03af6323c7e8e17180021c40346dd741475eaa6cf1f4fc0c01d5c6cbec",
+      "copiado_em": "2026-09-27",
+      "transformacoes": []
+    },
+    "racas.json": {
+      "origem": "app_streamlit/data/catalogs/racas.json",
+      "sha256_origem": "c107f995b1e06182e240e47075d1c02f0d5fef501d517d6f4cf783c819654c89",
+      "copiado_em": "2026-09-27",
+      "transformacoes": [
+        "Campo altura (minima e maxima, em metros) em cada raça: intervalo típico aprovado pelo usuário em 2026-09-28 (Criação de Personagem.md, Altura e Tamanho fora da média)."
+      ]
+    },
+    "efeitos_default.json": {
+      "origem": "app_streamlit/data/catalogs/efeitos_default.json",
+      "sha256_origem": "40b6ef0d2c7be0a5a18e54043943e61ea57054e7bb8ff760bed8890ca8da336a",
+      "copiado_em": "2026-09-27",
+      "transformacoes": [
+        "Campo grupo em cada efeito, com os grupos de Condições e Tipos de Dano.md.",
+        "Sobrepeso (cc_above) marcado como suspenso: substituído pela Sobrecarga derivada da grade de carga."
+      ]
+    },
+    "listas_ficha.json": {
+      "origem": "app_streamlit/app/sections/info_basica.py e app_streamlit/app/sections/personalidade.py",
+      "sha256_origem": {
+        "app_streamlit/app/sections/info_basica.py": "f77e0d67a21f8a07230c388d8b6964401ed42bc93c3644af072916726550718e",
+        "app_streamlit/app/sections/personalidade.py": "fd2e8c4d909aa1282e9470811dd37e5d43f61a35d7cfb6d825502b01eff922a7"
+      },
+      "copiado_em": "2026-09-27",
+      "transformacoes": [
+        "Listas e dicas extraídas do código do Streamlit.",
+        "Pecado gravado como Ganancia passa a Ganância, com Ganancia como grafia equivalente.",
+        "Lista faixas_de_altura por Tamanho, aprovada pelo usuário em 2026-09-28 (Criação de Personagem.md, Altura e Tamanho fora da média).",
+        "Campo de personalidade História (longo, até 4000 caracteres) e mapa icones_ficha do Resumo da ficha, aprovados pelo usuário em 2026-09-28 (aba-resumo-da-ficha).",
+        "Campos Frase marcante e Traços (tipo tracos, até 6), ícone de cada campo e arrumação da aba Personalidade (personalidade_topo, grupos_personalidade, icones_personalidade), decididos pelo usuário em 2026-09-29 (reformular-personalidade-da-ficha)."
+      ]
+    },
+    "itens.json": {
+      "origem": "Decisão do usuário em 2026-09-28 (mudança reformular-visual-da-ficha); catálogo novo, sem arquivo de origem no Streamlit",
+      "sha256_origem": {},
+      "copiado_em": "2026-09-28",
+      "transformacoes": [
+        "Raridades (Comum, Incomum, Raro, Épico, Lendário) e categorias de item; Criaturas cobre o subtipo criatura dos corpos carregados.",
+        "Listas, campos e campos por subtipo tirados de Equipamentos.md e de Condições e Tipos de Dano.md (simplificar-criacao-de-cartas, 2026-09-30); o terceiro tipo físico de dano é Contundente, por decisão do usuário; sem peso."
+      ]
+    },
+    "framework.json": {
+      "origem": "rules/sistema/Framework de Criação, Aprendizado e Uso de Magias e Habilidades.md",
+      "sha256_origem": {
+        "rules/sistema/Framework de Criação, Aprendizado e Uso de Magias e Habilidades.md": "12259db5495ca262e05d99c7d328b7197e3dd9833f3b0a96d507b326de64f46a"
+      },
+      "copiado_em": "2026-10-01",
+      "transformacoes": [
+        "Faixas de Grau e Descansos Mínimos das seções 23 e 24, custos mínimos da seção 22 e fórmula do Custo de Uso da seção 27 (Potência² ÷ 80, mínimo 1 PP, passiva permanente sem custo), aprovadas pelo usuário em 2026-10-01.",
+        "Listas de Tipo (seção 4), Forma (seção 2) e Alcance (seção 6: Pessoal, Toque, Alcance da arma ou metros de 1 em 1, decisão do usuário em 2026-10-01) e as oito escolas de Escolas de Magia.md (mudança adaptar-cartas-ao-framework)."
+      ]
+    }
+  }
+}

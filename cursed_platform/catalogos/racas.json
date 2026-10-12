@@ -1,0 +1,119 @@
+[
+  {
+    "nome": "Humano",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "altura": { "minima": 1.55, "maxima": 1.90 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Elfo",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "altura": { "minima": 1.60, "maxima": 1.95 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Anão",
+    "deslocamento": 7,
+    "tamanho": "Pequeno",
+    "altura": { "minima": 1.10, "maxima": 1.40 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Gnomo",
+    "deslocamento": 6,
+    "tamanho": "Pequeno",
+    "altura": { "minima": 0.90, "maxima": 1.20 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Orc",
+    "deslocamento": 9,
+    "tamanho": "Grande",
+    "altura": { "minima": 2.10, "maxima": 2.50 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Troll",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "altura": { "minima": 1.80, "maxima": 2.10 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Goblin",
+    "deslocamento": 6,
+    "tamanho": "Pequeno",
+    "altura": { "minima": 0.80, "maxima": 1.20 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Drow",
+    "deslocamento": 9,
+    "tamanho": "Médio",
+    "altura": { "minima": 1.55, "maxima": 1.85 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  },
+  {
+    "nome": "Golias",
+    "deslocamento": 10,
+    "tamanho": "Enorme",
+    "altura": { "minima": 3.00, "maxima": 3.80 },
+    "habilidades": [
+        {
+          "nome": "nome",
+          "descricao": "descricao",
+          "tipo": "Passiva"
+        }
+    ]
+  }
+]

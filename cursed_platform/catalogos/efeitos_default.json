@@ -1,0 +1,175 @@
+[
+  {
+    "associacao": "cc_above",
+    "categoria": "sistemico",
+    "nome": "Sobrepeso",
+    "imagem": "cc_above.png",
+    "descricao": "Você está carregando mais peso do que consegue (101%–150%): –3 m de Movimento, -2 em Esquiva e não pode Correr/Dash.",
+    "modificadores": [
+      {
+        "alvo": "movimento:metros",
+        "valor": -3
+      },
+      {
+        "alvo": "defesa:esquiva",
+        "valor": -2
+      }
+    ],
+    "grupo": "Sistêmicos",
+    "suspenso": {
+      "motivo": "O Sobrepeso foi substituído pela Sobrecarga, calculada automaticamente pela grade de carga."
+    }
+  },
+  {
+    "associacao": "condicao_surpreso",
+    "categoria": "condicao",
+    "nome": "Surpreso",
+    "descricao": "Até o começo de seu primeiro turno no conflito, não pode realizar Reações, Esquiva ou Bloqueio.",
+    "grupo": "Abertura e mobilidade"
+  },
+  {
+    "associacao": "condicao_derrubado",
+    "categoria": "condicao",
+    "nome": "Derrubado",
+    "descricao": "Não possui Movimento voluntário normal e precisa gastar uma Ação de Movimento para se levantar.",
+    "grupo": "Abertura e mobilidade"
+  },
+  {
+    "associacao": "condicao_agarrado",
+    "categoria": "condicao",
+    "nome": "Agarrado",
+    "descricao": "Movimento voluntário 0; ainda pode agir e se defender. A fonte define escape e movimento do alvo.",
+    "grupo": "Abertura e mobilidade"
+  },
+  {
+    "associacao": "condicao_imobilizado",
+    "categoria": "condicao",
+    "nome": "Imobilizado",
+    "descricao": "Movimento voluntário 0 e não pode Esquivar; pode Bloquear se conseguir mover a proteção.",
+    "grupo": "Abertura e mobilidade"
+  },
+  {
+    "associacao": "condicao_contido",
+    "categoria": "condicao",
+    "nome": "Contido",
+    "descricao": "Movimento voluntário 0, sem Esquiva e Bloqueio apenas quando a fonte permitir o movimento necessário.",
+    "grupo": "Abertura e mobilidade"
+  },
+  {
+    "associacao": "condicao_ofuscado",
+    "categoria": "condicao",
+    "nome": "Ofuscado",
+    "descricao": "-2 em ataques dependentes da visão e em testes de Percepção visual.",
+    "modificadores": [
+      {
+        "alvo": "ataque",
+        "valor": -2,
+        "quando": "depende_visao"
+      },
+      {
+        "alvo": "teste:percepcao",
+        "valor": -2,
+        "quando": "depende_visao"
+      }
+    ],
+    "grupo": "Sentidos e comunicação"
+  },
+  {
+    "associacao": "condicao_cego",
+    "categoria": "condicao",
+    "nome": "Cego",
+    "descricao": "Não enxerga, falha em testes exclusivamente visuais e sofre -4 em ataques e Defesas dependentes da visão.",
+    "substitui": [
+      "condicao_ofuscado"
+    ],
+    "modificadores": [
+      {
+        "alvo": "ataque",
+        "valor": -4,
+        "quando": "depende_visao"
+      },
+      {
+        "alvo": "defesa",
+        "valor": -4,
+        "quando": "depende_visao"
+      }
+    ],
+    "grupo": "Sentidos e comunicação"
+  },
+  {
+    "associacao": "condicao_silenciado",
+    "categoria": "condicao",
+    "nome": "Silenciado",
+    "descricao": "Não pode falar, emitir comandos verbais nem utilizar componentes verbais.",
+    "grupo": "Sentidos e comunicação"
+  },
+  {
+    "associacao": "condicao_invisivel",
+    "categoria": "condicao",
+    "nome": "Invisível",
+    "descricao": "Não pode ser visto por meios visuais comuns; ainda pode ser localizado por outros sentidos e evidências.",
+    "grupo": "Sentidos e comunicação"
+  },
+  {
+    "associacao": "condicao_sem_reacao",
+    "categoria": "condicao",
+    "nome": "Sem Reação",
+    "descricao": "Não pode gastar sua Reação; não impede Defesas salvo regra expressa.",
+    "grupo": "Capacidade"
+  },
+  {
+    "associacao": "condicao_atordoado",
+    "categoria": "condicao",
+    "nome": "Atordoado",
+    "descricao": "Não pode realizar Reações e, em seu turno, escolhe Ações ou Movimento, não ambos.",
+    "grupo": "Capacidade"
+  },
+  {
+    "associacao": "condicao_paralisado",
+    "categoria": "condicao",
+    "nome": "Paralisado",
+    "descricao": "Não pode se mover, realizar ações físicas, Esquivar ou Bloquear; ações puramente mentais ainda podem ser possíveis.",
+    "grupo": "Capacidade"
+  },
+  {
+    "associacao": "condicao_incapacitado",
+    "categoria": "condicao",
+    "aliases": [
+      "completamente_incapacitado"
+    ],
+    "nome": "Incapacitado",
+    "descricao": "Não pode realizar Ações, Movimento voluntário, Reações, Esquiva ou Bloqueio, mas ainda percebe o ambiente.",
+    "grupo": "Capacidade"
+  },
+  {
+    "associacao": "condicao_inconsciente",
+    "categoria": "condicao",
+    "nome": "Inconsciente",
+    "descricao": "Não percebe o ambiente e não pode agir, mover-se voluntariamente, reagir, Esquivar ou Bloquear.",
+    "grupo": "Capacidade"
+  },
+  {
+    "associacao": "condicao_exposto",
+    "categoria": "condicao",
+    "nome": "Exposto",
+    "descricao": "O próximo ataque válido acerta automaticamente, sem Esquiva ou Bloqueio. Desative Exposto após esse ataque.",
+    "grupo": "Exposição, controle e dano contínuo"
+  },
+  {
+    "associacao": "condicao_controlado",
+    "categoria": "condicao",
+    "aliases": [
+      "completamente_controlado"
+    ],
+    "nome": "Controlado",
+    "descricao": "A origem decide Ações e Movimento; autodestruição exige autorização expressa.",
+    "grupo": "Exposição, controle e dano contínuo"
+  },
+  {
+    "associacao": "condicao_sangrando",
+    "categoria": "condicao",
+    "nome": "Sangrando",
+    "descricao": "No fim de cada turno, perde 1 PV uma única vez; termina por estabilização ou interrupção de abrangência adequada.",
+    "grupo": "Exposição, controle e dano contínuo"
+  }
+]

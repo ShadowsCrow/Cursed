@@ -1,0 +1,11 @@
+Use $imagegen to generate exactly ONE image, and nothing else (do not write code, do not edit files).
+
+The attached image is an approved UI concept of a fantasy grimoire. At the bottom right of the right page there is a "Publicar" button that looks like a deep red wax seal with a gold border.
+
+Generate ONE single such wax seal button, in exactly the same painterly style, material and colors: an elongated horizontal deep crimson wax seal with irregular melted wax edges, a raised smooth center area and a thin gold ornamental border inside the wax, glossy highlights, seen straight from the front. Proportions about 185 x 75 (width x height).
+
+The center must be COMPLETELY BLANK: no letters, no text, no emblem, no icon, just smooth red wax where a label will be placed later.
+
+Place the single seal in the center of a landscape image 1536 x 1024, about 900 pixels wide, on a perfectly plain, flat, uniform light parchment-beige background (#e9dcc0), with no table, no shadow on the background, no vignette, no other objects. The seal must not touch the edges of the image; the top-left corner area of the image must be only the plain background.
+
+When done, reply only with the absolute path of the generated image file.
