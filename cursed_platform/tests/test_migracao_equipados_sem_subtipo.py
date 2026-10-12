@@ -65,7 +65,7 @@ class MigracaoEquipadosSemSubtipoSqliteTest(unittest.TestCase):
                            "origem, item_id) VALUES ('c', 'm', 'p', 'd', 'v', 'item', 'no_inventario', 'concessao', 'legado')"))
             c.execute(text("INSERT INTO item_offers (id, mesa_id, item_id, de_personagem_id, para_personagem_id, estado) "
                            "VALUES ('o', 'm', 'legado', 'p', 'q', 'pendente')"))
-        _migrar(self.engine, "0021_remover_equipados_sem_subtipo")
+        _migrar(self.engine, "0021_equipados_sem_subtipo")
 
     def tearDown(self):
         self.engine.dispose()

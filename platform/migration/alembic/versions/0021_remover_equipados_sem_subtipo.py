@@ -10,7 +10,7 @@ são apagados com suas operações e fontes, a carta de item que o possuía pass
 ofertas pendentes dele são canceladas. A versão das fichas afetadas avança. A descida não recria
 os itens.
 
-Revision ID: 0021_remover_equipados_sem_subtipo
+Revision ID: 0021_equipados_sem_subtipo
 Revises: 0020_apresentacao_vista
 """
 
@@ -20,7 +20,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "0021_remover_equipados_sem_subtipo"
+revision = "0021_equipados_sem_subtipo"
 down_revision = "0020_apresentacao_vista"
 branch_labels = None
 depends_on = None

@@ -25,7 +25,7 @@ class MigracaoCartasFrameworkSqliteTest(unittest.TestCase):
         self.diretorio = TemporaryDirectory()
         self.engine = create_engine(f"sqlite:///{Path(self.diretorio.name) / 'cartas.sqlite'}")
         with self.engine.begin() as c:
-            command.upgrade(_config(c), "0021_remover_equipados_sem_subtipo")
+            command.upgrade(_config(c), "0021_equipados_sem_subtipo")
             c.execute(text("INSERT INTO rpg_tables (id, nome, narrador_id, campos_bloqueados, campos_exigem_aprovacao) "
                            "VALUES ('m', 'Mesa', 'n', '[]', '[]')"))
             cartas = {
@@ -83,7 +83,7 @@ class MigracaoCartasFrameworkSqliteTest(unittest.TestCase):
 
     def test_descida_devolve_a_passiva(self):
         with self.engine.begin() as c:
-            command.downgrade(_config(c), "0021_remover_equipados_sem_subtipo")
+            command.downgrade(_config(c), "0021_equipados_sem_subtipo")
         _, rascunho = self.conteudo("passiva")
         self.assertEqual(rascunho["ativacao"], "passiva")
         self.assertNotIn("ativacao_legado", rascunho)

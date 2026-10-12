@@ -12,7 +12,7 @@ A descida devolve `passiva` a `ativacao`, mas não recria `grau` nem `descansos_
 ser calculados.
 
 Revision ID: 0022_cartas_campos_do_framework
-Revises: 0021_remover_equipados_sem_subtipo
+Revises: 0021_equipados_sem_subtipo
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ import sqlalchemy as sa
 
 
 revision = "0022_cartas_campos_do_framework"
-down_revision = "0021_remover_equipados_sem_subtipo"
+down_revision = "0021_equipados_sem_subtipo"
 branch_labels = None
 depends_on = None
 
