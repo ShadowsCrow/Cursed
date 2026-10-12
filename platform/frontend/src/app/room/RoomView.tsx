@@ -697,7 +697,7 @@ export function RoomView({ api, mesaId, userId, narrator, realtime }: {
         </button>}
       </div>
 
-      <div className="room-view__signals" aria-live="polite" aria-label="Sinais temporários da mesa">
+      <div className="room-view__signals" role="log" aria-live="polite" aria-label="Sinais temporários da mesa">
         {ephemera.pings.map((sinal) => <p key={`${sinal.usuarioId}-${sinal.recebidoEm}`}>
           Ping de {sinal.usuarioId}: coluna {sinal.x}, linha {sinal.y}.</p>)}
         {ephemera.arrastes.map((sinal) => <p key={sinal.tokenId}>

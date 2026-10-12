@@ -95,23 +95,29 @@ test("sala recupera snapshot após desconexão sem revelar token oculto", async 
   const visivel = await chamar("narrador", "POST", `/mesas/${m}/sala/cenas/${cena.id}/tokens`, {
     camada_id: camada.id, rotulo: "Sentinela", x: 1, y: 2, tamanho: 1, oculto: false,
   });
-  await chamar("narrador", "POST", `/mesas/${m}/sala/cenas/${cena.id}/tokens`, {
+  const oculto = await chamar("narrador", "POST", `/mesas/${m}/sala/cenas/${cena.id}/tokens`, {
     camada_id: camada.id, rotulo: "Espião", x: 5, y: 5, tamanho: 1, oculto: true,
   });
   const jogador = await abrir(browser, "jogador-1", `/mesas/${m}?painel=room`);
   const narrador = await abrir(browser, "narrador", `/mesas/${m}?painel=room`);
   try {
-    await expect(jogador.pagina.getByRole("heading", { name: "Cena compartilhada" })).toBeVisible();
+    // A Sala é um palco sem cabeçalho (experiencia-da-mesa). O mapa conta só os tokens que cada um vê; a lista fica no
+    // painel, que o jogador abre (e fica aberto depois de recarregar), direto na aba Cena, e o Narrador, na sub-aba
+    // Tokens, com a marca "oculto" no nome do botão.
+    await expect(jogador.pagina.getByRole("heading", { name: "Sala — Ponte" })).toBeVisible();
+    await expect(jogador.pagina.getByRole("img", { name: /, 1 tokens$/ })).toBeVisible();
+    await jogador.pagina.getByRole("button", { name: "Abrir painel" }).click();
     await expect(jogador.pagina.getByRole("button", { name: "Sentinela (1, 2)" })).toBeVisible();
     await expect(jogador.pagina.getByText("Espião")).toHaveCount(0);
-    await expect(narrador.pagina.getByRole("button", { name: "Espião (5, 5)" })).toBeVisible();
+    await narrador.pagina.getByRole("tab", { name: /^Tokens/ }).click();
+    await expect(narrador.pagina.getByRole("button", { name: /^Espião \(5, 5\)/ })).toBeVisible();
     await verificarAxe(jogador.pagina, "grid");
-    await narrador.pagina.getByRole("button", { name: "Espião (5, 5)" }).focus();
-    await narrador.pagina.keyboard.press("Enter");
-    await narrador.pagina.getByLabel("Coluna de destino").fill("6");
-    await narrador.pagina.getByLabel("Linha de destino").fill("6");
-    await narrador.pagina.getByRole("button", { name: "Confirmar movimento" }).click();
-    await expect(narrador.pagina.getByRole("button", { name: "Espião (6, 6)" })).toBeVisible();
+    // O movimento por coordenadas saiu da Sala (agora é arrastar no mapa); o token oculto anda pela API.
+    await chamar("narrador", "POST", `/mesas/${m}/sala/tokens/${oculto.id}/movimento`, {
+      x: 6, y: 6, versao_esperada: oculto.versao,
+    });
+    await expect(narrador.pagina.getByRole("button", { name: /^Espião \(6, 6\)/ })).toBeVisible();
+    await expect(jogador.pagina.getByText("Espião")).toHaveCount(0);
     await jogador.contexto.setOffline(true);
     await chamar("narrador", "POST", `/mesas/${m}/sala/tokens/${visivel.id}/movimento`, {
       x: 3, y: 4, versao_esperada: visivel.versao,
@@ -119,6 +125,7 @@ test("sala recupera snapshot após desconexão sem revelar token oculto", async 
     await jogador.contexto.setOffline(false);
     await jogador.pagina.reload();
     await expect(jogador.pagina.getByRole("button", { name: "Sentinela (3, 4)" })).toBeVisible();
+    await expect(jogador.pagina.getByRole("img", { name: /, 1 tokens$/ })).toBeVisible();
     await expect(jogador.pagina.getByText("Espião")).toHaveCount(0);
   } finally {
     await jogador.contexto.close();
